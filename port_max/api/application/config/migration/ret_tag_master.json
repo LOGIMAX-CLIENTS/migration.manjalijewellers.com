@@ -1,0 +1,154 @@
+{
+    "entity": "tag_details",
+    "ai": {
+        "enabled": true,
+        "max_rows": 20
+    },
+    "validation": {
+        "required_file_name_pattern": "tag*.xlsx",
+        "required_sheet_name": "port_tag_master"
+    },
+    "file_path": "uploads/tag_master.xlsx",
+    "migrations": [{
+        "destination_table": "ret_import_tag_details",
+        "primary_key": "id",
+        "mappings": {
+            "old_metal_id": {
+                "source_column": "old_metal_id",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "old_category_id": {
+                "source_column": "old_category_id",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "old_product_id": {
+                "source_column": "old_product_id",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "old_design_id": {
+                "source_column": "old_design_id",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "old_sub_design_id": {
+                "source_column": "old_sub_design_id",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "old_purity_id": {
+                "source_column": "old_purity_id",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "old_branch_id": {
+                "source_column": "old_branch_id",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "old_karigar_id": {
+                "source_column": "old_karigar_id",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "old_counter_id": {
+                "source_column": "old_counter_id",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "old_size_id": {
+                "source_column": "old_size_id",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "metal_name": {
+                "source_column": "metal_name",
+                "validations": { "type": "string", "max_length": 255, "required": false }
+            },
+            "category_name": {
+                "source_column": "category_name",
+                "validations": { "type": "string", "max_length": 255, "required": false }
+            },
+            "product_name": {
+                "source_column": "product_name",
+                "validations": { "type": "string", "max_length": 255, "required": true }
+            },
+            "design_name": {
+                "source_column": "design_name",
+                "validations": { "type": "string", "max_length": 255, "required": false }
+            },
+            "sub_design_name": {
+                "source_column": "sub_design_name",
+                "validations": { "type": "string", "max_length": 255, "required": false }
+            },
+            "purity_name": {
+                "source_column": "purity_name",
+                "validations": { "type": "string", "max_length": 255, "required": false }
+            },
+            "branch_name": {
+                "source_column": "branch_name",
+                "validations": { "type": "string", "max_length": 255, "required": false }
+            },
+            "karigar_name": {
+                "source_column": "karigar_name",
+                "validations": { "type": "string", "max_length": 255, "required": false }
+            },
+            "counter_name": {
+                "source_column": "counter_name",
+                "validations": { "type": "string", "max_length": 255, "required": false }
+            },
+            "size_value": {
+                "source_column": "size_value",
+                "validations": { "type": "string", "max_length": 255, "required": false }
+            },
+            "size_name": {
+                "source_column": "size_name",
+                "validations": { "type": "string", "max_length": 255, "required": false }
+            },
+            "pieces": {
+                "source_column": "pieces",
+                "validations": { "type": "numeric", "min": 1, "required": true }
+            },
+            "gross_wt": {
+                "source_column": "gross_wt",
+                "validations": { "type": "numeric", "min": 0, "required": true }
+            },
+            "net_wt": {
+                "source_column": "net_wt",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "less_wt": {
+                "source_column": "less_wt",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "sales_type": {
+                "source_column": "sales_type",
+                "validations": { "type": "string", "max_length": 50, "required": false }
+            },
+            "prod_calc_based_on": {
+                "source_column": "prod_calc_based_on",
+                "validations": { "type": "string", "max_length": 50, "required": false }
+            },
+            "tag_calc_based_on": {
+                "source_column": "tag_calc_based_on",
+                "validations": { "type": "string", "max_length": 50, "required": false }
+            },
+            "wastage_per": {
+                "source_column": "wastage_percent",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "mc_type": {
+                "source_column": "mc_type",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "mc_value": {
+                "source_column": "mc_value",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "tag_number": {
+                "source_column": "tag_number",
+                "validations": { "type": "string", "max_length": 255, "required": false }
+            },
+            "huid1": {
+                "source_column": "huid1",
+                "validations": { "type": "string", "max_length": 255, "required": false }
+            },
+            "huid2": {
+                "source_column": "huid2",
+                "validations": { "type": "string", "max_length": 255, "required": false }
+            }
+        }
+    }]
+}

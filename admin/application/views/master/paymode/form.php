@@ -1,0 +1,74 @@
+      <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <section class="content-header">
+          <h1>
+            Payment Mode
+            <small></small>
+          </h1>
+          <ol class="breadcrumb">
+            <li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li>
+            <li><a href="<?php echo base_url('index.php/settings/paymode/list');?>">Master</a></li>
+            <li class="active">Payment Mode</li>
+          </ol>
+        </section>
+
+        <!-- Main content -->
+        <section class="content">
+     
+          <!-- Default box -->
+          <div class="box">
+            <div class="box-header with-border">
+              <h3 class="box-title">Payment Mode - <?php echo ( $paymode['id_mode']!=NULL?'Edit' :'Add'); ?></h3>
+              <div class="box-tools pull-right">
+                <button class="btn btn-box-tool" data-widget="collapse" data-toggle="tooltip" title="Collapse"><i class="fa fa-minus"></i></button>
+                <button class="btn btn-box-tool" data-widget="remove" data-toggle="tooltip" title="Remove"><i class="fa fa-times"></i></button>
+              </div>
+            </div>
+            <div class="box-body">
+              <div class="">
+				<?php echo form_open((  $paymode['id_mode']!=NULL &&  $paymode['id_mode']>0 ?'settings/paymode/update/'.$paymode['id_mode']:'settings/paymode/save')) ?>
+				 <div class="row">
+				 	<div class="form-group">
+                       <label for="chargeseme_name" class="col-md-2 col-md-offset-1 ">Payment Mode <span class="error">*</span></label>
+                       <div class="col-md-4">
+<input type="text" class="form-control" id="mode_name" name="paymode[mode_name]" onkeypress="return /^[a-zA-Z ]$/i.test(event.key)" value="<?php echo set_value('paymode[mode_name]',$paymode['mode_name']); ?>" placeholder="eg: Credit Card" required="true">                   <p class="help-block"></p>
+                       	
+                       </div>
+                    </div>
+				 </div>
+				
+				<div class="row">
+				 	<div class="form-group">
+                       <label for="chargeseme_name" class="col-md-2 col-md-offset-1 ">Short Code</label>
+                       <div class="col-md-4">
+<input type="text" class="form-control" name="paymode[short_code]" id="short_code" onkeypress="return /^[a-zA-Z_]$/i.test(event.key)" value="<?php echo set_value('paymode[short_code]',$paymode['short_code']); ?>" placeholder="eg: CC"/>               
+                        <p class="help-block"></p>
+                       	
+                       </div>
+                    </div>
+				 </div>	
+ 
+	
+				
+				<br/>      
+				 <div class="row col-xs-12">
+				   <div class="box box-default"><br/>
+					  <div class="col-xs-offset-5">
+						<button type="submit" class="btn btn-primary">Save</button> 
+						<button type="button" class="btn btn-default btn-cancel">Cancel</button>
+						
+					  </div> <br/>
+					</div>
+				  </div>      
+				        	
+               </form>              	              	
+              </div>
+            </div><!-- /.box-body -->
+            <div class="box-footer">
+              
+            </div><!-- /.box-footer-->
+          </div><!-- /.box -->
+         
+
+        </section><!-- /.content -->
+      </div><!-- /.content-wrapper -->

@@ -1,0 +1,359 @@
+<?php
+/**
+ * Source Version - Unified Webhook Handler
+ * Routes deployments by branch to correct environment
+ * Includes notifications via GitHub Actions dispatch
+ * 
+ * Branch → Environment Mapping:
+ *   develop  → test_etail_v3 (Develop)
+ *   qa       → QA
+ *   support  → Support
+ *   main     → etail (Production)
+ */
+
+header('Content-Type: text/plain; charset=utf-8');
+
+// =============================================================================
+// ENVIRONMENT CONFIGURATION
+// =============================================================================
+
+$ENVIRONMENTS = [
+    'Retail_1.1.1.0001' => [
+        'folder' => 'develop',
+        'name' => 'Develop',
+        'maintenance' => false,
+        'deploy_mode' => 'git_pull'  // or 'symlink' for zero-downtime
+    ],
+    'QA' => [
+        'folder' => 'qa',
+        'name' => 'QA',
+        'maintenance' => false,
+        'deploy_mode' => 'git_pull'
+    ],
+    'support' => [
+        'folder' => 'support',
+        'name' => 'Support',
+        'maintenance' => false,
+        'deploy_mode' => 'git_pull'
+    ],
+    'Production' => [
+        'folder' => 'etail',
+        'name' => 'Production',
+        'maintenance' => true,
+        'deploy_mode' => 'symlink'  // Production uses zero-downtime
+    ]
+];
+
+// =============================================================================
+// CONFIGURATION (from environment variables)
+// =============================================================================
+
+$CONFIG = [
+    'secret' => getenv('WEBHOOK_SECRET') ?: $_SERVER['WEBHOOK_SECRET'] ?? '',
+    'base_path' => getenv('BASE_PATH') ?: '/home/retaillogimaxind/public_html',
+    'log_file' => getenv('LOG_FILE') ?: '/home/retaillogimaxind/public_html/webhooks/webhook.log',
+    'repo_url' => 'git@github.com:Logimax-Technologies/etail_development_src.git',
+    'github_token' => ''
+];
+
+// Load GitHub token from file (check multiple locations)
+$token_paths = [
+    '/home/retaillogimaxind/public_html/webhooks/.github_token',
+    '/home/retaillogimaxind/.github_token'
+];
+foreach ($token_paths as $token_file) {
+    if (file_exists($token_file)) {
+        $CONFIG['github_token'] = trim(file_get_contents($token_file));
+        break;
+    }
+}
+
+// Validate secret
+if (empty($CONFIG['secret'])) {
+    http_response_code(500);
+    die('WEBHOOK_SECRET environment variable is not set');
+}
+
+// =============================================================================
+// LOGGING
+// =============================================================================
+
+function log_event($level, $message) {
+    global $CONFIG;
+    $entry = "[" . date('Y-m-d H:i:s') . "] [$level] $message\n";
+    if (!empty($CONFIG['log_file'])) {
+        file_put_contents($CONFIG['log_file'], $entry, FILE_APPEND | LOCK_EX);
+    }
+}
+
+log_event('INFO', '=== Webhook received ===');
+log_event('INFO', 'Method: ' . ($_SERVER['REQUEST_METHOD'] ?? 'UNKNOWN'));
+
+// =============================================================================
+// REQUEST VALIDATION
+// =============================================================================
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    log_event('ERROR', 'Method not allowed');
+    die('Method not allowed');
+}
+
+$input = file_get_contents('php://input');
+if (empty($input)) {
+    http_response_code(400);
+    log_event('ERROR', 'Empty payload');
+    die('Empty payload');
+}
+
+log_event('INFO', 'Payload size: ' . strlen($input) . ' bytes');
+
+// =============================================================================
+// SIGNATURE VERIFICATION
+// =============================================================================
+
+$signature = $_SERVER['HTTP_X_HUB_SIGNATURE_256'] ?? '';
+if (empty($signature)) {
+    http_response_code(403);
+    log_event('ERROR', 'Missing signature');
+    die('Missing signature');
+}
+
+$expected = 'sha256=' . hash_hmac('sha256', $input, $CONFIG['secret']);
+if (!hash_equals($expected, $signature)) {
+    http_response_code(403);
+    log_event('ERROR', 'Invalid signature');
+    die('Invalid signature');
+}
+
+log_event('INFO', 'Signature verified ✓');
+
+// =============================================================================
+// PARSE PAYLOAD
+// =============================================================================
+
+$data = json_decode($input, true);
+log_event("DEBUG", "Full ref: " . ($data["ref"] ?? "none") . " | base_ref: " . ($data["base_ref"] ?? "none"));
+if (!$data) {
+    http_response_code(400);
+    log_event('ERROR', 'Invalid JSON');
+    die('Invalid JSON');
+}
+
+// Handle ping event
+$event = $_SERVER['HTTP_X_GITHUB_EVENT'] ?? 'push';
+if ($event === 'ping') {
+    log_event('INFO', 'Ping received - OK');
+    echo 'pong';
+    exit;
+}
+
+// =============================================================================
+// DETERMINE BRANCH & ENVIRONMENT
+// =============================================================================
+
+$ref = $data['ref'] ?? '';
+$branch = str_replace('refs/heads/', '', $ref);
+
+log_event('INFO', "Branch: $branch");
+
+if (!isset($ENVIRONMENTS[$branch])) {
+    log_event('WARNING', "Branch '$branch' not configured - ignoring");
+    echo "Branch $branch not configured for deployment";
+    exit;
+}
+
+$env = $ENVIRONMENTS[$branch];
+$folder = $env['folder'];
+$env_name = $env['name'];
+$maintenance = $env['maintenance'];
+$deploy_mode = $env['deploy_mode'];
+
+$env_path = $CONFIG['base_path'] . '/' . $folder;
+$deploy_script = $env_path . '/deploy.sh';
+$unified_script = $env_path . '/unified-deploy.sh';
+
+log_event('INFO', "Environment: $env_name ($folder)");
+log_event('INFO', "Deploy mode: $deploy_mode");
+
+// =============================================================================
+// EXTRACT COMMIT INFO
+// =============================================================================
+
+$commit_id = $data['head_commit']['id'] ?? substr(uniqid(), 0, 7);
+$commit_msg = $data['head_commit']['message'] ?? 'No message';
+$author = $data['head_commit']['author']['name'] ?? $data['pusher']['name'] ?? 'Unknown';
+$repo_name = $data['repository']['full_name'] ?? 'Logimax-Technologies/etail_development_src';
+
+// Clean commit message for shell
+$commit_msg_clean = str_replace(["\r\n", "\r", "\n", '"', "'"], [' ', ' ', ' ', '', ''], $commit_msg);
+
+log_event('INFO', "Commit: $commit_id by $author");
+log_event('INFO', "Message: " . substr($commit_msg_clean, 0, 100));
+
+// =============================================================================
+// EXECUTE DEPLOYMENT
+// =============================================================================
+
+$output = '';
+$success = false;
+
+if ($deploy_mode === 'symlink' && file_exists($unified_script)) {
+    // Symlink deployment (zero-downtime)
+    $maintenance_flag = $maintenance ? '--maintenance' : '';
+    $command = sprintf(
+        'cd %s && nohup bash %s --branch %s %s > /tmp/%s-deploy.log 2>&1 & echo $!',
+        escapeshellarg($env_path),
+        escapeshellarg($unified_script),
+        escapeshellarg($branch),
+        $maintenance_flag,
+        $folder
+    );
+    $pid = trim(shell_exec($command));
+    log_event('INFO', "Symlink deploy started (PID: $pid)");
+    $output = "Symlink deployment started with PID: $pid";
+    $success = true;
+    
+} elseif (file_exists($deploy_script)) {
+    // Use existing deploy.sh (git pull with logging)
+    $command = sprintf(
+        'cd %s && bash %s %s 2>&1',
+        escapeshellarg($env_path),
+        escapeshellarg($deploy_script),
+        escapeshellarg($branch)
+    );
+    $output = shell_exec($command);
+    log_event('INFO', "Deploy.sh output: " . substr($output, 0, 500));
+    $success = strpos($output, 'Deployment complete') !== false 
+            || strpos($output, '✅') !== false 
+            || strpos($output, 'HEAD is now at') !== false
+            || strpos($output, 'Already up to date') !== false;
+    
+} else {
+    // Fallback: simple git pull
+    log_event('INFO', 'Using fallback git pull');
+    $command = sprintf(
+        'cd %s && GIT_SSH_COMMAND="ssh -i ~/.ssh/id_rsa" git fetch --all && git checkout %s && git reset --hard origin/%s 2>&1',
+        escapeshellarg($env_path),
+        escapeshellarg($branch),
+        escapeshellarg($branch)
+    );
+    $output = shell_exec($command);
+    log_event('INFO', "Git pull output: " . substr($output, 0, 500));
+    $success = strpos($output, 'HEAD is now at') !== false;
+}
+
+// =============================================================================
+// SEND NOTIFICATION (via GitHub Actions dispatch)
+// =============================================================================
+
+if (!empty($CONFIG['github_token'])) {
+    // Send different event types based on deploy mode
+    $event_type = ($deploy_mode === 'symlink') ? 'production-deployed' : 'staging-deployed';
+    
+    // Debug: Log notification attempt details
+    log_event('DEBUG', "Notification: repo=$repo_name, event=$event_type, token_len=" . strlen($CONFIG['github_token']));
+    
+    $notification_data = [
+        'event_type' => $event_type,
+        'client_payload' => [
+            'branch' => $branch,
+            'commit' => $commit_id,
+            'message' => $commit_msg_clean,
+            'user' => $author,
+            'server' => $env_name,
+            'status' => $success ? 'SUCCESS' : 'FAILED',
+            'timestamp' => date('Y-m-d H:i:s'),
+            'repository' => $repo_name,
+            'deploy_mode' => $deploy_mode,
+            'release_id' => isset($release_id) ? $release_id : 'N/A'
+        ]
+    ];
+    
+    $api_endpoint = "https://api.github.com/repos/$repo_name/dispatches";
+    log_event('DEBUG', "API URL: $api_endpoint");
+    
+    $ch = curl_init($api_endpoint);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode($notification_data),
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/vnd.github.v3+json',
+            'Authorization: Bearer ' . $CONFIG['github_token'],
+            'User-Agent: Logimax-Deploy-Webhook',
+            'Content-Type: application/json'
+        ]
+    ]);
+    
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curl_error = curl_error($ch);
+    curl_close($ch);
+    
+    if ($http_code === 204) {
+        log_event('INFO', 'Notification sent ✓');
+    } else {
+        log_event('WARNING', "Notification failed (HTTP $http_code)");
+        log_event('DEBUG', "Response: $response");
+        if ($curl_error) {
+            log_event('DEBUG', "CURL Error: $curl_error");
+        }
+    }
+} else {
+    log_event('WARNING', 'No GitHub token configured - skipping notification');
+}
+
+// =============================================================================
+// LOG TO CI/CD DASHBOARD DATABASE
+// =============================================================================
+
+$api_url = 'https://retail.logimaxindia.com/test_etail_v3/cicd/docs/api/deployments.php';
+$log_data = json_encode([
+    'environment' => $env_name,
+    'branch' => $branch,
+    'commit_hash' => $commit_id,
+    'commit_message' => $commit_msg_clean,
+    'deployed_by' => $author,
+    'status' => $success ? 'success' : 'failed',
+    'deploy_mode' => $deploy_mode,
+    'release_id' => isset($release_id) ? $release_id : null,
+    'previous_release' => isset($previous_release) ? $previous_release : null
+]);
+
+$ch = curl_init($api_url);
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_POSTFIELDS => $log_data,
+    CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+    CURLOPT_TIMEOUT => 5
+]);
+$api_response = curl_exec($ch);
+$api_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+curl_close($ch);
+
+if ($api_code === 201) {
+    log_event('INFO', 'Logged to dashboard DB ✓');
+} else {
+    log_event('WARNING', "Dashboard DB log failed (HTTP $api_code)");
+}
+
+// =============================================================================
+// RESPONSE
+// =============================================================================
+
+$status = $success ? 'success' : 'completed';
+$response = [
+    'status' => $status,
+    'environment' => $env_name,
+    'branch' => $branch,
+    'commit' => $commit_id,
+    'deploy_mode' => $deploy_mode,
+    'message' => "Deployment $status for $env_name"
+];
+
+log_event('INFO', "Deployment $status for $env_name");
+log_event('INFO', '=== Webhook complete ===');
+
+echo json_encode($response, JSON_PRETTY_PRINT);

@@ -1,0 +1,31 @@
+# Domain Concepts: Retail Purchase
+
+## Supplier Catalog (Purchase Item Master)
+A "Supplier Catalog" entry is not a Vendor entity itself, but a **specification of an item that can be ordered**. It links the internal Retail Product definitions to procurement specifics.
+-   **Role**: Defines *what* can be bought.
+-   **Linkage**: Maps `Product` + `Design` + `SubDesign` to costing rules.
+
+## Vendor / Karigar (The Entity)
+In `etail_v3`, the term "Karigar" (Goldsmith/Artisan) acts as the **Unified Vendor Entity**.
+-   **Dual Role**: A 'Karigar' can be an internal worker (labor charges) or an external supplier (buying goods).
+-   **Differentiation**: The `karigar_for` field specifies the role (e.g., Jewel Supplier vs. Manufacturer).
+-   **Attributes**: Includes tax details (GST, PAN), bank details, and address.
+
+## Costing Parameters (Purchase)
+-   **Wastage (VA)**: Percentage of metal loss covered by the supplier.
+-   **Making Charges (MC)**: Labor cost for manufacturing.
+-   **Weight Range**: Different costs can apply to different weight brackets of the same item.
+
+## Stock Types (Inventory)
+1.  **Tagged Stock (`ret_taging`)**: Individual items tracked by a unique Barcode/Tag ID.
+    -   Has specific Weight, Stone details, and Status (e.g., 1=Stock, 7=Issued).
+    -   Used for Ornaments and high-value pieces.
+2.  **Non-Tagged Stock (`ret_nontag_item`)**: Bulk stock tracked by Weight and Quantity under a Category/Product (e.g., Loose Stones, Bullion, Chains).
+    -   Managed by aggregating weights.
+3.  **Suspense Stock**: Stock that has been entered (via PO) but not yet finalized/approved or QC'd.
+
+## Issue & Receipt
+-   **Stock Issue**: Moving inventory *out* of the current branch's safe (to Karigar for work, to another Branch, or to Salesman).
+-   **Stock Receipt**: Receiving inventory *back* into the safe (from Karigar after repair, from Branch).
+
+

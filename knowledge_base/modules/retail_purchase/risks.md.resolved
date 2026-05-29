@@ -1,0 +1,18 @@
+# Risk Assessment: Retail Purchase
+
+## Critical Risks
+1.  **Suspense Stock "Black Hole"**
+    -   **Risk**: Items entered via PO but never approved (stuck in `tag_status=0` or `is_approved=0`) may not appear in stock reports but physically exist.
+    -   **Mitigation**: Regular reconciliation reports for "Pending Approvals".
+
+2.  **Old Metal Valuation**
+    -   **Risk**: `ret_bill_old_metal_sale_details` relies on manual entry of `pure_wt` and [rate](file:///c:/xampp/htdocs/etail_v3/admin/application/models/ret_catalog_model.php#7488-7499). Incorrect entry here directly impacts financial P&L.
+    -   **Mitigation**: Strict validation on "Dust/Stone Deduction" logic in JS.
+
+3.  **Stock Issue without Receipt**
+    -   **Risk**: Stock issued to a Karigar (Issue Type 1) that is never "Received Back" (Issue Type 2) leads to inventory leakage.
+    -   **Mitigation**: "Pending Issue" reports must be monitored daily.
+
+## Technical Debt
+-   **Complex SQL in Models**: [ret_reports_model.php](file:///c:/xampp/htdocs/etail_v3/admin/application/models/ret_reports_model.php) contains massive raw SQL queries (some >100 lines). This is hard to maintain and prone to SQL injection if parameters aren't strictly bound (though CodeIgniter helpers are used, raw queries are risky).
+-   **Hardcoded Logic**: Some business rules (e.g., specific status IDs `1`, `7`) seem hardcoded in Controllers/Models rather than defined as constants.

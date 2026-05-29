@@ -1,0 +1,67 @@
+@startuml EDA_Approval_Flow
+!theme plain
+title EDA Approval Decision Flow
+
+start
+
+:Estimation Created\nwith is_eda = 1;
+
+:is_eda_approved = 0\n(Pending);
+
+:Manager Views\nEDA Queue;
+
+:Display Estimation Details;
+note right
+  - Estimation Number
+  - Customer Name
+  - Total Amount
+  - Requested Discount
+  - Sales Staff Name
+  - Product Details
+end note
+
+if (Manager Decision?) then (Approve)
+    :Enter/Confirm\nFinal Amount;
+    
+    :Begin Transaction;
+    
+    :Update ret_estimation\nis_eda_approved = 1\nestimate_final_amt = value;
+    
+    repeat :For Each Item;
+        if (Tagged Item?) then (yes)
+            :Update ret_taging\ntag_status = 10 (Sold);
+            :Insert ret_taging_status_log;
+        elseif (Non-Tag Item?) then (yes)
+            :Check ret_nontag_items_master;
+            :Reduce Inventory;
+            :Insert ret_nontag_item_log;
+        endif
+    repeat while (More Items?) is (yes)
+    
+    :Commit Transaction;
+    
+    :Log Activity\n"Record Approved successfully";
+    
+    :Estimation Ready\nfor Billing;
+    
+else (Reject)
+    :Update ret_estimation\nis_eda_approved = 2;
+    
+    :Log Activity\n"Record Rejected";
+    
+    :Sales Staff Notified;
+    
+    if (Re-edit?) then (yes)
+        :Open Estimation\nfor Editing;
+        :Modify Discount;
+        :Save Changes;
+        :is_eda_approved = 0\n(Back to Pending);
+        -> Manager Views\nEDA Queue;
+    else (no)
+        :Estimation Remains\nRejected;
+    endif
+endif
+
+stop
+
+@enduml

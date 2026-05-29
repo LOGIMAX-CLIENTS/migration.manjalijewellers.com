@@ -1,0 +1,13 @@
+{
+  "modules": {
+    "estimation": {
+      "name": "Estimation Module (Pilot)",
+      "paths": [
+        "admin/assets/js/ret_estimation.js",
+        "admin/application/controllers/Admin_ret_estimation.php",
+        "admin/application/models/Ret_estimation_model.php"
+      ],
+      "entry_points": ["admin_ret_estimation/index"]
+    }
+  }
+}

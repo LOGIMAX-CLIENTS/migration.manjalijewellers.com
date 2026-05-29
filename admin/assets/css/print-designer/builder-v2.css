@@ -1,0 +1,163 @@
+/* Document container inside GrapesJS */
+#gjs {
+    border: none;
+    height: 100%;
+    width: 100%;
+}
+
+/* 
+  We will use GrapesJS's wrapper to act as the "page".
+  By default, GrapesJS canvas stretches. We style the iframe (.gjs-frame).
+*/
+.gjs-frame {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    background: white !important;
+    margin: 0 auto !important; /* center it */
+    display: block !important;
+}
+
+/* Paper Sizes */
+/* A4 */
+.paper-a4 .gjs-frame {
+    width: 21cm !important;
+    min-height: 29.7cm !important;
+}
+
+/* A5 */
+.paper-a5 .gjs-frame {
+    width: 14.8cm !important;
+    min-height: 21cm !important;
+}
+
+/* Letter */
+.paper-letter .gjs-frame {
+    width: 8.5in !important;
+    min-height: 11in !important;
+}
+
+/* Thermal 80mm */
+.paper-thermal-80mm .gjs-frame {
+    width: 80mm !important;
+    min-height: 200mm !important; /* Will grow if content does */
+}
+
+/* Thermal 58mm */
+.paper-thermal-58mm .gjs-frame {
+    width: 58mm !important;
+    min-height: 150mm !important;
+}
+
+/* Custom */
+.paper-custom .gjs-frame {
+    width: 100% !important;
+    min-height: 100% !important;
+}
+
+/* UI tweaks for the GrapeJS editor */
+.gjs-block {
+    width: 100%;
+    min-height: auto;
+    padding: 10px;
+    border: 1px solid #e0e4e8;
+    border-radius: 4px;
+    background: white;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    margin-bottom: 8px;
+    color: #444;
+    transition: all 0.2s;
+}
+.gjs-block:hover {
+    border-color: #3c8dbc;
+    color: #3c8dbc;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.gjs-block-label {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Hide some annoying selector parts if we want pure simplicity */
+.gjs-sm-sector .gjs-sm-title {
+    background-color: #f4f6f9;
+    color: #333;
+    border-bottom: 1px solid #d2d6de;
+    font-weight: bold;
+}
+
+.gjs-sm-sector .gjs-sm-properties {
+    background-color: #ffffff;
+}
+
+.gjs-trait {
+    border-bottom: 1px solid #eee;
+}
+
+/* ==============================================================
+   OVERRIDE GRAPESJS DEFAULT DARK THEME FOR A CLEAN LIGHT UI
+   ============================================================== */
+
+/* Canvas wrapper background */
+.gjs-cv-canvas {
+    background-color: transparent !important;
+}
+
+/* Base editor background */
+.gjs-editor {
+    background-color: transparent !important;
+}
+
+/* Block Manager / Left Sidebar */
+.gjs-blocks-c {
+    background-color: #fff !important;
+}
+
+.gjs-category-title,
+.gjs-layer-title,
+.gjs-sm-sector-title {
+    background-color: #f4f6f9 !important;
+    color: #333 !important;
+    border-bottom: 1px solid #d2d6de !important;
+    font-weight: 600 !important;
+    border-top: none !important;
+}
+
+.gjs-category-title:hover {
+    background-color: #eef1f6 !important;
+}
+
+/* Right Sidebar panels (Style Manager, Traits, Layers) */
+.gjs-sm-sectors,
+.gjs-traits-c,
+.gjs-layers {
+    background-color: #fff !important;
+    color: #444 !important;
+}
+
+/* Input fields inside Style/Trait managers */
+.gjs-field,
+.gjs-field-colorp-c,
+.gjs-sm-property select {
+    background-color: #fff !important;
+    color: #333 !important;
+    border: 1px solid #d2d6de !important;
+    border-radius: 4px;
+}
+
+/* Text color for properties */
+.gjs-sm-property .gjs-sm-label,
+.gjs-trait-label {
+    color: #555 !important;
+}
+
+/* Arrows for selects/dropdowns */
+.gjs-field-arrow-u,
+.gjs-field-arrow-d {
+    border-bottom-color: #888 !important;
+    border-top-color: #888 !important;
+}
+
+/* Selected item in Layers */
+.gjs-layer.gjs-active {
+    background-color: rgba(60, 141, 188, 0.1) !important;
+}

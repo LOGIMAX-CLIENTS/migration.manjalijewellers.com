@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Dashboard - Logimax CI/CD</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="js/auth-check.js" data-require-role="support"></script>
+    <script src="js/toast.js"></script>
+    <link rel="stylesheet" href="css/dashboard-extra.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #f5f5f5;
+            --bg-card: rgba(255, 255, 255, 0.85);
+            --bg-card-hover: rgba(255, 255, 255, 0.95);
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --text-muted: #999999;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --accent: #1a1a1a;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --info: #06b6d4;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+            --radius-sm: 12px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            right: -30%;
+            width: 80%;
+            height: 150%;
+            background: linear-gradient(135deg, #e8e8e8 0%, #d4d4d4 50%, #e0e0e0 100%);
+            border-radius: 50%;
+            z-index: -1;
+            opacity: 0.6;
+        }
+
+        .app-container { display: flex; min-height: 100vh; }
+
+        /* Sidebar */
+        .sidebar {
+            width: 220px;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            background: transparent;
+        }
+
+        .logo { display: flex; align-items: center; gap: 10px; padding: 0 12px; margin-bottom: 32px; }
+        .logo-icon { width: 32px; height: 32px; }
+        .logo-text { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+
+        .nav-section { margin-bottom: 24px; }
+        .nav-section-title { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; padding: 0 12px; margin-bottom: 8px; }
+
+        .nav-item {
+            display: flex; align-items: center; gap: 12px; padding: 12px;
+            border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease;
+            color: var(--text-secondary); font-size: 14px; font-weight: 500; text-decoration: none;
+        }
+        .nav-item:hover { background: var(--bg-card); }
+        .nav-item.active { background: var(--accent); color: white; }
+        .nav-item svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+        .sidebar-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border-color); }
+
+        /* Main Content */
+        .main-content { flex: 1; padding: 24px 32px; overflow-y: auto; }
+
+        /* Header */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .greeting { font-size: 28px; font-weight: 700; color: var(--text-primary); }
+        .greeting-sub { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+        .header-actions { display: flex; align-items: center; gap: 12px; }
+
+        .btn { display: flex; align-items: center; gap: 8px; padding: 10px 20px; border: none; border-radius: 50px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-secondary { background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background: var(--bg-card-hover); }
+
+        .avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 16px; }
+
+        /* Info Banner */
+        .info-banner {
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            color: var(--text-primary);
+            padding: 16px 20px;
+            border-radius: var(--radius-md);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+        }
+        .info-banner svg { color: var(--info); flex-shrink: 0; }
+
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: var(--bg-card); border-radius: var(--radius-lg); padding: 24px; backdrop-filter: blur(20px); border: 1px solid var(--border-color); transition: all 0.3s ease; }
+        .stat-card:hover { box-shadow: var(--shadow-md); }
+        .stat-label { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-value { font-size: 32px; font-weight: 700; color: var(--text-primary); }
+        .stat-value.success { color: var(--success); }
+        .stat-value.warning { color: var(--warning); }
+
+        /* Card */
+        .card { background: var(--bg-card); border-radius: var(--radius-lg); padding: 24px; backdrop-filter: blur(20px); border: 1px solid var(--border-color); transition: all 0.3s ease; margin-bottom: 24px; }
+        .card:hover { box-shadow: var(--shadow-md); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .card-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+
+        /* Fixed Sync Info */
+        .sync-info { display: flex; gap: 16px; padding: 16px; background: rgba(0, 0, 0, 0.02); border-radius: var(--radius-md); margin-bottom: 20px; align-items: center; }
+        .sync-info-item { display: flex; flex-direction: column; }
+        .sync-info-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .sync-info-value { font-size: 14px; font-weight: 600; }
+        .sync-arrow { font-size: 20px; color: var(--text-muted); }
+        .branch-select { padding: 8px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; background: white; min-width: 150px; cursor: pointer; }
+        .branch-select:focus { outline: none; border-color: var(--accent); }
+
+        /* Search */
+        .search-input { width: 100%; padding: 12px 16px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 14px; margin-bottom: 16px; }
+        .search-input:focus { outline: none; border-color: var(--accent); }
+
+        /* Client List */
+        .client-list { max-height: 400px; overflow-y: auto; }
+        .client-item { display: flex; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--border-color); gap: 12px; }
+        .client-item:hover { background: rgba(0, 0, 0, 0.02); }
+        .client-item:last-child { border-bottom: none; }
+        .checkbox { accent-color: var(--accent); width: 18px; height: 18px; cursor: pointer; }
+        .client-info { flex: 1; }
+        .client-name { font-weight: 500; font-size: 14px; }
+        .client-repo { font-size: 12px; color: var(--text-muted); }
+
+        .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 50px; font-size: 12px; font-weight: 500; }
+        .status-synced { background: rgba(34,197,94,0.1); color: var(--success); }
+        .status-outdated { background: rgba(245,158,11,0.1); color: var(--warning); }
+        .status-pending { background: rgba(6,182,212,0.1); color: var(--info); }
+
+        /* Sync Actions */
+        .sync-actions { display: flex; gap: 12px; padding-top: 16px; border-top: 1px solid var(--border-color); margin-top: 16px; align-items: center; }
+        .selected-count { font-size: 14px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
+        .selected-count strong { color: var(--accent); }
+
+        /* Activity */
+        .activity-item { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-color); gap: 12px; }
+        .activity-item:last-child { border-bottom: none; }
+        .activity-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .activity-dot.success { background: var(--success); }
+        .activity-dot.failed { background: var(--error); }
+        .activity-dot.pending { background: var(--warning); }
+        .activity-info { flex: 1; }
+        .activity-title { font-size: 14px; font-weight: 500; }
+        .activity-meta { font-size: 12px; color: var(--text-muted); }
+        .activity-time { font-size: 12px; color: var(--text-muted); }
+
+        /* Toast */
+        .toast { position: fixed; top: 24px; right: 24px; padding: 14px 20px; background: white; border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); display: none; align-items: center; gap: 12px; z-index: 300; }
+        .toast.show { display: flex; animation: slideIn 0.3s ease; }
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.error { border-left: 4px solid var(--error); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Loading */
+        .loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.8); display: none; align-items: center; justify-content: center; z-index: 400; }
+        .loading-overlay.show { display: flex; }
+        .spinner { width: 48px; height: 48px; border: 4px solid var(--border-color); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 768px) { .sidebar { display: none; } .stats-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <svg class="logo-icon" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#1a1a1a"/>
+                    <path d="M8 16L14 22L24 10" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="logo-text">Logimax</span>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Menu</div>
+                <a href="index.html" class="nav-item" data-require-role="admin">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/>
+                        <rect x="14" y="14" width="7" height="7" rx="1"/>
+                    </svg>
+                    Admin Dashboard
+                </a>
+                <a href="support-dashboard.html" class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                    Quick Sync
+                </a>
+                <a href="support-deploy.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                    Deployments
+                </a>
+            </div>
+
+            <div class="sidebar-footer">
+                <a href="#" class="nav-item" id="logout-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    Logout
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <div>
+                    <h1 class="greeting">Quick Sync</h1>
+                    <p class="greeting-sub">Sync clients to staging</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="loadData()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0115.17-3.36L23 10M1 14l4.32 4.32A9 9 0 0020.49 15"/></svg>
+                        Refresh
+                    </button>
+                    <div class="avatar" id="user-avatar">S</div>
+                </div>
+            </header>
+
+            <!-- Info Banner -->
+            <div class="info-banner">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                <span>Select a <strong>source branch</strong> from main repo and a <strong>target branch</strong> for client repos. Branches are fetched from GitHub.</span>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Clients</div>
+                    <div class="stat-value" id="stat-total">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Synced</div>
+                    <div class="stat-value success" id="stat-synced">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Need Sync</div>
+                    <div class="stat-value warning" id="stat-outdated">--</div>
+                </div>
+            </div>
+
+            <!-- Sync Panel -->
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Quick Sync</h2>
+                </div>
+
+                <div class="sync-info">
+                    <div class="sync-info-item">
+                        <span class="sync-info-label">Source (Main Repo)</span>
+                        <select id="source-branch" class="branch-select" onchange="updateTargetBranches()">
+                            <option value="">Loading...</option>
+                        </select>
+                    </div>
+                    <span class="sync-arrow">→</span>
+                    <div class="sync-info-item">
+                        <span class="sync-info-label">Target (Client Repos)</span>
+                        <select id="target-branch" class="branch-select">
+                            <option value="main">main (default)</option>
+                            <option value="staging">staging</option>
+                        </select>
+                    </div>
+                </div>
+
+                <input type="text" id="search-input" class="search-input" placeholder="Search clients..." oninput="filterClients()">
+
+                <div class="client-list" id="client-list">
+                    <div style="text-align: center; padding: 40px; color: var(--text-muted);">Loading clients...</div>
+                </div>
+
+                <div class="sync-actions">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+                        <input type="checkbox" class="checkbox" id="select-all" onchange="toggleSelectAll()">
+                        Select All
+                    </label>
+                    <span class="selected-count">Selected: <strong id="selected-count">0</strong></span>
+                    <button class="btn btn-primary" id="sync-btn" onclick="syncSelected()" disabled style="margin-left: auto;">
+                        Sync Selected
+                    </button>
+                </div>
+            </section>
+
+            <!-- Recent Activity -->
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Recent Activity (Last 7 Days)</h2>
+                </div>
+                <div id="activity-list">
+                    <div style="text-align: center; padding: 40px; color: var(--text-muted);">Loading activity...</div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div class="toast" id="toast"><span id="toast-message"></span></div>
+    <div class="loading-overlay" id="loading"><div class="spinner"></div></div>
+
+    <script>
+        const API_BASE = 'api';
+        const SOURCE_REPO = 'etail_development_src';
+        const SOURCE_ORG = 'Logimax-Technologies';
+        const CLIENT_ORG = 'LOGIMAX-CLIENTS';
+        let clients = [];
+        let selectedClients = new Set();
+
+        document.addEventListener('DOMContentLoaded', loadData);
+
+        async function loadData() { 
+            await Promise.all([loadSourceBranches(), loadClients(), loadActivity()]); 
+        }
+
+        // Fetch source branches from main repo
+        async function loadSourceBranches() {
+            try {
+                const response = await fetch(`${API_BASE}/github-repos.php?org=${SOURCE_ORG}&repo=${SOURCE_REPO}&action=branches`);
+                const data = await response.json();
+                const select = document.getElementById('source-branch');
+                
+                if (data.success && data.branches) {
+                    // Sort branches to show common ones first
+                    const priorityBranches = ['Production', 'support', 'QA', 'main', 'master'];
+                    const sorted = data.branches.sort((a, b) => {
+                        const aIdx = priorityBranches.indexOf(a.name);
+                        const bIdx = priorityBranches.indexOf(b.name);
+                        if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+                        if (aIdx !== -1) return -1;
+                        if (bIdx !== -1) return 1;
+                        return a.name.localeCompare(b.name);
+                    });
+                    
+                    select.innerHTML = sorted.map(b => 
+                        `<option value="${b.name}" ${b.name === 'Production' ? 'selected' : ''}>${b.name}</option>`
+                    ).join('');
+                } else {
+                    select.innerHTML = '<option value="Production">Production (fallback)</option>';
+                }
+            } catch (e) {
+                console.warn('Failed to load source branches:', e);
+                document.getElementById('source-branch').innerHTML = '<option value="Production">Production (fallback)</option>';
+            }
+        }
+
+        // Load target branches when client is selected (uses first selected client's repo)
+        async function updateTargetBranches() {
+            // Could dynamically fetch target branches based on selected client
+            // For now, keeping common defaults
+        }
+
+        async function loadClients() {
+            try {
+                const response = await fetch(`${API_BASE}/version-tracker.php?action=status`);
+                const data = await response.json();
+                if (data.success) {
+                    clients = data.clients.filter(c => c.version_policy !== 'pinned');
+                    updateStats(data.stats);
+                    renderClients();
+                }
+            } catch (e) { showToast('Connection error', 'error'); }
+        }
+
+        async function loadActivity() {
+            try {
+                const response = await fetch(`${API_BASE}/deployment-history.php?limit=10&days=7`);
+                const data = await response.json();
+                renderActivity(data.deployments || []);
+            } catch (e) { document.getElementById('activity-list').innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);">No recent activity</div>'; }
+        }
+
+        function updateStats(stats) {
+            document.getElementById('stat-total').textContent = stats.total || 0;
+            document.getElementById('stat-synced').textContent = stats.synced || 0;
+            document.getElementById('stat-outdated').textContent = (stats.outdated || 0) + (stats.not_synced || 0);
+        }
+
+        function renderClients() {
+            const container = document.getElementById('client-list');
+            const search = document.getElementById('search-input').value.toLowerCase();
+            let filtered = search ? clients.filter(c => c.name.toLowerCase().includes(search) || c.repo.toLowerCase().includes(search)) : clients;
+
+            if (filtered.length === 0) { container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted);">No clients found</div>'; return; }
+
+            container.innerHTML = filtered.map(client => {
+                const isSelected = selectedClients.has(client.repo);
+                const statusClass = client.sync_status === 'synced' ? 'status-synced' : client.sync_status === 'pending_merge' ? 'status-pending' : 'status-outdated';
+                const statusLabel = client.sync_status === 'synced' ? '✓ Synced' : client.sync_status === 'pending_merge' ? '◐ Pending' : '⚠ Needs Sync';
+                return `<div class="client-item"><input type="checkbox" class="checkbox client-checkbox" data-repo="${client.repo}" ${isSelected ? 'checked' : ''} onchange="toggleClient('${client.repo}')"><div class="client-info"><div class="client-name">${client.name}</div><div class="client-repo">${client.repo}</div></div><span class="status-badge ${statusClass}">${statusLabel}</span></div>`;
+            }).join('');
+        }
+
+        function renderActivity(deployments) {
+            const container = document.getElementById('activity-list');
+            if (!deployments || deployments.length === 0) { container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);">No recent activity</div>'; return; }
+            container.innerHTML = deployments.slice(0, 10).map(d => {
+                const statusClass = d.status === 'success' ? 'success' : d.status === 'failed' ? 'failed' : 'pending';
+                return `<div class="activity-item"><div class="activity-dot ${statusClass}"></div><div class="activity-info"><div class="activity-title">${d.client_name || d.client_id || 'Unknown'}</div><div class="activity-meta">${d.environment || 'sync'} • ${d.branch || 'Production'}</div></div><span class="activity-time">${formatTimeAgo(d.started_at || d.created_at)}</span></div>`;
+            }).join('');
+        }
+
+        function formatTimeAgo(dateStr) {
+            if (!dateStr) return '';
+            const diff = Math.floor((new Date() - new Date(dateStr)) / 1000);
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+            return `${Math.floor(diff / 86400)}d ago`;
+        }
+
+        function toggleClient(repo) { selectedClients.has(repo) ? selectedClients.delete(repo) : selectedClients.add(repo); updateSelectedCount(); }
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('select-all').checked;
+            selectedClients.clear();
+            if (selectAll) document.querySelectorAll('.client-checkbox').forEach(cb => { cb.checked = true; selectedClients.add(cb.dataset.repo); });
+            else document.querySelectorAll('.client-checkbox').forEach(cb => cb.checked = false);
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() { document.getElementById('selected-count').textContent = selectedClients.size; document.getElementById('sync-btn').disabled = selectedClients.size === 0; }
+        function filterClients() { renderClients(); }
+
+        async function syncSelected() {
+            if (selectedClients.size === 0 || selectedClients.size > 10) { showToast(selectedClients.size === 0 ? 'Select at least one client' : 'Maximum 10 clients per batch', 'error'); return; }
+            
+            const sourceBranch = document.getElementById('source-branch').value;
+            const targetBranch = document.getElementById('target-branch').value;
+            
+            if (!sourceBranch || !targetBranch) { showToast('Please select source and target branches', 'error'); return; }
+            
+            showLoading(true);
+            try {
+                const response = await fetch(`${API_BASE}/trigger-sync.php`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clients: Array.from(selectedClients), source_branch: sourceBranch, target_branch: targetBranch, auto_merge: true }) });
+                const data = await response.json();
+                if (data.success) { showToast(`Sync triggered for ${selectedClients.size} clients! (${sourceBranch} → ${targetBranch})`, 'success'); selectedClients.clear(); updateSelectedCount(); document.getElementById('select-all').checked = false; setTimeout(loadClients, 3000); }
+                else showToast(data.error || 'Sync failed', 'error');
+            } catch (e) { showToast('Connection error', 'error'); }
+            finally { showLoading(false); }
+        }
+
+        // showToast is now provided by js/toast.js
+        function showLoading(show) { document.getElementById('loading').classList.toggle('show', show); }
+        document.getElementById('logout-btn')?.addEventListener('click', (e) => { e.preventDefault(); if (confirm('Logout?')) window.cicdAuth.logout(); });
+    </script>
+</body>
+</html>

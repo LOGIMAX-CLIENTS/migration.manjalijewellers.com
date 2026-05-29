@@ -1,0 +1,30 @@
+{
+    "entity": "charges_import",
+    "ai": {
+        "enabled": true,
+        "max_rows": 20
+    },
+    "validation": {
+        "required_file_name_pattern": "tag*.xlsx",
+        "required_sheet_name": "port_tag_charges"
+    },
+    "file_path": "uploads/tag_master.xlsx",
+    "migrations": [{
+        "destination_table": "ret_import_charges",
+        "primary_key": "id",
+        "mappings": {
+            "tag_number": {
+                "source_column": "tag_number",
+                "validations": { "type": "string", "max_length": 50, "required": true }
+            },
+            "charge_name": {
+                "source_column": "charge_name",
+                "validations": { "type": "string", "max_length": 100, "required": true }
+            },
+            "charge_value": {
+                "source_column": "charge_value",
+                "validations": { "type": "numeric", "min": 0, "required": true }
+            }
+        }
+    }]
+}

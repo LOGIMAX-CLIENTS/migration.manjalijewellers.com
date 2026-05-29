@@ -1,0 +1,80 @@
+# MINIMAL WORKING .htaccess for Gitea Webhook
+
+SetEnv WEBHOOK_SECRET "921c493d946559a9a20565068a5f18ffbc6f899cb34b14f07f939e2e60157709"
+
+# Disable mod_security for this directory
+<IfModule mod_security.c>
+    SecFilterEngine Off
+    SecFilterScanPOST Off
+</IfModule>
+
+<IfModule mod_security2.c>
+    SecRuleEngine Off
+    SecAuditEngine Off
+</IfModule>
+
+# Allow POST to deploy-gitea.php from specific IPs
+<Files "deploy-gitea.php">
+    # Apache 2.2 syntax
+    <IfModule !mod_authz_core.c>
+        Order Deny,Allow
+        Deny from all
+        # GitHub IPs
+        Allow from 192.30.252.0/22
+        Allow from 185.199.108.0/22
+        Allow from 140.82.112.0/20
+        Allow from 143.55.64.0/20
+        # Gitea IP
+        Allow from 13.126.132.86
+        # Local
+        Allow from 127.0.0.1
+        # Allow POST only
+        <LimitExcept POST>
+            Deny from all
+        </LimitExcept>
+    </IfModule>
+    
+    # Apache 2.4 syntax
+    <IfModule mod_authz_core.c>
+        Require ip 192.30.252.0/22
+        Require ip 185.199.108.0/22
+        Require ip 140.82.112.0/20
+        Require ip 143.55.64.0/20
+        Require ip 13.126.132.86
+        Require ip 127.0.0.1
+        <LimitExcept POST>
+            Require all denied
+        </LimitExcept>
+    </IfModule>
+</Files>
+
+# Allow POST to deploy.php (GitHub)
+<Files "deploy.php">
+    <IfModule !mod_authz_core.c>
+        Order Deny,Allow
+        Deny from all
+        Allow from 192.30.252.0/22
+        Allow from 185.199.108.0/22
+        Allow from 140.82.112.0/20
+        Allow from 143.55.64.0/20
+        Allow from 127.0.0.1
+    </IfModule>
+    <IfModule mod_authz_core.c>
+        Require ip 192.30.252.0/22
+        Require ip 185.199.108.0/22
+        Require ip 140.82.112.0/20
+        Require ip 143.55.64.0/20
+        Require ip 127.0.0.1
+        <LimitExcept POST>
+            Require all denied
+        </LimitExcept>
+    </IfModule>
+</Files>
+
+# Disable directory listing
+Options -Indexes
+
+# Block sensitive files
+<FilesMatch "\.(log|txt|key|env)$">
+    Deny from all
+</FilesMatch>

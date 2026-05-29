@@ -1,0 +1,1232 @@
+{
+    "metadata": {
+        "tool": "Customization Fingerprint v1.0",
+        "scan_date": "2026-03-12",
+        "scan_time": "08:27:44",
+        "source_path": "d:\\XAMPP\\htdocs\\retail_v5",
+        "client_path": "d:\\XAMPP\\htdocs\\theniNPR_newversion",
+        "client_name": "theniNPR",
+        "modules_scanned": 14
+    },
+    "thresholds": {
+        "level_1_max": 10,
+        "level_2_max": 40,
+        "function_body_change_threshold": 20
+    },
+    "weights": {
+        "controller": 0.25,
+        "model": 0.3,
+        "js": 0.25,
+        "views": 0.15,
+        "css": 0.05
+    },
+    "summary": {
+        "total_modules": 14,
+        "average_drift": 6.4,
+        "lane_distribution": {
+            "Express": 11,
+            "Adapted": 3,
+            "Independent": 0
+        },
+        "estimated_hours": 69,
+        "estimated_days": 8.6
+    },
+    "modules": {
+        "Purchase": {
+            "module": "Purchase",
+            "layers": {
+                "controller": {
+                    "drift": 5,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_purchase.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/controllers\\admin_ret_purchase.php",
+                    "source_functions": 101,
+                    "client_functions": 96,
+                    "shared": 96,
+                    "source_only": [
+                        "check_cheque_number_exist",
+                        "get_po_ratecut_balance_details",
+                        "getPending_payment_po_bills",
+                        "getPending_payment_po_bills_for_payment",
+                        "get_pending_po_bills_after_tagging_without_pcs_with_weight"
+                    ],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 13625,
+                    "client_lines": 13390
+                },
+                "model": {
+                    "drift": 6.6,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_purchase_order_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/models\\ret_purchase_order_model.php",
+                    "source_functions": 243,
+                    "client_functions": 230,
+                    "shared": 230,
+                    "source_only": [
+                        "getTaggedRefNo",
+                        "get_po_payment_pending_bills",
+                        "getPending_payment_po_bills_for_payment",
+                        "getPending_payment_po_bills",
+                        "get_pending_po_bills_after_tagging_without_pcs_with_weight",
+                        "get_approval_po_bills",
+                        "get_po_details_by_ref_no",
+                        "get_gold_rate",
+                        "check_cheque_number_exist",
+                        "get_po_ratecut_balance_details",
+                        "save_email_log",
+                        "get_email_log_by_token",
+                        "update_email_log"
+                    ],
+                    "client_only": [],
+                    "modified_count": 3,
+                    "source_lines": 9043,
+                    "client_lines": 8464
+                },
+                "js": {
+                    "drift": 3.5,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_purchase_order.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/assets/js\\ret_purchase_order.js",
+                    "source_functions": 327,
+                    "client_functions": 320,
+                    "shared": 320,
+                    "source_only": [
+                        "getTaggedRefNo",
+                        "load_approval_po_bill_details",
+                        "load_approval_po_bills",
+                        "load_supplier_approval_po_bills",
+                        "load_supplier_po_bills",
+                        "get_all_payment_pending_po_bills",
+                        "calculateSelectedTotal"
+                    ],
+                    "client_only": [],
+                    "source_lines": 83121,
+                    "client_lines": 88709,
+                    "line_delta": 5588
+                },
+                "views": {
+                    "drift": 29.4,
+                    "status": "ok",
+                    "source_files": 12,
+                    "client_files": 17,
+                    "shared": 12,
+                    "source_only": [],
+                    "client_only": [
+                        "job_receipt 7-6-23.php",
+                        "job_receipt_21.03.2023.php",
+                        "pur_entry_form 22-6-23.php",
+                        "pur_entry_form_25.01.2023.php",
+                        "pur_entry_form_28.04.2023.php"
+                    ],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_lines": 287,
+                    "client_lines": 287
+                }
+            },
+            "overall_drift": 8.5,
+            "missing_files": []
+        },
+        "LOT": {
+            "module": "LOT",
+            "layers": {
+                "controller": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_lot.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/controllers\\admin_ret_lot.php",
+                    "source_functions": 21,
+                    "client_functions": 21,
+                    "shared": 21,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 2565,
+                    "client_lines": 2543
+                },
+                "model": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_lot_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/models\\ret_lot_model.php",
+                    "source_functions": 45,
+                    "client_functions": 45,
+                    "shared": 45,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 1902,
+                    "client_lines": 1902
+                },
+                "js": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_lot.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/assets/js\\ret_lot.js",
+                    "source_functions": 109,
+                    "client_functions": 109,
+                    "shared": 109,
+                    "source_only": [],
+                    "client_only": [],
+                    "source_lines": 23629,
+                    "client_lines": 23629,
+                    "line_delta": 0
+                },
+                "views": {
+                    "drift": 20,
+                    "status": "ok",
+                    "source_files": 4,
+                    "client_files": 5,
+                    "shared": 4,
+                    "source_only": [],
+                    "client_only": [
+                        "list_14_07_2025.php"
+                    ],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 1.7,
+                    "status": "ok",
+                    "source_lines": 265,
+                    "client_lines": 255
+                }
+            },
+            "overall_drift": 3.1,
+            "missing_files": []
+        },
+        "Tagging": {
+            "module": "Tagging",
+            "layers": {
+                "controller": {
+                    "drift": 5.4,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_tagging.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/controllers\\admin_ret_tagging.php",
+                    "source_functions": 111,
+                    "client_functions": 108,
+                    "shared": 108,
+                    "source_only": [
+                        "convert_numeric_to_alpha",
+                        "convert_alpha_to_numeric",
+                        "format_tag_code"
+                    ],
+                    "client_only": [],
+                    "modified_count": 3,
+                    "source_lines": 9383,
+                    "client_lines": 9439
+                },
+                "model": {
+                    "drift": 2.3,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_tag_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/models\\ret_tag_model.php",
+                    "source_functions": 130,
+                    "client_functions": 129,
+                    "shared": 129,
+                    "source_only": [
+                        "get_other_metals"
+                    ],
+                    "client_only": [],
+                    "modified_count": 2,
+                    "source_lines": 10254,
+                    "client_lines": 9883
+                },
+                "js": {
+                    "drift": 0.8,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_tagging.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/assets/js\\ret_tagging.js",
+                    "source_functions": 256,
+                    "client_functions": 254,
+                    "shared": 254,
+                    "source_only": [
+                        "calc_pur_wastage",
+                        "footerCallback"
+                    ],
+                    "client_only": [],
+                    "source_lines": 55760,
+                    "client_lines": 55322,
+                    "line_delta": 438
+                },
+                "views": {
+                    "drift": 51.9,
+                    "status": "ok",
+                    "source_files": 14,
+                    "client_files": 27,
+                    "shared": 14,
+                    "source_only": [],
+                    "client_only": [
+                        "bulk_edit_14_07_2025.php",
+                        "form 08-10-2021.php",
+                        "form 10-12-2021.php",
+                        "form 13-10-21.php",
+                        "form 24-11-2021.php",
+                        "form 27-11-2021.php",
+                        "form 3-12-2021.php",
+                        "form06-09-22.php",
+                        "form15-03-2022.php",
+                        "form_03.11.2021.php",
+                        "form_11.09.2021.php",
+                        "form_22.04.2023.php",
+                        "form_29.07.20.php"
+                    ],
+                    "significantly_changed": 1
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "no_css",
+                    "detail": "No CSS file for this module"
+                }
+            },
+            "overall_drift": 10.6,
+            "missing_files": []
+        },
+        "Customer_Order": {
+            "module": "Customer_Order",
+            "layers": {
+                "controller": {
+                    "drift": 1.8,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_order.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/controllers\\admin_ret_order.php",
+                    "source_functions": 57,
+                    "client_functions": 57,
+                    "shared": 57,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 1,
+                    "source_lines": 2378,
+                    "client_lines": 2324
+                },
+                "model": {
+                    "drift": 5.4,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_order_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/models\\ret_order_model.php",
+                    "source_functions": 111,
+                    "client_functions": 106,
+                    "shared": 106,
+                    "source_only": [
+                        "save_email_log",
+                        "get_email_log_by_token",
+                        "update_email_log",
+                        "update_order_acceptance",
+                        "update_order_rejection"
+                    ],
+                    "client_only": [],
+                    "modified_count": 1,
+                    "source_lines": 2320,
+                    "client_lines": 2207
+                },
+                "js": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_order.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/assets/js\\ret_order.js",
+                    "source_functions": 159,
+                    "client_functions": 159,
+                    "shared": 159,
+                    "source_only": [],
+                    "client_only": [],
+                    "source_lines": 35185,
+                    "client_lines": 35141,
+                    "line_delta": 44
+                },
+                "views": {
+                    "drift": 71.4,
+                    "status": "ok",
+                    "source_files": 7,
+                    "client_files": 12,
+                    "shared": 5,
+                    "source_only": [
+                        "order_accept_public.php",
+                        "order_message.php"
+                    ],
+                    "client_only": [
+                        "cart_list_14_07_2025.php",
+                        "cus_order_print_28.06.2022.php",
+                        "form_04.04.2023.php",
+                        "form_05_07_2025.php",
+                        "form_06_06_2025.php",
+                        "form_18.03.2023.php",
+                        "list_18.03.2023.php"
+                    ],
+                    "significantly_changed": 1
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_lines": 254,
+                    "client_lines": 254
+                }
+            },
+            "overall_drift": 12.8,
+            "missing_files": []
+        },
+        "Branch_Transfer": {
+            "module": "Branch_Transfer",
+            "layers": {
+                "controller": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_brntransfer.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/controllers\\admin_ret_brntransfer.php",
+                    "source_functions": 12,
+                    "client_functions": 12,
+                    "shared": 12,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 1377,
+                    "client_lines": 1377
+                },
+                "model": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_brntransfer_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/models\\ret_brntransfer_model.php",
+                    "source_functions": 52,
+                    "client_functions": 52,
+                    "shared": 52,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 2235,
+                    "client_lines": 2204
+                },
+                "js": {
+                    "drift": 0.3,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_branch_transfer.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/assets/js\\ret_branch_transfer.js",
+                    "source_functions": 55,
+                    "client_functions": 55,
+                    "shared": 55,
+                    "source_only": [],
+                    "client_only": [],
+                    "source_lines": 8878,
+                    "client_lines": 8777,
+                    "line_delta": 101
+                },
+                "views": {
+                    "drift": 42.9,
+                    "status": "ok",
+                    "source_files": 8,
+                    "client_files": 14,
+                    "shared": 8,
+                    "source_only": [],
+                    "client_only": [
+                        "approval_list_23.03.2023.php",
+                        "form_23.03.2023.php",
+                        "form_23_06_2025.php",
+                        "print_16.08.2021.php",
+                        "print_18.03.2022.php",
+                        "print_2.2.2021.php"
+                    ],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_lines": 276,
+                    "client_lines": 276
+                }
+            },
+            "overall_drift": 6.5,
+            "missing_files": []
+        },
+        "Estimation": {
+            "module": "Estimation",
+            "layers": {
+                "controller": {
+                    "drift": 3.2,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_estimation.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/controllers\\admin_ret_estimation.php",
+                    "source_functions": 62,
+                    "client_functions": 60,
+                    "shared": 60,
+                    "source_only": [
+                        "get_va_range",
+                        "getFinancialYr"
+                    ],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 3573,
+                    "client_lines": 3368
+                },
+                "model": {
+                    "drift": 3.7,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_estimation_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/models\\ret_estimation_model.php",
+                    "source_functions": 109,
+                    "client_functions": 107,
+                    "shared": 107,
+                    "source_only": [
+                        "get_stone_disc",
+                        "get_va_range"
+                    ],
+                    "client_only": [],
+                    "modified_count": 2,
+                    "source_lines": 3029,
+                    "client_lines": 2891
+                },
+                "js": {
+                    "drift": 10.9,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_estimation.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/assets/js\\ret_estimation.js",
+                    "source_functions": 191,
+                    "client_functions": 174,
+                    "shared": 174,
+                    "source_only": [
+                        "get_metal_master",
+                        "calc_dia_tot_amt",
+                        "validateVASlabDetailRow",
+                        "create_new_empty_est_va_slab_row",
+                        "apply_va_slab_row",
+                        "onDiscValueChange",
+                        "remove_va_slab_row",
+                        "wastage_slab_value",
+                        "edit_wastage_slab",
+                        "check_disc_min_max_stone_rate",
+                        "isLikelyBase64",
+                        "get_topup_chit_closing_balance",
+                        "validateSRDetailRow",
+                        "create_new_empty_est_sr_row",
+                        "getFinancialYr",
+                        "getBillDetails",
+                        "remove_sr_row"
+                    ],
+                    "client_only": [],
+                    "source_lines": 31402,
+                    "client_lines": 26535,
+                    "line_delta": 4867
+                },
+                "views": {
+                    "drift": 33.3,
+                    "status": "ok",
+                    "source_files": 2,
+                    "client_files": 3,
+                    "shared": 2,
+                    "source_only": [],
+                    "client_only": [
+                        "form_14_07_2025.php"
+                    ],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_lines": 244,
+                    "client_lines": 244
+                }
+            },
+            "overall_drift": 9.6,
+            "missing_files": []
+        },
+        "Billing": {
+            "module": "Billing",
+            "layers": {
+                "controller": {
+                    "drift": 4.3,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_billing.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/controllers\\admin_ret_billing.php",
+                    "source_functions": 115,
+                    "client_functions": 112,
+                    "shared": 112,
+                    "source_only": [
+                        "billing_insurance",
+                        "bank_ledger_transfer",
+                        "update_order_rate_type"
+                    ],
+                    "client_only": [],
+                    "modified_count": 2,
+                    "source_lines": 12279,
+                    "client_lines": 12058
+                },
+                "model": {
+                    "drift": 10.7,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_billing_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/models\\ret_billing_model.php",
+                    "source_functions": 238,
+                    "client_functions": 225,
+                    "shared": 221,
+                    "source_only": [
+                        "get_total_returned_amount_by_bill",
+                        "get_petty_cash_issue_amt",
+                        "get_petty_cash_emp",
+                        "getInsuranceDetails",
+                        "code_insurance_number_generator",
+                        "get_insurance_last_code_no",
+                        "get_customer_order_details",
+                        "update_customer_order_rate",
+                        "get_total_advance_for_order",
+                        "get_previous_credit_collections",
+                        "get_bill_ids",
+                        "getBill_refnumbers",
+                        "get_adv_order_details",
+                        "get_all_ledgers",
+                        "get_ledger_current_balance",
+                        "process_ledger_transfer",
+                        "get_ledger_transfer_list"
+                    ],
+                    "client_only": [
+                        "getColumnDefaults",
+                        "check_advance_availability",
+                        "check_idempotency",
+                        "get_tag_status_for_update"
+                    ],
+                    "modified_count": 5,
+                    "source_lines": 11740,
+                    "client_lines": 11465
+                },
+                "js": {
+                    "drift": 2.5,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_billing.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/assets/js\\ret_billing.js",
+                    "source_functions": 382,
+                    "client_functions": 372,
+                    "shared": 372,
+                    "source_only": [
+                        "calculateDiscountAllocations",
+                        "_distributeDiscountToTier",
+                        "get_purchase_employee_options",
+                        "append_est_sales_return_details",
+                        "get_bank_ledger_transfer_list",
+                        "ledger_transfer_list",
+                        "ledger_transfer",
+                        "applyBalanceLogic",
+                        "onTransferModeChange",
+                        "bLog"
+                    ],
+                    "client_only": [],
+                    "source_lines": 44875,
+                    "client_lines": 43855,
+                    "line_delta": 1020
+                },
+                "views": {
+                    "drift": 53.8,
+                    "status": "ok",
+                    "source_files": 8,
+                    "client_files": 11,
+                    "shared": 6,
+                    "source_only": [
+                        "ledger_transfer_form.php",
+                        "ledger_transfer_list.php"
+                    ],
+                    "client_only": [
+                        "25-01-24form.php",
+                        "billsplit_25_03_2025.php",
+                        "form_14_07_2025.php",
+                        "list_04_07_2025.php",
+                        "paymentmode_edit_04_07_2025.php"
+                    ],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_lines": 1225,
+                    "client_lines": 1225
+                }
+            },
+            "overall_drift": 13,
+            "missing_files": []
+        },
+        "Reports": {
+            "module": "Reports",
+            "layers": {
+                "controller": {
+                    "drift": 5.1,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_reports.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/controllers\\admin_ret_reports.php",
+                    "source_functions": 235,
+                    "client_functions": 225,
+                    "shared": 224,
+                    "source_only": [
+                        "cash_book_detail",
+                        "get_account_head_list",
+                        "petty_cash_report",
+                        "day_inout_cashbook",
+                        "gst_r1",
+                        "sales_purchase",
+                        "gst_abstract_v1",
+                        "gst_abstract_bills",
+                        "get_ActiveLedger",
+                        "ledger_report",
+                        "supplier_unified_transaction"
+                    ],
+                    "client_only": [
+                        "mc_avg"
+                    ],
+                    "modified_count": 0,
+                    "source_lines": 9994,
+                    "client_lines": 9390
+                },
+                "model": {
+                    "drift": 7.2,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_reports_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/models\\ret_reports_model.php",
+                    "source_functions": 389,
+                    "client_functions": 367,
+                    "shared": 366,
+                    "source_only": [
+                        "get_order_value",
+                        "get_total_order_advance",
+                        "get_gst_r1_b2b",
+                        "get_gst_r1_b2c",
+                        "get_gst_r1_b2cl",
+                        "get_gst_r1_hsn_summary",
+                        "get_hsn_summary_sales",
+                        "get_hsn_summary_sales_return",
+                        "get_gst_r1_return",
+                        "get_gst_r1_doc_issued_smry",
+                        "get_cash_book_detailed",
+                        "get_petty_cash_report",
+                        "get_account_head_list",
+                        "get_day_inout_cashbook_details",
+                        "getGroupWiseBilling",
+                        "get_salesDetails_groupwise",
+                        "getOld_sales_details_groupwise",
+                        "get_payment_details_groupwise",
+                        "get_gst_abstract_details_v1",
+                        "get_gst_abstract_details_bills",
+                        "getLedgerReportData",
+                        "get_ActiveLedger",
+                        "getSmithCombinedLedger"
+                    ],
+                    "client_only": [
+                        "getMcaverageBilling"
+                    ],
+                    "modified_count": 4,
+                    "source_lines": 37324,
+                    "client_lines": 33367
+                },
+                "js": {
+                    "drift": 13.1,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_reports.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/assets/js\\ret_reports.js",
+                    "source_functions": 340,
+                    "client_functions": 317,
+                    "shared": 316,
+                    "source_only": [
+                        "get_gst_r1_b2b_items",
+                        "get_gst_r1_b2cs_items",
+                        "get_gst_r1_b2cl_items",
+                        "get_gst_r1_hsn_summary",
+                        "get_gst_r1_b2b_return",
+                        "get_gst_r1_b2c_return",
+                        "get_gst_r1_export",
+                        "get_gst_r1_monthly_doc_smry",
+                        "set_cash_book_detailed",
+                        "get_stock_issue_type",
+                        "get_petty_cash_report",
+                        "get_account_head",
+                        "get_SupplierUnifiedTransactions",
+                        "get_day_inout_cashbook_details",
+                        "get_gst_abstract_details_v1",
+                        "_createNode",
+                        "get_sales_purchase_trns_list",
+                        "get_gst_abstract_bills_details",
+                        "get_ActiveBankLedger",
+                        "get_bank_ledger_report",
+                        "sumCol",
+                        "format_signed_money",
+                        "body",
+                        "title"
+                    ],
+                    "client_only": [
+                        "avg_mc_billing"
+                    ],
+                    "source_lines": 69963,
+                    "client_lines": 51382,
+                    "line_delta": 18581
+                },
+                "views": {
+                    "drift": 17.2,
+                    "status": "ok",
+                    "source_files": 139,
+                    "client_files": 160,
+                    "shared": 136,
+                    "source_only": [
+                        "cash_book_detail.php",
+                        "sales_purchase.php",
+                        "supplier_unified_transaction.php"
+                    ],
+                    "client_only": [
+                        "bill_wise_transcation_16_06_2025.php",
+                        "cash_abstract_04_07_2025.php",
+                        "cash_deposit_report16-09-22.php",
+                        "credit_history_13.08.2022.php",
+                        "credit_issued_13.08.2022.php",
+                        "credit_pending_01_03_2024.php",
+                        "credit_pending_13.08.2022.php",
+                        "credit_pending_14_02_2024.php",
+                        "credit_pending_26_12_2025.php",
+                        "customer_history_29.02.2022.php",
+                        "detail_item-wise_sales_16_06_2025.php",
+                        "discount_bills_27_02_2024.php",
+                        "duplicate_tag_print_log_06_07_2025.php",
+                        "est_referral 27-02-24.php",
+                        "mc_avg_form.php",
+                        "old_metal_analyse_16_06_2025.php",
+                        "reorder_items_07.03.2022.php",
+                        "sales_return_14_07_2025.php",
+                        "scan_report_16_06_2025.php",
+                        "scanned_details_16_06_2025.php",
+                        "smithtransactions_08.03.2023.php",
+                        "tag_history_16_06_2025.php",
+                        "tag_items_designwise_16_06_2025.php",
+                        "tobe_pending23-02-24.php"
+                    ],
+                    "significantly_changed": 1
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "no_css",
+                    "detail": "No CSS file for this module"
+                }
+            },
+            "overall_drift": 9.8,
+            "missing_files": []
+        },
+        "Dashboard": {
+            "module": "Dashboard",
+            "layers": {
+                "controller": {
+                    "drift": 5.6,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_dashboard.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/controllers\\admin_ret_dashboard.php",
+                    "source_functions": 54,
+                    "client_functions": 52,
+                    "shared": 52,
+                    "source_only": [
+                        "get_cash_deposit_details_branchwise",
+                        "get_LedgerBalanceAlert"
+                    ],
+                    "client_only": [],
+                    "modified_count": 1,
+                    "source_lines": 2150,
+                    "client_lines": 2060
+                },
+                "model": {
+                    "drift": 7.1,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_dashboard_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/models\\ret_dashboard_model.php",
+                    "source_functions": 97,
+                    "client_functions": 92,
+                    "shared": 91,
+                    "source_only": [
+                        "TagStockMetalWise",
+                        "NonTagStockMetalWise",
+                        "get_all_branch_store",
+                        "get_deposit_details_branchwise",
+                        "get_previous_date_closing",
+                        "getLedgerBalanceAlertData"
+                    ],
+                    "client_only": [
+                        "StockMetalWise"
+                    ],
+                    "modified_count": 0,
+                    "source_lines": 5241,
+                    "client_lines": 5089
+                },
+                "js": {
+                    "drift": 7.5,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_dashboard.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/assets/js\\ret_dashboard.js",
+                    "source_functions": 101,
+                    "client_functions": 92,
+                    "shared": 92,
+                    "source_only": [
+                        "get_deposit_data",
+                        "get_delayed_po_payments",
+                        "get_today_delivery_po_payments",
+                        "get_delayed_purchase_orders",
+                        "recalculate_delayed_report_footers",
+                        "formatNumber",
+                        "get_rate_cut_profit_loss",
+                        "check_LedgerBalanceAlert",
+                        "render"
+                    ],
+                    "client_only": [],
+                    "source_lines": 19382,
+                    "client_lines": 18584,
+                    "line_delta": 798
+                },
+                "views": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_files": 0,
+                    "client_files": 0,
+                    "shared": 0,
+                    "source_only": [],
+                    "client_only": [],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_lines": 226,
+                    "client_lines": 226
+                }
+            },
+            "overall_drift": 5.4,
+            "missing_files": []
+        },
+        "Other_Inventory": {
+            "module": "Other_Inventory",
+            "layers": {
+                "controller": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_other_inventory.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/controllers\\admin_ret_other_inventory.php",
+                    "source_functions": 45,
+                    "client_functions": 45,
+                    "shared": 45,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 1514,
+                    "client_lines": 1513
+                },
+                "model": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_other_inventory_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/models\\ret_other_inventory_model.php",
+                    "source_functions": 60,
+                    "client_functions": 60,
+                    "shared": 60,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 869,
+                    "client_lines": 869
+                },
+                "js": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_other_inventory.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/assets/js\\ret_other_inventory.js",
+                    "source_functions": 63,
+                    "client_functions": 63,
+                    "shared": 63,
+                    "source_only": [],
+                    "client_only": [],
+                    "source_lines": 3392,
+                    "client_lines": 3388,
+                    "line_delta": 4
+                },
+                "views": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_files": 5,
+                    "client_files": 5,
+                    "shared": 5,
+                    "source_only": [],
+                    "client_only": [],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "no_css",
+                    "detail": "No CSS file for this module"
+                }
+            },
+            "overall_drift": 0,
+            "missing_files": []
+        },
+        "Old_Metal_Process": {
+            "module": "Old_Metal_Process",
+            "layers": {
+                "controller": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_metal_process.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/controllers\\admin_ret_metal_process.php",
+                    "source_functions": 26,
+                    "client_functions": 26,
+                    "shared": 26,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 1791,
+                    "client_lines": 1772
+                },
+                "model": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_metal_process_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/models\\ret_metal_process_model.php",
+                    "source_functions": 84,
+                    "client_functions": 84,
+                    "shared": 84,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 1980,
+                    "client_lines": 1979
+                },
+                "js": {
+                    "drift": 0.3,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_metal_process.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/assets/js\\ret_metal_process.js",
+                    "source_functions": 72,
+                    "client_functions": 72,
+                    "shared": 72,
+                    "source_only": [],
+                    "client_only": [],
+                    "source_lines": 5087,
+                    "client_lines": 5041,
+                    "line_delta": 46
+                },
+                "views": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_files": 1,
+                    "client_files": 1,
+                    "shared": 1,
+                    "source_only": [],
+                    "client_only": [],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_lines": 149,
+                    "client_lines": 149
+                }
+            },
+            "overall_drift": 0.1,
+            "missing_files": []
+        },
+        "Section_Transfer": {
+            "module": "Section_Transfer",
+            "layers": {
+                "controller": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_section_transfer.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/controllers\\admin_ret_section_transfer.php",
+                    "source_functions": 5,
+                    "client_functions": 5,
+                    "shared": 5,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 672,
+                    "client_lines": 672
+                },
+                "model": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_section_transfer_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/models\\ret_section_transfer_model.php",
+                    "source_functions": 14,
+                    "client_functions": 14,
+                    "shared": 14,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 412,
+                    "client_lines": 412
+                },
+                "js": {
+                    "drift": 0.4,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_section_transfer.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/assets/js\\ret_section_transfer.js",
+                    "source_functions": 10,
+                    "client_functions": 10,
+                    "shared": 10,
+                    "source_only": [],
+                    "client_only": [],
+                    "source_lines": 1636,
+                    "client_lines": 1614,
+                    "line_delta": 22
+                },
+                "views": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_files": 1,
+                    "client_files": 1,
+                    "shared": 1,
+                    "source_only": [],
+                    "client_only": [],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "no_css",
+                    "detail": "No CSS file for this module"
+                }
+            },
+            "overall_drift": 0.1,
+            "missing_files": []
+        },
+        "Stock_Issue": {
+            "module": "Stock_Issue",
+            "layers": {
+                "controller": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_stock_issue.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/controllers\\admin_ret_stock_issue.php",
+                    "source_functions": 13,
+                    "client_functions": 13,
+                    "shared": 13,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 1412,
+                    "client_lines": 1404
+                },
+                "model": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_stock_issue_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/models\\ret_stock_issue_model.php",
+                    "source_functions": 26,
+                    "client_functions": 26,
+                    "shared": 26,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 1372,
+                    "client_lines": 1377
+                },
+                "js": {
+                    "drift": 0.6,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_stock_issue.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/assets/js\\ret_stock_issue.js",
+                    "source_functions": 39,
+                    "client_functions": 39,
+                    "shared": 39,
+                    "source_only": [],
+                    "client_only": [],
+                    "source_lines": 12210,
+                    "client_lines": 12472,
+                    "line_delta": 262
+                },
+                "views": {
+                    "drift": 57.1,
+                    "status": "ok",
+                    "source_files": 4,
+                    "client_files": 7,
+                    "shared": 4,
+                    "source_only": [],
+                    "client_only": [
+                        "form_05_07_2025.php",
+                        "issue_ack_13.06.2023.php",
+                        "issue_ack_20.06.2023.php"
+                    ],
+                    "significantly_changed": 1
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_lines": 255,
+                    "client_lines": 255
+                }
+            },
+            "overall_drift": 8.7,
+            "missing_files": []
+        },
+        "Catalog_Inventory": {
+            "module": "Catalog_Inventory",
+            "layers": {
+                "controller": {
+                    "drift": 1.8,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_catalog.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/controllers\\admin_ret_catalog.php",
+                    "source_functions": 163,
+                    "client_functions": 160,
+                    "shared": 160,
+                    "source_only": [
+                        "ret_crdr_ledger",
+                        "stone_discount",
+                        "wastage_discount"
+                    ],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 23578,
+                    "client_lines": 22920
+                },
+                "model": {
+                    "drift": 2.2,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_catalog_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/application/models\\ret_catalog_model.php",
+                    "source_functions": 358,
+                    "client_functions": 350,
+                    "shared": 350,
+                    "source_only": [
+                        "get_tgrp_items",
+                        "ajax_get_crdr_ledger",
+                        "get_crdr_ledger",
+                        "ajax_get_stn_disc",
+                        "get_stn_disc",
+                        "check_wastage_range",
+                        "ajax_get_wastage",
+                        "get_wastage"
+                    ],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 8683,
+                    "client_lines": 8584
+                },
+                "js": {
+                    "drift": 0.5,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\catalog.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\theniNPR_newversion\\admin/assets/js\\catalog.js",
+                    "source_functions": 6,
+                    "client_functions": 6,
+                    "shared": 6,
+                    "source_only": [],
+                    "client_only": [],
+                    "source_lines": 449,
+                    "client_lines": 442,
+                    "line_delta": 7
+                },
+                "views": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_files": 0,
+                    "client_files": 0,
+                    "shared": 0,
+                    "source_only": [],
+                    "client_only": [],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "no_css",
+                    "detail": "No CSS file for this module"
+                }
+            },
+            "overall_drift": 1.3,
+            "missing_files": []
+        }
+    }
+}

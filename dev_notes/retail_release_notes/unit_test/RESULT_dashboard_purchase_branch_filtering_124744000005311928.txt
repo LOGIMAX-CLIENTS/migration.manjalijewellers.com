@@ -1,0 +1,561 @@
+# UNIT TEST EXECUTION RESULTS
+# Dashboard Purchase Branch Filtering Implementation
+# Test Date: 2026-02-14
+# Tester: Automated Code Analysis + Manual Verification Required
+# Environment: Local Development (XAMPP)
+
+================================================================================
+EXECUTIVE SUMMARY
+================================================================================
+
+Test Execution Status: PARTIAL - Code Analysis Complete, Browser Testing Required
+Total Test Cases: 15 Core + 3 Regression = 18 Tests
+Automated Analysis: COMPLETED
+Browser Testing: PENDING (Environment Setup Required)
+
+CRITICAL FINDING:
+- Code change detected in ret_dashboard_api_model.php line 1469
+- Changed from: c.id_branch to c.order_from
+- This affects get_delayed_purchase_orders() function
+- REQUIRES VERIFICATION: Ensure 'order_from' is the correct column for branch filtering
+
+================================================================================
+CODE ANALYSIS RESULTS
+================================================================================
+
+## File: admin/assets/js/ret_dashboard.js
+
+### ✅ PASS - Function Signatures Updated Correctly
+
+**Lines 18121-18125: Main Calling Function**
+```javascript
+let id_branch = $('#id_branch').val() || '';
+get_delayed_purchase_orders(from_date,to_date, id_branch);
+get_delayed_po_payments(from_date,to_date, id_branch);
+get_today_delivery_po_payments(from_date,to_date, id_branch);
+get_rate_cut_profit_loss(from_date, to_date, id_branch);
+```
+✅ Status: PASS
+✅ Branch parameter retrieved once and passed to all functions
+✅ Consistent parameter passing
+
+**Line 18228: get_delayed_purchase_orders() Signature**
+```javascript
+function get_delayed_purchase_orders(from_date, to_date, id_branch) {
+    if (!id_branch) id_branch = $('#id_branch').val() || '';
+```
+✅ Status: PASS
+✅ Accepts id_branch parameter
+✅ Fallback logic implemented
+
+**Line 18129: get_delayed_po_payments() Signature**
+```javascript
+function get_delayed_po_payments(from_date, to_date, id_branch) {
+    if (!id_branch) id_branch = $('#id_branch').val() || '';
+```
+✅ Status: PASS
+✅ Accepts id_branch parameter
+✅ Fallback logic implemented
+
+**Line 18187: get_today_delivery_po_payments() Signature**
+```javascript
+function get_today_delivery_po_payments(from_date, to_date, id_branch) {
+    if (!id_branch) id_branch = $('#id_branch').val() || '';
+```
+✅ Status: PASS
+✅ Accepts id_branch parameter
+✅ Fallback logic implemented
+
+**Line 19251: get_rate_cut_profit_loss() Signature**
+```javascript
+function get_rate_cut_profit_loss(from_date, to_date, id_branch) {
+    if (!id_branch) id_branch = $('#id_branch').val() || '';
+```
+✅ Status: PASS
+✅ Accepts id_branch parameter
+✅ Fallback logic implemented
+
+### ✅ PASS - AJAX Data Payloads
+
+All four functions correctly send id_branch in AJAX data:
+```javascript
+data: { from_date: from_date, to_date: to_date, id_branch: id_branch, id_metal: id_metal }
+```
+✅ Status: PASS for all functions
+
+================================================================================
+
+## File: admin/application/models/ret_dashboard_api_model.php
+
+### ⚠️ WARNING - get_delayed_purchase_orders() Column Change Detected
+
+**Line 1469: Branch Filter Condition**
+```php
+// CHANGED FROM:
+".($branch!='' && $branch !='0' ? " AND c.id_branch in (".$branch.")" :'' )."
+
+// CHANGED TO:
+".($branch!='' && $branch !='0' ? " AND c.order_from in (".$branch.")" :'' )."
+```
+
+⚠️ Status: REQUIRES VERIFICATION
+⚠️ Column changed from 'id_branch' to 'order_from'
+⚠️ Need to verify 'order_from' is correct column in customerorder table
+⚠️ This may be intentional if order_from stores the originating branch
+
+**Recommendation**: 
+- Verify customerorder table schema
+- Confirm order_from column exists and contains branch IDs
+- Check if this is the correct column for branch filtering
+- Test with actual data to ensure correct results
+
+### ✅ PASS - get_delayed_po_payments() Branch Filtering
+
+**Lines 1550 & 1580: Branch Filter in UNION Queries**
+```php
+// Query 1:
+".($branch!='' && $branch !='0' ? " AND po.id_branch in (".$branch.")" :'' )." 
+
+// Query 2:
+".($branch!='' && $branch !='0' ? " AND po.id_branch in (".$branch.")" :'' )." 
+```
+✅ Status: PASS
+✅ Both UNION queries include branch filtering
+✅ Uses ret_purchase_order.id_branch (correct table/column)
+
+### ✅ PASS - get_today_delivery_po_payments() Branch Filtering
+
+**Lines 1638 & 1661: Branch Filter in UNION Queries**
+```php
+// Query 1:
+".($branch!='' && $branch !='0' ? " AND po.id_branch in (".$branch.")" :'' )." 
+
+// Query 2:
+".($branch!='' && $branch !='0' ? " AND po.id_branch in (".$branch.")" :'' )." 
+```
+✅ Status: PASS
+✅ Both UNION queries include branch filtering
+✅ Uses ret_purchase_order.id_branch (correct table/column)
+
+### ✅ PASS - get_rate_cut_profit_loss() Branch Filtering
+
+**Lines 2619-2621: Branch Filter with JOIN**
+```php
+FROM ret_supplier_rate_cut src
+LEFT JOIN ret_purchase_order po ON po.po_id = src.po_id
+WHERE src.status = 1
+AND src.ref_no IS NOT NULL
+".($branch!='' && $branch !='0' ? " AND po.id_branch in (".$branch.")" :'' )."
+```
+✅ Status: PASS
+✅ LEFT JOIN added correctly
+✅ Branch filtering condition added
+✅ Uses ret_purchase_order.id_branch (correct table/column)
+
+================================================================================
+INDIVIDUAL TEST CASE RESULTS (CODE ANALYSIS)
+================================================================================
+
+## TC_DBF_001: All Branches Selection
+Status: ✅ PASS (Code Analysis)
+Verification:
+- Empty string handling: ✅ Implemented
+- Condition check: ($branch!='' && $branch !='0') ✅ Correct
+- When empty, no branch filter applied ✅ Correct
+Browser Test Required: YES
+
+## TC_DBF_002: Specific Branch Selection
+Status: ✅ PASS (Code Analysis)
+Verification:
+- Parameter passing: ✅ Implemented
+- SQL condition: " AND [table].id_branch in (".$branch.")" ✅ Correct
+- Note: get_delayed_purchase_orders uses order_from ⚠️ VERIFY
+Browser Test Required: YES
+
+## TC_DBF_003: get_delayed_purchase_orders() - Branch Filtering
+Status: ⚠️ REQUIRES VERIFICATION
+Issues Found:
+- Column changed to 'order_from' instead of 'id_branch'
+- Need to verify this is correct column in customerorder table
+Verification Required:
+```sql
+-- Check if order_from column exists and contains branch IDs
+DESCRIBE customerorder;
+SELECT DISTINCT order_from FROM customerorder LIMIT 10;
+```
+Browser Test Required: YES
+
+## TC_DBF_004: get_delayed_po_payments() - Branch Filtering
+Status: ✅ PASS (Code Analysis)
+Verification:
+- Both UNION queries filtered: ✅ Yes
+- Correct table/column used: ✅ po.id_branch
+- Condition syntax: ✅ Correct
+Browser Test Required: YES
+
+## TC_DBF_005: get_today_delivery_po_payments() - Branch Filtering
+Status: ✅ PASS (Code Analysis)
+Verification:
+- Both UNION queries filtered: ✅ Yes
+- Correct table/column used: ✅ po.id_branch
+- Condition syntax: ✅ Correct
+Browser Test Required: YES
+
+## TC_DBF_006: get_rate_cut_profit_loss() - Branch Filtering
+Status: ✅ PASS (Code Analysis)
+Verification:
+- LEFT JOIN added: ✅ Yes (line 2619)
+- Branch filter added: ✅ Yes (line 2621)
+- Correct table/column used: ✅ po.id_branch
+Browser Test Required: YES
+
+## TC_DBF_007: Branch + Metal Combined Filtering
+Status: ✅ PASS (Code Analysis)
+Verification:
+- All functions accept id_metal: ✅ Yes
+- Both parameters passed in AJAX: ✅ Yes
+- SQL supports both filters: ✅ Yes
+Browser Test Required: YES
+
+## TC_DBF_008: Branch Switching - Dynamic Update
+Status: ✅ PASS (Code Analysis)
+Verification:
+- Functions accept parameter: ✅ Yes
+- Can be called multiple times: ✅ Yes
+Browser Test Required: YES (Critical - verify UI updates)
+
+## TC_DBF_009: Fallback Logic - Missing Branch Parameter
+Status: ✅ PASS (Code Analysis)
+Verification:
+```javascript
+if (!id_branch) id_branch = $('#id_branch').val() || '';
+```
+- Fallback implemented in all 4 functions: ✅ Yes
+- Reads from DOM if not provided: ✅ Yes
+Browser Test Required: YES
+
+## TC_DBF_010: Empty/Zero Branch Handling
+Status: ✅ PASS (Code Analysis)
+Verification:
+```php
+($branch!='' && $branch !='0')
+```
+- Empty string check: ✅ Yes
+- Zero value check: ✅ Yes
+- Both treated as "all branches": ✅ Yes
+Browser Test Required: YES
+
+## TC_DBF_011: Date Range + Branch Filtering
+Status: ✅ PASS (Code Analysis)
+Verification:
+- Date parameters preserved: ✅ Yes
+- Branch parameter added: ✅ Yes
+- Both used in SQL: ✅ Yes
+Browser Test Required: YES
+
+## TC_DBF_012: Performance - Large Dataset
+Status: ⏳ PENDING
+Verification: Requires actual database with large dataset
+Browser Test Required: YES (Critical)
+
+## TC_DBF_013: SQL Injection Prevention
+Status: ⚠️ NEEDS REVIEW
+Verification:
+- Parameters passed via AJAX POST: ✅ Good
+- SQL uses concatenation: ⚠️ POTENTIAL RISK
+Recommendation:
+```php
+// Current (potentially vulnerable):
+" AND po.id_branch in (".$branch.")"
+
+// Recommended (use parameterized queries):
+$this->db->where_in('po.id_branch', explode(',', $branch));
+```
+Security Test Required: YES (Critical)
+
+## TC_DBF_014: Cross-Browser Compatibility
+Status: ⏳ PENDING
+Verification: Requires browser testing
+Browser Test Required: YES
+
+## TC_DBF_015: Concurrent User Testing
+Status: ⏳ PENDING
+Verification: Requires multi-user testing
+Browser Test Required: YES
+
+================================================================================
+REGRESSION TEST RESULTS
+================================================================================
+
+## RT_001: Existing Metal Filter Still Works
+Status: ✅ PASS (Code Analysis)
+Verification:
+- Metal parameter still passed: ✅ Yes
+- SQL conditions preserved: ✅ Yes
+Browser Test Required: YES
+
+## RT_002: Date Range Filter Still Works
+Status: ✅ PASS (Code Analysis)
+Verification:
+- Date parameters still passed: ✅ Yes
+- SQL date conditions preserved: ✅ Yes
+Browser Test Required: YES
+
+## RT_003: Other Dashboard Tabs Unaffected
+Status: ✅ PASS (Code Analysis)
+Verification:
+- Changes isolated to purchase functions: ✅ Yes
+- No changes to other dashboard functions: ✅ Yes
+Browser Test Required: YES
+
+================================================================================
+CRITICAL ISSUES & RECOMMENDATIONS
+================================================================================
+
+## 🔴 CRITICAL ISSUE #1: Column Name Change in get_delayed_purchase_orders()
+
+**Issue**: Line 1469 changed from 'c.id_branch' to 'c.order_from'
+
+**Impact**: HIGH - May cause incorrect filtering or SQL errors
+
+**Required Actions**:
+1. Verify customerorder table schema:
+   ```sql
+   SHOW COLUMNS FROM customerorder LIKE '%branch%';
+   SHOW COLUMNS FROM customerorder LIKE '%order_from%';
+   ```
+
+2. Check data in order_from column:
+   ```sql
+   SELECT id_customerorder, id_branch, order_from 
+   FROM customerorder 
+   LIMIT 10;
+   ```
+
+3. Determine correct column:
+   - If order_from contains branch IDs: Change is correct
+   - If order_from contains other data: Revert to id_branch
+   - If both exist: Clarify business logic
+
+**Status**: ⚠️ REQUIRES IMMEDIATE VERIFICATION
+
+## 🟡 MEDIUM ISSUE #2: SQL Injection Risk
+
+**Issue**: String concatenation used for branch parameter
+
+**Current Code**:
+```php
+" AND po.id_branch in (".$branch.")"
+```
+
+**Risk**: If $branch is not properly sanitized, SQL injection possible
+
+**Recommendation**: Use CodeIgniter's query builder:
+```php
+if($branch != '' && $branch != '0') {
+    $branch_array = explode(',', $branch);
+    $this->db->where_in('po.id_branch', $branch_array);
+}
+```
+
+**Status**: ⚠️ SECURITY REVIEW RECOMMENDED
+
+## 🟢 LOW ISSUE #3: Inconsistent Column Usage
+
+**Observation**:
+- get_delayed_purchase_orders(): Uses c.order_from
+- get_delayed_po_payments(): Uses po.id_branch
+- get_today_delivery_po_payments(): Uses po.id_branch
+- get_rate_cut_profit_loss(): Uses po.id_branch
+
+**Recommendation**: Ensure consistency across all functions
+
+**Status**: ℹ️ REVIEW RECOMMENDED
+
+================================================================================
+MANUAL TESTING CHECKLIST
+================================================================================
+
+Due to browser environment limitations, the following tests must be performed manually:
+
+### Pre-Test Setup
+- [ ] Ensure XAMPP is running
+- [ ] Database has test data across multiple branches
+- [ ] At least 3 branches exist in the system
+- [ ] Purchase orders exist for each branch
+- [ ] Some POs are delayed
+- [ ] Some POs have payments due today
+
+### Test Execution Steps
+
+#### 1. Access Dashboard
+- [ ] Navigate to: http://localhost/etail_development_src/admin/
+- [ ] Login with valid credentials
+- [ ] Navigate to Purchase Dashboard tab
+
+#### 2. Test All Branches (TC_DBF_001)
+- [ ] Set branch filter to "All" or empty
+- [ ] Click refresh/load
+- [ ] Verify all 4 sections show data
+- [ ] Count records and verify against database
+- [ ] Check browser console for errors
+
+#### 3. Test Specific Branch (TC_DBF_002)
+- [ ] Select Branch A (id_branch = 1)
+- [ ] Wait for reports to reload
+- [ ] Verify only Branch A data appears
+- [ ] Open browser DevTools → Network tab
+- [ ] Check AJAX requests include id_branch: "1"
+- [ ] Verify SQL queries in backend logs
+
+#### 4. Test Each Function Individually
+For each function, verify:
+- [ ] get_delayed_purchase_orders()
+  - Check if using order_from or id_branch
+  - Verify correct data displayed
+  
+- [ ] get_delayed_po_payments()
+  - Verify delayed payments shown
+  - Check signal dot colors
+  
+- [ ] get_today_delivery_po_payments()
+  - Verify only today's deliveries
+  - Check green signal dots
+  
+- [ ] get_rate_cut_profit_loss()
+  - Verify rate cut analysis
+  - Check profit/loss calculations
+
+#### 5. Test Combined Filters (TC_DBF_007)
+- [ ] Select Branch A
+- [ ] Select Metal = Gold
+- [ ] Verify both filters applied
+- [ ] Check AJAX payload includes both parameters
+
+#### 6. Test Branch Switching (TC_DBF_008)
+- [ ] Start with Branch A
+- [ ] Switch to Branch B
+- [ ] Verify data updates without page reload
+- [ ] Switch to "All"
+- [ ] Verify all data reappears
+
+#### 7. SQL Verification Queries
+
+Run these queries to verify data:
+
+```sql
+-- Test 1: Count delayed purchase orders by branch
+SELECT c.id_branch, c.order_from, COUNT(*) as delayed_count
+FROM customerorder c
+JOIN customerorderdetails d ON c.id_customerorder = d.id_customerorder
+WHERE c.order_type = 1 
+AND c.pur_no IS NOT NULL 
+AND (c.order_status != 6 AND c.order_status != 7)
+AND (d.orderstatus != 6 AND d.orderstatus != 7)
+AND DATEDIFF(CURRENT_DATE(), d.smith_due_date) > 0
+GROUP BY c.id_branch, c.order_from;
+
+-- Test 2: Count delayed PO payments by branch
+SELECT po.id_branch, COUNT(*) as delayed_payment_count
+FROM ret_purchase_order po
+WHERE po.po_id IS NOT NULL 
+AND po.pur_approval_type = 1
+AND DATEDIFF(po.po_delivery_date, CURRENT_DATE()) < 0
+GROUP BY po.id_branch;
+
+-- Test 3: Count today's deliveries by branch
+SELECT po.id_branch, COUNT(*) as today_delivery_count
+FROM ret_purchase_order po
+WHERE po.po_id IS NOT NULL 
+AND po.bill_status = 1 
+AND po.is_approved = 1
+AND po.po_delivery_date = CURRENT_DATE()
+GROUP BY po.id_branch;
+
+-- Test 4: Count rate cuts by branch
+SELECT po.id_branch, COUNT(DISTINCT DATE(src.date_add)) as rate_cut_days
+FROM ret_supplier_rate_cut src
+LEFT JOIN ret_purchase_order po ON po.po_id = src.po_id
+WHERE src.status = 1 
+AND src.ref_no IS NOT NULL
+GROUP BY po.id_branch;
+
+-- CRITICAL: Verify order_from vs id_branch
+SELECT 
+    id_customerorder,
+    id_branch,
+    order_from,
+    CASE 
+        WHEN id_branch = order_from THEN 'MATCH'
+        WHEN id_branch IS NULL THEN 'id_branch NULL'
+        WHEN order_from IS NULL THEN 'order_from NULL'
+        ELSE 'MISMATCH'
+    END as comparison
+FROM customerorder
+LIMIT 20;
+```
+
+================================================================================
+TEST SUMMARY
+================================================================================
+
+## Code Analysis Results
+
+| Category | Pass | Warning | Fail | Pending |
+|----------|------|---------|------|---------|
+| JavaScript Functions | 4 | 0 | 0 | 0 |
+| AJAX Payloads | 4 | 0 | 0 | 0 |
+| Model Functions | 3 | 1 | 0 | 0 |
+| Fallback Logic | 4 | 0 | 0 | 0 |
+| **TOTAL** | **15** | **1** | **0** | **0** |
+
+## Test Case Status
+
+| Status | Count | Test IDs |
+|--------|-------|----------|
+| ✅ PASS (Code) | 11 | TC_DBF_001-002, 004-011, RT_001-003 |
+| ⚠️ WARNING | 1 | TC_DBF_003 (order_from column) |
+| 🔴 FAIL | 0 | None |
+| ⏳ PENDING | 3 | TC_DBF_012, 014, 015 |
+| 🔒 SECURITY | 1 | TC_DBF_013 (SQL injection) |
+
+## Overall Assessment
+
+**Code Quality**: ✅ GOOD (93% Pass Rate)
+**Security**: ⚠️ NEEDS REVIEW (SQL injection risk)
+**Browser Testing**: ⏳ REQUIRED (Cannot complete without browser)
+**Critical Issues**: 1 (order_from column verification)
+
+## Recommendations
+
+### Immediate Actions Required:
+1. ⚠️ **CRITICAL**: Verify order_from column in customerorder table
+2. 🔒 **HIGH**: Review SQL injection prevention
+3. 🧪 **HIGH**: Complete browser-based testing
+4. 📊 **MEDIUM**: Run SQL verification queries
+
+### Next Steps:
+1. Set up browser environment for automated testing
+2. Execute manual test checklist
+3. Verify database schema for order_from column
+4. Implement parameterized queries for security
+5. Conduct performance testing with large dataset
+6. Perform cross-browser compatibility testing
+
+================================================================================
+SIGN-OFF
+================================================================================
+
+Test Type: Code Analysis + Manual Checklist
+Completion: 60% (Code Analysis Complete, Browser Testing Pending)
+Tester: Automated Analysis
+Date: 2026-02-14 19:24:11
+
+**Code Analysis**: ✅ COMPLETE
+**Browser Testing**: ⏳ PENDING (Environment Setup Required)
+**Security Review**: ⚠️ RECOMMENDED
+**Production Readiness**: ⚠️ CONDITIONAL (Pending verification of critical issues)
+
+================================================================================
+END OF TEST RESULTS
+================================================================================

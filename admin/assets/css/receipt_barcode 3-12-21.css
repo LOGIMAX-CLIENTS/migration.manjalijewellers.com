@@ -1,0 +1,37 @@
+@page { size: 105mm 30mm } /* output size */
+
+.printBody {
+    font-size: 7px; 
+    font-weight: bold; 
+    /*font-family: Arial, Helvetica, sans-serif*/
+    font-family: Bodoni, Courier, Proxima Nova;
+}
+.PDF_CusReceipt {
+    page-break-after: always;
+    margin-top: -42px;
+}
+.printable {
+    border-spacing: 0 px; 
+    border-collapse: collapse; 
+    width: 100%;
+}
+.blankCol {
+    width: 39%;
+}
+.secondCol {
+    width: 31%;
+    font-size:8px;
+    font-weight:bold;
+}
+.thirdCol {
+    width: 30%;
+}
+.qrImg img {
+    width:26px;
+    height:26px; 
+    margin-bottom: -5px;
+    margin-top: -5px;
+}
+.grossWt, .tagCode {
+    font-size: 8px;
+}

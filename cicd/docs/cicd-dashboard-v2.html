@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CI/CD Dashboard - Logimax</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-body: #f5f5f7;
+            --bg-card: #ffffff;
+            --bg-sidebar: #1a1a2e;
+            --sidebar-hover: #252542;
+            --sidebar-active: #7c3aed;
+            --accent: #7c3aed;
+            --accent-light: #a78bfa;
+            --accent-gradient: linear-gradient(180deg, #a78bfa 0%, #7c3aed 100%);
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --text-muted: #9ca3af;
+            --text-sidebar: #9ca3af;
+            --border: #e5e7eb;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08);
+            --shadow-lg: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-body);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* Dark Sidebar */
+        .sidebar {
+            width: 72px;
+            background: var(--bg-sidebar);
+            height: 100vh;
+            position: fixed;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            z-index: 100;
+        }
+        .logo {
+            width: 40px;
+            height: 40px;
+            background: var(--accent);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 40px;
+            font-size: 1.2rem;
+            color: #fff;
+        }
+        .nav-icons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+        }
+        .nav-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-sidebar);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.2rem;
+            text-decoration: none;
+        }
+        .nav-icon:hover {
+            background: var(--sidebar-hover);
+            color: #fff;
+        }
+        .nav-icon.active {
+            background: var(--sidebar-active);
+            color: #fff;
+        }
+        .nav-bottom {
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        /* Main Layout */
+        .main {
+            margin-left: 72px;
+            flex: 1;
+            display: flex;
+            min-height: 100vh;
+        }
+        .content-area {
+            flex: 1;
+            padding: 24px 28px;
+            max-width: calc(100% - 340px);
+        }
+        .right-sidebar {
+            width: 340px;
+            background: var(--bg-card);
+            border-left: 1px solid var(--border);
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        /* Topbar */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 28px;
+        }
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 20px;
+            width: 320px;
+            box-shadow: var(--shadow);
+        }
+        .search-box input {
+            border: none;
+            background: none;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            width: 100%;
+            outline: none;
+        }
+        .search-box input::placeholder { color: var(--text-muted); }
+        .search-icon { color: var(--text-muted); font-size: 1rem; }
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .icon-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            transition: all 0.2s;
+        }
+        .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .user-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Stat Cards Row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+        }
+        .stat-card:hover {
+            box-shadow: var(--shadow-lg);
+            border-color: var(--accent);
+        }
+        .stat-card.featured {
+            background: var(--bg-card);
+            border: 2px solid var(--accent);
+        }
+        .stat-content { flex: 1; }
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.1;
+        }
+        .stat-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.8rem;
+            margin-top: 8px;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+        .stat-change.up { background: rgba(34,197,94,0.1); color: var(--success); }
+        .stat-change.down { background: rgba(239,68,68,0.1); color: var(--danger); }
+        .stat-sparkline {
+            width: 100px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Chart Section */
+        .chart-section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 28px;
+        }
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .chart-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .dropdown {
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg-card);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn {
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+        .btn:hover { background: var(--bg-body); }
+        .btn-dark {
+            background: var(--bg-sidebar);
+            color: #fff;
+            border-color: var(--bg-sidebar);
+        }
+        .btn-dark:hover { background: #252542; }
+        .chart-container {
+            height: 260px;
+            position: relative;
+        }
+
+        /* Top Sessions Cards */
+        .bottom-section {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+        }
+        .sessions-info {
+            flex-shrink: 0;
+        }
+        .sessions-info h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .sessions-info p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .sessions-info strong { color: var(--text-primary); }
+        .top-cards {
+            display: flex;
+            gap: 16px;
+            flex: 1;
+        }
+        .top-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            flex: 1;
+            text-align: center;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+        .top-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+        .top-card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: var(--bg-body);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            font-size: 1.4rem;
+        }
+        .top-card-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .top-card-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+        .top-card-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .top-card-value span {
+            font-size: 0.85rem;
+            font-weight: 400;
+            color: var(--text-muted);
+        }
+
+        /* Right Sidebar */
+        .sidebar-section {
+            margin-bottom: 32px;
+        }
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .sidebar-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .more-btn {
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        .radar-container {
+            height: 200px;
+            position: relative;
+        }
+
+        /* Statistics Items */
+        .stat-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .stat-item:last-child { border-bottom: none; }
+        .stat-item-info h4 {
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .stat-item-info p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .stat-item-info .change {
+            font-size: 0.75rem;
+            color: var(--success);
+        }
+        .stat-item-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .mini-chart {
+            width: 60px;
+            height: 30px;
+        }
+        .stat-item-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Circular Progress */
+        .circular-progress {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .circular-progress svg {
+            transform: rotate(-90deg);
+            width: 44px;
+            height: 44px;
+        }
+        .circular-progress circle {
+            fill: none;
+            stroke-width: 4;
+        }
+        .circular-progress .bg { stroke: var(--border); }
+        .circular-progress .progress { stroke: var(--accent); stroke-linecap: round; }
+        .circular-progress .value {
+            position: absolute;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        /* Loading */
+        .loading-spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 40px auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: var(--bg-card);
+            border-radius: 16px;
+            width: 500px;
+            max-width: 95vw;
+            box-shadow: var(--shadow-lg);
+        }
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 { font-size: 1.1rem; font-weight: 600; }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+        .modal-body { padding: 24px; }
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            padding: 14px 20px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            display: none;
+            align-items: center;
+            gap: 12px;
+            z-index: 300;
+        }
+        .toast.show { display: flex; }
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.error { border-left: 4px solid var(--danger); }
+
+        /* Table */
+        .table-section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-top: 28px;
+        }
+        .table-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .table-header h3 { font-size: 1rem; font-weight: 600; }
+        .filter-pills { display: flex; gap: 6px; }
+        .pill {
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--bg-body);
+            color: var(--text-secondary);
+        }
+        .pill:hover { color: var(--text-primary); }
+        .pill.active { background: var(--accent); color: #fff; }
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            padding: 12px 20px;
+            text-align: left;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-body);
+        }
+        td {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(124,58,237,0.02); }
+        .client-info { display: flex; align-items: center; gap: 12px; }
+        .client-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .client-name { font-weight: 500; }
+        .client-domain { font-size: 0.75rem; color: var(--text-muted); }
+        .badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        .badge-pending { background: rgba(156,163,175,0.15); color: var(--text-muted); }
+        .badge-progress { background: rgba(245,158,11,0.15); color: var(--warning); }
+        .badge-done { background: rgba(34,197,94,0.15); color: var(--success); }
+        .badge-failed { background: rgba(239,68,68,0.15); color: var(--danger); }
+        .steps-mini { display: flex; gap: 4px; }
+        .step-dot {
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            font-weight: 600;
+            background: var(--bg-body);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .step-dot:hover { transform: scale(1.1); }
+        .step-dot.done { background: var(--success); color: #fff; }
+        .actions { display: flex; gap: 6px; }
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+        }
+        .action-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .checkbox { accent-color: var(--accent); }
+
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .right-sidebar { width: 300px; }
+            .content-area { max-width: calc(100% - 300px); }
+        }
+        @media (max-width: 1200px) {
+            .right-sidebar { display: none; }
+            .content-area { max-width: 100%; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .sidebar { width: 0; display: none; }
+            .main { margin-left: 0; }
+            .stats-row { grid-template-columns: 1fr; }
+            .top-cards { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Dark Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">🚀</div>
+        <nav class="nav-icons">
+            <a href="#" class="nav-icon active" data-tooltip="Dashboard">📊</a>
+            <a href="#" class="nav-icon" data-tooltip="Deployments">📤</a>
+            <a href="#" class="nav-icon" data-tooltip="Clients">👥</a>
+            <a href="#" class="nav-icon" data-tooltip="Analytics">📈</a>
+        </nav>
+        <div class="nav-bottom">
+            <a href="#" class="nav-icon" data-tooltip="Settings">⚙️</a>
+            <a href="#" class="nav-icon" data-tooltip="Help">❓</a>
+            <a href="#" class="nav-icon" data-tooltip="Logout">🚪</a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="content-area">
+            <!-- Topbar -->
+            <div class="topbar">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="search" placeholder="Search ...">
+                </div>
+                <div class="topbar-right">
+                    <div class="icon-btn">💬</div>
+                    <div class="icon-btn">🔔</div>
+                    <div class="user-avatar">LM</div>
+                </div>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="stats-row">
+                <div class="stat-card featured">
+                    <div class="stat-content">
+                        <div class="stat-label">Total Deployments</div>
+                        <div class="stat-value" id="stat-deployments">2.4k+</div>
+                        <div class="stat-change up">↑ 17%</div>
+                    </div>
+                    <div class="stat-sparkline">
+                        <canvas id="spark1"></canvas>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-label">Success Rate</div>
+                        <div class="stat-value" id="stat-success">94.2%</div>
+                        <div class="stat-change down">↓ 2%</div>
+                    </div>
+                    <div class="stat-sparkline">
+                        <canvas id="spark2"></canvas>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-label">Avg Deploy Time</div>
+                        <div class="stat-value" id="stat-time">45s</div>
+                        <div class="stat-change up">↑ 8%</div>
+                    </div>
+                    <div class="stat-sparkline">
+                        <canvas id="spark3"></canvas>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-label">Active Clients</div>
+                        <div class="stat-value" id="stat-clients">82</div>
+                        <div class="stat-change up">↑ 5</div>
+                    </div>
+                    <div class="stat-sparkline">
+                        <canvas id="spark4"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deployments Chart -->
+            <div class="chart-section">
+                <div class="chart-header">
+                    <h2 class="chart-title">Deployments Overview</h2>
+                    <div class="chart-actions">
+                        <div class="dropdown" id="dateRange">
+                            Last 14 days <span>▼</span>
+                        </div>
+                        <button class="btn btn-dark" onclick="exportCSV()">
+                            ⬇ Download CSV
+                        </button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="mainChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Bottom Section -->
+            <div class="bottom-section">
+                <div class="sessions-info">
+                    <h3>Top Clients</h3>
+                    <p>Deployment statistics for<br><strong>last 7 days</strong></p>
+                </div>
+                <div class="top-cards">
+                    <div class="top-card">
+                        <div class="top-card-icon">🏢</div>
+                        <div class="top-card-title" id="top1-name">Loading...</div>
+                        <div class="top-card-subtitle">Most Deploys</div>
+                        <div class="top-card-value"><span id="top1-value">--</span> <span>/ deploys</span></div>
+                    </div>
+                    <div class="top-card">
+                        <div class="top-card-icon">⚡</div>
+                        <div class="top-card-title" id="top2-name">Loading...</div>
+                        <div class="top-card-subtitle">Fastest Avg</div>
+                        <div class="top-card-value"><span id="top2-value">--</span> <span>/ seconds</span></div>
+                    </div>
+                    <div class="top-card">
+                        <div class="top-card-icon">✅</div>
+                        <div class="top-card-title" id="top3-name">Loading...</div>
+                        <div class="top-card-subtitle">Best Success</div>
+                        <div class="top-card-value"><span id="top3-value">--</span> <span>/ rate</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clients Table -->
+            <div class="table-section">
+                <div class="table-header">
+                    <h3>👥 Client Repositories</h3>
+                    <div class="filter-pills">
+                        <span class="pill active" data-filter="all">All</span>
+                        <span class="pill" data-filter="pending">Pending</span>
+                        <span class="pill" data-filter="in-progress">In Progress</span>
+                        <span class="pill" data-filter="completed">Completed</span>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:40px"><input type="checkbox" class="checkbox" id="select-all"></th>
+                            <th>Client</th>
+                            <th>Status</th>
+                            <th>Progress</th>
+                            <th>Updated</th>
+                            <th style="width:100px">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clients-table">
+                        <tr><td colspan="6"><div class="loading-spinner"></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <aside class="right-sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-header">
+                    <h3 class="sidebar-title">Deployments by Environment</h3>
+                    <span class="more-btn">•••</span>
+                </div>
+                <div class="radar-container">
+                    <canvas id="radarChart"></canvas>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-header">
+                    <h3 class="sidebar-title">Statistics</h3>
+                    <span class="more-btn">•••</span>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-item-info">
+                        <h4>Staging Deploys</h4>
+                        <p>Max 878</p>
+                        <span class="change">30%</span>
+                    </div>
+                    <div class="stat-item-right">
+                        <div class="circular-progress">
+                            <svg><circle class="bg" cx="22" cy="22" r="18"/><circle class="progress" cx="22" cy="22" r="18" stroke-dasharray="113" stroke-dashoffset="79"/></svg>
+                            <span class="value">30%</span>
+                        </div>
+                        <span class="stat-item-value">320</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-item-info">
+                        <h4>Production Deploys</h4>
+                        <p>Max 878</p>
+                        <span class="change">87%</span>
+                    </div>
+                    <div class="stat-item-right">
+                        <div class="circular-progress" style="--accent: #22c55e;">
+                            <svg><circle class="bg" cx="22" cy="22" r="18"/><circle class="progress" cx="22" cy="22" r="18" stroke-dasharray="113" stroke-dashoffset="15" style="stroke:#22c55e"/></svg>
+                            <span class="value" style="color:#22c55e">87%</span>
+                        </div>
+                        <span class="stat-item-value">765</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-item-info">
+                        <h4>Avg Build Time</h4>
+                        <p class="change">+21%</p>
+                    </div>
+                    <div class="stat-item-right">
+                        <canvas id="miniChart" class="mini-chart"></canvas>
+                        <span class="stat-item-value">3.1k+</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modal-title">Modal</h2>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body" id="modal-body"></div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <span id="toast-icon"></span>
+        <span id="toast-msg"></span>
+    </div>
+
+<script>
+// ============================================================================
+// STATE
+// ============================================================================
+let clients = [], clientStatus = {};
+const STORAGE_KEY = 'cicd_client_status';
+const STEPS = [
+    {id:'secrets',label:'S',title:'Secrets'},
+    {id:'workflow',label:'W',title:'Workflow'},
+    {id:'files',label:'F',title:'Files'},
+    {id:'env',label:'E',title:'Env'},
+    {id:'test',label:'T',title:'Test'}
+];
+const API_BASE = 'api/';
+
+// ============================================================================
+// INIT
+// ============================================================================
+async function init() {
+    clientStatus = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    await loadClients();
+    initCharts();
+    loadStats();
+    setupEventListeners();
+}
+
+async function loadClients() {
+    const cached = localStorage.getItem('cicd_clients_cache');
+    if (cached) clients = JSON.parse(cached);
+    
+    try {
+        const res = await fetch(API_BASE + 'github-repos.php?org=LOGIMAX-CLIENTS');
+        if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.repos) {
+                clients = data.repos.map(r => ({
+                    id: r.name.replace(/\./g, '_'),
+                    name: r.name,
+                    repo: r.name,
+                    url: r.html_url
+                }));
+                localStorage.setItem('cicd_clients_cache', JSON.stringify(clients));
+            }
+        }
+    } catch(e) {}
+    
+    if (!clients.length) {
+        try {
+            const res = await fetch('../../clients/registry.json');
+            if (res.ok) {
+                const data = await res.json();
+                clients = data.clients || [];
+            }
+        } catch(e) {}
+    }
+    
+    renderClients();
+    updateTopCards();
+}
+
+async function loadStats() {
+    try {
+        const res = await fetch(API_BASE + 'stats.php?action=overview');
+        const data = await res.json();
+        if (data.success && data.stats) {
+            const s = data.stats;
+            document.getElementById('stat-deployments').textContent = s.total_deployments.value;
+            document.getElementById('stat-success').textContent = s.success_rate.value;
+            document.getElementById('stat-time').textContent = s.avg_time.value;
+            document.getElementById('stat-clients').textContent = s.active_clients.value;
+        }
+    } catch(e) {}
+}
+
+function initCharts() {
+    const purple = '#7c3aed';
+    const purpleLight = '#a78bfa';
+    const green = '#22c55e';
+    
+    // Sparklines
+    const sparkConfig = (color) => ({
+        type: 'line',
+        data: {
+            labels: ['','','','','','',''],
+            datasets: [{
+                data: [30,45,35,50,40,60,45],
+                borderColor: color,
+                borderWidth: 2,
+                fill: false,
+                pointRadius: 0,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { display: false }, y: { display: false } }
+        }
+    });
+    
+    new Chart(document.getElementById('spark1'), sparkConfig(purple));
+    new Chart(document.getElementById('spark2'), sparkConfig('#ef4444'));
+    new Chart(document.getElementById('spark3'), sparkConfig(green));
+    new Chart(document.getElementById('spark4'), sparkConfig(purple));
+    
+    // Main Area Chart
+    const mainCtx = document.getElementById('mainChart').getContext('2d');
+    const gradient = mainCtx.createLinearGradient(0, 0, 0, 260);
+    gradient.addColorStop(0, 'rgba(124,58,237,0.3)');
+    gradient.addColorStop(1, 'rgba(124,58,237,0.02)');
+    
+    new Chart(mainCtx, {
+        type: 'line',
+        data: {
+            labels: ['28 Mar','29 Mar','30 Mar','31 Mar','01 Apr','02 Apr','03 Apr','04 Apr','05 Apr','06 Apr'],
+            datasets: [{
+                label: 'Staging',
+                data: [80, 100, 75, 120, 140, 180, 200, 150, 160, 170],
+                borderColor: purple,
+                backgroundColor: gradient,
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 0,
+                pointHoverRadius: 6
+            },{
+                label: 'Production',
+                data: [40, 60, 55, 80, 95, 120, 90, 100, 110, 95],
+                borderColor: purpleLight,
+                borderWidth: 2,
+                fill: false,
+                tension: 0.4,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { intersect: false, mode: 'index' },
+            plugins: {
+                legend: { display: true, position: 'top', align: 'end' },
+                tooltip: {
+                    backgroundColor: '#1a1a2e',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    padding: 12,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    callbacks: {
+                        label: (ctx) => `${ctx.dataset.label}: ${ctx.raw} deploys`
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                    ticks: { color: '#9ca3af' }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#9ca3af' }
+                }
+            }
+        }
+    });
+    
+    // Radar Chart (Environment Distribution)
+    new Chart(document.getElementById('radarChart'), {
+        type: 'polarArea',
+        data: {
+            labels: ['Staging', 'Production', 'QA', 'Support'],
+            datasets: [{
+                data: [45, 35, 15, 5],
+                backgroundColor: [
+                    'rgba(124,58,237,0.7)',
+                    'rgba(167,139,250,0.7)',
+                    'rgba(196,181,253,0.5)',
+                    'rgba(221,214,254,0.4)'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right', labels: { boxWidth: 12, padding: 16, color: '#6b7280' } }
+            },
+            scales: {
+                r: { display: false }
+            }
+        }
+    });
+    
+    // Mini sparkline in statistics
+    new Chart(document.getElementById('miniChart'), {
+        type: 'line',
+        data: {
+            labels: ['','','','','',''],
+            datasets: [{
+                data: [20,35,25,40,30,45],
+                borderColor: green,
+                borderWidth: 2,
+                fill: false,
+                pointRadius: 0,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { display: false }, y: { display: false } }
+        }
+    });
+}
+
+// ============================================================================
+// RENDER
+// ============================================================================
+function renderClients() {
+    const filter = document.querySelector('.filter-pills .pill.active')?.dataset.filter || 'all';
+    const search = document.getElementById('search').value.toLowerCase();
+    
+    const filtered = clients.filter(c => {
+        const s = getStatus(c.repo);
+        return (filter === 'all' || s === filter) && c.repo.toLowerCase().includes(search);
+    });
+    
+    document.getElementById('clients-table').innerHTML = filtered.length ? filtered.map(c => {
+        const s = getStatus(c.repo);
+        const st = clientStatus[c.repo]?.steps || {};
+        return `<tr>
+            <td><input type="checkbox" class="checkbox" value="${c.repo}"></td>
+            <td>
+                <div class="client-info">
+                    <div class="client-avatar">${c.repo.charAt(0).toUpperCase()}</div>
+                    <div>
+                        <div class="client-name">${c.repo}</div>
+                        <div class="client-domain">${c.name||''}</div>
+                    </div>
+                </div>
+            </td>
+            <td><span class="badge badge-${s==='in-progress'?'progress':s==='completed'?'done':s}">${s}</span></td>
+            <td>
+                <div class="steps-mini">
+                    ${STEPS.map(step => `<div class="step-dot ${st[step.id]||''}" data-tooltip="${step.title}" onclick="toggleStep('${c.repo}','${step.id}')">${step.label}</div>`).join('')}
+                </div>
+            </td>
+            <td style="color:var(--text-muted);font-size:0.8rem">${clientStatus[c.repo]?.lastUpdated||'-'}</td>
+            <td>
+                <div class="actions">
+                    <button class="action-btn" data-tooltip="Setup" onclick="setupClient('${c.repo}')">⚡</button>
+                    <button class="action-btn" data-tooltip="Notes" onclick="openNotes('${c.repo}')">📝</button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('') : '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted)">No clients match filter</td></tr>';
+}
+
+function getStatus(r) {
+    const s = clientStatus[r];
+    if (!s) return 'pending';
+    const done = Object.values(s.steps||{}).filter(x=>x==='done').length;
+    return done === STEPS.length ? 'completed' : done > 0 ? 'in-progress' : 'pending';
+}
+
+function updateTopCards() {
+    // Mock top clients for now
+    document.getElementById('top1-name').textContent = 'Client A';
+    document.getElementById('top1-value').textContent = '2k+';
+    document.getElementById('top2-name').textContent = 'Client B';
+    document.getElementById('top2-value').textContent = '32';
+    document.getElementById('top3-name').textContent = 'Client C';
+    document.getElementById('top3-value').textContent = '98%';
+}
+
+// ============================================================================
+// ACTIONS
+// ============================================================================
+function toggleStep(r, id) {
+    if (!clientStatus[r]) clientStatus[r] = {steps:{}};
+    clientStatus[r].steps[id] = clientStatus[r].steps[id]==='done'?'':'done';
+    clientStatus[r].lastUpdated = new Date().toLocaleDateString();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(clientStatus));
+    renderClients();
+}
+
+function setupClient(r) {
+    const params = new URLSearchParams({ repo: r });
+    window.location.href = `client-setup-wizard.html?${params.toString()}`;
+}
+
+function openNotes(r) {
+    document.getElementById('modal-title').textContent = `Notes: ${r}`;
+    const d = clientStatus[r] || {};
+    document.getElementById('modal-body').innerHTML = `
+        <div style="margin-bottom:15px">
+            <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:6px">Notes</label>
+            <textarea id="n-notes" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;min-height:100px;font-family:inherit">${d.notes||''}</textarea>
+        </div>
+        <button class="btn" style="background:var(--accent);color:#fff;border-color:var(--accent)" onclick="saveNotes('${r}')">Save</button>
+    `;
+    document.getElementById('modal').classList.add('show');
+}
+
+function saveNotes(r) {
+    if (!clientStatus[r]) clientStatus[r] = {steps:{}};
+    clientStatus[r].notes = document.getElementById('n-notes').value;
+    clientStatus[r].lastUpdated = new Date().toLocaleDateString();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(clientStatus));
+    closeModal();
+    toast('success', 'Notes saved!');
+}
+
+function closeModal() {
+    document.getElementById('modal').classList.remove('show');
+}
+
+function toast(type, msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toast-icon').textContent = type === 'success' ? '✓' : '✗';
+    document.getElementById('toast-msg').textContent = msg;
+    t.className = 'toast show ' + type;
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function exportCSV() {
+    let csv = 'Client,Status,Updated\n';
+    clients.forEach(c => {
+        csv += `"${c.repo}","${getStatus(c.repo)}","${clientStatus[c.repo]?.lastUpdated||''}"\n`;
+    });
+    const blob = new Blob([csv], {type:'text/csv'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `cicd-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    toast('success', 'CSV downloaded!');
+}
+
+// ============================================================================
+// EVENTS
+// ============================================================================
+function setupEventListeners() {
+    document.getElementById('search').addEventListener('input', renderClients);
+    
+    document.querySelectorAll('.filter-pills .pill').forEach(p => {
+        p.addEventListener('click', () => {
+            document.querySelectorAll('.filter-pills .pill').forEach(x => x.classList.remove('active'));
+            p.classList.add('active');
+            renderClients();
+        });
+    });
+    
+    document.getElementById('select-all').addEventListener('change', e => {
+        document.querySelectorAll('tbody .checkbox').forEach(c => c.checked = e.target.checked);
+    });
+    
+    document.getElementById('modal').addEventListener('click', e => {
+        if (e.target.id === 'modal') closeModal();
+    });
+    
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeModal();
+        if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+            e.preventDefault();
+            document.getElementById('search').focus();
+        }
+    });
+}
+
+// Start
+init();
+</script>
+</body>
+</html>

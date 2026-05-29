@@ -1,0 +1,39 @@
+# .github/workflows/deploy.yml
+name: 🚀 Ultra-Fast Staging Deploy
+
+on:
+  push:
+    branches: [ ${{ github.ref_name }} ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+    - name: 🚀 Trigger Webhook Deploy
+      run: |
+        # Validate required secrets
+        if [ -z "${{ secrets.WEBHOOK_SECRET }}" ]; then
+          echo "❌ WEBHOOK_SECRET is not set"
+          exit 1
+        fi
+        if [ -z "${{ secrets.WEBHOOK_URL }}" ]; then
+          echo "❌ WEBHOOK_URL is not set"
+          exit 1
+        fi
+        
+        # Generate the signature correctly
+        SECRET="${{ secrets.WEBHOOK_SECRET }}"
+        PAYLOAD='{"ref":"refs/heads/${{ github.ref }}","head_commit":{"id":"${{ github.sha }}","message":"${{ github.event.head_commit.message }}"},"repository":{"full_name":"${{ github.repository }}"}}'
+        
+        # Generate SHA256 signature
+        SIGNATURE=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$SECRET" | awk '{print "sha256="$2}')
+        
+        curl -X POST ${{ secrets.WEBHOOK_URL }} \
+          -H "Content-Type: application/json" \
+          -H "X-Hub-Signature-256: $SIGNATURE" \
+          -H "X-GitHub-Event: push" \
+          -H "User-Agent: GitHub-Hookshot/$(date +%s)" \
+          -d "$PAYLOAD"

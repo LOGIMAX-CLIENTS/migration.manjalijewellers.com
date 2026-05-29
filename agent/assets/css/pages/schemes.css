@@ -1,0 +1,475 @@
+/*------------------------------------------------------------------
+Bootstrap Admin Template by EGrappler.com
+------------------------------------------------------------------*/
+
+
+
+/*------------------------------------------------------------------
+[1. Shortcuts / .shortcuts]
+*/
+#spinner{
+position:absolute;
+left: 635px; 
+top: 300px;
+display:none;
+}
+
+.shortcuts {
+	text-align: center;	
+}
+
+.shortcuts .shortcut { 
+	width: 22.50%;
+	display: inline-block;
+	padding: 12px 0;
+	margin: 0 .9% 1em;
+	vertical-align: top;	
+	
+	text-decoration: none;
+	
+	background: #f9f6f1;
+	
+	border-radius: 5px;
+}
+
+.shortcuts .shortcut .shortcut-icon {
+	margin-top: .25em;
+	margin-bottom: .25em;
+	
+	font-size: 32px;
+	color: #545454;
+}
+
+.shortcuts .shortcut:hover {
+	background: #0079C0;
+}
+
+.shortcuts .shortcut:hover span{
+	color: #fff;
+}
+
+.shortcuts .shortcut:hover .shortcut-icon {
+	color: #fff;
+}
+
+.shortcuts .shortcut-label {
+	display: block;
+	
+	font-weight: 400;
+	color: #545454;
+}
+
+
+
+/*------------------------------------------------------------------
+[2. Stats / .stats]
+*/
+
+.stats {
+	width: 100%;
+	display: table;
+	padding: 0 0 0 10px;
+	margin-top: .5em;
+	margin-bottom: 1.9em;
+}
+
+.stats .stat {
+	display: table-cell;
+	width: 40%;
+	vertical-align: top;
+	
+	font-size: 11px;
+	font-weight: bold;
+	color: #999;
+}
+
+.stat-value {
+	display: block;
+	margin-bottom: .55em;
+	
+	font-size: 30px;
+	font-weight: bold;
+	letter-spacing: -2px;
+	color: #444;
+}
+
+.stat-time {
+	text-align: center;
+	padding-top: 1.5em;
+}
+
+.stat-time .stat-value {
+	color: #19bc9c;
+	font-size: 40px;
+}
+
+.stats #donut-chart {
+	height: 100px;
+	margin-left: -20px;	
+}
+
+
+
+
+
+/*------------------------------------------------------------------
+[3. News Item / .news-items]
+*/
+
+.news-items {
+	margin: 1em 0 0;
+}
+
+.news-items li {
+	display: table;
+	padding: 0 2em 0 1.5em;
+	padding-bottom: 1em;
+	margin-bottom: 1em;
+	border-bottom: 1px dotted #CCC;
+}
+
+.news-items li:last-child { padding-bottom: 0; border: none; }
+
+.news-item-date {
+	display: table-cell;
+}
+
+.news-item-detail {
+	display: table-cell;
+}
+
+.news-item-title {
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.news-item-date {
+	width: 75px;
+	vertical-align: middle;
+	text-align: center;
+	
+}
+
+.news-item-day {
+	display: block;
+	margin-bottom: .25em;
+	
+	font-size: 24px;
+	color: #888;
+}
+
+.news-item-preview {
+	margin-bottom: 0;
+	
+	color: #777;
+}
+
+.news-item-month {
+	display: block;
+	padding-right: 1px;	
+	
+	font-size: 12px;
+	font-weight: 600;
+	color: #888;
+}
+
+
+
+/*------------------------------------------------------------------
+[4. Action Table / .action-table]
+*/
+
+.action-table .btn-small {
+	padding: 4px 5px 5px;
+	
+	font-size: 10px;
+}
+
+.action-table .td-actions { 
+	width: 80px; 
+	
+	text-align: center; 
+}
+
+	.action-table .td-actions .btn { 
+		margin-right: .5em;		
+	}
+	
+	.action-table .td-actions .btn:last-child { 
+		margin-rigth: 0; 		
+	}
+	
+	
+	
+#big_stats 
+{ 
+	width: 100%; 
+	display: table;
+	margin-top: 1.5em;
+	
+	
+}
+
+.big-stats-container .widget-content {
+	border:0;
+}
+
+#big_stats .stat
+{
+	width: 25%;
+	height: 90px;
+	text-align: center;
+	display: table-cell;
+	padding: 0;
+	position: relative;
+	
+	border-right: 1px solid #CCC;
+	border-left: 1px solid #FFF;
+}
+#big_stats  i { font-size:30px; display:block; line-height: 40px; color:#b2afaa;}
+#big_stats .stat:hover i {color:#19bc9c;}
+
+h6.bigstats{margin: 20px;
+border-bottom: 1px solid #eee;
+padding-bottom: 20px;
+margin-bottom: 26px;}
+
+#big_stats .stat:first-child {
+	border-left: none;
+}
+
+#big_stats .stat:last-child {
+	border-right: none;
+}
+
+#big_stats .stat h4
+{
+	font-size: 11px;
+	font-weight: bold;
+	color: #777;
+	margin-bottom: 1.5em;
+}
+
+#big_stats .stat .value
+{
+	font-size: 45px;
+	font-weight: bold;
+	color: #545454;
+	line-height: 1em;
+}
+
+#schemPayList .titleHead{
+	font-weight:bold;
+	color:#000000;
+	font-size:14px;
+	text-align:center;
+}
+#schemPayList .schemeType{
+	margin-left:1%;
+	font-weight:bold;
+}
+#schemPayList .schemeTable tr td,#schemPayList .schemeTable tr th{
+	text-align:center;
+}
+
+#schemPayList #schemeDts_amt{
+	width:50%
+}
+#schemPayList  .heading{
+	font-weight:bold;
+	color:#000;
+}
+#schemPayList .description{
+	padding:1% 2% 2% 2%;
+}
+#schemPayList #scheme_modal .modal-header{
+	text-align:center;
+	color:#FFFFFF;
+	background-color:#877E78;
+}
+#schemeJoin_modal .modal-header{
+	text-align:center;
+	font-size:12px;
+	color:#FFFFFF;
+	background-color:#877E78;
+}
+
+#schemPayList #scheme_modal .schemeName{
+	font-weight:bold;
+	color:#000000;
+	font-size:14px;
+	text-align:center;
+}
+
+#schemPayList #scheme_modal #scheme-amount tr td{
+	text-align:center;
+}
+#schemPayList #scheme_modal .heading{
+	font-weight:bold;
+	color:#000;
+}
+#schemPayList #scheme_modal .description{
+	padding:2%;
+}
+
+.schemeDetails{
+	cursor:pointer;
+	color:#ED9A1D !important;
+	font-size:12px;
+	font-weight:bold;
+}
+.schemeDetails:hover{
+	text-decoration:underline;
+}
+#schemeTable table tr th, #schemeTable table tr td{
+	text-align:center;
+	color: #333;
+}
+.btns_scheme{
+padding:3px ;
+height:45px;
+margin-left:10px;
+}
+.btnscheme{
+padding:7px;
+width:175px;
+}
+.join_schemes{
+padding: 25px 0px 50px 0px;
+
+}
+.join_existing{
+padding: 25px 0px 25px 15px;
+    width: 82%;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1px solid #ccc;
+    background-color: #F9F9F9;
+    margin-bottom: 20px;
+    box-shadow: 0 0 2px #dadada, 0 -3px 0 #e6e6e6 inset;
+   
+
+}
+.schemeTxt {
+text-align: left; 
+font-weight: bold; 
+font-size: 14px; 
+height: 45px;
+}
+.modal-header{
+	color: #fff;
+	background-color: #877E78;
+	text-align:center;
+}
+.modal-body{
+	color:#000;
+}
+@media all and (max-width: 950px) and (min-width: 1px) {
+	
+	#big_stats {
+		display: block;
+		margin-bottom: -40px;
+	}
+	
+	#big_stats .stat {
+		width: 49%;
+		display: block;
+		margin-bottom: 3em;
+		float: left;
+	}	
+	
+	#big_stats .stat:nth-child(2) {
+		border-right: none;
+	}
+	
+	#big_stats .stat:nth-child(3) {
+		border-left: none;
+	}
+	
+}
+
+@media (max-width: 767px) {
+	#big_stats .stat .value {
+		font-size: 40px;
+	}
+}
+	
+	
+	
+	
+@media (max-width: 979px) {
+	
+	.shortcuts .shortcut {
+		width: 31%;
+	}
+}
+
+
+@media (max-width: 480px) {
+	
+	.stats .stat {
+		
+		margin-bottom: 3em;
+	}
+	
+	.stats .stat .stat-value {
+		margin-bottom: .15em;
+		
+		font-size: 20px;
+	}
+	
+	.stats {
+		float: left;
+		
+		display: block;
+		
+		margin-bottom: 0;
+	}
+	
+	#chart-stats {
+		margin: 2em 0 1em;		
+	}
+	
+	.shortcuts .shortcut {
+		width: 48%;
+	}
+}
+
+.schTitle{
+	color:#0079C0;
+}
+
+.join-existing{
+	background: #F9F9F9;
+	margin:0 35%;
+	border: 1px solid #D5D5D5; 
+	width:23%;
+	padding:2%;
+}
+
+.join-existing #account_name{
+	width: 89%;
+}
+@media (max-width: 480px) {
+	
+	.join-existing{
+	background: #F9F9F9;
+	margin-left:0px!important;
+	border: 1px solid #D5D5D5; 
+	width:100%;
+	padding:2%;
+}
+
+.join-existing select{
+	width:25%;
+}
+
+.join-existing #chit_number{
+	width:75%;
+	margin-top:-15%; 
+	margin-left:26%; 
+}
+	.join-existing #account_name{
+	width: 100%;
+}
+}	

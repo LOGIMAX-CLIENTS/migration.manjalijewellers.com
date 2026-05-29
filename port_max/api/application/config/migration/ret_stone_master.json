@@ -1,0 +1,47 @@
+{
+    "entity": "stone_details",
+    "ai": {
+        "enabled": true,
+        "max_rows": 20
+    },
+    "validation": {
+        "required_file_name_pattern": "stone*.xlsx",
+        "required_sheet_name": "port_stone_master"
+    },
+    "file_path": "uploads/stone_master.xlsx",
+    "migrations": [{
+        "destination_table": "ret_stone",
+        "primary_key": "stone_id",
+        "mappings": {
+            "old_id": {
+                "source_column": "old_id",
+                "validations": { "type": "numeric", "min": 1, "required": false }
+            },
+            "stone_name": {
+                "source_column": "stone_name",
+                "validations": { "type": "string", "max_length": 100, "required": true },
+                "check_if_exists": true
+            },
+            "stone_code": {
+                "source_column": "short_code",
+                "validations": { "type": "string", "max_length": 100, "required": false }
+            },
+            "stone_type": {
+                "source_column": "stone_type_id",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "uom_id": {
+                "source_column": "uom_id",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "is_certificate_req": {
+                "source_column": "certificate_req",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "is_4c_req": {
+                "source_column": "four_c_req",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            }
+        }
+    }]
+}

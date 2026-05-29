@@ -1,0 +1,746 @@
+[
+  {
+    "id": "EST-001",
+    "title": "Gift voucher save uses undefined variable $arrayMaterials — crashes silently, vouchers never persisted",
+    "severity": "P0",
+    "classification": "Functional",
+    "confidence": "High",
+    "affected_files": [
+      "admin/application/controllers/admin_ret_estimation.php:1215",
+      "admin/application/controllers/admin_ret_estimation.php:2341"
+    ],
+    "affected_db_tables": ["ret_est_gift_voucher_details(est_id, voucher_no, gift_voucher_amt)"],
+    "reproduction_steps": [
+      "1. Open Add Estimation form",
+      "2. Add any item (tag/catalog/custom)",
+      "3. Add a gift voucher with a valid voucher number and amount",
+      "4. Save the estimation",
+      "5. Check ret_est_gift_voucher_details table — no rows inserted for this estimation"
+    ],
+    "repro_commands": [
+      "SELECT * FROM ret_est_gift_voucher_details WHERE est_id = <newly_created_est_id>; -- Returns 0 rows"
+    ],
+    "observed_behavior": "The code builds $arrayGiftVoucher correctly but then calls insertBatchData($arrayMaterials, ...) instead of insertBatchData($arrayGiftVoucher, ...). $arrayMaterials is undefined, so insertBatchData receives NULL/empty, and no rows are inserted. The transaction continues without error because CI2 does not throw on empty batch insert.",
+    "expected_behavior": "Gift voucher details should be persisted in ret_est_gift_voucher_details with correct est_id, voucher_no, and gift_voucher_amt values.",
+    "root_cause_analysis": "Copy-paste error at line 1215 (save path) and line 2341 (update path). The variable name $arrayMaterials was copied from a different section. It should be $arrayGiftVoucher. This bug exists in BOTH the save and update code paths.",
+    "proposed_permanent_fix": {
+      "patch_outline": "Replace $arrayMaterials with $arrayGiftVoucher at line 1215 and line 2341 in admin_ret_estimation.php",
+      "exact_sql_migration": "-- No schema change needed. Data migration to recover lost vouchers requires manual reconciliation from application logs.",
+      "code_snippet_or_diff_example": "--- a/admin/application/controllers/admin_ret_estimation.php\n+++ b/admin/application/controllers/admin_ret_estimation.php\n@@ -1215,1 +1215,1 @@\n-\t\t\t\t\t\t\t\t$tagInsert = $this->$model->insertBatchData($arrayMaterials, 'ret_est_gift_voucher_details');\n+\t\t\t\t\t\t\t\t$tagInsert = $this->$model->insertBatchData($arrayGiftVoucher, 'ret_est_gift_voucher_details');\n@@ -2341,1 +2341,1 @@\n-\t\t\t\t\t\t\t\t$tagInsert = $this->$model->insertBatchData($arrayMaterials, 'ret_est_gift_voucher_details');\n+\t\t\t\t\t\t\t\t$tagInsert = $this->$model->insertBatchData($arrayGiftVoucher, 'ret_est_gift_voucher_details');"
+    },
+    "frontend_validations": [],
+    "backend_validations": ["Add a check after insertBatchData to verify row count matches $arrayGiftVoucher count"],
+    "tests_to_add": {
+      "unit_tests": [
+        "test_gift_voucher_save_persists_data: Create estimation with 2 gift vouchers -> assert ret_est_gift_voucher_details has 2 rows with correct amounts",
+        "test_gift_voucher_update_persists_data: Edit estimation, add gift voucher -> assert data persisted after update"
+      ],
+      "integration_tests": [
+        "POST /admin_ret_estimation/estimation/save with gift_voucher payload -> verify DB rows exist"
+      ],
+      "e2e_tests": [
+        "Add estimation with gift voucher -> verify voucher appears on edit screen"
+      ]
+    },
+    "migration_plan": "Audit existing ret_estimation records that have gift_voucher_amt > 0 but no corresponding rows in ret_est_gift_voucher_details. These represent lost data. Manual reconciliation required.",
+    "rollback_plan": "Revert the two-line fix. No schema changes to roll back.",
+    "deployment_notes": "No DB locks needed. Can be deployed immediately.",
+    "monitoring_and_alerting": [
+      "Add log line after gift voucher batch insert: log_message('info', 'Gift vouchers inserted: ' . count($arrayGiftVoucher) . ' for est_id: ' . $insId);",
+      "Alert query: SELECT e.estimation_id FROM ret_estimation e WHERE e.gift_voucher_amt > 0 AND NOT EXISTS (SELECT 1 FROM ret_est_gift_voucher_details g WHERE g.est_id = e.estimation_id);"
+    ],
+    "kb_correlation": {
+      "kb_entries_used": ["estimation_module_kb.md (table schema)", "workflow_03_save_estimation.md"],
+      "kb_missing": "Add KB entry documenting gift voucher save flow and the variable naming convention"
+    },
+    "ready_to_fix_in_repo": true,
+    "fix_one_task_instructions": [
+      "1. git checkout -b fix/EST-001-gift-voucher-undefined-var",
+      "2. Open admin/application/controllers/admin_ret_estimation.php",
+      "3. Line 1215: Replace $arrayMaterials with $arrayGiftVoucher",
+      "4. Line 2341: Replace $arrayMaterials with $arrayGiftVoucher",
+      "5. Test: Create estimation with gift voucher, verify ret_est_gift_voucher_details populated",
+      "6. Test: Edit estimation with gift voucher, verify ret_est_gift_voucher_details updated",
+      "7. git commit -m 'fix(EST-001): Fix gift voucher save using undefined $arrayMaterials variable'",
+      "8. git push && create PR"
+    ]
+  },
+  {
+    "id": "EST-002",
+    "title": "Custom item market_rate_tax stores market_rate_cost value — wrong tax amount in DB",
+    "severity": "P0",
+    "classification": "Calculation",
+    "confidence": "High",
+    "affected_files": [
+      "admin/application/controllers/admin_ret_estimation.php:956",
+      "admin/application/controllers/admin_ret_estimation.php:2091"
+    ],
+    "affected_db_tables": ["ret_estimation_items(market_rate_tax)"],
+    "reproduction_steps": [
+      "1. Open Add Estimation form",
+      "2. Add a Custom/Home Bill item (item_type=2)",
+      "3. The item should have market_rate_cost=5000 and market_rate_tax=250",
+      "4. Save the estimation",
+      "5. Check ret_estimation_items — market_rate_tax column will contain 5000 instead of 250"
+    ],
+    "repro_commands": [
+      "SELECT market_rate_cost, market_rate_tax FROM ret_estimation_items WHERE esti_id = <est_id> AND item_type = 2; -- market_rate_tax will equal market_rate_cost"
+    ],
+    "observed_behavior": "Line 956 reads: `'market_rate_tax' => !empty($estCustom['market_rate_tax'][$key]) ? $estCustom['market_rate_cost'][$key] : 0` — the ternary condition checks market_rate_tax but the truthy branch returns market_rate_cost. Same bug at line 2091 in the update path.",
+    "expected_behavior": "market_rate_tax column should store the actual market rate tax value from $estCustom['market_rate_tax'][$key].",
+    "root_cause_analysis": "Copy-paste error. The condition checks the correct field but the value branch references the wrong field. This affects every custom item ever saved or updated. Financial reporting based on market_rate_tax will show inflated values.",
+    "proposed_permanent_fix": {
+      "patch_outline": "Fix the value reference in both save (line 956) and update (line 2091) paths",
+      "exact_sql_migration": "-- Cannot auto-fix existing data because the correct market_rate_tax values were never stored.\n-- Need manual audit or recalculation from JS-side data if available in logs.",
+      "code_snippet_or_diff_example": "--- a/admin/application/controllers/admin_ret_estimation.php\n+++ b/admin/application/controllers/admin_ret_estimation.php\n@@ -956,1 +956,1 @@\n-\t\t\t\t\t\t\t\t\t'market_rate_tax'       => !empty($estCustom['market_rate_tax'][$key]) ? $estCustom['market_rate_cost'][$key] : 0,\n+\t\t\t\t\t\t\t\t\t'market_rate_tax'       => !empty($estCustom['market_rate_tax'][$key]) ? $estCustom['market_rate_tax'][$key] : 0,\n@@ -2091,1 +2091,1 @@\n-\t\t\t\t\t\t\t\t\t'market_rate_tax'       => !empty($estCustom['market_rate_tax'][$key]) ? $estCustom['market_rate_cost'][$key] : 0,\n+\t\t\t\t\t\t\t\t\t'market_rate_tax'       => !empty($estCustom['market_rate_tax'][$key]) ? $estCustom['market_rate_tax'][$key] : 0,"
+    },
+    "frontend_validations": [],
+    "backend_validations": ["Add assertion: market_rate_tax <= market_rate_cost (tax should not exceed cost)"],
+    "tests_to_add": {
+      "unit_tests": [
+        "test_custom_item_market_rate_tax_saved_correctly: Save custom item with cost=5000, tax=150 -> assert DB market_rate_tax=150, NOT 5000"
+      ],
+      "integration_tests": [],
+      "e2e_tests": []
+    },
+    "migration_plan": "Existing custom item market_rate_tax values are corrupt (contain cost values). If market_rate_tax reporting is critical, backfill from billing data or re-derive from tax_group calculations.",
+    "rollback_plan": "Revert the two-line fix.",
+    "deployment_notes": "Deploy immediately. No DB changes.",
+    "monitoring_and_alerting": [
+      "Query: SELECT est_item_id FROM ret_estimation_items WHERE item_type=2 AND market_rate_tax = market_rate_cost AND market_rate_cost > 0; -- Detects this bug pattern"
+    ],
+    "kb_correlation": {
+      "kb_entries_used": ["business_rules.md (calculation types)"],
+      "kb_missing": "Add KB entry: custom item field mapping and market rate fields"
+    },
+    "ready_to_fix_in_repo": true,
+    "fix_one_task_instructions": [
+      "1. git checkout -b fix/EST-002-custom-item-market-rate-tax",
+      "2. Open admin/application/controllers/admin_ret_estimation.php",
+      "3. Line 956: Change $estCustom['market_rate_cost'][$key] to $estCustom['market_rate_tax'][$key]",
+      "4. Line 2091: Same fix",
+      "5. Test: Create custom item, verify market_rate_tax in DB is correct",
+      "6. git commit -m 'fix(EST-002): Fix custom item market_rate_tax storing cost instead of tax'",
+      "7. git push && create PR"
+    ]
+  },
+  {
+    "id": "EST-003",
+    "title": "Delete estimation leaves orphan records in 6+ child tables",
+    "severity": "P1",
+    "classification": "Data Integrity",
+    "confidence": "High",
+    "affected_files": [
+      "admin/application/controllers/admin_ret_estimation.php:1453-1503"
+    ],
+    "affected_db_tables": [
+      "ret_est_other_metals(est_item_id)",
+      "ret_estimation_other_charges(est_item_id)",
+      "ret_estimation_item_other_materials(est_id → missing delete in some paths)",
+      "ret_est_tag_merge(est_item_id)",
+      "ret_est_sales_return_utilization(est_id)",
+      "ret_estimation_other_inventory_issue(esti_id)"
+    ],
+    "reproduction_steps": [
+      "1. Create an estimation with tagged items that have other_metals, charges, and materials",
+      "2. Also add sales return utilization and other inventory items",
+      "3. Delete the estimation",
+      "4. Check ret_est_other_metals, ret_estimation_other_charges, ret_est_tag_merge, ret_est_sales_return_utilization, ret_estimation_other_inventory_issue — orphan rows remain"
+    ],
+    "repro_commands": [
+      "-- After deleting estimation ID=123:",
+      "SELECT COUNT(*) FROM ret_est_other_metals WHERE est_item_id IN (SELECT est_item_id FROM ret_estimation_items WHERE esti_id = 123); -- Would have been > 0 before delete",
+      "SELECT COUNT(*) FROM ret_est_tag_merge WHERE est_item_id IN (SELECT est_item_id FROM ret_estimation_items WHERE esti_id = 123);",
+      "SELECT COUNT(*) FROM ret_est_sales_return_utilization WHERE est_id = 123;",
+      "SELECT COUNT(*) FROM ret_estimation_other_inventory_issue WHERE esti_id = 123;"
+    ],
+    "observed_behavior": "The delete case (lines 1453-1503) only deletes from: ret_est_gift_voucher_details, ret_est_chit_utilization, ret_estimation_items, ret_estimation_item_stones, ret_estimation_item_other_materials, ret_estimation_old_metal_sale_details, ret_estimation. It does NOT delete from ret_est_other_metals, ret_estimation_other_charges, ret_est_tag_merge, ret_esti_old_metal_stone_details, ret_est_sales_return_utilization, or ret_estimation_other_inventory_issue.",
+    "expected_behavior": "All child records across all related tables should be deleted when an estimation is deleted.",
+    "root_cause_analysis": "The delete path was written before some of these child tables existed and was never updated when those features were added. The tables lack foreign key CASCADE constraints.",
+    "proposed_permanent_fix": {
+      "patch_outline": "Add deleteData calls for all missing tables in the delete case block, before deleting ret_estimation_items (since ret_est_other_metals and ret_estimation_other_charges reference est_item_id, they must be deleted first)",
+      "exact_sql_migration": "-- Clean up existing orphans:\nDELETE om FROM ret_est_other_metals om LEFT JOIN ret_estimation_items ei ON om.est_item_id = ei.est_item_id WHERE ei.est_item_id IS NULL;\nDELETE oc FROM ret_estimation_other_charges oc LEFT JOIN ret_estimation_items ei ON oc.est_item_id = ei.est_item_id WHERE ei.est_item_id IS NULL;\nDELETE tm FROM ret_est_tag_merge tm LEFT JOIN ret_estimation_items ei ON tm.est_item_id = ei.est_item_id WHERE ei.est_item_id IS NULL;\nDELETE sr FROM ret_est_sales_return_utilization sr LEFT JOIN ret_estimation e ON sr.est_id = e.estimation_id WHERE e.estimation_id IS NULL;\nDELETE oi FROM ret_estimation_other_inventory_issue oi LEFT JOIN ret_estimation e ON oi.esti_id = e.estimation_id WHERE e.estimation_id IS NULL;\nDELETE os FROM ret_esti_old_metal_stone_details os LEFT JOIN ret_estimation e ON os.est_id = e.estimation_id WHERE e.estimation_id IS NULL;",
+      "code_snippet_or_diff_example": "// Add before line 1461 ($this->$model->deleteData('esti_id', $id, 'ret_estimation_items')):\n$this->$model->deleteData('est_id', $id, 'ret_est_sales_return_utilization');\n$this->$model->deleteData('esti_id', $id, 'ret_estimation_other_inventory_issue');\n$this->$model->deleteData('est_id', $id, 'ret_esti_old_metal_stone_details');\n// Need to delete by est_item_id, so first get all item IDs:\n$items = $this->db->select('est_item_id')->where('esti_id', $id)->get('ret_estimation_items')->result_array();\n$item_ids = array_column($items, 'est_item_id');\nif (!empty($item_ids)) {\n    $this->db->where_in('est_item_id', $item_ids)->delete('ret_est_other_metals');\n    $this->db->where_in('est_item_id', $item_ids)->delete('ret_estimation_other_charges');\n    $this->db->where_in('est_item_id', $item_ids)->delete('ret_est_tag_merge');\n}"
+    },
+    "frontend_validations": [],
+    "backend_validations": [],
+    "tests_to_add": {
+      "unit_tests": [
+        "test_delete_estimation_cleans_all_child_tables: Create full estimation with all item types -> delete -> assert 0 rows in all 13 related tables"
+      ],
+      "integration_tests": [],
+      "e2e_tests": []
+    },
+    "migration_plan": "Run the orphan cleanup SQL above in a maintenance window. Execute in batches of 1000 rows for large datasets.",
+    "rollback_plan": "The cleanup SQL is non-reversible (orphan data has no parent). The code fix can be reverted but orphans would re-accumulate.",
+    "deployment_notes": "Run orphan cleanup SQL before deploying code fix to clean existing data.",
+    "monitoring_and_alerting": [
+      "Weekly orphan check query: SELECT COUNT(*) as orphans FROM ret_est_other_metals om LEFT JOIN ret_estimation_items ei ON om.est_item_id = ei.est_item_id WHERE ei.est_item_id IS NULL;"
+    ],
+    "kb_correlation": {
+      "kb_entries_used": ["estimation_module_kb.md (key relationships diagram)"],
+      "kb_missing": "Add KB entry listing ALL child tables that must be cleaned on delete, with the correct FK column names"
+    },
+    "ready_to_fix_in_repo": true,
+    "fix_one_task_instructions": [
+      "1. git checkout -b fix/EST-003-delete-orphan-records",
+      "2. Add all missing deleteData calls in the delete case of admin_ret_estimation.php",
+      "3. Run orphan cleanup SQL on dev/staging DB",
+      "4. Test: Create estimation with all item types, delete, verify all tables clean",
+      "5. git commit -m 'fix(EST-003): Delete all child records when estimation is deleted'",
+      "6. git push && create PR"
+    ]
+  },
+  {
+    "id": "EST-004",
+    "title": "No form_secret validation in save/update — allows double-submit and lacks CSRF protection",
+    "severity": "P1",
+    "classification": "Concurrency",
+    "confidence": "High",
+    "affected_files": [
+      "admin/application/controllers/admin_ret_estimation.php:284-1349",
+      "admin/application/controllers/admin_ret_estimation.php:1505-2434"
+    ],
+    "affected_db_tables": ["ret_estimation (duplicate rows)"],
+    "reproduction_steps": [
+      "1. Open Add Estimation form",
+      "2. Fill in all details with items",
+      "3. Click save — quickly double-click or use browser back button and resubmit",
+      "4. Two estimation records created with identical data"
+    ],
+    "repro_commands": [],
+    "observed_behavior": "The save and update cases in the estimation() method do NOT check the form_secret token. The KB (edge_cases_and_errors.md E22) documents form_secret as a protection mechanism, but it is not actually implemented in the save/update paths.",
+    "expected_behavior": "form_secret should be validated before processing save/update to prevent double-submit and provide CSRF protection.",
+    "root_cause_analysis": "The form_secret check was documented in KB but never implemented in the estimation save/update controller methods. The form view likely generates a form_secret field (based on KB docs) but the controller never validates it.",
+    "proposed_permanent_fix": {
+      "patch_outline": "Add form_secret validation at the beginning of both 'save' and 'update' cases, comparing POST form_secret against session FORM_SECRET",
+      "exact_sql_migration": "",
+      "code_snippet_or_diff_example": "// Add at the top of case 'save' (after line 288):\n$form_secret = isset($addData['form_secret']) ? $addData['form_secret'] : '';\nif (!$this->session->userdata('FORM_SECRET') || strcasecmp($form_secret, $this->session->userdata('FORM_SECRET')) !== 0) {\n    $return_data['status'] = false;\n    $return_data['type'] = 1;\n    $this->session->set_flashdata('chit_alert', array('message' => 'Invalid or duplicate form submission', 'class' => 'danger', 'title' => 'Add Estimation'));\n    echo json_encode($return_data);\n    break;\n}\n$this->session->unset_userdata('FORM_SECRET'); // Invalidate after use"
+    },
+    "frontend_validations": ["Ensure form.php generates and submits form_secret hidden field"],
+    "backend_validations": ["Validate form_secret in both save and update cases; invalidate token after use"],
+    "tests_to_add": {
+      "unit_tests": [
+        "test_save_rejects_missing_form_secret: POST without form_secret -> assert rejection",
+        "test_save_rejects_duplicate_form_secret: POST with same form_secret twice -> second should be rejected"
+      ],
+      "integration_tests": [],
+      "e2e_tests": []
+    },
+    "migration_plan": "No data migration needed. Identify duplicate estimations by checking for identical rows: SELECT esti_no, est_date, id_branch, COUNT(*) as cnt FROM ret_estimation GROUP BY esti_no, est_date, id_branch HAVING cnt > 1;",
+    "rollback_plan": "Remove the form_secret check code. No schema changes.",
+    "deployment_notes": "Ensure the form view generates form_secret before deploying the backend check.",
+    "monitoring_and_alerting": [
+      "Log rejected form_secret attempts for security audit"
+    ],
+    "kb_correlation": {
+      "kb_entries_used": ["edge_cases_and_errors.md (E22: Double Submit)"],
+      "kb_missing": "Update KB to note that form_secret is NOT currently implemented in save/update"
+    },
+    "ready_to_fix_in_repo": true,
+    "fix_one_task_instructions": [
+      "1. git checkout -b fix/EST-004-add-form-secret-validation",
+      "2. Verify form.php generates form_secret hidden field",
+      "3. Add form_secret validation in save and update cases",
+      "4. Test: Submit form -> success. Resubmit same form -> rejection",
+      "5. git commit -m 'fix(EST-004): Add form_secret validation to prevent double-submit'",
+      "6. git push && create PR"
+    ]
+  },
+  {
+    "id": "EST-005",
+    "title": "Child tag stone details use wrong index [$key] — stones never saved for merged child tags",
+    "severity": "P1",
+    "classification": "Functional",
+    "confidence": "High",
+    "affected_files": [
+      "admin/application/controllers/admin_ret_estimation.php:575-597",
+      "admin/application/controllers/admin_ret_estimation.php:1783-1805"
+    ],
+    "affected_db_tables": ["ret_estimation_item_stones(est_item_id)"],
+    "reproduction_steps": [
+      "1. Open Add Estimation form",
+      "2. Add a parent tag that has child (merged) tags",
+      "3. The child tags have stone details",
+      "4. Save the estimation",
+      "5. Check ret_estimation_item_stones for the child tag's est_item_id — no stone rows exist"
+    ],
+    "repro_commands": [
+      "SELECT * FROM ret_estimation_item_stones WHERE est_item_id IN (SELECT est_item_id FROM ret_estimation_items WHERE istag_merged = 2 AND esti_id = <est_id>); -- Returns 0 rows"
+    ],
+    "observed_behavior": "At line 575: `if (!empty($childtag['stone_details'][$key]))` — $childtag is a single child tag object from the decoded JSON, but $key is the PARENT tag's foreach index. This means it's accessing a numeric index on the child tag's stone_details, which is a JSON string (not an array indexed by $key). The condition will almost always be false, so child tag stones are never saved.",
+    "expected_behavior": "Child tag stone_details should be decoded from the childtag's stone_details array and saved to ret_estimation_item_stones with the child's est_item_id.",
+    "root_cause_analysis": "The $key variable is the parent tag iteration index BUT the child tag data is already decoded from JSON. The child tag's stone_details is its own field, not indexed by the parent's $key. The check should be `if (!empty($childtag['stone_details']))` and the foreach should iterate `$childtag['stone_details']` (after json_decode if it's a string).",
+    "proposed_permanent_fix": {
+      "patch_outline": "Fix the condition and iteration at lines 575-597 (save path) and lines 1783-1805 (update path) to properly check and decode child tag stone details",
+      "exact_sql_migration": "",
+      "code_snippet_or_diff_example": "// Replace lines 575-597 with:\nif (!empty($childtag['stone_details'])) {\n    $child_stone_details = is_string($childtag['stone_details']) \n        ? json_decode($childtag['stone_details'], true) \n        : $childtag['stone_details'];\n    if (!empty($child_stone_details)) {\n        foreach ($child_stone_details as $stone) {\n            $stone_data = array(\n                'est_id'        => $insId,\n                'est_item_id'   => $childinsd,\n                'pieces'        => $stone['stone_pcs'],\n                'wt'            => $stone['stone_wt'],\n                'stone_id'      => $stone['stone_id'],\n                'price'         => $stone['stone_price'],\n                'is_apply_in_lwt' => $stone['show_in_lwt'],\n                'stone_cal_type' => $stone['stone_cal_type'],\n                'rate_per_gram'  => $stone['stone_rate'],\n                'uom_id'         => $stone['stone_uom_id'],\n            );\n            $stoneInsert = $this->$model->insertData($stone_data, 'ret_estimation_item_stones');\n        }\n    }\n}"
+    },
+    "frontend_validations": [],
+    "backend_validations": [],
+    "tests_to_add": {
+      "unit_tests": [
+        "test_child_tag_stones_saved: Create estimation with merged tags having stones -> assert stone records exist for child tag est_item_id"
+      ],
+      "integration_tests": [],
+      "e2e_tests": []
+    },
+    "migration_plan": "Existing child tag stone data was lost at save time. No recovery possible unless re-saved from UI.",
+    "rollback_plan": "Revert the code changes. No schema changes.",
+    "deployment_notes": "No DB changes needed.",
+    "monitoring_and_alerting": [],
+    "kb_correlation": {
+      "kb_entries_used": ["estimation_module_kb.md (tag merge relationships)"],
+      "kb_missing": "Add KB entry documenting child tag stone save process"
+    },
+    "ready_to_fix_in_repo": true,
+    "fix_one_task_instructions": [
+      "1. git checkout -b fix/EST-005-child-tag-stone-index",
+      "2. Fix the child tag stone save logic at lines 575-597 and 1783-1805",
+      "3. Test with merged tags having stones",
+      "4. git commit -m 'fix(EST-005): Fix child tag stone details indexing bug'",
+      "5. git push && create PR"
+    ]
+  },
+  {
+    "id": "EST-006",
+    "title": "Update path does NOT delete ret_est_other_metals, ret_estimation_other_charges, or ret_est_tag_merge before re-insert — duplicate rows accumulate",
+    "severity": "P1",
+    "classification": "Data Integrity",
+    "confidence": "High",
+    "affected_files": [
+      "admin/application/controllers/admin_ret_estimation.php:1548-1577"
+    ],
+    "affected_db_tables": [
+      "ret_est_other_metals(est_item_id)",
+      "ret_estimation_other_charges(est_item_id)",
+      "ret_est_tag_merge(est_item_id)"
+    ],
+    "reproduction_steps": [
+      "1. Create an estimation with tagged items that have other metals and charges",
+      "2. Edit the estimation (don't change anything) and save",
+      "3. Check ret_est_other_metals — rows are now doubled",
+      "4. Edit and save again — rows tripled",
+      "5. Each edit multiplies the rows"
+    ],
+    "repro_commands": [
+      "SELECT est_item_id, COUNT(*) as cnt FROM ret_est_other_metals GROUP BY est_item_id HAVING cnt > 1; -- Shows duplicates"
+    ],
+    "observed_behavior": "The update path (lines 1548-1577) deletes ret_estimation_items, ret_estimation_item_stones, ret_estimation_item_other_materials, ret_estimation_old_metal_sale_details, ret_esti_old_metal_stone_details, and ret_est_chit_utilization — but does NOT delete ret_est_other_metals, ret_estimation_other_charges, or ret_est_tag_merge. These child tables are then re-populated in the loop, creating duplicate rows.",
+    "expected_behavior": "All child item-level tables should be deleted before re-inserting during update.",
+    "root_cause_analysis": "The update delete-then-reinsert pattern was not updated when ret_est_other_metals, ret_estimation_other_charges, and ret_est_tag_merge were added. Since these tables reference est_item_id (which gets new IDs on re-insert), old rows become orphaned duplicates.",
+    "proposed_permanent_fix": {
+      "patch_outline": "Add deleteData calls for the 3 missing tables in the update path, using the same pattern as the existing deletes. Must get est_item_ids first since these tables use est_item_id as FK.",
+      "exact_sql_migration": "-- Clean existing duplicates (keep first occurrence):\nDELETE t1 FROM ret_est_other_metals t1 INNER JOIN ret_est_other_metals t2 WHERE t1.id > t2.id AND t1.est_item_id = t2.est_item_id AND t1.tag_other_itm_metal_id = t2.tag_other_itm_metal_id;",
+      "code_snippet_or_diff_example": "// Add after line 1566 (after deleting ret_estimation_items):\n// Actually, must delete BEFORE deleting ret_estimation_items since we need the est_item_ids\n// Move these BEFORE the ret_estimation_items delete:\n$old_items = $this->db->select('est_item_id')->where('esti_id', $id)->get('ret_estimation_items')->result_array();\n$old_item_ids = array_column($old_items, 'est_item_id');\nif (!empty($old_item_ids)) {\n    $this->db->where_in('est_item_id', $old_item_ids)->delete('ret_est_other_metals');\n    $this->db->where_in('est_item_id', $old_item_ids)->delete('ret_estimation_other_charges');\n    $this->db->where_in('est_item_id', $old_item_ids)->delete('ret_est_tag_merge');\n}"
+    },
+    "frontend_validations": [],
+    "backend_validations": [],
+    "tests_to_add": {
+      "unit_tests": [
+        "test_update_no_duplicate_other_metals: Create estimation with other metals -> edit and save -> assert same number of rows, not doubled"
+      ],
+      "integration_tests": [],
+      "e2e_tests": []
+    },
+    "migration_plan": "Run duplicate cleanup SQL. May need to identify correct rows by examining creation timestamps or row IDs.",
+    "rollback_plan": "Revert code. Duplicates would re-accumulate on future edits.",
+    "deployment_notes": "Run cleanup SQL before deploying.",
+    "monitoring_and_alerting": [
+      "Alert: SELECT est_item_id FROM ret_est_other_metals GROUP BY est_item_id, tag_other_itm_metal_id HAVING COUNT(*) > 1; -- Detects duplicates"
+    ],
+    "kb_correlation": {
+      "kb_entries_used": ["estimation_module_kb.md"],
+      "kb_missing": "Add KB documenting the complete list of tables that must be cleaned in delete-and-reinsert update pattern"
+    },
+    "ready_to_fix_in_repo": true,
+    "fix_one_task_instructions": [
+      "1. git checkout -b fix/EST-006-update-duplicate-rows",
+      "2. Add delete calls for ret_est_other_metals, ret_estimation_other_charges, ret_est_tag_merge in update path",
+      "3. Ensure they execute BEFORE ret_estimation_items delete",
+      "4. Test: Edit estimation with charges/metals, verify no duplicates",
+      "5. git commit -m 'fix(EST-006): Delete child records before re-insert during update'",
+      "6. git push && create PR"
+    ]
+  },
+  {
+    "id": "EST-007",
+    "title": "Update path chit utilization missing rate_per_gram field — data loss on edit",
+    "severity": "P1",
+    "classification": "Data Integrity",
+    "confidence": "Medium",
+    "affected_files": [
+      "admin/application/controllers/admin_ret_estimation.php:2347-2378"
+    ],
+    "affected_db_tables": ["ret_est_chit_utilization(rate_per_gram)"],
+    "reproduction_steps": [
+      "1. Create estimation with chit utilization (rate_per_gram is populated at save time, line 1244)",
+      "2. Edit the estimation and save",
+      "3. Check ret_est_chit_utilization — rate_per_gram is now 0 or NULL"
+    ],
+    "repro_commands": [
+      "SELECT * FROM ret_est_chit_utilization WHERE est_id = <est_id>; -- rate_per_gram will be 0 after edit"
+    ],
+    "observed_behavior": "The save path chit insert (line 1244) includes 'rate_per_gram' field. The update path chit insert (lines 2347-2378) does NOT include 'rate_per_gram', so it defaults to 0 or the column default.",
+    "expected_behavior": "The update path should persist rate_per_gram just like the save path does.",
+    "root_cause_analysis": "When the chit utilization code was duplicated for the update path, the rate_per_gram field was omitted. The update path is a subset of the save path's chit fields.",
+    "proposed_permanent_fix": {
+      "patch_outline": "Add 'rate_per_gram' field to the chit utilization array in the update path at line 2371",
+      "exact_sql_migration": "",
+      "code_snippet_or_diff_example": "// Add after line 2370 ('savings_in_making_charge' => ...):\n'rate_per_gram' => ($estChit['rate_per_gram'][$key] != '' ? $estChit['rate_per_gram'][$key] : 0),"
+    },
+    "frontend_validations": [],
+    "backend_validations": [],
+    "tests_to_add": {
+      "unit_tests": [
+        "test_update_chit_preserves_rate_per_gram: Create with chit -> edit -> verify rate_per_gram persisted"
+      ],
+      "integration_tests": [],
+      "e2e_tests": []
+    },
+    "migration_plan": "Affected records have rate_per_gram=0 after being edited. If original rate can be derived from the estimation's goldrate_22ct/silverrate_1gm, a backfill is possible.",
+    "rollback_plan": "Revert the one-line addition.",
+    "deployment_notes": "No DB changes needed.",
+    "monitoring_and_alerting": [],
+    "kb_correlation": {
+      "kb_entries_used": ["chit_utilization_methods.md"],
+      "kb_missing": "Add KB comparison table of save vs update field mappings"
+    },
+    "ready_to_fix_in_repo": true,
+    "fix_one_task_instructions": [
+      "1. git checkout -b fix/EST-007-update-chit-rate-per-gram",
+      "2. Add rate_per_gram to chit array in update path",
+      "3. Test: Create estimation with chit, edit, verify rate_per_gram persisted",
+      "4. git commit -m 'fix(EST-007): Add missing rate_per_gram to chit update path'",
+      "5. git push && create PR"
+    ]
+  },
+  {
+    "id": "EST-008",
+    "title": "est_date uses date() on full datetime string — produces wrong format",
+    "severity": "P2",
+    "classification": "Functional",
+    "confidence": "Medium",
+    "affected_files": [
+      "admin/application/controllers/admin_ret_estimation.php:336"
+    ],
+    "affected_db_tables": ["ret_estimation(est_date)"],
+    "reproduction_steps": [
+      "1. Create an estimation when the day closing date matches today's date",
+      "2. Check the est_date value in DB"
+    ],
+    "repro_commands": [],
+    "observed_behavior": "Line 336: `'est_date' => date($estimation_datetime)` — PHP's `date()` function treats the first argument as a FORMAT string, not a date value. When $estimation_datetime is '2026-02-17 14:30:00', PHP interprets characters like 'Y', 'm', 'd', 'H', 'i', 's' as format codes, producing garbled output.",
+    "expected_behavior": "est_date should store the date portion of $estimation_datetime. Correct code: `'est_date' => date('Y-m-d', strtotime($estimation_datetime))`",
+    "root_cause_analysis": "Misuse of PHP date() function. The first parameter should be a format string, not a date value. Since the $estimation_datetime already has the correct date, it should either be substr'd or formatted properly.",
+    "proposed_permanent_fix": {
+      "patch_outline": "Change date($estimation_datetime) to date('Y-m-d', strtotime($estimation_datetime))",
+      "exact_sql_migration": "",
+      "code_snippet_or_diff_example": "--- a/admin/application/controllers/admin_ret_estimation.php\n+++ b/admin/application/controllers/admin_ret_estimation.php\n@@ -336,1 +336,1 @@\n-\t\t\t\t\t\t'est_date'            => date($estimation_datetime),\n+\t\t\t\t\t\t'est_date'            => date('Y-m-d', strtotime($estimation_datetime)),"
+    },
+    "frontend_validations": [],
+    "backend_validations": [],
+    "tests_to_add": {
+      "unit_tests": [
+        "test_est_date_format: Save estimation -> assert est_date is valid Y-m-d format"
+      ],
+      "integration_tests": [],
+      "e2e_tests": []
+    },
+    "migration_plan": "Check existing est_date values for garbled data: SELECT estimation_id, est_date FROM ret_estimation WHERE est_date NOT REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}$';",
+    "rollback_plan": "Revert the one-line fix.",
+    "deployment_notes": "No DB changes.",
+    "monitoring_and_alerting": [],
+    "kb_correlation": {
+      "kb_entries_used": ["none"],
+      "kb_missing": "Add KB entry about datetime handling patterns"
+    },
+    "ready_to_fix_in_repo": true,
+    "fix_one_task_instructions": [
+      "1. git checkout -b fix/EST-008-est-date-format",
+      "2. Fix date() call at line 336",
+      "3. Test: Verify est_date is correct Y-m-d",
+      "4. git commit && PR"
+    ]
+  },
+  {
+    "id": "EST-009",
+    "title": "Order items always set net_wt = gross_wt — ignores stone/less weight deductions",
+    "severity": "P2",
+    "classification": "Calculation",
+    "confidence": "Medium",
+    "affected_files": [
+      "admin/application/controllers/admin_ret_estimation.php:706-708"
+    ],
+    "affected_db_tables": ["ret_estimation_items(net_wt, gross_wt)"],
+    "reproduction_steps": [
+      "1. Create order with items that have less_wt or stone deductions",
+      "2. Add order items to estimation",
+      "3. Save — check DB: net_wt = gross_wt for all order items"
+    ],
+    "repro_commands": [],
+    "observed_behavior": "Lines 706-708 set both gross_wt and net_wt to $order['weight'][$key]. No less_wt or stone deduction is applied.",
+    "expected_behavior": "net_wt should be calculated as gross_wt minus any stone or less weight deductions from the order data.",
+    "root_cause_analysis": "Order item save was simplified and doesn't account for weight deductions. The order table may not carry these fields, but if it does, they should be used.",
+    "proposed_permanent_fix": {
+      "patch_outline": "If order data includes less_wt, compute net_wt = weight - less_wt. Otherwise, add a less_wt field to the order form.",
+      "exact_sql_migration": "",
+      "code_snippet_or_diff_example": "'net_wt' => isset($order['net_wt'][$key]) ? $order['net_wt'][$key] : $order['weight'][$key],"
+    },
+    "frontend_validations": [],
+    "backend_validations": [],
+    "tests_to_add": {
+      "unit_tests": [],
+      "integration_tests": [],
+      "e2e_tests": []
+    },
+    "migration_plan": "No migration needed — order items are informational in estimation.",
+    "rollback_plan": "Revert code change.",
+    "deployment_notes": "Low risk.",
+    "monitoring_and_alerting": [],
+    "kb_correlation": {
+      "kb_entries_used": ["business_rules.md (caltype formulas)"],
+      "kb_missing": "Add KB documenting order item calculation differences"
+    },
+    "ready_to_fix_in_repo": false,
+    "fix_one_task_instructions": [
+      "1. Investigate if customerorder table has net_wt/less_wt fields",
+      "2. If yes, pass them through to the estimation save",
+      "3. If no, document this limitation"
+    ]
+  },
+  {
+    "id": "EST-010",
+    "title": "Custom item charges loop only captures LAST id_charge — prior charges discarded",
+    "severity": "P2",
+    "classification": "Functional",
+    "confidence": "Medium",
+    "affected_files": [
+      "admin/application/controllers/admin_ret_estimation.php:904-912",
+      "admin/application/controllers/admin_ret_estimation.php:2039-2047"
+    ],
+    "affected_db_tables": ["ret_estimation_items(id_division)"],
+    "reproduction_steps": [
+      "1. Create estimation with custom item that has multiple charges",
+      "2. The id_division field will contain only the last charge's id_charge",
+      "3. All prior charge associations are lost"
+    ],
+    "repro_commands": [],
+    "observed_behavior": "Lines 904-912: The foreach loop iterates charges but only assigns `$id_charge = $charge['id_charge']` — overwriting on each iteration. Only the LAST charge's ID is stored in id_division.",
+    "expected_behavior": "All charges should be stored in ret_estimation_other_charges for the custom item, and id_division should not be a single scalar if multiple charges exist.",
+    "root_cause_analysis": "The charges loop was likely meant to only handle a single charge (the 'division' charge). But if multiple charges exist, only the last one is captured. The charges should be inserted into ret_estimation_other_charges (but this code block is commented out at lines 1050-1076).",
+    "proposed_permanent_fix": {
+      "patch_outline": "Uncomment the charges insert code block and insert each charge into ret_estimation_other_charges. The id_division can keep the last charge for backward compatibility, or use the first charge.",
+      "exact_sql_migration": "",
+      "code_snippet_or_diff_example": "// Instead of just looping to capture last id_charge, also insert each charge"
+    },
+    "frontend_validations": [],
+    "backend_validations": [],
+    "tests_to_add": {
+      "unit_tests": [],
+      "integration_tests": [],
+      "e2e_tests": []
+    },
+    "migration_plan": "None needed.",
+    "rollback_plan": "Revert code changes.",
+    "deployment_notes": "Low risk.",
+    "monitoring_and_alerting": [],
+    "kb_correlation": {
+      "kb_entries_used": ["estimation_module_kb.md"],
+      "kb_missing": "Add KB entry documenting custom item charge handling"
+    },
+    "ready_to_fix_in_repo": false,
+    "fix_one_task_instructions": [
+      "1. Investigate if custom items should support multiple charges in ret_estimation_other_charges",
+      "2. If yes, uncomment the charges insert block (lines 1050-1076) for the save path",
+      "3. Add equivalent insert for update path",
+      "4. Test with multiple charges"
+    ]
+  },
+  {
+    "id": "EST-011",
+    "title": "Catalog item stone save missing uom_id and quality_id fields",
+    "severity": "P2",
+    "classification": "Data Integrity",
+    "confidence": "Low",
+    "affected_files": [
+      "admin/application/controllers/admin_ret_estimation.php:817-837"
+    ],
+    "affected_db_tables": ["ret_estimation_item_stones(uom_id, quality_id)"],
+    "reproduction_steps": [
+      "1. Add catalog item with stones to estimation",
+      "2. Save — check ret_estimation_item_stones for the catalog item",
+      "3. uom_id and quality_id columns will be NULL"
+    ],
+    "repro_commands": [],
+    "observed_behavior": "Catalog item stone insert (lines 817-837) does NOT include uom_id or quality_id fields. Tag item stone insert (lines 473-503) DOES include them. Inconsistency.",
+    "expected_behavior": "Both tag and catalog stone inserts should persist the same fields.",
+    "root_cause_analysis": "The catalog stone save block was written at a different time and wasn't updated when uom_id and quality_id were added to the tag stone save.",
+    "proposed_permanent_fix": {
+      "patch_outline": "Add uom_id and quality_id to catalog stone insert array",
+      "exact_sql_migration": "",
+      "code_snippet_or_diff_example": "// Add to catalog stone insert (after 'stone_cal_type'):\n'uom_id' => $stone['stone_uom_id'],\n'quality_id' => (!empty($stone['quality_id']) ? $stone['quality_id'] : NULL),\n'max_stn_amt' => $stone['max_stn_price'],"
+    },
+    "frontend_validations": [],
+    "backend_validations": [],
+    "tests_to_add": {
+      "unit_tests": [],
+      "integration_tests": [],
+      "e2e_tests": []
+    },
+    "migration_plan": "None.",
+    "rollback_plan": "Revert.",
+    "deployment_notes": "Low risk.",
+    "monitoring_and_alerting": [],
+    "kb_correlation": {
+      "kb_entries_used": ["estimation_module_kb.md"],
+      "kb_missing": "Add KB mapping of which fields each item type populates in stone table"
+    },
+    "ready_to_fix_in_repo": true,
+    "fix_one_task_instructions": [
+      "1. git checkout -b fix/EST-011-catalog-stone-fields",
+      "2. Add missing fields to catalog stone insert",
+      "3. Test and PR"
+    ]
+  },
+  {
+    "id": "EST-012",
+    "title": "Custom item diamond_amount field name mismatch between save and update paths",
+    "severity": "P2",
+    "classification": "Data Integrity",
+    "confidence": "Medium",
+    "affected_files": [
+      "admin/application/controllers/admin_ret_estimation.php:976",
+      "admin/application/controllers/admin_ret_estimation.php:2109"
+    ],
+    "affected_db_tables": ["ret_estimation_items(diamond_amount)"],
+    "reproduction_steps": [
+      "1. Create estimation with custom item having diamond amount",
+      "2. diamond_amount saved correctly on create (uses diamond_amt key)",
+      "3. Edit the estimation and save",
+      "4. diamond_amount may be 0 if POST key name is diamond_amt but update path expects tot_dia_amt"
+    ],
+    "repro_commands": [],
+    "observed_behavior": "Save path (line 976): uses `$estCustom['diamond_amt'][$key]`. Update path (line 2109): uses `$estCustom['tot_dia_amt'][$key]`. If the JS POST key is consistently one name, the other path will produce 0.",
+    "expected_behavior": "Both paths should use the same POST field name, matching whatever the JS sends.",
+    "root_cause_analysis": "Inconsistent field names between save and update codepaths — likely a refactoring oversight.",
+    "proposed_permanent_fix": {
+      "patch_outline": "Verify the JS field name and ensure both save and update paths use it. Most likely diamond_amt is correct (matches other fields like stone_amt).",
+      "exact_sql_migration": "",
+      "code_snippet_or_diff_example": "// Line 2109 — change tot_dia_amt to diamond_amt to match save path:\n'diamond_amount' => !empty($estCustom['diamond_amt'][$key]) ? $estCustom['diamond_amt'][$key] : 0.00,"
+    },
+    "frontend_validations": [],
+    "backend_validations": [],
+    "tests_to_add": {
+      "unit_tests": [],
+      "integration_tests": [],
+      "e2e_tests": []
+    },
+    "migration_plan": "None.",
+    "rollback_plan": "Revert.",
+    "deployment_notes": "Low risk.",
+    "monitoring_and_alerting": [],
+    "kb_correlation": {
+      "kb_entries_used": ["none"],
+      "kb_missing": "Add KB mapping POST field names to DB columns for all item types"
+    },
+    "ready_to_fix_in_repo": true,
+    "fix_one_task_instructions": [
+      "1. git checkout -b fix/EST-012-diamond-amount-field-name",
+      "2. Check JS ret_estimation.js for the correct field name",
+      "3. Align both save and update paths",
+      "4. Test and PR"
+    ]
+  },
+  {
+    "id": "EST-013",
+    "title": "update_status case references undefined $status variable and redirects to wrong module",
+    "severity": "P3",
+    "classification": "Functional",
+    "confidence": "High",
+    "affected_files": [
+      "admin/application/controllers/admin_ret_estimation.php:2436-2451"
+    ],
+    "affected_db_tables": [],
+    "reproduction_steps": [
+      "1. Call admin_ret_estimation/estimation/update_status/<id>",
+      "2. PHP notice: undefined variable $status",
+      "3. After execution, user is redirected to admin_ret_lot/lot_inward/list instead of estimation list"
+    ],
+    "repro_commands": [],
+    "observed_behavior": "Line 2438: `$data = array('status' => $status)` — $status is undefined (it's the $id parameter). Line 2440: `$this->$model->updateData($id, $data)` — wrong argument order (should be ($data, id_field, id_value, table)). Line 2450: redirects to admin_ret_lot/lot_inward/list (wrong module!).",
+    "expected_behavior": "Should update estimation status and redirect back to estimation list.",
+    "root_cause_analysis": "This entire case block appears to be copy-pasted from the lot_inward module and never adapted for estimations. The updateData call signature doesn't match the model's method signature.",
+    "proposed_permanent_fix": {
+      "patch_outline": "Either remove this dead code or fix it to work with estimation module. Fix the redirect URL, variable references, and updateData call signature.",
+      "exact_sql_migration": "",
+      "code_snippet_or_diff_example": ""
+    },
+    "frontend_validations": [],
+    "backend_validations": [],
+    "tests_to_add": {
+      "unit_tests": [],
+      "integration_tests": [],
+      "e2e_tests": []
+    },
+    "migration_plan": "None.",
+    "rollback_plan": "Revert.",
+    "deployment_notes": "Low risk — likely dead code.",
+    "monitoring_and_alerting": [],
+    "kb_correlation": {
+      "kb_entries_used": ["none"],
+      "kb_missing": "Document estimation status update flow if it exists"
+    },
+    "ready_to_fix_in_repo": true,
+    "fix_one_task_instructions": [
+      "1. Determine if update_status is used anywhere (search JS/views for the URL)",
+      "2. If unused, remove the dead code",
+      "3. If used, fix the implementation"
+    ]
+  },
+  {
+    "id": "EST-014",
+    "title": "20+ debug print_r/exit statements left commented in production code",
+    "severity": "P3",
+    "classification": "Logging",
+    "confidence": "Low",
+    "affected_files": [
+      "admin/application/controllers/admin_ret_estimation.php (throughout)"
+    ],
+    "affected_db_tables": [],
+    "reproduction_steps": [
+      "Code review — search for 'print_r' and 'exit' in the controller"
+    ],
+    "repro_commands": [
+      "grep -n 'print_r\\|exit' admin/application/controllers/admin_ret_estimation.php | grep -v '//' -- Some are not properly commented"
+    ],
+    "observed_behavior": "20+ instances of commented-out debug statements. Some may not be properly commented and could execute.",
+    "expected_behavior": "Debug statements should be removed from production code. Use proper logging instead.",
+    "root_cause_analysis": "Development debug code left during feature development.",
+    "proposed_permanent_fix": {
+      "patch_outline": "Remove all commented debug statements and replace critical ones with log_message() calls",
+      "exact_sql_migration": "",
+      "code_snippet_or_diff_example": ""
+    },
+    "frontend_validations": [],
+    "backend_validations": [],
+    "tests_to_add": {
+      "unit_tests": [],
+      "integration_tests": [],
+      "e2e_tests": []
+    },
+    "migration_plan": "None.",
+    "rollback_plan": "Revert.",
+    "deployment_notes": "No risk.",
+    "monitoring_and_alerting": [],
+    "kb_correlation": {
+      "kb_entries_used": ["none"],
+      "kb_missing": "Add coding standards KB for debug statement removal"
+    },
+    "ready_to_fix_in_repo": true,
+    "fix_one_task_instructions": [
+      "1. Search and remove all commented print_r/exit lines",
+      "2. git commit -m 'cleanup(EST-014): Remove debug statements from estimation controller'"
+    ]
+  }
+]

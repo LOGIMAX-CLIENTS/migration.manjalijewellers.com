@@ -1,0 +1,54 @@
+[15-May-2025 05:43:47 UTC] PHP Warning:  mysqli::__construct(): (HY000/1045): Access denied for user 'vziglmrs_tktm'@'server.dcnmjewels.com' (using password: YES) in /home/dcnmjewe/sktmonline.com/staging/query/differentiate_columns.php on line 8
+[15-May-2025 06:53:33 UTC] PHP Warning:  mysqli::__construct(): (HY000/1045): Access denied for user 'vziglmrs_tktm'@'server.dcnmjewels.com' (using password: YES) in /home/dcnmjewe/sktmonline.com/staging/query/differentiate_columns.php on line 8
+[15-May-2025 10:12:55 UTC] PHP Warning:  mysqli::__construct(): (HY000/1045): Access denied for user 'vziglmrs_tktm'@'server.dcnmjewels.com' (using password: YES) in /home/dcnmjewe/sktmonline.com/staging/query/tables.php on line 9
+[15-May-2025 10:28:08 UTC] PHP Warning:  mysqli::__construct(): (HY000/2002): Invalid argument in /home/dcnmjewe/sktmonline.com/staging/query/tables.php on line 8
+[15-May-2025 10:29:43 UTC] PHP Warning:  mysqli::__construct(): php_network_getaddresses: getaddrinfo failed: Name or service not known in /home/dcnmjewe/sktmonline.com/staging/query/tables.php on line 8
+[15-May-2025 10:29:43 UTC] PHP Warning:  mysqli::__construct(): (HY000/2002): php_network_getaddresses: getaddrinfo failed: Name or service not known in /home/dcnmjewe/sktmonline.com/staging/query/tables.php on line 8
+[15-May-2025 10:30:15 UTC] PHP Warning:  session_start(): Cannot start session when headers already sent in /home/dcnmjewe/sktmonline.com/staging/query/config.php on line 2
+[15-May-2025 10:30:15 UTC] PHP Warning:  mysqli::__construct(): (HY000/1045): Access denied for user ''@'localhost' (using password: YES) in /home/dcnmjewe/sktmonline.com/staging/query/columns.php on line 8
+[15-May-2025 10:30:54 UTC] PHP Warning:  session_start(): Cannot start session when headers already sent in /home/dcnmjewe/sktmonline.com/staging/query/config.php on line 2
+[15-May-2025 10:30:54 UTC] PHP Warning:  mysqli::__construct(): (HY000/1045): Access denied for user ''@'localhost' (using password: YES) in /home/dcnmjewe/sktmonline.com/staging/query/columns.php on line 8
+[15-May-2025 10:30:57 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home/dcnmjewe/sktmonline.com/staging/query/columns.php:37
+Stack trace:
+#0 {main}
+  thrown in /home/dcnmjewe/sktmonline.com/staging/query/columns.php on line 37
+[15-May-2025 10:31:46 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home/dcnmjewe/sktmonline.com/staging/query/columns.php:37
+Stack trace:
+#0 {main}
+  thrown in /home/dcnmjewe/sktmonline.com/staging/query/columns.php on line 37
+[15-May-2025 10:31:48 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home/dcnmjewe/sktmonline.com/staging/query/columns.php:37
+Stack trace:
+#0 {main}
+  thrown in /home/dcnmjewe/sktmonline.com/staging/query/columns.php on line 37
+[15-May-2025 10:33:15 UTC] PHP Fatal error:  Uncaught Error: Call to a member function close() on null in /home/dcnmjewe/sktmonline.com/staging/query/columns.php:76
+Stack trace:
+#0 {main}
+  thrown in /home/dcnmjewe/sktmonline.com/staging/query/columns.php on line 76
+[15-May-2025 10:33:20 UTC] PHP Fatal error:  Uncaught Error: Call to a member function close() on null in /home/dcnmjewe/sktmonline.com/staging/query/columns.php:76
+Stack trace:
+#0 {main}
+  thrown in /home/dcnmjewe/sktmonline.com/staging/query/columns.php on line 76
+[15-May-2025 10:47:30 UTC] PHP Warning:  mysqli::__construct(): (HY000/1045): Access denied for user ''@'localhost' (using password: YES) in /home/dcnmjewe/sktmonline.com/staging/query/tables.php on line 8
+[15-May-2025 10:47:32 UTC] PHP Warning:  mysqli::__construct(): (HY000/1045): Access denied for user ''@'localhost' (using password: YES) in /home/dcnmjewe/sktmonline.com/staging/query/columns.php on line 8
+[15-May-2025 10:48:48 UTC] PHP Warning:  mysqli::__construct(): (HY000/1045): Access denied for user ''@'localhost' (using password: YES) in /home/dcnmjewe/sktmonline.com/staging/query/columns.php on line 8
+[15-May-2025 10:48:54 UTC] PHP Warning:  session_start(): Cannot start session when headers already sent in /home/dcnmjewe/sktmonline.com/staging/query/config.php on line 2
+[15-May-2025 10:48:54 UTC] PHP Warning:  mysqli::__construct(): (HY000/1045): Access denied for user ''@'localhost' (using password: YES) in /home/dcnmjewe/sktmonline.com/staging/query/size.php on line 6
+[15-May-2025 10:49:00 UTC] PHP Warning:  mysqli::__construct(): (HY000/1045): Access denied for user ''@'localhost' (using password: YES) in /home/dcnmjewe/sktmonline.com/staging/query/size.php on line 8
+[15-May-2025 10:49:02 UTC] PHP Warning:  mysqli::__construct(): (HY000/1045): Access denied for user ''@'localhost' (using password: YES) in /home/dcnmjewe/sktmonline.com/staging/query/size.php on line 8
+[15-May-2025 11:39:38 UTC] PHP Warning:  session_start(): Cannot start session when headers already sent in /home/dcnmjewe/sktmonline.com/staging/query/config.php on line 2
+[15-May-2025 11:39:38 UTC] PHP Warning:  mysqli::__construct(): (HY000/1045): Access denied for user ''@'localhost' (using password: YES) in /home/dcnmjewe/sktmonline.com/staging/query/insert_datas.php on line 6
+[15-May-2025 11:40:42 UTC] PHP Warning:  session_start(): Cannot start session when headers already sent in /home/dcnmjewe/sktmonline.com/staging/query/config.php on line 2
+[15-May-2025 11:40:42 UTC] PHP Warning:  mysqli::__construct(): (HY000/1045): Access denied for user ''@'localhost' (using password: YES) in /home/dcnmjewe/sktmonline.com/staging/query/insert_datas.php on line 6
+[15-May-2025 11:41:06 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home/dcnmjewe/sktmonline.com/staging/query/insert_datas.php:19
+Stack trace:
+#0 {main}
+  thrown in /home/dcnmjewe/sktmonline.com/staging/query/insert_datas.php on line 19
+[15-May-2025 11:41:07 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home/dcnmjewe/sktmonline.com/staging/query/insert_datas.php:19
+Stack trace:
+#0 {main}
+  thrown in /home/dcnmjewe/sktmonline.com/staging/query/insert_datas.php on line 19
+[15-May-2025 12:02:59 UTC] PHP Warning:  mysqli::__construct(): (HY000/1045): Access denied for user ''@'localhost' (using password: YES) in /home/dcnmjewe/sktmonline.com/staging/query/columns.php on line 8
+[15-May-2025 12:16:41 UTC] PHP Warning:  mysqli::__construct(): (HY000/1044): Access denied for user 'dcnmjewe_sktmonline'@'200.69.23.15' to database 'dcnmjewe_tktm_live' in /home/dcnmjewe/sktmonline.com/staging/query/size.php on line 8
+[15-May-2025 12:20:56 UTC] PHP Warning:  mysqli::__construct(): (HY000/1045): Access denied for user 'dcnmjewe_sktmonlinelive'@'server.dcnmjewels.com' (using password: YES) in /home/dcnmjewe/sktmonline.com/staging/query/size.php on line 8
+[27-May-2025 13:08:05 UTC] PHP Warning:  mysqli::__construct(): (HY000/1045): Access denied for user 'dcnmjewe_sktmonline'@'server.dcnmjewels.com' (using password: YES) in /home/dcnmjewe/sktmonline.com/sktmsavingscheme/query/tables.php on line 8
+[27-May-2025 13:08:51 UTC] PHP Warning:  mysqli::__construct(): (HY000/1045): Access denied for user 'dcnmjewe_sktmonline'@'server.dcnmjewels.com' (using password: YES) in /home/dcnmjewe/sktmonline.com/sktmsavingscheme/query/tables.php on line 8

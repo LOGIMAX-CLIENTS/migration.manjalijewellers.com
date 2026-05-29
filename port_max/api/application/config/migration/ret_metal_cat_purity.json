@@ -1,0 +1,38 @@
+{
+    "entity": "category_purity_map",
+    "ai": {
+        "enabled": true,
+        "max_rows": 20
+    },
+    "validation": {
+        "required_file_name_pattern": "category_purity*.xlsx",
+        "required_sheet_name": "port_category_purity_map"
+    },
+    "file_path": "uploads/category_purity_map.xlsx",
+    "migrations": [{
+        "destination_table": "ret_metal_cat_purity",
+        "primary_key": null,
+        "mappings": {
+            "id_category": {
+                "lookup": {
+                    "table": "ret_category",
+                    "source_column": "category_name",
+                    "match_column": "name",
+                    "return_column": "id_ret_category",
+                    "create_if_missing": false
+                },
+                "validations": { "type": "string", "max_length": 100, "required": true }
+            },
+            "id_purity": {
+                "lookup": {
+                    "table": "ret_purity",
+                    "source_column": "purity_name",
+                    "match_column": "purity",
+                    "return_column": "id_purity",
+                    "create_if_missing": false
+                },
+                "validations": { "type": "string", "max_length": 50, "required": true }
+            }
+        }
+    }]
+}

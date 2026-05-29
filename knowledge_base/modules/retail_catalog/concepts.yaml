@@ -1,0 +1,40 @@
+# Retail Catalog Domain Concepts
+
+## Core Entities
+
+### Product (Retail)
+The central entity representing a sellable item blueprint.
+-   **Attributes**: Name, Code, Weight Range, Wastage (%), Making Charges, Tax Group.
+-   **Relationships**: Belongs to `SubCategory`, `Metal`. Can have multiple `SubProducts` and `Stones`.
+-   **Context**: This is the "Master" product definition, not the individual inventory item (Tag).
+
+### Purity
+Defines the quality/grade of a metal.
+-   **Examples**: 22k, 18k, 24k (for Gold).
+-   **Constraint**: Linked to Stock/Tags. Cannot be deleted if used.
+
+### Metal
+The base material type.
+-   **Examples**: Gold, Silver, Platinum.
+-   **Role**: Determines the daily rate applied to the product.
+
+### Stone
+ Gemstones or Diamonds associated with jewelry.
+-   **Attributes**: Name, Code, UOM (Unit of Measure), Rate.
+-   **Usage**: Added to products as components (Diamond Info).
+
+## Classification Hierarchy
+1.  **Category**: Broadest classification (e.g., "Bangles", "Chains").
+2.  **SubCategory**: Specific type (e.g., "Kerala Bangles", "Rope Chains").
+    -   *Rule*: Products are linked to SubCategories, not directly to Categories.
+
+## Store Layout Concepts
+-   **Branch**: A physical store or logical unit.
+-   **Floor**: A physical section within a branch.
+-   **Counter**: A specific sales counter within a floor.
+    -   *Usage*: Inventory (Tags) is assigned to a specific Counter.
+
+## Pricing Concepts
+-   **Material Rate**: The defining base rate for a material (Metal) on a given day.
+-   **Making Charges**: Cost added for craftsmanship (VA - Value Addition).
+    -   *Types*: Percentage, Fixed Amount.

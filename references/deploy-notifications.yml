@@ -1,0 +1,134 @@
+name: 📧 Deployment Notifications
+
+on:
+  repository_dispatch:
+    types: [deployment-completed]
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: 📨 Process Deployment Notification
+        id: notify
+        run: |
+          echo "Processing deployment notification..."
+          
+          # Validate required secrets
+          if [ -z "${{ secrets.SMTP_USERNAME }}" ] || [ -z "${{ secrets.SMTP_PASSWORD }}" ]; then
+            echo "❌ SMTP credentials not configured"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.MAIL_TO }}" ]; then
+            echo "❌ MAIL_TO not configured"
+            exit 1
+          fi
+          
+          # Extract payload data with fallbacks
+          BRANCH="${CLIENT_PAYLOAD_BRANCH:-${{ github.event.client_payload.branch || 'Unknown' }}}"
+          COMMIT="${CLIENT_PAYLOAD_COMMIT:-${{ github.event.client_payload.commit || 'Unknown' }}}"
+          STATUS="${CLIENT_PAYLOAD_STATUS:-${{ github.event.client_payload.status || 'completed' }}}"
+          SERVER="${DEPLOYMENT_SERVER:-${{ github.event.client_payload.server || 'Staging' }}}"
+          USER="${CLIENT_PAYLOAD_USER:-${{ github.event.client_payload.user || 'Auto-Deploy' }}}"
+          MESSAGE="${CLIENT_PAYLOAD_MESSAGE:-${{ github.event.client_payload.message || 'Deployment completed' }}}"
+          TIMESTAMP="${CLIENT_PAYLOAD_TIMESTAMP:-${{ github.event.client_payload.timestamp || 'Unknown' }}}"
+          
+          echo "📊 Deployment Details:"
+          echo "Branch: $BRANCH"
+          echo "Commit: $COMMIT"
+          echo "Status: $STATUS"
+          echo "Server: $SERVER"
+          echo "User: $USER"
+          echo "Message: $MESSAGE"
+          echo "Timestamp: $TIMESTAMP"
+          
+          # Set outputs for email
+          echo "email_subject=🚀 $SERVER Deployment $STATUS - $BRANCH" >> $GITHUB_OUTPUT
+          echo "deployment_info=✅ $MESSAGE" >> $GITHUB_OUTPUT
+
+      - name: 📨 Send Email Notification
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER || 'smtp.gmail.com' }}
+          server_port: ${{ secrets.SMTP_PORT || '587' }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          from: "${{ secrets.MAIL_FROM || 'Deployment Bot' }} <${{ secrets.SMTP_USERNAME }}>"
+          to: ${{ secrets.MAIL_TO }}
+          subject: "${{ steps.notify.outputs.email_subject }}"
+          html_body: |
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <style>
+                body { font-family: Arial, sans-serif; color: #333; }
+                .header { background: #0366d6; color: white; padding: 20px; border-radius: 5px; }
+                .content { padding: 20px; border: 1px solid #ddd; border-radius: 5px; margin: 10px 0; }
+                .success { border-left: 4px solid #28a745; }
+                .info { border-left: 4px solid #17a2b8; }
+                .detail { background: #f8f9fa; padding: 10px; border-radius: 3px; margin: 5px 0; }
+                .commit { font-family: monospace; background: #e9ecef; padding: 2px 5px; border-radius: 3px; }
+              </style>
+            </head>
+            <body>
+              <div class="header">
+                <h1>🚀 Deployment Notification</h1>
+                <p>${{ steps.notify.outputs.deployment_info }}</p>
+              </div>
+              
+              <div class="content success">
+                <h2>📊 Deployment Details</h2>
+                
+                <div class="detail">
+                  <strong>📅 Timestamp:</strong> ${{ github.event.client_payload.timestamp || 'Unknown' }}
+                </div>
+                
+                <div class="detail">
+                  <strong>🌿 Branch:</strong> ${{ github.event.client_payload.branch || 'Unknown' }}
+                </div>
+                
+                <div class="detail">
+                  <strong>🔨 Commit:</strong> 
+                  <span class="commit">${{ github.event.client_payload.commit || 'Unknown' }}</span>
+                </div>
+                
+                <div class="detail">
+                  <strong>🖥️ Server:</strong> ${{ env.DEPLOYMENT_SERVER || github.event.client_payload.server || 'Staging' }}
+                </div>
+                
+                <div class="detail">
+                  <strong>👤 Deployed By:</strong> ${{ github.event.client_payload.user || 'Auto-Deploy' }}
+                </div>
+                
+                <div class="detail">
+                  <strong>📝 Message:</strong> ${{ github.event.client_payload.message || 'Deployment completed successfully' }}
+                </div>
+                
+                <div class="detail">
+                  <strong>📈 Status:</strong> 
+                  <span style="color: #28a745; font-weight: bold;">
+                    ${{ github.event.client_payload.status || 'SUCCESS' }}
+                  </span>
+                </div>
+              </div>
+              
+              <div class="content info">
+                <h3>🔗 Quick Links</h3>
+                <p>
+                  <a href="https://github.com/${{ github.repository }}/commits/${{ github.event.client_payload.branch || 'main' }}">
+                    View Recent Commits
+                  </a> | 
+                  <a href="https://github.com/${{ github.repository }}/actions">
+                    View GitHub Actions
+                  </a>
+                </p>
+              </div>
+              
+              <footer style="margin-top: 20px; padding: 10px; text-align: center; color: #6c757d; font-size: 12px;">
+                This notification was automatically generated by GitHub Actions.
+              </footer>
+            </body>
+            </html>

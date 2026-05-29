@@ -1,0 +1,149 @@
+{
+    "entity": "account",
+    "ai": {
+        "enabled": true,
+        "max_rows": 20
+    },
+    "validation": {
+        "required_file_name_pattern": "account*.ods",
+        "required_sheet_name": "port_accounts"
+    },
+    "file_path": "uploads/vinsmera/account.ods",
+    "migrations": [{
+        "destination_table": "scheme_account",
+        "primary_key": "id_scheme_account",
+        "mappings": {
+            "id_customer": {
+                "lookup": {
+                    "table": "customer",
+                    "source_column": "mobile",
+                    "match_column": "mobile",
+                    "return_column": "id_customer",
+                    "create_if_missing": false
+                },
+                "validations": { "type": "numeric", "min": 1, "required": true }
+            },
+            "ref_no": {
+                "source_column": "client_id",
+                "validations": { "type": "string", "max_length": 100, "required": true },
+                "check_if_exists": true
+            },
+            "id_branch": {
+                "lookup": {
+                    "table": "branch",
+                    "source_column": "id_branch",
+                    "match_column": "id_branch",
+                    "return_column": "id_branch",
+                    "check_if_have": true,
+                    "create_if_missing": false
+                },
+                "validations": { "type": "numeric", "min": 1, "required": true }
+            },
+            "start_date": {
+                "source_column": "start_date",
+                "validations": { "type": "date", "format": "Y-m-d", "required": true }
+            },
+            "account_name": {
+                "source_column": "account_name",
+                "validations": { "type": "string", "max_length": 100, "required": true }
+            },
+            "id_scheme": {
+                "lookup": {
+                    "table": "scheme",
+                    "source_column": "sync_scheme_code",
+                    "match_column": "sync_scheme_code",
+                    "return_column": "id_scheme",
+                    "create_if_missing": false,
+                    "check_if_have": true
+                },
+                "validations": { "type": "numeric", "min": 1, "required": true }
+            },
+            "start_year": {
+                "source_column": "start_year",
+                "validations": { "type": "numeric", "length": 4, "required": true }
+            },
+            "scheme_acc_number": {
+                "source_column": "scheme_acc_number",
+                "format": {
+                    "start_year": "start_year",
+                    "id_scheme": "id_scheme",
+                    "scheme_acc_number": "scheme_acc_number"
+                },
+                "validations": { "type": "numeric", "min": 1, "required": true }
+            },
+            "is_refferal_by": {
+                "source_column": "is_refferal_by",
+                "validations": { "type": "numeric", "length": 1, "required": false }
+            },
+            "referal_code": {
+                "source_column": "referal_code",
+                "validations": { "type": "string", "max_length": 100, "required": false }
+            },
+            "topup_weight": {
+                "source_column": "topup_weight",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "topup_rate": {
+                "source_column": "topup_rate",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "topup_amount": {
+                "source_column": "topup_amount",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "added_by": {
+                "source_column": "added_by",
+                "validations": { "type": "numeric", "min": 1, "required": true }
+            },
+            "balance_amount": {
+                "source_column": "Opening_amount",
+                "validations": { "type": "numeric", "min": 1, "required": false }
+            },
+            "balance_weight": {
+                "source_column": "Opening_weight",
+                "validations": { "type": "numeric", "min": 1, "required": false }
+            },
+            "paid_installments": {
+                "source_column": "Opening_paid_installment",
+                "validations": { "type": "numeric", "min": 1, "required": false }
+            },
+            "is_opening": {
+                "source_column": "is_opening",
+                "validations": { "type": "numeric", "min": 1, "required": false }
+            },
+            "firstPayment_amt": {
+                "source_column": "firstPayment_amt",
+                "validations": { "type": "numeric", "min": 1, "required": true }
+            }
+        }
+    }],
+    "report": [{
+        "aggregation":  "count",
+        "field":        "id_scheme_account",
+        "group_by":     ["scheme_account.id_branch"],
+        "select":       "IFNULL(branch.name, '-') as branch,count(scheme_account.id_scheme_account) as count,max(scheme_account.id_scheme_account) as last_id",
+        "primary_key":  "id_scheme_account",
+        "where":        {
+            "current_import": {
+                "added_by": 6
+            }
+        },
+        "left_join": {
+            "table": "branch",
+            "on": "branch.id_branch = scheme_account.id_branch"
+        }
+    },
+    {
+        "aggregation":  "count",
+        "field":        "id_scheme_account",
+        "group_by":     ["added_by"],
+        "select":       "count(id_scheme_account) as count,max(id_scheme_account) as last_id,if(added_by = 0,'Webapp',(if(added_by = 1,'Admin',(if(added_by = 2,'Customer App',(if(added_by = 3,'Collection App',(if(added_by = 4,'Retail App',(if(added_by = 5,'Sync',(if(added_by = 6,'Import',if(added_by = 7,'Retail Admin','-')))))))))))))) as source",
+        "primary_key":  "id_scheme_account",
+        "where":        {
+            "current_import": {
+                "added_by": 6
+            }
+        }
+    }
+    ]
+}

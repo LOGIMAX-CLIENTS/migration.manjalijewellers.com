@@ -1,0 +1,287 @@
+body, html {
+
+	margin-bottom:0;
+
+	font-family:sans-serif;
+
+	text-transform:uppercase;
+
+}
+
+
+
+.PDFReceipt *{
+
+
+
+font-family:sans-serif;
+
+text-transform:uppercase;
+
+
+
+font-size: 12px;
+
+
+
+}
+
+
+
+.alignRight {
+
+	text-align: right;
+
+}
+
+
+
+.alignCenter {
+
+	text-align: center;
+
+}
+
+
+
+.alignLeft {
+
+	text-align: left;
+
+}
+
+
+
+.heading {
+
+	text-align: center;
+
+	font-size: 22px !important;
+
+}
+
+
+
+.footer .footer_left, .footer .footer_center, .footer .footer_right {
+
+	display: inline-block;
+
+
+
+}
+
+
+
+
+
+.heading .company_name {
+
+	font-weight: bold;
+
+	font-size: 20px;
+
+}
+
+
+
+.karigar_details {
+
+	width: 100%;
+
+	padding-top: 50px;
+
+}
+
+
+
+.karigar_details .details_left, .karigar_details .print_title, .karigar_details .details_right {
+
+	display: inline-block;
+
+}
+
+
+
+.receipt_from {
+
+	padding-bottom: 10px;
+
+	font-weight: bold;
+
+}
+
+
+
+.karigar_details .details_left {
+
+	width: 33%;
+
+	text-align: left;
+
+	vertical-align: top;
+
+}
+
+
+
+.karigar_details .print_title {
+
+	width: 33%;
+
+	text-align: center;
+
+	vertical-align: top;
+
+	font-size: 14px;
+
+}
+
+
+
+.karigar_details .details_right {
+
+	width: 33%;
+
+	text-align: right;
+
+	vertical-align: top;
+
+}
+
+
+
+.receipt_from , .print_title, .details_right {
+
+	font-weight: bold;
+
+}
+
+
+
+.receipt_details {
+
+	padding-top: 50px;
+
+	padding-bottom: 50px;
+
+}
+
+.job_receipt_table {
+
+	width: 100%;
+
+	border-collapse: collapse !important;
+
+	font-family:sans-serif;
+
+}
+
+
+
+.job_receipt_table th{
+
+	border: 1px solid black;
+
+	padding: 10px;
+
+	border-left : 0px;
+
+	border-right : 0px;
+
+}
+
+
+
+.job_receipt_table tbody td{
+
+	padding: 5px;
+
+}
+
+
+
+.job_receipt_table tfoot{ 
+
+    border: 1px solid #ccc;
+
+    border-left : 0px;
+
+    border-right : 0px;
+
+	font-weight: bold;
+
+	padding: 10px;
+
+}
+
+
+
+.job_receipt_table tfoot tr td{ 
+
+	padding: 10px;
+
+}
+
+
+
+.footer {
+
+	padding-top: 70px;
+
+	font-weight: bold;
+
+}
+
+
+
+/* .footer .footer_left, .footer .footer_center, .footer .footer_right {
+
+
+
+} */
+
+
+
+.footer .footer_left {
+
+	text-align: left;
+
+	vertical-align: top;
+
+	width: 33%;
+
+}
+
+
+
+.footer .footer_center {
+
+	text-align: center;
+
+	vertical-align: top;
+
+	width: 33%;
+
+}
+
+
+
+.footer .footer_right {
+
+	text-align: right;
+
+	vertical-align: top;
+
+	width: 33%;
+
+}
+
+.rateborders{
+
+	border-top: 1px solid #ccc;
+
+	text-align: right;
+
+	
+
+}

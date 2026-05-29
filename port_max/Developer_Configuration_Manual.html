@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PortMax — Developer Configuration Manual</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #fff;
+    color: #1e293b;
+    line-height: 1.7;
+    font-size: 13px;
+    padding: 40px 50px;
+  }
+
+  @media print {
+    body { padding: 20px 30px; font-size: 11px; }
+    .page-break { page-break-before: always; }
+    h2 { page-break-before: always; }
+    h2:first-of-type { page-break-before: avoid; }
+    table { page-break-inside: avoid; }
+    pre { page-break-inside: avoid; }
+    .no-print { display: none; }
+  }
+
+  .cover {
+    text-align: center;
+    padding: 60px 0 40px;
+    border-bottom: 3px solid #059669;
+    margin-bottom: 40px;
+  }
+  .cover h1 {
+    font-size: 30px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.5px;
+  }
+  .cover .subtitle {
+    font-size: 17px;
+    color: #64748b;
+    margin-top: 8px;
+    font-weight: 400;
+  }
+  .cover .meta {
+    margin-top: 20px;
+    color: #94a3b8;
+    font-size: 13px;
+  }
+  .cover .meta span {
+    margin: 0 12px;
+  }
+
+  h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-top: 40px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e2e8f0;
+  }
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #059669;
+    margin-top: 24px;
+    margin-bottom: 10px;
+  }
+  h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+    margin-top: 16px;
+    margin-bottom: 6px;
+  }
+
+  p { margin-bottom: 10px; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 12px;
+  }
+  th {
+    background: #059669;
+    color: #fff;
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  td {
+    padding: 7px 12px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #f8fafc; }
+  tr:hover td { background: #ecfdf5; }
+
+  pre {
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 16px 20px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 12px 0 20px;
+    white-space: pre;
+  }
+
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    background: #f1f5f9;
+    padding: 2px 5px;
+    border-radius: 4px;
+    color: #dc2626;
+  }
+
+  .toc {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 10px;
+    padding: 20px 28px;
+    margin: 20px 0 30px;
+  }
+  .toc h3 { color: #0f172a; margin-top: 0; }
+  .toc ol { padding-left: 24px; }
+  .toc li { margin: 6px 0; }
+  .toc a { color: #059669; text-decoration: none; font-weight: 500; }
+  .toc a:hover { text-decoration: underline; }
+
+  .note {
+    background: #fffbeb;
+    border-left: 4px solid #f59e0b;
+    padding: 10px 16px;
+    margin: 12px 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 12px;
+  }
+  .note-danger {
+    background: #fef2f2;
+    border-left: 4px solid #ef4444;
+    padding: 10px 16px;
+    margin: 12px 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 12px;
+  }
+  .note-info {
+    background: #eff6ff;
+    border-left: 4px solid #3b82f6;
+    padding: 10px 16px;
+    margin: 12px 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 12px;
+  }
+
+  .print-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #059669;
+    color: #fff;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+    box-shadow: 0 4px 12px rgba(5,150,105,.3);
+    z-index: 100;
+  }
+  .print-btn:hover { background: #047857; }
+
+  ul, ol { padding-left: 24px; margin-bottom: 12px; }
+  li { margin: 4px 0; }
+</style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">🖨️ Save as PDF</button>
+
+<!-- COVER -->
+<div class="cover">
+  <h1>PortMax</h1>
+  <div class="subtitle">Developer Configuration Manual</div>
+  <div class="meta">
+    <span><b>Version:</b> 2.1</span>
+    <span><b>Date:</b> 16 April 2026</span>
+    <span><b>Author:</b> Logimax Development Team</span>
+  </div>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+  <h3>Table of Contents</h3>
+  <ol>
+    <li><a href="#s1">Entity Configuration (config.json)</a></li>
+    <li><a href="#s2">Creating a New Entity Config</a></li>
+    <li><a href="#s3">Frontend Configuration</a></li>
+    <li><a href="#s4">Backend Configuration</a></li>
+    <li><a href="#s5">AWS Server Setup</a></li>
+    <li><a href="#s6">Deployment Checklist</a></li>
+    <li><a href="#s7">Adding a New Client Deployment</a></li>
+    <li><a href="#s8">Troubleshooting</a></li>
+  </ol>
+</div>
+
+<!-- 1. ENTITY CONFIGURATION -->
+<h2 id="s1">1. Entity Configuration (config.json)</h2>
+
+<p>Each importable entity (Customer, Employee, Account, etc.) is defined by a JSON config file stored at:</p>
+<pre>api/application/config/migration/{entity_name}.json</pre>
+
+<h3>1.1 Complete JSON Schema</h3>
+<pre>
+{
+  "entity": "customer",                          // Entity identifier
+
+  "ai": {                                        // [OPTIONAL] AI column matching
+    "enabled": true,                             //   Enable/disable AI suggestions
+    "max_rows": 20                               //   Max rows sent to AI for analysis
+  },
+
+  "validation": {
+    "required_file_name_pattern": "customer*.xlsx",  // File name pattern check
+    "required_sheet_name": "port_customer"            // Required Excel sheet name
+  },
+
+  "migrations": [{
+    "destination_table": "customer",              // Target DB table name
+    "primary_key": "id_customer",                 // Primary key column
+
+    "mappings": {                                 // Column mappings (see §1.2)
+      "db_column_name": { ... }
+    },
+
+    "children": [{                                // [OPTIONAL] Child tables
+      "destination_table": "address",
+      "foreign_key": "id_customer",               // Links to parent's primary_key
+      "mappings": { ... }
+    }]
+  }],
+
+  "report": [{                                    // [OPTIONAL] Post-import report queries
+    "aggregation": "count",
+    "field": "mobile",
+    "group_by": ["customer.id_branch"],
+    "select": "SQL SELECT clause",
+    "primary_key": "id_customer",
+    "where": { "current_import": { "added_by": 6 } },
+    "left_join": { "table": "branch", "on": "branch.id_branch = customer.id_branch" }
+  }]
+}
+</pre>
+
+<h3>1.2 Column Mapping Types</h3>
+
+<h4>Type A: Direct Column (Excel → DB)</h4>
+<pre>
+"firstname": {
+  "source_column": "first_name",         // Excel column header (case-insensitive)
+  "validations": {
+    "type": "string",                    // string | numeric | date | email | time
+    "max_length": 50,                    // Max character length
+    "required": true                     // Is this column mandatory?
+  }
+}
+</pre>
+
+<h4>Type B: Lookup Column (Excel name → DB ID)</h4>
+<pre>
+"id_village": {
+  "lookup": {
+    "table": "village",                  // Lookup table in DB
+    "source_column": "area_name",        // Excel column to read
+    "match_column": "village_name",      // DB column to match against
+    "return_column": "id_village",       // DB column to return (usually ID)
+    "create_if_missing": true,           // Auto-INSERT if not found
+    "check_if_have": false               // Just verify exists, don't return value
+  },
+  "validations": { "type": "string", "max_length": 100, "required": false }
+}
+</pre>
+
+<h4>Type C: Duplicate Check Column</h4>
+<pre>
+"mobile": {
+  "source_column": "mobile",
+  "validations": { "type": "numeric", "length": 10, "required": true },
+  "check_if_exists": true                // Skip row if this value already exists in DB
+}
+</pre>
+
+<h3>1.3 Validation Rules Reference</h3>
+<table>
+  <tr><th>Rule</th><th>Type</th><th>Description</th><th>Example</th></tr>
+  <tr><td><code>type</code></td><td>string</td><td>Data type check</td><td><code>"string"</code>, <code>"numeric"</code>, <code>"date"</code>, <code>"email"</code>, <code>"time"</code></td></tr>
+  <tr><td><code>required</code></td><td>boolean</td><td>Must not be empty</td><td><code>true</code></td></tr>
+  <tr><td><code>max_length</code></td><td>integer</td><td>Maximum characters</td><td><code>50</code></td></tr>
+  <tr><td><code>length</code></td><td>integer</td><td>Exact character length</td><td><code>10</code> (for mobile)</td></tr>
+  <tr><td><code>min</code></td><td>integer</td><td>Minimum numeric value</td><td><code>1</code></td></tr>
+  <tr><td><code>format</code></td><td>string</td><td>Date/time format</td><td><code>"Y-m-d"</code>, <code>"HH:mm"</code></td></tr>
+</table>
+
+<h3>1.4 Lookup Options Reference</h3>
+<table>
+  <tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr>
+  <tr><td><code>table</code></td><td>string</td><td>—</td><td>Database table to look up from</td></tr>
+  <tr><td><code>source_column</code></td><td>string</td><td>—</td><td>Excel column header containing the value</td></tr>
+  <tr><td><code>match_column</code></td><td>string</td><td>—</td><td>DB column to match the Excel value against</td></tr>
+  <tr><td><code>return_column</code></td><td>string</td><td>—</td><td>DB column value to return (usually an ID)</td></tr>
+  <tr><td><code>create_if_missing</code></td><td>boolean</td><td>false</td><td>Auto-create row if lookup value not found</td></tr>
+  <tr><td><code>check_if_have</code></td><td>boolean</td><td>false</td><td>Only verify value exists; don't replace with looked-up value</td></tr>
+</table>
+
+<h3>1.5 Report Configuration</h3>
+<p>The <code>report</code> array defines post-import summary queries. Each entry generates one report table on the Report page.</p>
+<table>
+  <tr><th>Field</th><th>Description</th><th>Example</th></tr>
+  <tr><td><code>aggregation</code></td><td>Aggregation type</td><td><code>"count"</code></td></tr>
+  <tr><td><code>field</code></td><td>Column to aggregate</td><td><code>"mobile"</code></td></tr>
+  <tr><td><code>group_by</code></td><td>GROUP BY columns (array)</td><td><code>["customer.id_branch"]</code></td></tr>
+  <tr><td><code>select</code></td><td>Full SELECT clause (raw SQL)</td><td>See examples below</td></tr>
+  <tr><td><code>primary_key</code></td><td>Primary key for <code>MAX()</code> tracking</td><td><code>"id_customer"</code></td></tr>
+  <tr><td><code>where.current_import</code></td><td>Filter for "current import" rows</td><td><code>{ "added_by": 6 }</code></td></tr>
+  <tr><td><code>left_join</code></td><td>Optional JOIN for labels</td><td><code>{ "table": "branch", "on": "..." }</code></td></tr>
+</table>
+
+<div class="note">
+  <b>Important:</b> The <code>select</code> clause MUST include <code>max({primary_key}) as last_id</code> — this is used internally to distinguish "before import" vs "current import" rows.
+</div>
+
+<div class="note" style="background:#fef2f2; border-left-color:#ef4444;">
+  <b>⚠️ Critical (v2.1):</b> The destination table's <code>primary_key</code> column <b>MUST have AUTO_INCREMENT</b> set in the database. Without it, imported rows will get <code>id = 0</code>, the "Current Import" report will show 0, and subsequent imports will fail with <code>Duplicate entry '0' for key 'PRIMARY'</code>. Verify with:
+  <pre style="margin:8px 0 0; font-size:11px;">SHOW CREATE TABLE customer;  -- Check for auto_increment
+ALTER TABLE customer MODIFY id_customer INT AUTO_INCREMENT;</pre>
+</div>
+
+<h4>Report SELECT Example (with JOIN)</h4>
+<pre>
+"select": "IFNULL(branch.name, '-') as branch, count(customer.mobile) as count, max(customer.id_customer) as last_id",
+"left_join": { "table": "branch", "on": "branch.id_branch = customer.id_branch" }
+</pre>
+
+<h4>Report SELECT Example (with CASE expression)</h4>
+<pre>
+"select": "count(mobile) as count, max(id_customer) as last_id, if(added_by=6,'Import','Other') as source"
+</pre>
+
+<!-- 2. CREATING NEW ENTITY -->
+<h2 id="s2">2. Creating a New Entity Config</h2>
+
+<h3>Step-by-Step Guide</h3>
+
+<h4>Step 1: Identify the target tables</h4>
+<p>Determine the main database table and any child tables. Example:</p>
+<ul>
+  <li>Main: <code>customer</code> (primary key: <code>id_customer</code>)</li>
+  <li>Child: <code>address</code> (foreign key: <code>id_customer</code>)</li>
+</ul>
+
+<h4>Step 2: Map Excel columns to DB columns</h4>
+<p>For each column in the Excel template:</p>
+<ol>
+  <li>Decide the DB column name it maps to</li>
+  <li>Decide if it's direct, lookup, or duplicate-check</li>
+  <li>Define validation rules (type, length, required)</li>
+</ol>
+
+<h4>Step 3: Create the JSON file</h4>
+<pre>
+// Save as: api/application/config/migration/newentity.json
+
+{
+  "entity": "newentity",
+  "validation": {
+    "required_file_name_pattern": "newentity*.xlsx",
+    "required_sheet_name": "port_newentity"
+  },
+  "migrations": [{
+    "destination_table": "your_table",
+    "primary_key": "id_your_table",
+    "mappings": {
+      // Add your column mappings here
+    }
+  }]
+}
+</pre>
+
+<h4>Step 4: Download Template for Testing</h4>
+<p>With PortMax v2.1, you don't need to manually create a test Excel file. Instead:</p>
+<ol>
+  <li>Select the entity in the UI (searchable dropdown)</li>
+  <li>Click <strong>"📥 Download Template"</strong> to generate an Excel file with correct headers + validation rules row</li>
+  <li>Fill in test data rows and upload</li>
+  <li>Validate and check for any mapping errors</li>
+  <li>Import and verify data in the database</li>
+</ol>
+
+<div class="note-danger">
+  <b>⚠️ Caution:</b> Always test with a small dataset first. The config is case-insensitive for column matching, but the Excel sheet name must match exactly.
+</div>
+
+<!-- 3. FRONTEND CONFIG -->
+<h2 id="s3">3. Frontend Configuration</h2>
+
+<h3>3.1 API URL (<code>config.js</code>)</h3>
+<p>File: <code>migration/src/lib/config.js</code></p>
+<pre>
+// Local development
+export const API_URL = "http://localhost/migrationtool/api/index.php/";
+
+// Production (uncomment the appropriate one)
+// export const API_URL = "https://www.domain.com/port_max/api/index.php/";
+</pre>
+
+<div class="note">
+  <b>Important:</b> After changing <code>config.js</code>, you must rebuild the frontend: <code>cd migration && npm run build</code>
+</div>
+
+<h3>3.2 User Manual URL</h3>
+<p>The "📖 User Manual" button in <code>DataMigration.svelte</code> links to:</p>
+<pre>window.open('/port_max/user_manual.html', '_blank')</pre>
+<p>Update this path if the deployment URL changes. The manual file is at <code>migration/static/user_manual.html</code>.</p>
+
+<h3>3.3 Frontend Build</h3>
+<pre>
+cd migration/
+npm install          # First time only
+npm run build        # Build for production → outputs to migration/build/
+npm run dev          # Run dev server locally (http://localhost:5173)
+</pre>
+
+<!-- 4. BACKEND CONFIG -->
+<h2 id="s4">4. Backend Configuration</h2>
+
+<h3>4.1 Global Config (<code>global_configs.php</code>)</h3>
+<p>File: <code>global_configs.php</code> (project root)</p>
+<pre>
+class Globals {
+    public static $hostname = "localhost";
+    public static $username = "root";
+    public static $password = "";
+    public static $database = "etail_v3";           // Default DB (used for login)
+    public static $timezone = "Asia/Kolkata";
+}
+</pre>
+
+<div class="note-info">
+  <b>Note:</b> These are default DB credentials for the client's application database. The login authentication itself uses <code>rest_valid_logins</code> (see §4.2a below).
+</div>
+
+<h3>4.2a Login Authentication (<code>rest.php</code>)</h3>
+<p>File: <code>api/application/config/rest.php</code></p>
+<p>Login credentials are configured in the <code>rest_valid_logins</code> array. The login form validates username and password against this config (not the database).</p>
+<pre>
+// api/application/config/rest.php (line ~252)
+$config['rest_valid_logins'] = array('portmax' => 'Lmx#2026@port');
+</pre>
+
+<h4>To change login credentials:</h4>
+<ol>
+  <li>Open <code>api/application/config/rest.php</code></li>
+  <li>Find <code>rest_valid_logins</code> array</li>
+  <li>Change the key (username) and value (password)</li>
+  <li>Multiple logins can be added: <code>array('user1' => 'pass1', 'user2' => 'pass2')</code></li>
+</ol>
+
+<div class="note-danger">
+  <b>Security:</b> Passwords are stored in plain text in this config file. Ensure this file is not publicly accessible via <code>.htaccess</code> rules.
+</div>
+
+<h3>4.2 CodeIgniter Config</h3>
+<table>
+  <tr><th>File</th><th>Setting</th><th>Value</th></tr>
+  <tr><td><code>config/config.php</code></td><td><code>base_url</code></td><td>Set to deployment URL</td></tr>
+  <tr><td><code>config/config.php</code></td><td><code>sess_save_path</code></td><td>Writable session directory</td></tr>
+  <tr><td><code>config/autoload.php</code></td><td><code>helper</code></td><td><code>['log']</code></td></tr>
+</table>
+
+<h3>4.3 PHP Extensions Required</h3>
+<table>
+  <tr><th>Extension</th><th>Purpose</th><th>Install Command (Ubuntu)</th></tr>
+  <tr><td><code>php-zip</code></td><td>Excel file processing (Box\Spout)</td><td><code>sudo apt install php7.4-zip</code></td></tr>
+  <tr><td><code>php-mbstring</code></td><td>String processing</td><td><code>sudo apt install php7.4-mbstring</code></td></tr>
+  <tr><td><code>php-mysql</code></td><td>MySQL database driver</td><td><code>sudo apt install php7.4-mysql</code></td></tr>
+  <tr><td><code>php-curl</code></td><td>cURL support</td><td><code>sudo apt install php7.4-curl</code></td></tr>
+  <tr><td><code>php-xml</code></td><td>XML processing</td><td><code>sudo apt install php7.4-xml</code></td></tr>
+  <tr><td><code>php-gd</code></td><td>Image processing</td><td><code>sudo apt install php7.4-gd</code></td></tr>
+</table>
+
+<h3>4.4 Composer Dependencies</h3>
+<pre>
+cd api/
+composer install     # Install all PHP dependencies
+
+# Key packages:
+# - box/spout: Excel streaming read/write
+# - phpoffice/phpspreadsheet: Legacy Excel support
+</pre>
+
+<h3>4.5 File Storage Structure</h3>
+<pre>
+uploads/
+├── {ClientName}/
+│   ├── *.xlsx                    # Uploaded Excel files
+│   ├── imported/                 # Archived files + activity logs
+│   └── summary/                  # Report XLSX exports
+
+tmp/
+├── backups/
+│   ├── {entity}_backup_{timestamp}.xlsx   # Excel backup (per-table sheets)
+│   └── {entity}_backup_{timestamp}.sql    # SQL backup (CREATE + INSERT)
+└── status_{taskId}.json                  # Async progress tracking
+</pre>
+
+<div class="note">
+  <b>Permissions:</b> Both <code>uploads/</code> and <code>tmp/backups/</code> directories must be writable by the web server: <code>chmod -R 775 uploads/ tmp/ && chown -R www-data:www-data uploads/ tmp/</code>
+</div>
+
+<!-- 5. AWS SERVER SETUP -->
+<h2 id="s5">5. AWS Server Setup</h2>
+
+<h3>5.1 Server Requirements</h3>
+<table>
+  <tr><th>Component</th><th>Minimum</th><th>Recommended</th></tr>
+  <tr><td>Instance Type</td><td>t2.micro</td><td>t2.small or higher</td></tr>
+  <tr><td>OS</td><td>Ubuntu 20.04 LTS</td><td>Ubuntu 22.04 LTS</td></tr>
+  <tr><td>PHP</td><td>7.4+</td><td>7.4 (tested)</td></tr>
+  <tr><td>MySQL</td><td>5.7+</td><td>8.0</td></tr>
+  <tr><td>Apache</td><td>2.4+</td><td>Latest</td></tr>
+  <tr><td>Node.js</td><td>16+</td><td>18 LTS</td></tr>
+  <tr><td>Disk</td><td>8 GB</td><td>20 GB+ (for backups)</td></tr>
+  <tr><td>RAM</td><td>1 GB</td><td>2 GB+ (for large Excel files)</td></tr>
+</table>
+
+<h3>5.2 PHP 7.4 Installation (Ubuntu)</h3>
+<pre>
+# 1. Add PHP repository
+sudo apt update
+sudo apt install software-properties-common -y
+sudo add-apt-repository ppa:ondrej/php -y
+sudo apt update
+
+# 2. Install PHP 7.4 with Apache module
+sudo apt install php7.4 php7.4-common libapache2-mod-php7.4 -y
+
+# 3. Install required extensions
+sudo apt install php7.4-zip -y
+sudo apt install php7.4-mbstring -y
+sudo apt install php7.4-mysql -y
+sudo apt install php7.4-curl -y
+sudo apt install php7.4-xml -y
+sudo apt install php7.4-gd -y
+
+# 4. Verify installation
+php -v
+php -m | grep zip
+
+# 5. Reload Apache
+sudo systemctl reload apache2
+</pre>
+
+<h3>5.3 Apache Configuration</h3>
+<pre>
+# Enable mod_rewrite
+sudo a2enmod rewrite
+sudo systemctl restart apache2
+</pre>
+
+<h4>Virtual Host (port_max)</h4>
+<pre>
+# /etc/apache2/sites-available/port_max.conf
+
+&lt;VirtualHost *:80&gt;
+    ServerName yourdomain.com
+    DocumentRoot /var/www/html
+
+    &lt;Directory /var/www/html/port_max&gt;
+        Options -Indexes +FollowSymLinks
+        AllowOverride All
+        Require all granted
+    &lt;/Directory&gt;
+
+    ErrorLog ${APACHE_LOG_DIR}/migration_error.log
+    CustomLog ${APACHE_LOG_DIR}/migration_access.log combined
+&lt;/VirtualHost&gt;
+</pre>
+
+<h3>5.4 PHP Configuration Tuning</h3>
+<p>Edit <code>/etc/php/7.4/apache2/php.ini</code>:</p>
+<pre>
+# For large Excel file uploads
+upload_max_filesize = 50M
+post_max_size = 55M
+max_execution_time = 600        # 10 minutes (for large validations)
+max_input_time = 300
+memory_limit = 512M             # Increase for 100k+ row files
+session.gc_maxlifetime = 7200   # 2 hour session timeout
+</pre>
+
+<h3>5.5 MySQL Configuration</h3>
+<pre>
+# /etc/mysql/mysql.conf.d/mysqld.cnf
+
+[mysqld]
+max_allowed_packet = 64M        # For large backup imports
+innodb_buffer_pool_size = 256M  # Performance tuning
+wait_timeout = 600              # Long query timeout
+</pre>
+
+<h3>5.6 Node.js Installation</h3>
+<pre>
+# Install Node.js 18 LTS
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt install -y nodejs
+node -v
+npm -v
+</pre>
+
+<h3>5.7 SSL Certificate (Let's Encrypt)</h3>
+<pre>
+sudo apt install certbot python3-certbot-apache -y
+sudo certbot --apache -d yourdomain.com
+sudo systemctl reload apache2
+</pre>
+
+<!-- 6. DEPLOYMENT CHECKLIST -->
+<h2 id="s6">6. Deployment Checklist</h2>
+
+<h3>6.1 Full Deployment Steps</h3>
+<pre>
+# 1. Upload project files to server
+scp -r migrationtool/ user@server:/var/www/html/port_max/
+
+# 2. Install PHP dependencies
+cd /var/www/html/port_max/api/
+composer install --no-dev
+
+# 3. Install frontend dependencies & build
+cd /var/www/html/port_max/migration/
+npm install
+npm run build
+
+# 4. Set permissions
+cd /var/www/html/port_max/
+sudo chown -R www-data:www-data api/uploads/
+sudo chmod -R 775 api/uploads/
+sudo mkdir -p api/tmp/backups
+sudo chown -R www-data:www-data api/tmp
+sudo chmod -R 775 api/tmp
+
+# 5. Update config.js with production API URL
+# Edit migration/src/lib/config.js
+# Then rebuild: npm run build
+
+# 6. Update global_configs.php with production DB credentials
+
+# 7. Verify
+curl https://yourdomain.com/port_max/api/index.php/AuthController/login
+</pre>
+
+<h3>6.2 Configuration Checklist</h3>
+<table>
+  <tr><th>✅</th><th>Item</th><th>File</th><th>Note</th></tr>
+  <tr><td>☐</td><td>API URL updated</td><td><code>config.js</code></td><td>Must match server domain</td></tr>
+  <tr><td>☐</td><td>Login credentials set</td><td><code>rest.php</code></td><td><code>rest_valid_logins</code> array</td></tr>
+  <tr><td>☐</td><td>DB credentials set</td><td><code>global_configs.php</code></td><td>Client database connection</td></tr>
+  <tr><td>☐</td><td>Frontend built</td><td><code>npm run build</code></td><td>After any frontend change</td></tr>
+  <tr><td>☐</td><td>uploads/ writable</td><td>Server filesystem</td><td><code>chmod 775</code></td></tr>
+  <tr><td>☐</td><td>tmp/backups/ writable</td><td>Server filesystem</td><td>For pre-import Excel + SQL backups</td></tr>
+  <tr><td>☐</td><td>PHP zip extension</td><td><code>php -m | grep zip</code></td><td>Required for Excel</td></tr>
+  <tr><td>☐</td><td>mod_rewrite enabled</td><td>Apache config</td><td>For CI3 routing</td></tr>
+  <tr><td>☐</td><td>Entity configs added</td><td><code>config/migration/*.json</code></td><td>Per client requirement</td></tr>
+  <tr><td>☐</td><td>User manual URL correct</td><td><code>DataMigration.svelte</code></td><td>Must match deploy path</td></tr>
+  <tr><td>☐</td><td>SSL certificate</td><td>Server</td><td>For HTTPS</td></tr>
+  <tr><td>☐</td><td><b>DB primary keys have AUTO_INCREMENT</b></td><td>MySQL</td><td>All destination tables must have AUTO_INCREMENT on primary key column</td></tr>
+</table>
+
+<!-- 7. NEW CLIENT -->
+<h2 id="s7">7. Adding a New Client Deployment</h2>
+
+<h3>Step 1: Set up the database</h3>
+<p>Ensure the client's database has the required lookup tables (city, state, country, village, branch, etc.) populated with data.</p>
+
+<h3>Step 2: Create entity config files</h3>
+<p>Create JSON config files for each entity the client needs to import. Place them in <code>api/application/config/migration/</code>.</p>
+
+<h3>Step 3: Set login credentials</h3>
+<p>Update <code>api/application/config/rest.php</code> → set <code>rest_valid_logins</code> username and password for the client.</p>
+
+<h3>Step 4: Update global_configs.php</h3>
+<p>Set the database credentials for the client's server.</p>
+
+<h3>Step 5: Update config.js</h3>
+<p>Update the API URL to point to the client's server domain.</p>
+
+<h3>Step 5: Build and deploy</h3>
+<pre>
+cd migration && npm run build
+# Copy entire project to client server
+</pre>
+
+<h3>Step 6: Verify</h3>
+<ol>
+  <li>Login with client credentials</li>
+  <li>Upload a small test file</li>
+  <li>Validate → Backup → Import → View Report</li>
+  <li>Verify data in database</li>
+</ol>
+
+<!-- 8. TROUBLESHOOTING -->
+<h2 id="s8">8. Troubleshooting</h2>
+
+<table>
+  <tr><th>Problem</th><th>Cause</th><th>Solution</th></tr>
+  <tr><td>Validation stuck at 0%</td><td>PHP process timeout</td><td>Increase <code>max_execution_time</code> in php.ini</td></tr>
+  <tr><td>Excel upload fails</td><td>File too large</td><td>Increase <code>upload_max_filesize</code> and <code>post_max_size</code></td></tr>
+  <tr><td>"zip extension not found"</td><td>Missing PHP extension</td><td><code>sudo apt install php7.4-zip && sudo systemctl reload apache2</code></td></tr>
+  <tr><td>Session lost on refresh</td><td>Session dir not writable</td><td>Check <code>session.save_path</code> permissions</td></tr>
+  <tr><td>CORS errors in browser</td><td>API URL mismatch</td><td>Ensure <code>config.js</code> API_URL matches server exactly</td></tr>
+  <tr><td>Backup file not created</td><td>uploads/ not writable</td><td><code>chmod -R 775 uploads/ && chown www-data:www-data uploads/</code></td></tr>
+  <tr><td>"Sheet not found" error</td><td>Wrong sheet name in Excel</td><td>Rename sheet to match <code>required_sheet_name</code> in config</td></tr>
+  <tr><td>Lookup "not found" errors</td><td>Missing reference data</td><td>Populate lookup tables (city, state, branch) in client DB first</td></tr>
+  <tr><td>Memory limit exceeded</td><td>Large Excel file (100k+ rows)</td><td>Increase <code>memory_limit</code> to 1024M or higher</td></tr>
+  <tr><td>Download "file not found"</td><td>File archived after import</td><td>Download endpoint checks <code>imported/</code> folder as fallback</td></tr>
+</table>
+
+<div class="note-info">
+  <b>Debug Logs:</b> Check PHP error logs at <code>/var/log/apache2/error.log</code> or <code>api/application/logs/</code> for detailed debug messages. All validation and import steps log with the <code>DEBUG:</code> prefix.
+</div>
+
+<br><br>
+<hr>
+<p style="text-align:center; color:#94a3b8; font-size:12px; margin-top:20px;">
+  <b>PortMax v2.1</b> - Developer Configuration Manual - Logimax Development Team - April 2026
+</p>
+
+</body>
+</html>

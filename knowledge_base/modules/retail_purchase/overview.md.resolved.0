@@ -1,0 +1,18 @@
+# Retail Purchase & Stock Module Overview
+
+## Scope
+This module handles the procurement lifecycle for the retail division, from defining purchasable items (Supplier Catalog) to raising Purchase Orders (POs) and managing Stock Inwarding.
+
+**Included:**
+-   **Supplier Catalog (`admin_ret_supp_catalog`)**: Definition of purchasable items with specific attributes like Wastage (VA) and Making Charges (MC).
+-   **Purchase Management (`admin_ret_purchase`)**: Creation and processing of Purchase Orders.
+-   **Stock Issues (`admin_ret_stock_issue`)**: Managing internal stock transfers or issues.
+-   **Approvals (`admin_ret_purchase_approval`)**: Workflow for specific purchase authorizations.
+
+**Excluded:**
+-   **Financial Ledgers**: While Purchase affects specific supplier ledgers (`ret_supplier_ledger_log`), the core accounting/ledger management is likely part of the **Accounts** module.
+-   **Sales**: Retail Sales are handled in a separate module.
+
+## Key Observations
+-   **"Supplier Catalog" vs "Vendor Master"**: The `admin_ret_supp_catalog` controller manages a *catalog of purchasable items* (`ret_supp_catalogue`), linking internal Products/Designs to purchase-specific parameters (Weight, MC, VA). It does **not** appear to manage the Vendor entities (Names, Addresses) themselves, which are likely referenced from a central Account/Ledger master.
+-   **Granular Costing**: The module focuses heavily on the intricacies of gold/silver costing, tracking `mc_value`, `mc_type`, [wastage](file:///c:/xampp/htdocs/etail_v3/admin/application/models/ret_catalog_model.php#8632-8648), and [purity](file:///c:/xampp/htdocs/etail_v3/admin/application/controllers/admin_ret_catalog.php#282-495) down to the specific catalog item.

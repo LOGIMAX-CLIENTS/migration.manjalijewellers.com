@@ -1,0 +1,297 @@
+@charset "utf-8";
+@media only screen and (max-width :1150px){
+.menu{font-size:10px}
+.log_link p{font-size:12px}
+.logo1 img{width:100%;margin-left:-5%}
+.menu1{font-size:10px;margin-left:-2%}
+.responsive-logo{width:80%}
+}
+@media only screen and (max-width :979px){
+.menu{float:left}
+.menu li{float:left}
+.collection_middle{border-left:none;border-right:0}
+.copyright,.poweredby{text-align:center}
+.current_price{padding:15px}
+.customer_care{padding:12px}
+.jointmobile{text-align:center}
+.responsive-logo{width:100%}
+}
+@media only screen and (max-width :920px){
+.menu{float:left}
+.menu li{float:left}
+.collection_middle{border-left:none;border-right:0}
+.copyright,.poweredby{text-align:center}
+.current_price{padding:15px}
+.customer_care{padding:12px}
+.jointmobile{text-align:center}
+.responsive-logo{width:100%}
+.logo{width:84%;margin-top:0;margin-bottom:10px}
+.my-stat{padding: 0% 0% !important;}
+.my-stat .nav-pills1 li{margin-bottom: 10px;}
+.agent_dashboard{margin-left:0px;}
+.agent_dashboard .col-xs-5, .agent_dashboard .col-xs-2{padding-left:10px;padding-right:10px;}
+.viswa_copyright{text-align:center}
+.log_link{text-align:center}
+.view_more{float:none !important;}
+#view_trans_data{text-align:center}
+.tabs2>li>a{text-align:center;border: 1px solid #ddd;margin-bottom: 10px;border-radius: 10px;}
+.file-button{margin-left:255px}
+}
+@media only screen and (max-width :850px){
+.information{margin-left:2%}
+.scheme{margin-left:2%}
+.footer_contact h4{margin-left:2%}
+.footer_contact p{margin-left:2%}
+.viswa_copyright{text-align:center}
+.log_link{text-align:center}
+.footer_aboutus h4{text-align:left}
+.footer_aboutus p{margin-right:3%}
+.menu .active{height:auto}
+.menu{float:right;margin-right:-8%;font-size:8px;margin-top:10px}
+.logo img{width:40%;margin-left:-5%}
+.logo1 img{width:23%;margin-left:-5%}
+.menu1{font-size:9px;margin-top:-11%;margin-left:18%}
+.img-responsive1{margin-left:28px;margin-top:7px}
+.logo{width:84%;margin-top:0;margin-bottom:10px}
+.file-button{margin-left:300px}
+}
+@media only screen and (max-width :800px){
+.information{margin-left:2%}
+.scheme{margin-left:2%}
+.footer_contact h4{margin-left:2%}
+.footer_contact p{margin-left:2%}
+.viswa_copyright{text-align:center;font-size:14px}
+.log_link{text-align:center;font-size:14px}
+.footer_aboutus h4{text-align:left}
+.footer_aboutus p{margin-right:3%}
+.menu .active{height:auto}
+.menu{float:right;margin-right:-8%;font-size:8px;margin-top:10px}
+.logo img{width:40%;margin-left:-5%}
+.logo1 img{width:23%;margin-left:-5%}
+.menu1{font-size:9px;margin-top:-11%;margin-left:18%}
+.img-responsive1{margin-left:28px;margin-top:7px}
+.responsive-logo{width:100%}
+}
+@media only screen and (max-width :767px){
+.menu{float:left}
+.menu li{float:left}
+.collection_middle{border-left:none;border-right:0}
+.copyright,.poweredby{text-align:center}
+.current_price{text-align:center}
+.customer_care{text-align:center}
+.jointmobile{text-align:center}
+.logoContainer{margin-top:-47px}
+.scheme{margin-left:16%}
+.footer_contact{margin-left:16%}
+.logoContainer{margin-top:-49%}
+.current_price{margin-top:1px}
+nav .navbar-toggle{margin-top:8px}
+.logo img{width:100%}
+.logo1 img{width:71%;margin-left:7px}
+.navbar-default .navbar-toggle{border:1px solid #8c1f48;margin-top:3%;background:#fff}
+.navbar-default .navbar-toggle .icon-bar{background-color:#8c1f48;}
+.navbar-default .navbar-toggle:hover, .navbar-default .navbar-toggle:focus{background:#fff}
+.topContainer{border-bottom:none;background:#fff;color:#000}
+.my-stat{padding: 0% 0% !important;}
+.my-stat .nav-pills1 li{margin-bottom: 10px;}
+.agent_dashboard{margin-left:0px;}
+.agent_dashboard .col-xs-5, .agent_dashboard .col-xs-2{padding-left:10px;padding-right:10px;}
+#carrier_wizard li a.unselected .chevron:after{border-left:none !important}
+}
+@media only screen and (max-width :740px){
+.copyright{text-align:center}
+.designedBy{text-align:center}
+.collection_middle{border-left:none;border-right:0}
+.jointmobile{margin-top:-6px}
+.customer_care{margin-top:-15px}
+.reachus p{font-size:12px!important}
+.scheme{margin-left:4%}
+.footer_contact{margin-left:2%}
+.logoContainer{margin-top:-43%}
+.current_price{margin-top:25px}
+nav .navbar-toggle{margin-top:27px}
+.logo img{width:100%;margin-left:0}
+.information{margin-left:4%}
+.logo1 img{width:71%;margin-left:7px}
+.mobile_logo img{width:30%;margin-left:10px;margin-top:4px}
+.topContainer{border-bottom:none;background:#fff;color:#000}
+}
+@media only screen and (max-width :700px){
+.copyright{text-align:center}
+.designedBy{text-align:center}
+.collection_middle{border-left:none;border-right:0}
+.jointmobile{margin-top:-6px}
+.customer_care{margin-top:-15px}
+.reachus p{font-size:12px!important}
+.scheme{margin-left:4%}
+.footer_contact{margin-left:2%}
+.logoContainer{margin-top:-43%}
+.current_price{margin-top:25px}
+nav .navbar-toggle{margin-top:27px}
+.logo img{width:100%;margin-left:0}
+.information{margin-left:4%}
+.logo1 img{width:71%;margin-left:7px}
+.mobile_logo img{width:30%;margin-left:10px;margin-top:4px}
+.head{line-height:10px}
+#schemeTable #clsfy_tc_block{text-align:center;margin-top:10px}
+#schemeTable .theme-txt{padding:5px}
+.profile_col{padding-left:5px;padding-right:5px}
+.profile,.select2-search__field{height:30px!important}
+}
+@media only screen and (max-width :640px){
+.copyright{text-align:center}
+.designedBy{text-align:center}
+.collection_middle{border-left:none;border-right:0}
+.jointmobile{margin-top:-6px}
+.customer_care{margin-top:-15px}
+.reachus p{font-size:12px!important}
+.scheme{margin-left:4%}
+.footer_contact{margin-left:2%}
+.logoContainer{margin-top:-43%}
+.current_price{margin-top:25px}
+nav .navbar-toggle{margin-top:27px}
+.logo img{width:100%;margin-left:0}
+.information{margin-left:4%}
+.logo1 img{width:71%;margin-left:7px}
+.mobile_logo img{width:30%;margin-left:10px;margin-top:4px}
+}
+@media only screen and (max-width :600px){
+.copyright{text-align:center}
+.designedBy{text-align:center}
+.collection_middle{border-left:none;border-right:0}
+.jointmobile{margin-top:-6px}
+.customer_care{margin-top:-15px}
+.reachus p{font-size:12px!important}
+.scheme{margin-left:4%}
+.footer_contact{margin-left:2%}
+.logoContainer{margin-top:-43%}
+.current_price{margin-top:25px}
+nav .navbar-toggle{margin-top:27px}
+.logo img{width:100%;margin-left:0}
+.information{margin-left:4%}
+.logo1 img{width:71%;margin-left:7px}
+.mobile_logo img{width:30%;margin-left:10px;margin-top:4px}
+}
+@media only screen and (max-width :570px){
+.copyright{text-align:center}
+.designedBy{text-align:center}
+.collection_middle{border-left:none;border-right:0}
+.jointmobile{margin-top:-6px}
+.customer_care{margin-top:-15px}
+.reachus p{font-size:12px!important}
+.scheme{margin-left:4%}
+.footer_contact{margin-left:2%}
+.logoContainer{margin-top:-43%}
+.current_price{margin-top:25px}
+nav .navbar-toggle{margin-top:27px}
+.logo img{width:100%;margin-left:0}
+.information{margin-left:4%}
+.logo1 img{width:71%;margin-left:7px}
+.mobile_logo img{width:30%;margin-left:10px;margin-top:4px}
+}
+@media only screen and (max-width :530px){
+.copyright{text-align:center}
+.designedBy{text-align:center}
+.collection_middle{border-left:none;border-right:0}
+.jointmobile{margin-top:-6px}
+.customer_care{margin-top:-15px}
+.reachus p{font-size:12px!important}
+.scheme{margin-left:4%}
+.footer_contact{margin-left:2%}
+.logoContainer{margin-top:-43%}
+.current_price{margin-top:25px}
+nav .navbar-toggle{margin-top:27px}
+.logo img{width:100%;margin-left:0}
+.information{margin-left:4%}
+.logo1 img{width:71%;margin-left:7px}
+.mobile_logo img{width:30%;margin-left:10px;margin-top:4px}
+}
+@media only screen and (max-width :480px){
+.copyright{text-align:center}
+.designedBy{text-align:center}
+.collection_middle{border-left:none;border-right:0}
+.jointmobile{margin-top:-6px}
+.customer_care{margin-top:-15px}
+.reachus p{font-size:12px!important}
+.scheme{margin-left:4%}
+.footer_contact{margin-left:2%}
+.logoContainer{margin-top:-43%}
+.current_price{margin-top:25px}
+nav .navbar-toggle{margin-top:27px}
+.logo img{width:100%;margin-left:0} 
+.information{margin-left:4%}
+.logo1 img{width:71%;margin-left:7px}
+.mobile_logo img{width:40%;margin-left:10px;margin-top:4px}
+.metalrate-top{padding-left:5px;padding-right:5px}
+.loginForm .login_form{padding:0}
+.transact-text{font-size:10px}
+.transact-text b{font-size:12px}
+#view_trans_data{margin-bottom: 46px;}
+.fullname{width: 100%;}
+.kyc_form{padding-left:0px;padding-right:0px;}
+.kyc_form1{padding-left:0px;padding-right:0px;}
+}
+@media only screen and (max-width :430px){
+.copyright{text-align:center}  
+.designedBy{text-align:center}
+.collection_middle{border-left:none;border-right:0}
+.jointmobile{margin-top:-6px}
+.customer_care{margin-top:-15px}
+.reachus p{font-size:12px!important}
+.scheme{margin-left:4%}
+.footer_contact{margin-left:2%}
+.logoContainer{margin-top:-43%}
+.current_price{margin-top:25px}
+nav .navbar-toggle{margin-top:27px}
+.logo img{width:100%;margin-left:0}
+.information{margin-left:4%}
+.logo1 img{width:71%;margin-left:7px}
+.mobile_logo img{width:45%;margin-left:10px;margin-top:4px}
+.transaction_img img{width:75%;}
+.transaction_img1 img{width:44%;}
+.transaction_img2 img{width:44%;}
+.file-button{margin-left:180px;}
+#carrier_wizard ul.anchor.nbr_steps_4 li, #carrier_wizard ul.anchor.nbr_steps_5 li{width:100% !important;margin-bottom:20px;}
+}
+@media only screen and (max-width :400px){
+.reachus p{font-size:10px!important}
+.scheme{margin-left:3%}
+.footer_contact{margin-left:1%}
+.logoContainer{margin-top:-45%}
+.current_price{margin-top:16px}
+.logo img{width:100%;margin-left:0}
+.logo1 img{width:45%;margin-left:7px}
+.mobile_logo img{width:45%;margin-left:10px;margin-top:4px}
+}
+@media only screen and (max-width :380px){
+.reachus p{font-size:10px!important}
+.scheme{margin-left:3%}
+.footer_contact{margin-left:1%}
+.logoContainer{margin-top:-45%}
+.current_price{margin-top:16px}
+.logo img{width:100%;margin-left:0}
+.logo1 img{width:71%;margin-left:7px}
+.mobile_logo img{width:50%;margin-left:10px;margin-top:4px}
+}
+@media only screen and (max-width :360px){
+.reachus p{font-size:10px!important}
+.scheme{margin-left:3%}
+.footer_contact{margin-left:1%}
+.logoContainer{margin-top:-45%}
+.current_price{margin-top:16px}
+.logo img{width:100%;margin-left:0}
+.logo1 img{width:71%;margin-left:7px}
+.mobile_logo img{width:50%;margin-left:20px;margin-top:4px}
+}
+@media only screen and (max-width :320px){
+.reachus p{font-size:10px!important}
+.scheme{margin-left:3%}
+.footer_contact{margin-left:1%}
+.logoContainer{margin-top:-49%}
+.current_price{margin-top:5px}
+nav .navbar-toggle{margin-top:11px;margin-right:8px}
+.logo img{width:100%;margin-left:0}
+.logo1 img{width:71%;margin-left:7px}
+.mobile_logo img{width:50%;margin-left:10px;margin-top:4px}
+.bold1 td{font-size:13px;}
+}

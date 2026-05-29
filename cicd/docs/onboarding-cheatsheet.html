@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mono-Repo Client Onboarding — Cheatsheet</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            line-height: 1.5;
+            color: #1a1a2e;
+            background: #fff;
+            padding: 20px;
+        }
+
+        @media print {
+            body { padding: 10px; font-size: 10px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none; }
+        }
+
+        h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #0f0f23;
+            border-bottom: 3px solid #6366f1;
+            padding-bottom: 6px;
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            color: #64748b;
+            font-size: 12px;
+            margin-bottom: 16px;
+        }
+
+        h2 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin: 14px 0 8px 0;
+        }
+
+        h3 {
+            font-size: 12px;
+            font-weight: 600;
+            color: #4f46e5;
+            margin: 8px 0 4px 0;
+            border-left: 3px solid #6366f1;
+            padding-left: 8px;
+        }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        .full-width { grid-column: 1 / -1; }
+
+        .card {
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 10px;
+            background: #fafbff;
+        }
+
+        .card-warn {
+            border-color: #fbbf24;
+            background: #fffbeb;
+        }
+
+        .card-success {
+            border-color: #34d399;
+            background: #ecfdf5;
+        }
+
+        pre, code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+        }
+
+        pre {
+            background: #1e1e2e;
+            color: #cdd6f4;
+            padding: 8px 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 4px 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        code {
+            background: #f1f5f9;
+            padding: 1px 4px;
+            border-radius: 2px;
+            color: #7c3aed;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+            margin: 4px 0;
+        }
+
+        th {
+            background: #f1f5f9;
+            font-weight: 600;
+            text-align: left;
+            padding: 4px 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        td {
+            padding: 3px 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        tr:nth-child(even) { background: #f8fafc; }
+
+        .tag {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 600;
+            padding: 1px 6px;
+            border-radius: 10px;
+            margin-right: 4px;
+        }
+
+        .tag-local { background: #dbeafe; color: #1e40af; }
+        .tag-server { background: #fce7f3; color: #9d174d; }
+        .tag-github { background: #d1fae5; color: #065f46; }
+        .tag-senior { background: #fef3c7; color: #92400e; }
+
+        .check { list-style: none; padding-left: 0; }
+        .check li { padding: 2px 0; padding-left: 18px; position: relative; }
+        .check li::before {
+            content: '☐';
+            position: absolute;
+            left: 0;
+            font-size: 12px;
+        }
+
+        .step-num {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            background: #6366f1;
+            color: #fff;
+            text-align: center;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 18px;
+            margin-right: 4px;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px dashed #cbd5e1;
+            margin: 8px 0;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #fef9c3 0%, #fef9c3 100%);
+            padding: 0 2px;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: #6366f1;
+            font-size: 14px;
+            margin: 2px 0;
+        }
+
+        .compact p { margin: 2px 0; }
+    </style>
+</head>
+<body>
+
+<!-- PAGE 1: Quick Reference -->
+<h1>🚀 Mono-Repo Client Onboarding</h1>
+<p class="subtitle">Cheatsheet v1.1 — Replace <code>{PLACEHOLDERS}</code> with actual values</p>
+
+<div class="grid">
+    <!-- INPUT VARIABLES -->
+    <div class="card full-width">
+        <h3>📋 Input Variables (fill before starting)</h3>
+        <table>
+            <tr><th>Variable</th><th>Value</th><th>Example</th></tr>
+            <tr><td><code>{CLIENT_ID}</code></td><td style="width:35%">________________________</td><td>ashoka</td></tr>
+            <tr><td><code>{CLIENT_NAME}</code></td><td>________________________</td><td>Ashoka Jewellers</td></tr>
+            <tr><td><code>{DOMAIN}</code></td><td>________________________</td><td>erp.ashokajewellery.in</td></tr>
+            <tr><td><code>{STAGING_DOMAIN}</code></td><td>________________________</td><td>staging.ashokajewellery.in</td></tr>
+            <tr><td><code>{SERVER_IP}</code></td><td>________________________</td><td>10.0.1.50</td></tr>
+            <tr><td><code>{SSH_KEY_PATH}</code></td><td>________________________</td><td>~/.ssh/ashoka.pem</td></tr>
+            <tr><td><code>{RDS_ENDPOINT}</code></td><td>________________________</td><td>ashoka-rds.xxxxx.rds.amazonaws.com</td></tr>
+            <tr><td><code>{DB_NAME_PROD}</code></td><td>________________________</td><td>ashoka_prod</td></tr>
+            <tr><td><code>{DB_NAME_STAGING}</code></td><td>________________________</td><td>ashoka_staging</td></tr>
+            <tr><td><code>{DB_USER}</code></td><td>________________________</td><td>admin</td></tr>
+        </table>
+    </div>
+</div>
+
+<!-- PHASE 1 -->
+<h2>Phase 1 — Local Setup <span class="tag tag-local">LOCAL</span> 5 min</h2>
+
+<div class="grid">
+    <div class="card">
+        <h3><span class="step-num">1</span> Create client JSON</h3>
+        <p>File: <code>config/clients/{CLIENT_ID}.json</code></p>
+<pre>{
+  "client_name": "{CLIENT_NAME}",
+  "features": [], "flags": {},
+  "deploy": {
+    "ssl_verify": false,
+    "staging": {
+      "webhook_url": "https://{DOMAIN}/webhooks/deploy.php",
+      "branch": "support"
+    },
+    "production": {
+      "webhook_url": "https://{DOMAIN}/webhooks/deploy.php",
+      "branch": "Production"
+    }
+  }
+}</pre>
+    </div>
+    <div class="card">
+        <h3><span class="step-num">2</span> Create override dir</h3>
+<pre>mkdir -p clients/{CLIENT_ID}/assets
+touch clients/{CLIENT_ID}/assets/.gitkeep</pre>
+
+        <h3><span class="step-num">3</span> Commit & push</h3>
+<pre>git add -f config/clients/{CLIENT_ID}.json \
+  clients/{CLIENT_ID}/
+git commit -m "Add client: {CLIENT_ID}"
+git push origin support</pre>
+        <div class="card-success" style="margin-top:6px;padding:4px 8px;border-radius:4px;border:1px solid #34d399;">
+            ✅ GitHub Actions auto-detects new client. Zero workflow changes.
+        </div>
+    </div>
+</div>
+
+<!-- PHASE 2 -->
+<h2>Phase 2 — SSH Deploy Key <span class="tag tag-server">SERVER</span> <span class="tag tag-github">GITHUB</span> 5 min</h2>
+
+<div class="card">
+    <h3><span class="step-num">4</span> Generate key (skip if key already exists on server)</h3>
+<pre>ssh -i {SSH_KEY_PATH} ubuntu@{SERVER_IP}
+ssh-keygen -t ed25519 -C "{CLIENT_ID}-server" -f /home/ubuntu/.ssh/id_ed25519 -N ""
+cat /home/ubuntu/.ssh/id_ed25519.pub    # Copy this</pre>
+
+    <h3><span class="step-num">5</span> Add to GitHub → repo Settings → Deploy Keys → Add → paste public key → ✅ Write access</h3>
+    <h3><span class="step-num">6</span> Verify: <code>ssh -i /home/ubuntu/.ssh/id_ed25519 -T git@github.com</code></h3>
+</div>
+
+<!-- PHASE 3 -->
+<h2>Phase 3 — Database Migration <span class="tag tag-server">SERVER</span> 15 min</h2>
+
+<div class="grid">
+    <div class="card">
+        <h3><span class="step-num">7</span> Create databases</h3>
+<pre>mysql -h {RDS_ENDPOINT} -u {DB_USER} -p
+
+CREATE DATABASE {DB_NAME_PROD}
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_general_ci;
+CREATE DATABASE {DB_NAME_STAGING}
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_general_ci;</pre>
+    </div>
+    <div class="card">
+        <h3><span class="step-num">8</span> Export → Strip → Import</h3>
+<pre># Export
+mysqldump -h {SOURCE_RDS} -u {USER} -p \
+  --set-gtid-purged=OFF --single-transaction \
+  --routines --triggers {SOURCE_DB} \
+  > /tmp/{CLIENT_ID}_dump.sql
+
+# Strip DEFINER (RDS requirement)
+sed -i 's/DEFINER=`[^`]*`@`[^`]*`//g' \
+  /tmp/{CLIENT_ID}_dump.sql
+
+# Import prod + staging
+mysql -h {RDS_ENDPOINT} -u {DB_USER} -p \
+  {DB_NAME_PROD} < /tmp/{CLIENT_ID}_dump.sql
+mysql -h {RDS_ENDPOINT} -u {DB_USER} -p \
+  {DB_NAME_STAGING} < /tmp/{CLIENT_ID}_dump.sql</pre>
+    </div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- PAGE 2 -->
+
+<!-- PHASE 4 -->
+<h2>Phase 4 — Server Setup <span class="tag tag-server">SERVER</span> 20 min</h2>
+
+<div class="card">
+    <h3><span class="step-num">9</span> Upload & run setup script (one command does everything)</h3>
+<pre># From local machine
+scp -i {SSH_KEY_PATH} cicd/server/setup-mono-client.sh cicd/server/deploy-mono.sh ubuntu@{SERVER_IP}:/tmp/
+
+# On server
+ssh -i {SSH_KEY_PATH} ubuntu@{SERVER_IP}
+sudo chmod +x /tmp/setup-mono-client.sh /tmp/deploy-mono.sh
+sudo -E bash /tmp/setup-mono-client.sh {CLIENT_ID} \
+  git@github.com:Logimax-Technologies/etail_development_src.git \
+  --domain {DOMAIN} --staging-domain {STAGING_DOMAIN}</pre>
+    <div class="card-success" style="margin-top:6px;padding:4px 8px;border-radius:4px;border:1px solid #34d399;">
+        <strong>Script auto-creates:</strong> dirs, clones (staging+prod), 21 symlinks, webhook handlers, vhost config, uncomments index.php, generates database.php
+    </div>
+</div>
+
+<div class="grid">
+    <div class="card">
+        <h3><span class="step-num">10</span> Configure DB credentials</h3>
+<pre># Production
+sudo nano /var/www/{CLIENT_ID}/prod/shared/config/global_configs.php
+# Set: $hostname, $username, $password, $database
+
+# Staging (if separate DB)
+sudo cp /var/www/{CLIENT_ID}/prod/shared/config/global_configs.php \
+       /var/www/{CLIENT_ID}/staging/global_configs.php
+sudo nano /var/www/{CLIENT_ID}/staging/global_configs.php
+# Change: $database → {DB_NAME_STAGING}</pre>
+    </div>
+    <div class="card">
+        <h3><span class="step-num">11</span> Activate vhost</h3>
+<pre>sudo cp /tmp/{CLIENT_ID}-vhost.conf \
+  /etc/apache2/sites-available/{CLIENT_ID}.conf
+sudo a2ensite {CLIENT_ID}.conf
+sudo apache2ctl configtest
+sudo systemctl reload apache2</pre>
+
+        <h3><span class="step-num">12</span> Upload assets</h3>
+<pre>sudo cp -rp /var/www/existing_client/prod/shared/data/assets_img/* \
+  /var/www/{CLIENT_ID}/prod/shared/data/assets_img/
+# Repeat for assets_dist/ and assets_plugins/</pre>
+
+        <h3><span class="step-num">13</span> Set webhook secret</h3>
+<pre># Same value as MONO_WEBHOOK_SECRET in GitHub
+echo "export DEVOPS_WEBHOOK_SECRET='xxx'" \
+  | sudo tee -a /etc/environment</pre>
+    </div>
+</div>
+
+<!-- SYMLINK STRUCTURE -->
+<h2>📂 Server Directory Structure — Symlink Map</h2>
+
+<div class="card full-width">
+    <p style="margin-bottom:6px;"><code>→</code> = symlink to <code>shared/</code>. All others are real files/dirs. Created by <code>setup-mono-client.sh</code>.</p>
+<pre style="font-size:9px;line-height:1.4;">/var/www/{CLIENT_ID}/
+│
+├── staging/                                    ← git pull deploys here
+│   ├── admin/
+│   │   ├── img/, log/, uploads/, ...           (local dirs, gitignored — 15 total)
+│   │   └── application/config/
+│   │       ├── database.php                    (generated — uses Globals::)
+│   │       └── global_configs.php              (manually configured)
+│   ├── global_configs.php                      (manually configured)
+│   └── webhooks/deploy.php
+│
+└── prod/
+    ├── current → releases/{TIMESTAMP}/         ← atomic symlink (deploy swaps this)
+    ├── .maintenance_active                     ← touch to enable maintenance page
+    │
+    ├── releases/{TIMESTAMP}/                   ← each deploy = new release
+    │   ├── admin/
+    │   │   ├── application/config/
+    │   │   │   └── database.php              → shared/config/database.php
+    │   │   │
+    │   │   │   ── Data Symlinks (14) ──
+    │   │   ├── img                           → shared/data/img
+    │   │   ├── uploads                       → shared/data/uploads
+    │   │   ├── uploads_root                  → shared/data/uploads_root
+    │   │   ├── vendor_ack                    → shared/data/vendor_ack
+    │   │   ├── estimation                    → shared/data/estimation
+    │   │   ├── export                        → shared/data/export
+    │   │   ├── adm_app_apk                   → shared/data/adm_app_apk
+    │   │   ├── bill_qrcode                   → shared/data/bill_qrcode
+    │   │   ├── esti_qrcode                   → shared/data/esti_qrcode
+    │   │   ├── other_qrcode                  → shared/data/other_qrcode
+    │   │   ├── other_inventory_qrcode        → shared/data/other_inventory_qrcode
+    │   │   ├── other_product_qrcode          → shared/data/other_product_qrcode
+    │   │   ├── assets/
+    │   │   │   ├── kyc                       → shared/data/kyc
+    │   │   │   ├── img                       → shared/data/assets_img      (copied first)
+    │   │   │   ├── dist                      → shared/data/assets_dist     (copied first)
+    │   │   │   └── plugins                   → shared/data/assets_plugins  (copied first)
+    │   │   ├── log                           → shared/logs/app_log
+    │   │   └── tagging_log                   → shared/logs/tagging_log
+    │   │
+    │   ├── global_configs.php                → shared/config/global_configs.php
+    │   ├── rate.txt                          → shared/data/rate.txt
+    │   └── webhooks/deploy.php
+    │
+    └── shared/                                 ← PERSISTS across all releases
+        ├── config/    database.php, global_configs.php
+        ├── data/      img, kyc, uploads, uploads_root, vendor_ack, estimation,
+        │              export, adm_app_apk, bill_qrcode, esti_qrcode,
+        │              other_qrcode, other_inventory_qrcode, other_product_qrcode,
+        │              assets_img, assets_dist, assets_plugins, rate.txt
+        └── logs/      app_log, tagging_log</pre>
+    <p style="margin-top:4px;"><strong>Total: 21 symlinks</strong> (2 config + 14 data + 3 assets + 2 logs)</p>
+</div>
+
+<!-- PHASE 5 -->
+<h2>Phase 5 — DNS + SSL <span class="tag tag-senior">SENIOR</span></h2>
+
+<div class="card card-warn">
+    <table>
+        <tr><th>Task</th><th>Details</th><th>Done?</th></tr>
+        <tr><td>DNS A/CNAME</td><td>Point <code>{DOMAIN}</code> + <code>{STAGING_DOMAIN}</code> to server</td><td>☐</td></tr>
+        <tr><td>ACM cert</td><td>Add both domains to ALB certificate</td><td>☐</td></tr>
+    </table>
+    <p style="margin-top:4px;">After ACM done → change <code>"ssl_verify": true</code> in JSON, commit, push.</p>
+</div>
+
+<!-- PHASE 6 -->
+<h2>Phase 6 — DevOps Tool Registration <span class="tag tag-local">LOCAL</span> 5 min</h2>
+
+<div class="card">
+    <h3><span class="step-num">15</span> Register client</h3>
+<pre>TOKEN=$(curl -s -X POST https://devops.logimaxindia.com/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "USER", "password": "PASS"}' | jq -r '.data.token')
+
+curl -X POST https://devops.logimaxindia.com/api/clients \
+  -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
+  -d '{"clientId":"{CLIENT_ID}","clientName":"{CLIENT_NAME}",
+       "repoName":"etail_development_src","repoOrg":"Logimax-Technologies",
+       "stagingBranch":"support","prodBranch":"Production",
+       "baseUrl":"https://{DOMAIN}","serverFolder":"{CLIENT_ID}",
+       "webhookPath":"/webhooks/deploy.php"}'</pre>
+</div>
+
+<!-- PHASE 7 -->
+<h2>Phase 7 — Verification <span class="tag tag-server">SERVER</span> 10 min</h2>
+
+<div class="grid-3">
+    <div class="card">
+        <h3><span class="step-num">16</span> Access</h3>
+<pre>curl -Ik https://{DOMAIN}/admin/
+curl -Ik https://{STAGING_DOMAIN}/admin/</pre>
+    </div>
+    <div class="card">
+        <h3><span class="step-num">17</span> Maintenance</h3>
+<pre>sudo touch /var/www/{CLIENT_ID}/prod/.maintenance_active
+curl -s https://{DOMAIN}/ | head -5
+sudo rm /var/www/{CLIENT_ID}/prod/.maintenance_active</pre>
+    </div>
+    <div class="card">
+        <h3><span class="step-num">18</span> Webhook</h3>
+<pre>curl -X POST http://localhost/webhooks/deploy.php \
+  -H "Host: {DOMAIN}" \
+  -H "Content-Type: application/json" \
+  -d '{"environment":"staging"}'</pre>
+    </div>
+</div>
+
+<!-- CHECKLIST -->
+<h2>✅ Completion Checklist</h2>
+
+<div class="grid">
+    <div class="card">
+        <ul class="check">
+            <li><code>config/clients/{CLIENT_ID}.json</code> committed</li>
+            <li><code>clients/{CLIENT_ID}/</code> directory committed</li>
+            <li>SSH deploy key on server + GitHub</li>
+            <li>Databases created + SQL imported</li>
+            <li>Server dirs via <code>setup-mono-client.sh</code></li>
+            <li><code>global_configs.php</code> configured</li>
+            <li>Apache vhost activated</li>
+            <li>Assets uploaded (img, dist, plugins)</li>
+            <li><code>DEVOPS_WEBHOOK_SECRET</code> set</li>
+        </ul>
+    </div>
+    <div class="card">
+        <ul class="check">
+            <li>DNS records configured</li>
+            <li>ACM certificate updated</li>
+            <li><code>ssl_verify</code> → <code>true</code> after ACM</li>
+            <li>Client registered in DevOps Tool</li>
+            <li>Staging accessible (HTTP 200/302)</li>
+            <li>Production accessible (HTTP 200/302)</li>
+            <li>Maintenance page works</li>
+            <li>Webhook deploy tested</li>
+            <li>GitHub Actions E2E tested</li>
+        </ul>
+    </div>
+</div>
+
+<!-- QUICK REFERENCE -->
+<h2>🔧 Quick Reference — Post-Setup Commands</h2>
+
+<div class="grid">
+    <div class="card">
+        <h3>Manual Deploy</h3>
+<pre># Staging
+cd /var/www/{CLIENT_ID}/staging
+git pull origin support
+
+# Production
+sudo bash /var/www/{CLIENT_ID}/prod/current/cicd/server/deploy-mono.sh Production</pre>
+    </div>
+    <div class="card">
+        <h3>Rollback Production</h3>
+<pre># List releases
+ls -lt /var/www/{CLIENT_ID}/prod/releases/
+
+# Rollback to previous
+sudo ln -sfn /var/www/{CLIENT_ID}/prod/releases/{PREV} \
+  /var/www/{CLIENT_ID}/prod/current_tmp
+sudo mv -Tf /var/www/{CLIENT_ID}/prod/current_tmp \
+  /var/www/{CLIENT_ID}/prod/current</pre>
+    </div>
+</div>
+
+<div style="text-align:center;color:#94a3b8;margin-top:16px;font-size:10px;">
+    Logimax Technologies — Mono-Repo CI/CD v1.1 — Generated 2026-03-07
+</div>
+
+</body>
+</html>

@@ -1,0 +1,4 @@
+# Force LF line endings for shell scripts (prevents CRLF issues on Ubuntu)
+*.sh text eol=lf
+*.bash text eol=lf
+*.sql text eol=lf

@@ -1,0 +1,70 @@
+{
+    "entity": "stone_import",
+    "ai": {
+        "enabled": true,
+        "max_rows": 20
+    },
+    "validation": {
+        "required_file_name_pattern": "tag*.xlsx",
+        "required_sheet_name": "port_tag_stone_details"
+    },
+    "file_path": "uploads/tag_master.xlsx",
+    "migrations": [{
+        "destination_table": "ret_import_stone_details",
+        "primary_key": "id",
+        "mappings": {
+            "old_stone_id": {
+                "source_column": "old_stone_id",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "old_stone_type_id": {
+                "source_column": "old_stone_type_id",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "old_uom_id": {
+                "source_column": "old_uom_id",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "tag_number": {
+                "source_column": "tag_number",
+                "validations": { "type": "string", "max_length": 255, "required": true }
+            },
+            "stone_type_name": {
+                "source_column": "stone_type_name",
+                "validations": { "type": "string", "max_length": 255, "required": false }
+            },
+            "stone_name": {
+                "source_column": "stone_name",
+                "validations": { "type": "string", "max_length": 255, "required": true }
+            },
+            "uom_name": {
+                "source_column": "uom_name",
+                "validations": { "type": "string", "max_length": 255, "required": false }
+            },
+            "is_less_id": {
+                "source_column": "is_less_id",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "pieces": {
+                "source_column": "pieces",
+                "validations": { "type": "numeric", "min": 0, "required": true }
+            },
+            "stone_wt": {
+                "source_column": "stone_wt",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "stone_calc_type": {
+                "source_column": "stone_calc_type",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "rate_per_gram": {
+                "source_column": "rate_per_gram",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "amount": {
+                "source_column": "amount",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            }
+        }
+    }]
+}

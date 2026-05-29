@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mono-Repo Architecture — Release Note & Meeting Update</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --accent: #4f46e5;
+            --accent-light: rgba(79,70,229,0.08);
+            --green: #059669;
+            --green-light: rgba(5,150,105,0.08);
+            --red: #dc2626;
+            --yellow: #d97706;
+            --yellow-light: rgba(217,119,6,0.08);
+            --blue: #2563eb;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 0;
+        }
+
+        @media print {
+            body { padding: 0; font-size: 10px; }
+            .no-print { display: none !important; }
+            .page-break { page-break-before: always; }
+            .container { max-width: 100%; padding: 20px; }
+            .card { break-inside: avoid; box-shadow: none !important; border: 1px solid #ddd; }
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 32px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 48px 32px 36px;
+            background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
+            color: #fff;
+            border-radius: 16px;
+            margin-bottom: 32px;
+        }
+        .header h1 {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        .header .subtitle {
+            font-size: 15px;
+            opacity: 0.85;
+            font-weight: 400;
+        }
+        .header .meta {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 28px;
+            font-size: 12px;
+            opacity: 0.75;
+        }
+
+        /* Section titles */
+        h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text);
+            margin: 36px 0 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--accent);
+            display: inline-block;
+        }
+        h3 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            margin: 16px 0 8px;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .card-accent { border-left: 4px solid var(--accent); }
+        .card-green { border-left: 4px solid var(--green); }
+        .card-yellow { border-left: 4px solid var(--yellow); }
+        .card-red { border-left: 4px solid var(--red); }
+
+        /* Tags */
+        .tag {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-right: 4px;
+        }
+        .tag-accent { background: var(--accent-light); color: var(--accent); }
+        .tag-green { background: var(--green-light); color: var(--green); }
+        .tag-yellow { background: var(--yellow-light); color: var(--yellow); }
+        .tag-red { background: rgba(220,38,38,0.08); color: var(--red); }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin: 12px 0;
+        }
+        th {
+            text-align: left;
+            padding: 10px 14px;
+            background: #f1f5f9;
+            border-bottom: 2px solid var(--accent);
+            font-weight: 600;
+            font-size: 12px;
+            color: #334155;
+        }
+        td {
+            padding: 8px 14px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+
+        /* Lists */
+        ul { list-style: none; padding: 0; }
+        ul li {
+            padding: 5px 0 5px 22px;
+            position: relative;
+            font-size: 13px;
+        }
+        ul li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+            font-weight: 700;
+        }
+        .check li::before { content: '✓'; color: var(--green); }
+
+        /* Code */
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(79,70,229,0.08);
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 12px;
+            color: var(--accent);
+        }
+
+        /* Grid */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+        /* Metric */
+        .metric { text-align: center; padding: 20px; }
+        .metric-value {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--accent);
+        }
+        .metric-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Alert boxes */
+        .alert {
+            padding: 14px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin: 12px 0;
+        }
+        .alert-info { background: rgba(37,99,235,0.06); border-left: 4px solid var(--blue); }
+        .alert-warning { background: var(--yellow-light); border-left: 4px solid var(--yellow); }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 32px;
+            font-size: 11px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+            margin-top: 40px;
+        }
+
+        /* Print button */
+        .print-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 13px;
+            box-shadow: 0 2px 8px rgba(79,70,229,0.3);
+            z-index: 100;
+        }
+        .print-btn:hover { background: #4338ca; }
+
+        .divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 28px 0;
+        }
+
+        .highlight {
+            background: linear-gradient(135deg, var(--accent-light), rgba(124,58,237,0.06));
+            border-radius: 8px;
+            padding: 16px 20px;
+        }
+
+        p { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+        strong { color: var(--text); }
+    </style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">🖨️ Print / PDF</button>
+
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        <div style="font-size: 12px; letter-spacing: 3px; text-transform: uppercase; opacity: 0.6; margin-bottom: 12px;">Release Note</div>
+        <h1>Mono-Repo Architecture<br>& Git Feature Branch Workflow</h1>
+        <p class="subtitle">Internal Release — Logimax Technologies</p>
+        <div class="meta">
+            <span>📅 March 10, 2026</span>
+            <span>📋 Version 1.0</span>
+            <span>🏢 Logimax Technologies</span>
+        </div>
+    </div>
+
+    <!-- Executive Summary -->
+    <h2>📋 Executive Summary</h2>
+    <div class="card card-accent">
+        <p>We have successfully implemented and deployed a <strong>Mono-Repo Architecture</strong> with a <strong>Three-Layer Override System</strong> that allows us to serve multiple clients from a single codebase while preserving client-specific customizations. This replaces our previous approach of maintaining separate Git repositories per client.</p>
+        <p style="margin-top:8px;"><strong>First client deployed:</strong> Ashoka Jewellers — running on production as of March 7, 2026.</p>
+        <p style="margin-top:8px;">A <strong>Git Feature Branch Workflow</strong> with standardized naming conventions has been established to ensure clean collaboration, traceable changes, and safe deployments.</p>
+    </div>
+
+    <!-- Meeting Summary -->
+    <h2>🗓️ Meeting Summary — March 9, 2026</h2>
+    <div class="card card-green">
+        <h3>Presentation Outcome</h3>
+        <p>The presentation covering Mono-Repo Architecture, Three-Layer Override System, Git Feature Branch Workflow, CI/CD Pipeline, and Server Architecture was delivered to the team. <strong>The session completed smoothly.</strong></p>
+    </div>
+
+    <div class="card card-yellow">
+        <h3>Questions & Action Items Raised</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Topic</th>
+                    <th>Question / Concern</th>
+                    <th>Resolution</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Cron Job Scheduling</strong></td>
+                    <td>How are scheduled cron jobs handled during symlink swap / maintenance window?</td>
+                    <td><span class="tag tag-yellow">Phase 2</span> Cron job coordination with deploy process to be addressed</td>
+                </tr>
+                <tr>
+                    <td><strong>Payment Blocking</strong></td>
+                    <td>Are payment transactions blocked or lost when maintenance mode is active during deployment?</td>
+                    <td><span class="tag tag-yellow">Phase 2</span> Graceful payment handling during maintenance to be implemented</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="alert alert-info">
+        <strong>Note:</strong> Both items above are captured as Phase 2 backlog items. The current deployment uses a brief maintenance page (typically &lt;10 seconds for staging, &lt;30 seconds for production) but does not coordinate with cron schedules or in-flight payment transactions.
+    </div>
+
+    <hr class="divider">
+
+    <!-- What Was Released -->
+    <h2>🚀 What Was Released (Phase 1)</h2>
+
+    <div class="grid-3">
+        <div class="metric card">
+            <div class="metric-value">1</div>
+            <div class="metric-label">Single Codebase</div>
+        </div>
+        <div class="metric card">
+            <div class="metric-value">~1hr</div>
+            <div class="metric-label">Client Onboarding</div>
+        </div>
+        <div class="metric card">
+            <div class="metric-value">&lt;1s</div>
+            <div class="metric-label">Rollback Time</div>
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="card card-green">
+            <h3>✅ Architecture</h3>
+            <ul class="check">
+                <li>Three-Layer Override System (Core → Feature Pack → Client)</li>
+                <li>Dynamic view/model/helper resolution via <code>MY_Loader.php</code></li>
+                <li>Client config via JSON files (<code>config/clients/*.json</code>)</li>
+                <li>Zero-change client onboarding (folder + JSON = new client)</li>
+                <li>Cookie-based CLIENT_ID persistence for local development</li>
+            </ul>
+        </div>
+        <div class="card card-green">
+            <h3>✅ CI/CD Pipeline</h3>
+            <ul class="check">
+                <li>GitHub Actions workflow (<code>deploy-mono-client.yml</code>)</li>
+                <li>Auto-discovery of clients from <code>config/clients/*.json</code></li>
+                <li>Webhook-triggered deployment per client per environment</li>
+                <li>Maintenance mode auto-enabled/disabled during deploy</li>
+                <li>Release-based production with symlink swap</li>
+                <li>5 release history for instant rollback</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="card card-green">
+            <h3>✅ Server Architecture</h3>
+            <ul class="check">
+                <li>Staging: direct <code>git pull</code> (fast iteration)</li>
+                <li>Production: clone-based releases with 21 symlinks</li>
+                <li>Shared data directories (uploads, config, logs)</li>
+                <li>Atomic symlink swap (zero-downtime deploy)</li>
+                <li>One-command server provisioning script</li>
+            </ul>
+        </div>
+        <div class="card card-green">
+            <h3>✅ Git Workflow</h3>
+            <ul class="check">
+                <li>Feature branch workflow with PR-based merge</li>
+                <li>Standardized branch naming convention (7 types)</li>
+                <li>Zoho task ID traceability in branch names</li>
+                <li>Protected <code>Production</code> + <code>support</code> branches</li>
+                <li>Squash & merge with code review requirement</li>
+            </ul>
+        </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Branch Naming Quick Reference -->
+    <h2>🔀 Branch Naming Convention — Quick Reference</h2>
+    <div class="card">
+        <p><strong>Format:</strong> <code>&lt;type&gt;/&lt;task-id&gt;-&lt;short-description&gt;</code> — lowercase, hyphens only, 5-7 words</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Use Case</th>
+                    <th>Example</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>feature/</code></td>
+                    <td>New functionality</td>
+                    <td><code>feature/5628318-add-hallmark-field</code></td>
+                </tr>
+                <tr>
+                    <td><code>fix/</code></td>
+                    <td>Small fixes (typo, minor UI)</td>
+                    <td><code>fix/5698123-correct-gst-label</code></td>
+                </tr>
+                <tr>
+                    <td><code>bugfix/</code></td>
+                    <td>Confirmed tracked bugs</td>
+                    <td><code>bugfix/5698456-login-crash</code></td>
+                </tr>
+                <tr>
+                    <td><code>hotfix/</code></td>
+                    <td>Urgent production fix</td>
+                    <td><code>hotfix/5712789-payment-failure</code></td>
+                </tr>
+                <tr>
+                    <td><code>chore/</code></td>
+                    <td>Maintenance / housekeeping</td>
+                    <td><code>chore/5734567-update-dependencies</code></td>
+                </tr>
+                <tr>
+                    <td><code>refactor/</code></td>
+                    <td>Restructure without behavior change</td>
+                    <td><code>refactor/5745678-modularize-billing</code></td>
+                </tr>
+                <tr>
+                    <td><code>docs/</code></td>
+                    <td>Documentation only</td>
+                    <td><code>docs/5756789-update-api-docs</code></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <hr class="divider">
+
+    <!-- First Client: Ashoka -->
+    <h2>🏪 First Client Deployment — Ashoka Jewellers</h2>
+    <div class="card card-accent">
+        <table>
+            <tbody>
+                <tr>
+                    <td><strong>Client ID</strong></td>
+                    <td><code>ashoka</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Staging URL</strong></td>
+                    <td><code>erp.ashokajewellery.in</code> (staging environment)</td>
+                </tr>
+                <tr>
+                    <td><strong>Server</strong></td>
+                    <td>EC2 instance (ap-south-1), Ubuntu, Apache</td>
+                </tr>
+                <tr>
+                    <td><strong>Database</strong></td>
+                    <td>AWS RDS (ashoka_prod, ashoka_staging)</td>
+                </tr>
+                <tr>
+                    <td><strong>Override Files</strong></td>
+                    <td>Tag print views (<code>clients/ashoka/views/tagging/print/</code>)</td>
+                </tr>
+                <tr>
+                    <td><strong>Deploy Method</strong></td>
+                    <td>GitHub Actions → Webhook → git pull (staging) / symlink swap (prod)</td>
+                </tr>
+                <tr>
+                    <td><strong>Status</strong></td>
+                    <td><span class="tag tag-green" style="font-size:11px;">Live on Staging</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Phase 2 Roadmap -->
+    <h2>📅 Phase 2 Roadmap</h2>
+
+    <div class="alert alert-warning">
+        <strong>⚠️ Items from Meeting Feedback</strong> — Cron job scheduling during deployments and payment transaction safety during maintenance have been added as priority items.
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Priority</th>
+                    <th>Effort</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="background: var(--yellow-light);">
+                    <td><strong>Cron Job Coordination</strong></td>
+                    <td><span class="tag tag-red">High</span></td>
+                    <td>~1 day</td>
+                    <td>Pause/defer cron jobs during deploy; resume after symlink swap completes</td>
+                </tr>
+                <tr style="background: var(--yellow-light);">
+                    <td><strong>Payment Safety During Deploy</strong></td>
+                    <td><span class="tag tag-red">High</span></td>
+                    <td>~1-2 days</td>
+                    <td>Queue or gracefully block payment transactions during maintenance window; process after deploy</td>
+                </tr>
+                <tr>
+                    <td><strong>Setup Wizard Enhancement</strong></td>
+                    <td><span class="tag tag-accent">High</span></td>
+                    <td>~1.5 days</td>
+                    <td>Interactive onboarding wizard in DevOps Tool</td>
+                </tr>
+                <tr>
+                    <td><strong>Deploy Approval Flow</strong></td>
+                    <td><span class="tag tag-accent">High</span></td>
+                    <td>~2-3 days</td>
+                    <td>TL/Manager approval gate before production deployment</td>
+                </tr>
+                <tr>
+                    <td><strong>SQL Migration Pipeline</strong></td>
+                    <td><span class="tag tag-accent">High</span></td>
+                    <td>~2-3 days</td>
+                    <td>Schema versioning + automated migration across all client DBs</td>
+                </tr>
+                <tr>
+                    <td><strong>AWS Automation</strong></td>
+                    <td><span class="tag tag-yellow">Med</span></td>
+                    <td>~1 day</td>
+                    <td>DNS records, SSL certs, ALB config via AWS API</td>
+                </tr>
+                <tr>
+                    <td><strong>Health Checks & Auto-Rollback</strong></td>
+                    <td><span class="tag tag-yellow">Med</span></td>
+                    <td>~1 day</td>
+                    <td>HTTP health check after deploy; auto-revert if broken</td>
+                </tr>
+                <tr>
+                    <td><strong>Deploy Monitoring</strong></td>
+                    <td><span class="tag tag-yellow">Med</span></td>
+                    <td>~2 days</td>
+                    <td>Real-time dashboard + Slack/webhook notifications</td>
+                </tr>
+            </tbody>
+        </table>
+        <p style="margin-top: 12px; font-size: 12px;"><strong>Total Phase 2 estimated effort:</strong> ~4-5 weeks (sequential) | Items are independent and can be parallelized.</p>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Files & Documentation -->
+    <h2>📁 Key Files & Documentation</h2>
+    <div class="card">
+        <table>
+            <thead>
+                <tr>
+                    <th>Document</th>
+                    <th>Location</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Presentation Slides</td>
+                    <td><code>cicd/docs/mono-repo-presentation.html</code></td>
+                    <td>12-slide HTML deck used in the meeting</td>
+                </tr>
+                <tr>
+                    <td>Onboarding Walkthrough</td>
+                    <td><code>cicd/docs/onboarding-walkthrough.md</code></td>
+                    <td>Step-by-step guide for new client setup</td>
+                </tr>
+                <tr>
+                    <td>Onboarding Cheatsheet</td>
+                    <td><code>cicd/docs/onboarding-cheatsheet.html</code></td>
+                    <td>Printable quick-reference card</td>
+                </tr>
+                <tr>
+                    <td>Server Setup Script</td>
+                    <td><code>cicd/server/setup-mono-client.sh</code></td>
+                    <td>One-command server provisioning</td>
+                </tr>
+                <tr>
+                    <td>Deploy Script</td>
+                    <td><code>cicd/server/deploy-mono.sh</code></td>
+                    <td>Deployment automation (git pull / symlink)</td>
+                </tr>
+                <tr>
+                    <td>CI/CD Workflow</td>
+                    <td><code>.github/workflows/deploy-mono-client.yml</code></td>
+                    <td>GitHub Actions pipeline</td>
+                </tr>
+                <tr>
+                    <td>Override Loader</td>
+                    <td><code>admin/application/core/MY_Loader.php</code></td>
+                    <td>Three-layer view/model/helper resolution</td>
+                </tr>
+                <tr>
+                    <td>Client Config (Ashoka)</td>
+                    <td><code>config/clients/ashoka.json</code></td>
+                    <td>Client-specific deploy + feature config</td>
+                </tr>
+                <tr>
+                    <td>Onboard Workflow</td>
+                    <td><code>.agent/workflows/onboard-mono-client.md</code></td>
+                    <td>Agent workflow for new client onboarding</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <strong>Logimax Technologies</strong> &nbsp;|&nbsp; Internal Release Note &nbsp;|&nbsp; Mono-Repo Architecture v1.0 &nbsp;|&nbsp; March 10, 2026
+        <br>
+        <span style="font-size: 10px; margin-top: 4px; display: inline-block;">Prepared by: Development Team &nbsp;|&nbsp; Distribution: Management, Team Leads, Development Team</span>
+    </div>
+
+</div>
+
+</body>
+</html>

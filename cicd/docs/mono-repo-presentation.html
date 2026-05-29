@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mono-Repo Architecture & Git Feature Branches</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-dark: #f8fafc;
+            --bg-card: #ffffff;
+            --accent: #4f46e5;
+            --accent-2: #7c3aed;
+            --accent-3: #6d28d9;
+            --green: #059669;
+            --red: #dc2626;
+            --yellow: #d97706;
+            --blue: #2563eb;
+            --pink: #db2777;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Slide system — strictly viewport-bound */
+        .slide {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            padding: 40px 60px 60px;
+            position: relative;
+            overflow: hidden;
+            flex-direction: column;
+        }
+        .slide.active { display: flex; }
+
+        .slide::before {
+            content: '';
+            position: absolute;
+            top: -200px; right: -200px;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(79,70,229,0.06) 0%, transparent 70%);
+            z-index: 0;
+        }
+
+        .slide > * { position: relative; z-index: 1; }
+
+        /* Typography */
+        .slide-title {
+            font-size: 42px;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 6px;
+            background: linear-gradient(135deg, #1e293b 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            flex-shrink: 0;
+        }
+
+        .slide-subtitle {
+            font-size: 16px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            font-weight: 400;
+            flex-shrink: 0;
+        }
+
+        h3 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #0f172a;
+        }
+
+        /* Grid layouts */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+        .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+        .flex-fill { flex: 1; min-height: 0; overflow: hidden; }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .card-accent { border-left: 3px solid var(--accent); }
+        .card-green { border-left: 3px solid var(--green); }
+        .card-red { border-left: 3px solid var(--red); }
+        .card-yellow { border-left: 3px solid var(--yellow); }
+        .card-blue { border-left: 3px solid var(--blue); }
+        .card-pink { border-left: 3px solid var(--pink); }
+
+        /* Code */
+        pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            background: #1e293b;
+            color: #e2e8f0;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 10px 14px;
+            overflow-x: auto;
+            line-height: 1.5;
+        }
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(79,70,229,0.1);
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 12px;
+            color: var(--accent);
+        }
+
+        /* Tags */
+        .tag {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin: 2px 3px 2px 0;
+        }
+        .tag-purple { background: rgba(79,70,229,0.1); color: var(--accent); }
+        .tag-green { background: rgba(5,150,105,0.1); color: var(--green); }
+        .tag-red { background: rgba(220,38,38,0.1); color: var(--red); }
+        .tag-yellow { background: rgba(217,119,6,0.1); color: var(--yellow); }
+        .tag-blue { background: rgba(37,99,235,0.1); color: var(--blue); }
+        .tag-pink { background: rgba(219,39,119,0.1); color: var(--pink); }
+
+        /* Flow diagrams */
+        .flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+        .flow-item {
+            background: #f1f5f9;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 7px 14px;
+            font-weight: 600;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .flow-arrow { color: var(--accent); font-size: 16px; }
+
+        /* Lists */
+        ul { list-style: none; padding: 0; }
+        ul li { padding: 4px 0; padding-left: 20px; position: relative; font-size: 13px; line-height: 1.5; }
+        ul li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+            font-weight: 700;
+        }
+        .check-list li::before { content: '✓'; color: var(--green); }
+        .cross-list li::before { content: '✗'; color: var(--red); }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th {
+            text-align: left;
+            padding: 8px 12px;
+            background: #f1f5f9;
+            border-bottom: 2px solid var(--accent);
+            font-weight: 600;
+            font-size: 12px;
+            color: #334155;
+        }
+        td {
+            padding: 6px 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+        }
+
+        /* Tree diagram */
+        .tree { font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.6; }
+        .tree-highlight { color: var(--accent); font-weight: 600; }
+        .tree-muted { color: var(--text-muted); }
+
+        /* Metrics */
+        .metric { text-align: center; padding: 14px; }
+        .metric-value {
+            font-size: 40px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .metric-label { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            bottom: 16px;
+            right: 30px;
+            display: flex;
+            gap: 6px;
+            z-index: 100;
+        }
+        .nav button {
+            background: var(--accent);
+            border: 1px solid var(--accent);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        .nav button:hover { background: var(--accent-2); }
+
+        .slide-counter {
+            position: fixed;
+            bottom: 20px;
+            left: 30px;
+            font-size: 12px;
+            color: var(--text-muted);
+            z-index: 100;
+        }
+
+        .footer-brand {
+            position: absolute;
+            bottom: 14px;
+            left: 60px;
+            font-size: 10px;
+            color: rgba(0,0,0,0.15);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .slide.active > * {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        .slide.active > *:nth-child(2) { animation-delay: 0.08s; }
+        .slide.active > *:nth-child(3) { animation-delay: 0.15s; }
+        .slide.active > *:nth-child(4) { animation-delay: 0.22s; }
+
+        /* Hero center */
+        .hero-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            flex: 1;
+        }
+
+        .connector {
+            width: 2px; height: 16px;
+            background: linear-gradient(to bottom, var(--accent), var(--border));
+            margin: 0 auto;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-success { background: rgba(5,150,105,0.1); color: var(--green); border: 1px solid rgba(5,150,105,0.25); }
+        .badge-warning { background: rgba(217,119,6,0.1); color: var(--yellow); border: 1px solid rgba(217,119,6,0.25); }
+
+        .emoji { font-size: 22px; margin-bottom: 6px; display: block; }
+
+        /* Branch naming specific */
+        .branch-type {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .branch-type:last-child { border-bottom: none; }
+        .branch-type-icon {
+            width: 28px; height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════ SLIDE 1: TITLE ═══════════ -->
+<div class="slide active" id="slide-1">
+    <div class="hero-center">
+        <div style="margin-bottom: 20px;">
+            <span class="tag tag-purple">Architecture</span>
+            <span class="tag tag-green">CI/CD</span>
+            <span class="tag tag-blue">Git Workflow</span>
+        </div>
+        <h1 class="slide-title" style="font-size: 52px; max-width: 800px;">
+            Mono-Repo Architecture<br>& Feature Branch Workflow
+        </h1>
+        <p class="slide-subtitle" style="max-width: 600px; text-align: center; margin-top: 12px; font-size: 18px;">
+            Single codebase, multiple clients. Clean collaboration.
+        </p>
+        <div style="margin-top: 36px; display: flex; gap: 20px;">
+            <div class="badge badge-success">✓ Implemented & Deployed</div>
+            <div class="badge badge-warning">Ashoka — First Client Live</div>
+        </div>
+    </div>
+    <div class="footer-brand">Logimax Technologies</div>
+</div>
+
+<!-- ═══════════ SLIDE 2: THE PROBLEM ═══════════ -->
+<div class="slide" id="slide-2">
+    <h1 class="slide-title">The Problem</h1>
+    <p class="slide-subtitle">What we had — separate repos per client</p>
+
+    <div class="grid-2 flex-fill">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+            <div class="card card-red" style="flex:1;">
+                <span class="emoji">📦</span>
+                <h3>Duplicate Repositories</h3>
+                <ul class="cross-list">
+                    <li>Each client = separate Git repo</li>
+                    <li>Same codebase copy-pasted across 10+ repos</li>
+                    <li>Bug fix in one? Manually copy to all others</li>
+                    <li>20 repos × same fix = 20 PRs</li>
+                </ul>
+            </div>
+            <div class="card card-red" style="flex:1;">
+                <span class="emoji">⏱️</span>
+                <h3>Slow Onboarding</h3>
+                <ul class="cross-list">
+                    <li>New client = fork repo, reconfigure everything</li>
+                    <li>Set up CI/CD from scratch each time</li>
+                    <li>~1 full day per client</li>
+                </ul>
+            </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+            <div class="card card-red" style="flex:1;">
+                <span class="emoji">🔀</span>
+                <h3>Drift & Inconsistency</h3>
+                <ul class="cross-list">
+                    <li>Client repos diverge over time</li>
+                    <li>No way to know which client has which version</li>
+                    <li>Merge conflicts when syncing changes</li>
+                    <li>Some clients miss critical security patches</li>
+                </ul>
+            </div>
+            <div class="card card-red" style="flex:1;">
+                <span class="emoji">🧪</span>
+                <h3>Testing Blind Spots</h3>
+                <ul class="cross-list">
+                    <li>Fix tested on one client, breaks another</li>
+                    <li>No unified test across all clients</li>
+                    <li>Client-specific bugs surface in production</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="footer-brand">Logimax Technologies</div>
+</div>
+
+<!-- ═══════════ SLIDE 3: THE SOLUTION ═══════════ -->
+<div class="slide" id="slide-3">
+    <h1 class="slide-title">The Solution: Mono-Repo</h1>
+    <p class="slide-subtitle">One repo, all clients — with a three-layer override system</p>
+
+    <div class="grid-2 flex-fill" style="align-items: start;">
+        <div class="card card-green" style="height:100%;">
+            <h3>How It Works</h3>
+            <p style="color: var(--text-muted); font-size: 13px; line-height: 1.6; margin-bottom: 12px;">
+                All clients share the <strong>same core code</strong>. Client-specific differences
+                are handled through <strong>overrides</strong> — only the files that differ are stored per client.
+            </p>
+            <ul class="check-list">
+                <li>Core code lives in one place — fix once, deploy everywhere</li>
+                <li>Client overrides are scoped — only custom views, CSS, configs</li>
+                <li>Dynamic loader checks client folder first, falls back to core</li>
+                <li>Zero changes to core code per client</li>
+            </ul>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0;">
+            <h3 style="margin-bottom:10px;">Three-Layer Override</h3>
+            <div class="card" style="border-left: 3px solid var(--blue); margin-bottom: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div><span class="tag tag-blue">Layer 3</span> <strong>Client Override</strong></div>
+                    <span style="color: var(--text-muted); font-size: 11px;">Highest Priority</span>
+                </div>
+                <p style="color: var(--text-muted); font-size: 12px; margin-top: 4px;">
+                    <code>clients/ashoka/views/billing.php</code> — Custom billing, logo, GST format
+                </p>
+            </div>
+            <div class="connector"></div>
+            <div class="card" style="border-left: 3px solid var(--yellow); margin-bottom: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div><span class="tag tag-yellow">Layer 2</span> <strong>Feature Pack</strong></div>
+                    <span style="color: var(--text-muted); font-size: 11px;">Shared Extensions</span>
+                </div>
+                <p style="color: var(--text-muted); font-size: 12px; margin-top: 4px;">
+                    <code>feature_packs/jewellery/</code> — Industry-specific modules (hallmark, karat)
+                </p>
+            </div>
+            <div class="connector"></div>
+            <div class="card" style="border-left: 3px solid var(--green);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div><span class="tag tag-green">Layer 1</span> <strong>Core</strong></div>
+                    <span style="color: var(--text-muted); font-size: 11px;">Base Platform</span>
+                </div>
+                <p style="color: var(--text-muted); font-size: 12px; margin-top: 4px;">
+                    <code>admin/application/views/</code> — Standard ERP: billing, inventory, reports
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="footer-brand">Logimax Technologies</div>
+</div>
+
+<!-- ═══════════ SLIDE 4: REPO STRUCTURE ═══════════ -->
+<div class="slide" id="slide-4">
+    <h1 class="slide-title">Repository Structure</h1>
+    <p class="slide-subtitle">Where things live in the mono-repo</p>
+
+    <div class="grid-2 flex-fill">
+        <div class="card">
+            <h3>📁 Directory Layout</h3>
+<pre style="font-size: 11px; line-height: 1.65;">retail_v5/
+├── admin/                      <span class="tree-muted">← Core application</span>
+│   ├── application/
+│   │   ├── controllers/
+│   │   ├── models/
+│   │   └── views/              <span class="tree-muted">← Layer 1: Core views</span>
+│   └── assets/
+│
+├── <span class="tree-highlight">clients/</span>                     <span class="tree-muted">← Client overrides</span>
+│   ├── <span class="tree-highlight">ashoka/</span>                 <span class="tree-muted">← Layer 3</span>
+│   │   ├── views/  css/  config/
+│   └── <span class="tree-highlight">theninpr/</span>               <span class="tree-muted">← Layer 3</span>
+│       └── views/
+│
+├── <span class="tree-highlight">feature_packs/</span>               <span class="tree-muted">← Shared extensions</span>
+│   └── <span class="tree-highlight">jewellery/</span>              <span class="tree-muted">← Layer 2</span>
+│       └── views/  models/
+│
+├── <span class="tree-highlight">config/clients/</span>              <span class="tree-muted">← Client JSON configs</span>
+│   ├── ashoka.json
+│   └── theninpr.json
+│
+├── .github/workflows/          <span class="tree-muted">← CI/CD pipeline</span>
+│   └── deploy-mono-client.yml
+│
+└── cicd/server/                <span class="tree-muted">← Deployment scripts</span>
+    ├── setup-mono-client.sh
+    └── deploy-mono.sh</pre>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+            <div class="card card-accent">
+                <h3>🔍 Override Resolution</h3>
+                <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 10px;">
+                    When loading <code>bill_format.php</code> for Ashoka:
+                </p>
+                <div class="flow" style="flex-direction: column; align-items: stretch; gap: 4px;">
+                    <div class="flow-item" style="border-left: 3px solid var(--blue); text-align: center; font-size: 11px;">
+                        1️⃣ Check <code>clients/ashoka/views/bill_format.php</code>
+                    </div>
+                    <div style="text-align: center; color: var(--text-muted); font-size: 11px;">↓ not found?</div>
+                    <div class="flow-item" style="border-left: 3px solid var(--yellow); text-align: center; font-size: 11px;">
+                        2️⃣ Check <code>feature_packs/jewellery/views/bill_format.php</code>
+                    </div>
+                    <div style="text-align: center; color: var(--text-muted); font-size: 11px;">↓ not found?</div>
+                    <div class="flow-item" style="border-left: 3px solid var(--green); text-align: center; font-size: 11px;">
+                        3️⃣ Use <code>admin/views/bill_format.php</code> (core)
+                    </div>
+                </div>
+            </div>
+            <div class="card card-green">
+                <h3>✨ Key Benefit</h3>
+                <p style="color: var(--text-muted); font-size: 13px; line-height: 1.6;">
+                    Adding a new client = creating a <strong>folder</strong> + a <strong>JSON file</strong>.
+                    No code changes. No workflow changes. The system auto-discovers new clients.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="footer-brand">Logimax Technologies</div>
+</div>
+
+<!-- ═══════════ SLIDE 5: GIT BRANCHING STRATEGY ═══════════ -->
+<div class="slide" id="slide-5">
+    <h1 class="slide-title">Git Feature Branch Workflow</h1>
+    <p class="slide-subtitle">How we develop, review, and deploy changes safely</p>
+
+    <div class="flex-fill" style="display:flex;flex-direction:column;gap:14px;">
+        <!-- Branch bar -->
+        <div class="card" style="padding: 20px 28px;">
+            <div style="display: flex; align-items: center; gap: 0; font-family: 'JetBrains Mono', monospace; font-size: 13px;">
+                <div style="flex: 0 0 auto; text-align: center;">
+                    <div style="background: rgba(220,38,38,0.08); border:1px solid rgba(220,38,38,0.25); padding: 8px 18px; border-radius: 6px; color: var(--red); font-weight: 700;">Production</div>
+                    <div style="color: var(--text-muted); font-size: 10px; margin-top: 3px;">Protected • Live</div>
+                </div>
+                <div style="flex: 1; height: 2px; background: linear-gradient(to right, var(--red), var(--green));"></div>
+                <div style="flex: 0 0 auto; text-align: center;">
+                    <div style="background: rgba(5,150,105,0.08); border:1px solid rgba(5,150,105,0.25); padding: 8px 18px; border-radius: 6px; color: var(--green); font-weight: 700;">support</div>
+                    <div style="color: var(--text-muted); font-size: 10px; margin-top: 3px;">Staging • QA</div>
+                </div>
+                <div style="flex: 1; height: 2px; background: linear-gradient(to right, var(--green), var(--accent));"></div>
+                <div style="flex: 0 0 auto; text-align: center;">
+                    <div style="background: rgba(79,70,229,0.08); border:1px solid rgba(79,70,229,0.25); padding: 8px 24px; border-radius: 6px; color: var(--accent); font-weight: 700;">feature/*</div>
+                    <div style="color: var(--text-muted); font-size: 10px; margin-top: 3px;">Development</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-3" style="flex:1;">
+            <div class="card card-accent">
+                <span class="emoji">🌿</span>
+                <h3>Feature Branches</h3>
+                <p style="color: var(--text-muted); font-size: 12px; line-height: 1.6;">
+                    Every task gets its own branch from <code>support</code>.
+                    Named with Zoho task ID for traceability.
+                </p>
+<pre style="font-size: 10px; margin-top: 8px;">feature/5628318-add-hallmark
+bugfix/5698123-fix-gst-calc
+hotfix/5712456-payment-crash</pre>
+            </div>
+            <div class="card card-green">
+                <span class="emoji">🔍</span>
+                <h3>Pull Request Review</h3>
+                <ul style="font-size: 12px;">
+                    <li>PR: <code>feature/*</code> → <code>support</code></li>
+                    <li>Reviewer assigned (TL / senior)</li>
+                    <li>Code review + feedback</li>
+                    <li>CI checks run automatically</li>
+                    <li>No direct pushes to support</li>
+                </ul>
+            </div>
+            <div class="card card-yellow">
+                <span class="emoji">🚀</span>
+                <h3>Release Flow</h3>
+                <ul style="font-size: 12px;">
+                    <li>QA verifies on staging</li>
+                    <li><code>support</code> → <code>Production</code> merge</li>
+                    <li>Auto-deploys to all clients</li>
+                    <li>Zero-downtime symlink swap</li>
+                    <li>Instant rollback if needed</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="footer-brand">Logimax Technologies</div>
+</div>
+
+<!-- ═══════════ SLIDE 6: BRANCH NAMING GUIDELINES ═══════════ -->
+<div class="slide" id="slide-6">
+    <h1 class="slide-title">Branch Naming Convention</h1>
+    <p class="slide-subtitle">Format: <code>&lt;type&gt;/&lt;task-id&gt;-&lt;short-description&gt;</code> — lowercase, hyphens only</p>
+
+    <div class="grid-2 flex-fill" style="align-items: start;">
+        <div>
+            <div class="card" style="margin-bottom: 12px;">
+                <h3>📏 Naming Rules</h3>
+                <ul style="font-size: 12px;">
+                    <li>Lowercase only — no capitals</li>
+                    <li>Hyphens <code>-</code> only — no spaces, no underscores</li>
+                    <li>Summarize task into 5–7 meaningful words</li>
+                    <li>Remove filler words (and, the, of, for, to)</li>
+                    <li>Keep domain abbreviations (grn, sku, gst)</li>
+                    <li>Prefix with branch type + Zoho task ID</li>
+                </ul>
+            </div>
+            <div class="card card-accent">
+                <h3>📝 Example</h3>
+<pre style="font-size: 11px;">
+<span style="color:var(--text-muted);">Type:</span>        feature
+<span style="color:var(--text-muted);">Task ID:</span>     124744000005628318
+<span style="color:var(--text-muted);">Description:</span> "Add validation for GST calculation
+              in invoice module"
+
+<span style="color:var(--green);">→ Result:</span>
+feature/5628318-gst-validation-invoice-module</pre>
+            </div>
+        </div>
+        <div>
+            <div class="card" style="height:100%;">
+                <h3>Branch Types</h3>
+
+                <div class="branch-type">
+                    <div class="branch-type-icon" style="background:rgba(37,99,235,0.1);color:var(--blue);">F</div>
+                    <div>
+                        <div style="font-weight:600;font-size:13px;"><code>feature/</code> — New functionality</div>
+                        <div style="color:var(--text-muted);font-size:11px;">Adding payment module, new API, UI component</div>
+                    </div>
+                </div>
+
+                <div class="branch-type">
+                    <div class="branch-type-icon" style="background:rgba(5,150,105,0.1);color:var(--green);">f</div>
+                    <div>
+                        <div style="font-weight:600;font-size:13px;"><code>fix/</code> — Small fixes</div>
+                        <div style="color:var(--text-muted);font-size:11px;">Typo, wrong calculation, minor UI issue</div>
+                    </div>
+                </div>
+
+                <div class="branch-type">
+                    <div class="branch-type-icon" style="background:rgba(217,119,6,0.1);color:var(--yellow);">B</div>
+                    <div>
+                        <div style="font-weight:600;font-size:13px;"><code>bugfix/</code> — Confirmed bug (tracked)</div>
+                        <div style="color:var(--text-muted);font-size:11px;">Login crash, API error, data corruption</div>
+                    </div>
+                </div>
+
+                <div class="branch-type">
+                    <div class="branch-type-icon" style="background:rgba(220,38,38,0.1);color:var(--red);">H</div>
+                    <div>
+                        <div style="font-weight:600;font-size:13px;"><code>hotfix/</code> — Urgent production fix</div>
+                        <div style="color:var(--text-muted);font-size:11px;">Critical bug → goes directly to Production</div>
+                    </div>
+                </div>
+
+                <div class="branch-type">
+                    <div class="branch-type-icon" style="background:rgba(100,116,139,0.1);color:var(--text-muted);">C</div>
+                    <div>
+                        <div style="font-weight:600;font-size:13px;"><code>chore/</code> — Maintenance / housekeeping</div>
+                        <div style="color:var(--text-muted);font-size:11px;">Update dependencies, CI/CD config, cleanup</div>
+                    </div>
+                </div>
+
+                <div class="branch-type">
+                    <div class="branch-type-icon" style="background:rgba(79,70,229,0.1);color:var(--accent);">R</div>
+                    <div>
+                        <div style="font-weight:600;font-size:13px;"><code>refactor/</code> — Restructure without behavior change</div>
+                        <div style="color:var(--text-muted);font-size:11px;">Optimize functions, modularize, rename</div>
+                    </div>
+                </div>
+
+                <div class="branch-type">
+                    <div class="branch-type-icon" style="background:rgba(219,39,119,0.1);color:var(--pink);">D</div>
+                    <div>
+                        <div style="font-weight:600;font-size:13px;"><code>docs/</code> — Documentation only</div>
+                        <div style="color:var(--text-muted);font-size:11px;">Update README, API docs, comments</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="footer-brand">Logimax Technologies</div>
+</div>
+
+<!-- ═══════════ SLIDE 7: FEATURE BRANCH STEP BY STEP ═══════════ -->
+<div class="slide" id="slide-7">
+    <h1 class="slide-title">Feature Branch — Day to Day</h1>
+    <p class="slide-subtitle">The exact commands and workflow developers follow</p>
+
+    <div class="grid-2 flex-fill">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+            <div class="card" style="flex:1;">
+                <h3>1️⃣ Start a Task</h3>
+<pre style="font-size: 11px;">
+<span style="color: var(--text-muted);"># Get latest from staging</span>
+git checkout support
+git pull origin support
+
+<span style="color: var(--text-muted);"># Create feature branch</span>
+git checkout -b feature/5628318-add-hallmark-field</pre>
+            </div>
+            <div class="card" style="flex:1;">
+                <h3>2️⃣ Develop & Commit</h3>
+<pre style="font-size: 11px;">
+<span style="color: var(--text-muted);"># Make changes, commit with clear messages</span>
+git add .
+git commit -m "Add hallmark purity field to billing"
+
+<span style="color: var(--text-muted);"># Push feature branch</span>
+git push origin feature/5628318-add-hallmark-field</pre>
+            </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+            <div class="card" style="flex:1;">
+                <h3>3️⃣ Create Pull Request</h3>
+                <ul style="font-size: 12px;">
+                    <li>Open PR: <code>feature/*</code> → <code>support</code></li>
+                    <li>Add description of what changed and why</li>
+                    <li>Assign reviewer (TL / senior dev)</li>
+                    <li>Link Zoho task ID in PR description</li>
+                    <li>CI pipeline runs automatic checks</li>
+                </ul>
+            </div>
+            <div class="card card-green" style="flex:1;">
+                <h3>4️⃣ Review → Merge → Deploy</h3>
+                <ul class="check-list" style="font-size: 12px;">
+                    <li>Reviewer reads diff, leaves comments</li>
+                    <li>Developer addresses feedback, pushes fixes</li>
+                    <li>Reviewer approves → <strong>Squash & Merge</strong></li>
+                    <li>Auto-deploys to staging for QA testing</li>
+                    <li>Delete feature branch after merge</li>
+                    <li>After QA → merge <code>support</code> to <code>Production</code></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="footer-brand">Logimax Technologies</div>
+</div>
+
+<!-- ═══════════ SLIDE 8: CI/CD PIPELINE ═══════════ -->
+<div class="slide" id="slide-8">
+    <h1 class="slide-title">CI/CD Pipeline</h1>
+    <p class="slide-subtitle">Automated deployment from push to production</p>
+
+    <div class="flex-fill" style="display:flex;flex-direction:column;gap:12px;">
+        <!-- Staging -->
+        <div class="card">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <span class="tag tag-green" style="font-size: 11px;">STAGING</span>
+                <span style="color: var(--text-muted); font-size: 12px;">Push to <code>support</code></span>
+            </div>
+            <div class="flow">
+                <div class="flow-item">Developer pushes</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-item">GitHub Actions</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-item">Scan clients/*.json</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-item">Webhook per client</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-item" style="background: rgba(5,150,105,0.08);">git pull on server</div>
+            </div>
+        </div>
+        <!-- Production -->
+        <div class="card">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <span class="tag tag-red" style="font-size: 11px;">PRODUCTION</span>
+                <span style="color: var(--text-muted); font-size: 12px;">Push to <code>Production</code></span>
+            </div>
+            <div class="flow">
+                <div class="flow-item">Merge to Production</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-item">Webhook triggers</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-item">Clone new release</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-item">Create 21 symlinks</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-item" style="background: rgba(220,38,38,0.08);">Atomic swap ⚡</div>
+            </div>
+        </div>
+        <!-- Features -->
+        <div class="grid-3" style="flex:1;">
+            <div class="card card-blue">
+                <span class="emoji">🔍</span>
+                <h3>Auto-Discovery</h3>
+                <p style="color: var(--text-muted); font-size: 12px;">
+                    Pipeline reads <code>config/clients/*.json</code>. Add JSON = add client. Zero YAML changes needed.
+                </p>
+            </div>
+            <div class="card card-pink">
+                <span class="emoji">🛡️</span>
+                <h3>Maintenance Mode</h3>
+                <p style="color: var(--text-muted); font-size: 12px;">
+                    Users see "maintenance" page during deploy. Auto-enabled before, auto-removed after. Prevents errors.
+                </p>
+            </div>
+            <div class="card card-green">
+                <span class="emoji">⏪</span>
+                <h3>Instant Rollback</h3>
+                <p style="color: var(--text-muted); font-size: 12px;">
+                    Production keeps last 5 releases. Rollback = swap one symlink. Under 1 second. No downtime.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="footer-brand">Logimax Technologies</div>
+</div>
+
+<!-- ═══════════ SLIDE 9: SERVER ARCHITECTURE ═══════════ -->
+<div class="slide" id="slide-9">
+    <h1 class="slide-title">Server Architecture</h1>
+    <p class="slide-subtitle">Hybrid deployment — different strategies for different environments</p>
+
+    <div class="grid-2 flex-fill">
+        <div class="card card-green" style="display:flex;flex-direction:column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <h3 style="margin:0;">Staging</h3>
+                <span class="tag tag-green">git pull</span>
+            </div>
+            <ul style="font-size: 12px; margin-bottom: 10px;">
+                <li>Direct <code>git pull</code> on the server</li>
+                <li>Fast — changes appear in seconds</li>
+                <li>QA team tests immediately</li>
+            </ul>
+<pre style="font-size: 10px; flex:1;">
+/var/www/{client}/staging/
+├── admin/           ← live code
+├── webhooks/deploy.php
+└── global_configs.php</pre>
+        </div>
+        <div class="card card-red" style="display:flex;flex-direction:column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <h3 style="margin:0;">Production</h3>
+                <span class="tag tag-red">symlink swap</span>
+            </div>
+            <ul style="font-size: 12px; margin-bottom: 10px;">
+                <li>New release cloned → <code>releases/{timestamp}</code></li>
+                <li>Atomic swap: <code>current →</code> new release</li>
+                <li>Old release stays for instant rollback</li>
+            </ul>
+<pre style="font-size: 10px; flex:1;">
+/var/www/{client}/prod/
+├── current → releases/20260309/
+├── releases/
+│   ├── 20260307/     ← rollback
+│   └── 20260309/     ← active
+└── shared/
+    ├── config/  data/  logs/</pre>
+        </div>
+    </div>
+
+    <div class="card" style="background: rgba(79,70,229,0.04); border-color: rgba(79,70,229,0.15); flex-shrink:0;">
+        <div style="display: flex; align-items: center; gap: 28px; justify-content: center;">
+            <div style="text-align: center;">
+                <div style="font-size: 11px; color: var(--text-muted);">Symlinks/release</div>
+                <div style="font-size: 26px; font-weight: 800; color: var(--accent);">21</div>
+            </div>
+            <div style="width: 1px; height: 32px; background: var(--border);"></div>
+            <div style="text-align: center;">
+                <div style="font-size: 11px; color: var(--text-muted);">Shared data dirs</div>
+                <div style="font-size: 26px; font-weight: 800; color: var(--accent);">17</div>
+            </div>
+            <div style="width: 1px; height: 32px; background: var(--border);"></div>
+            <div style="text-align: center;">
+                <div style="font-size: 11px; color: var(--text-muted);">Releases kept</div>
+                <div style="font-size: 26px; font-weight: 800; color: var(--accent);">5</div>
+            </div>
+            <div style="width: 1px; height: 32px; background: var(--border);"></div>
+            <div style="text-align: center;">
+                <div style="font-size: 11px; color: var(--text-muted);">Rollback time</div>
+                <div style="font-size: 26px; font-weight: 800; color: var(--green);">&lt;1s</div>
+            </div>
+        </div>
+    </div>
+    <div class="footer-brand">Logimax Technologies</div>
+</div>
+
+<!-- ═══════════ SLIDE 10: BEFORE vs AFTER ═══════════ -->
+<div class="slide" id="slide-10">
+    <h1 class="slide-title">Before vs After</h1>
+    <p class="slide-subtitle">Tangible improvements from the mono-repo migration</p>
+
+    <div class="flex-fill" style="display:flex;flex-direction:column;gap:16px;">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Metric</th>
+                    <th style="width: 37.5%; color: var(--red);">❌ Before (Separate Repos)</th>
+                    <th style="width: 37.5%; color: var(--green);">✅ After (Mono-Repo)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Client onboarding</strong></td>
+                    <td>~1 full day (manual setup)</td>
+                    <td>~1 hour (scripted)</td>
+                </tr>
+                <tr>
+                    <td><strong>Bug fix rollout</strong></td>
+                    <td>Copy-paste to N repos, N PRs</td>
+                    <td>1 commit → deploys to all clients</td>
+                </tr>
+                <tr>
+                    <td><strong>Add new client</strong></td>
+                    <td>Fork repo, reconfigure CI/CD</td>
+                    <td>1 JSON file + 1 folder</td>
+                </tr>
+                <tr>
+                    <td><strong>CI/CD per client</strong></td>
+                    <td>Separate workflow per repo</td>
+                    <td>1 workflow, auto-discovers clients</td>
+                </tr>
+                <tr>
+                    <td><strong>Code consistency</strong></td>
+                    <td>Repos drift, clients on different versions</td>
+                    <td>All clients always on latest core</td>
+                </tr>
+                <tr>
+                    <td><strong>Production rollback</strong></td>
+                    <td>Revert commit + redeploy (~5 min)</td>
+                    <td>Symlink swap (&lt;1 second)</td>
+                </tr>
+                <tr>
+                    <td><strong>Customization</strong></td>
+                    <td>Modify core files directly (risky)</td>
+                    <td>Override only what differs (safe)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="grid-3">
+            <div class="metric card">
+                <div class="metric-value">24x</div>
+                <div class="metric-label">Faster client onboarding</div>
+            </div>
+            <div class="metric card">
+                <div class="metric-value">1</div>
+                <div class="metric-label">Single source of truth</div>
+            </div>
+            <div class="metric card">
+                <div class="metric-value">&lt;1s</div>
+                <div class="metric-label">Production rollback time</div>
+            </div>
+        </div>
+    </div>
+    <div class="footer-brand">Logimax Technologies</div>
+</div>
+
+<!-- ═══════════ SLIDE 11: WHAT'S NEXT ═══════════ -->
+<div class="slide" id="slide-11">
+    <h1 class="slide-title">What's Next</h1>
+    <p class="slide-subtitle">Roadmap for continued improvement</p>
+
+    <div class="grid-2 flex-fill">
+        <div class="card card-green">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <h3 style="margin:0;">✅ Done (Phase 1)</h3>
+                <span class="badge badge-success" style="font-size:10px;padding:3px 8px;">Complete</span>
+            </div>
+            <ul class="check-list" style="font-size: 12px;">
+                <li>Three-layer override system in production</li>
+                <li>Ashoka — first mono-repo client deployed</li>
+                <li>CI/CD pipeline with auto-client discovery</li>
+                <li>Hybrid deployment (staging + production)</li>
+                <li>One-command server provisioning script</li>
+                <li>Onboarding documentation + cheatsheet</li>
+                <li>Git branch naming convention established</li>
+            </ul>
+        </div>
+        <div class="card card-yellow">
+            <h3>🔜 Phase 2 Roadmap</h3>
+            <table style="font-size: 11px;">
+                <tr>
+                    <td><strong>Setup Wizard</strong></td>
+                    <td><span class="tag tag-purple">High</span></td>
+                    <td>Interactive onboarding in DevOps Tool</td>
+                </tr>
+                <tr>
+                    <td><strong>Approval Flow</strong></td>
+                    <td><span class="tag tag-purple">High</span></td>
+                    <td>TL/Manager gate before prod deploy</td>
+                </tr>
+                <tr>
+                    <td><strong>SQL Migration</strong></td>
+                    <td><span class="tag tag-purple">High</span></td>
+                    <td>Schema versioning across client DBs</td>
+                </tr>
+                <tr>
+                    <td><strong>AWS Automation</strong></td>
+                    <td><span class="tag tag-yellow">Med</span></td>
+                    <td>DNS, SSL certs, ALB config via API</td>
+                </tr>
+                <tr>
+                    <td><strong>Health Checks</strong></td>
+                    <td><span class="tag tag-yellow">Med</span></td>
+                    <td>Auto-rollback if deploy breaks app</td>
+                </tr>
+                <tr>
+                    <td><strong>Monitoring</strong></td>
+                    <td><span class="tag tag-yellow">Med</span></td>
+                    <td>Deploy dashboard + Slack alerts</td>
+                </tr>
+            </table>
+            <div class="card card-accent" style="margin-top: 12px;">
+                <h3 style="font-size:14px;">🎯 End Goal</h3>
+                <p style="color: var(--text-muted); font-size: 12px; line-height: 1.5;">
+                    <strong>Self-service client onboarding</strong> — fill a form, click deploy,
+                    new client goes live in minutes. Fully automated.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="footer-brand">Logimax Technologies</div>
+</div>
+
+<!-- ═══════════ SLIDE 12: THANK YOU ═══════════ -->
+<div class="slide" id="slide-12">
+    <div class="hero-center">
+        <h1 class="slide-title" style="font-size: 52px;">Questions?</h1>
+        <p class="slide-subtitle" style="max-width: 500px; text-align: center; margin-top: 12px; font-size: 16px;">
+            Let's discuss the implementation details,<br>
+            timeline, or any concerns.
+        </p>
+        <div style="margin-top: 40px; display: flex; gap: 28px;">
+            <div style="text-align: center;">
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Documentation</div>
+                <code style="font-size: 11px;">cicd/docs/onboarding-walkthrough.md</code>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Cheatsheet</div>
+                <code style="font-size: 11px;">cicd/docs/onboarding-cheatsheet.html</code>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Roadmap</div>
+                <code style="font-size: 11px;">DevOps Tool → Phase 2</code>
+            </div>
+        </div>
+    </div>
+    <div class="footer-brand">Logimax Technologies</div>
+</div>
+
+<!-- Navigation -->
+<div class="slide-counter">
+    <span id="current-slide">1</span> / <span id="total-slides">12</span>
+</div>
+<div class="nav">
+    <button onclick="prevSlide()">← Prev</button>
+    <button onclick="nextSlide()">Next →</button>
+</div>
+
+<script>
+    let current = 1;
+    const total = document.querySelectorAll('.slide').length;
+    document.getElementById('total-slides').textContent = total;
+
+    function showSlide(n) {
+        document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+        current = Math.max(1, Math.min(n, total));
+        document.getElementById(`slide-${current}`).classList.add('active');
+        document.getElementById('current-slide').textContent = current;
+    }
+
+    function nextSlide() { showSlide(current + 1); }
+    function prevSlide() { showSlide(current - 1); }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+        if (e.key === 'Home') { e.preventDefault(); showSlide(1); }
+        if (e.key === 'End') { e.preventDefault(); showSlide(total); }
+    });
+</script>
+
+</body>
+</html>

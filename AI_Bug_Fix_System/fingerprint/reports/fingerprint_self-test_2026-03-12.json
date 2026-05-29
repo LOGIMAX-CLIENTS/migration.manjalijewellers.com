@@ -1,0 +1,941 @@
+{
+    "metadata": {
+        "tool": "Customization Fingerprint v1.0",
+        "scan_date": "2026-03-12",
+        "scan_time": "08:04:17",
+        "source_path": "d:\\XAMPP\\htdocs\\retail_v5",
+        "client_path": "d:\\XAMPP\\htdocs\\retail_v5",
+        "client_name": "self-test",
+        "modules_scanned": 14
+    },
+    "thresholds": {
+        "level_1_max": 10,
+        "level_2_max": 40,
+        "function_body_change_threshold": 20
+    },
+    "weights": {
+        "controller": 0.25,
+        "model": 0.3,
+        "js": 0.25,
+        "views": 0.15,
+        "css": 0.05
+    },
+    "summary": {
+        "total_modules": 14,
+        "average_drift": 0,
+        "lane_distribution": {
+            "Express": 14,
+            "Adapted": 0,
+            "Independent": 0
+        },
+        "estimated_hours": 42,
+        "estimated_days": 5.3
+    },
+    "modules": {
+        "Purchase": {
+            "module": "Purchase",
+            "layers": {
+                "controller": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_purchase.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_purchase.php",
+                    "source_functions": 101,
+                    "client_functions": 101,
+                    "shared": 101,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 13625,
+                    "client_lines": 13625
+                },
+                "model": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_purchase_order_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_purchase_order_model.php",
+                    "source_functions": 243,
+                    "client_functions": 243,
+                    "shared": 243,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 9043,
+                    "client_lines": 9043
+                },
+                "js": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_purchase_order.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_purchase_order.js",
+                    "source_functions": 327,
+                    "client_functions": 327,
+                    "shared": 327,
+                    "source_only": [],
+                    "client_only": [],
+                    "source_lines": 83121,
+                    "client_lines": 83121,
+                    "line_delta": 0
+                },
+                "views": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_files": 12,
+                    "client_files": 12,
+                    "shared": 12,
+                    "source_only": [],
+                    "client_only": [],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_lines": 287,
+                    "client_lines": 287
+                }
+            },
+            "overall_drift": 0,
+            "missing_files": []
+        },
+        "LOT": {
+            "module": "LOT",
+            "layers": {
+                "controller": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_lot.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_lot.php",
+                    "source_functions": 21,
+                    "client_functions": 21,
+                    "shared": 21,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 2565,
+                    "client_lines": 2565
+                },
+                "model": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_lot_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_lot_model.php",
+                    "source_functions": 45,
+                    "client_functions": 45,
+                    "shared": 45,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 1902,
+                    "client_lines": 1902
+                },
+                "js": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_lot.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_lot.js",
+                    "source_functions": 109,
+                    "client_functions": 109,
+                    "shared": 109,
+                    "source_only": [],
+                    "client_only": [],
+                    "source_lines": 23629,
+                    "client_lines": 23629,
+                    "line_delta": 0
+                },
+                "views": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_files": 4,
+                    "client_files": 4,
+                    "shared": 4,
+                    "source_only": [],
+                    "client_only": [],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_lines": 265,
+                    "client_lines": 265
+                }
+            },
+            "overall_drift": 0,
+            "missing_files": []
+        },
+        "Tagging": {
+            "module": "Tagging",
+            "layers": {
+                "controller": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_tagging.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_tagging.php",
+                    "source_functions": 111,
+                    "client_functions": 111,
+                    "shared": 111,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 9383,
+                    "client_lines": 9383
+                },
+                "model": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_tag_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_tag_model.php",
+                    "source_functions": 130,
+                    "client_functions": 130,
+                    "shared": 130,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 10254,
+                    "client_lines": 10254
+                },
+                "js": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_tagging.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_tagging.js",
+                    "source_functions": 256,
+                    "client_functions": 256,
+                    "shared": 256,
+                    "source_only": [],
+                    "client_only": [],
+                    "source_lines": 55760,
+                    "client_lines": 55760,
+                    "line_delta": 0
+                },
+                "views": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_files": 14,
+                    "client_files": 14,
+                    "shared": 14,
+                    "source_only": [],
+                    "client_only": [],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "no_css",
+                    "detail": "No CSS file for this module"
+                }
+            },
+            "overall_drift": 0,
+            "missing_files": []
+        },
+        "Customer_Order": {
+            "module": "Customer_Order",
+            "layers": {
+                "controller": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_order.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_order.php",
+                    "source_functions": 57,
+                    "client_functions": 57,
+                    "shared": 57,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 2378,
+                    "client_lines": 2378
+                },
+                "model": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_order_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_order_model.php",
+                    "source_functions": 111,
+                    "client_functions": 111,
+                    "shared": 111,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 2320,
+                    "client_lines": 2320
+                },
+                "js": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_order.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_order.js",
+                    "source_functions": 159,
+                    "client_functions": 159,
+                    "shared": 159,
+                    "source_only": [],
+                    "client_only": [],
+                    "source_lines": 35185,
+                    "client_lines": 35185,
+                    "line_delta": 0
+                },
+                "views": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_files": 7,
+                    "client_files": 7,
+                    "shared": 7,
+                    "source_only": [],
+                    "client_only": [],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_lines": 254,
+                    "client_lines": 254
+                }
+            },
+            "overall_drift": 0,
+            "missing_files": []
+        },
+        "Branch_Transfer": {
+            "module": "Branch_Transfer",
+            "layers": {
+                "controller": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_brntransfer.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_brntransfer.php",
+                    "source_functions": 12,
+                    "client_functions": 12,
+                    "shared": 12,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 1377,
+                    "client_lines": 1377
+                },
+                "model": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_brntransfer_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_brntransfer_model.php",
+                    "source_functions": 52,
+                    "client_functions": 52,
+                    "shared": 52,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 2235,
+                    "client_lines": 2235
+                },
+                "js": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_branch_transfer.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_branch_transfer.js",
+                    "source_functions": 55,
+                    "client_functions": 55,
+                    "shared": 55,
+                    "source_only": [],
+                    "client_only": [],
+                    "source_lines": 8878,
+                    "client_lines": 8878,
+                    "line_delta": 0
+                },
+                "views": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_files": 8,
+                    "client_files": 8,
+                    "shared": 8,
+                    "source_only": [],
+                    "client_only": [],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_lines": 276,
+                    "client_lines": 276
+                }
+            },
+            "overall_drift": 0,
+            "missing_files": []
+        },
+        "Estimation": {
+            "module": "Estimation",
+            "layers": {
+                "controller": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_estimation.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_estimation.php",
+                    "source_functions": 62,
+                    "client_functions": 62,
+                    "shared": 62,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 3573,
+                    "client_lines": 3573
+                },
+                "model": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_estimation_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_estimation_model.php",
+                    "source_functions": 109,
+                    "client_functions": 109,
+                    "shared": 109,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 3029,
+                    "client_lines": 3029
+                },
+                "js": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_estimation.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_estimation.js",
+                    "source_functions": 191,
+                    "client_functions": 191,
+                    "shared": 191,
+                    "source_only": [],
+                    "client_only": [],
+                    "source_lines": 31402,
+                    "client_lines": 31402,
+                    "line_delta": 0
+                },
+                "views": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_files": 2,
+                    "client_files": 2,
+                    "shared": 2,
+                    "source_only": [],
+                    "client_only": [],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_lines": 244,
+                    "client_lines": 244
+                }
+            },
+            "overall_drift": 0,
+            "missing_files": []
+        },
+        "Billing": {
+            "module": "Billing",
+            "layers": {
+                "controller": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_billing.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_billing.php",
+                    "source_functions": 115,
+                    "client_functions": 115,
+                    "shared": 115,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 12279,
+                    "client_lines": 12279
+                },
+                "model": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_billing_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_billing_model.php",
+                    "source_functions": 238,
+                    "client_functions": 238,
+                    "shared": 238,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 11740,
+                    "client_lines": 11740
+                },
+                "js": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_billing.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_billing.js",
+                    "source_functions": 382,
+                    "client_functions": 382,
+                    "shared": 382,
+                    "source_only": [],
+                    "client_only": [],
+                    "source_lines": 44875,
+                    "client_lines": 44875,
+                    "line_delta": 0
+                },
+                "views": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_files": 8,
+                    "client_files": 8,
+                    "shared": 8,
+                    "source_only": [],
+                    "client_only": [],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_lines": 1225,
+                    "client_lines": 1225
+                }
+            },
+            "overall_drift": 0,
+            "missing_files": []
+        },
+        "Reports": {
+            "module": "Reports",
+            "layers": {
+                "controller": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_reports.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_reports.php",
+                    "source_functions": 235,
+                    "client_functions": 235,
+                    "shared": 235,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 9994,
+                    "client_lines": 9994
+                },
+                "model": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_reports_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_reports_model.php",
+                    "source_functions": 389,
+                    "client_functions": 389,
+                    "shared": 389,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 37324,
+                    "client_lines": 37324
+                },
+                "js": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_reports.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_reports.js",
+                    "source_functions": 340,
+                    "client_functions": 340,
+                    "shared": 340,
+                    "source_only": [],
+                    "client_only": [],
+                    "source_lines": 69963,
+                    "client_lines": 69963,
+                    "line_delta": 0
+                },
+                "views": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_files": 139,
+                    "client_files": 139,
+                    "shared": 139,
+                    "source_only": [],
+                    "client_only": [],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "no_css",
+                    "detail": "No CSS file for this module"
+                }
+            },
+            "overall_drift": 0,
+            "missing_files": []
+        },
+        "Dashboard": {
+            "module": "Dashboard",
+            "layers": {
+                "controller": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_dashboard.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_dashboard.php",
+                    "source_functions": 54,
+                    "client_functions": 54,
+                    "shared": 54,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 2150,
+                    "client_lines": 2150
+                },
+                "model": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_dashboard_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_dashboard_model.php",
+                    "source_functions": 97,
+                    "client_functions": 97,
+                    "shared": 97,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 5241,
+                    "client_lines": 5241
+                },
+                "js": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_dashboard.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_dashboard.js",
+                    "source_functions": 101,
+                    "client_functions": 101,
+                    "shared": 101,
+                    "source_only": [],
+                    "client_only": [],
+                    "source_lines": 19382,
+                    "client_lines": 19382,
+                    "line_delta": 0
+                },
+                "views": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_files": 0,
+                    "client_files": 0,
+                    "shared": 0,
+                    "source_only": [],
+                    "client_only": [],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_lines": 226,
+                    "client_lines": 226
+                }
+            },
+            "overall_drift": 0,
+            "missing_files": []
+        },
+        "Other_Inventory": {
+            "module": "Other_Inventory",
+            "layers": {
+                "controller": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_other_inventory.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_other_inventory.php",
+                    "source_functions": 45,
+                    "client_functions": 45,
+                    "shared": 45,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 1514,
+                    "client_lines": 1514
+                },
+                "model": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_other_inventory_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_other_inventory_model.php",
+                    "source_functions": 60,
+                    "client_functions": 60,
+                    "shared": 60,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 869,
+                    "client_lines": 869
+                },
+                "js": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_other_inventory.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_other_inventory.js",
+                    "source_functions": 63,
+                    "client_functions": 63,
+                    "shared": 63,
+                    "source_only": [],
+                    "client_only": [],
+                    "source_lines": 3392,
+                    "client_lines": 3392,
+                    "line_delta": 0
+                },
+                "views": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_files": 5,
+                    "client_files": 5,
+                    "shared": 5,
+                    "source_only": [],
+                    "client_only": [],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "no_css",
+                    "detail": "No CSS file for this module"
+                }
+            },
+            "overall_drift": 0,
+            "missing_files": []
+        },
+        "Old_Metal_Process": {
+            "module": "Old_Metal_Process",
+            "layers": {
+                "controller": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_metal_process.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_metal_process.php",
+                    "source_functions": 26,
+                    "client_functions": 26,
+                    "shared": 26,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 1791,
+                    "client_lines": 1791
+                },
+                "model": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_metal_process_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_metal_process_model.php",
+                    "source_functions": 84,
+                    "client_functions": 84,
+                    "shared": 84,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 1980,
+                    "client_lines": 1980
+                },
+                "js": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_metal_process.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_metal_process.js",
+                    "source_functions": 72,
+                    "client_functions": 72,
+                    "shared": 72,
+                    "source_only": [],
+                    "client_only": [],
+                    "source_lines": 5087,
+                    "client_lines": 5087,
+                    "line_delta": 0
+                },
+                "views": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_files": 1,
+                    "client_files": 1,
+                    "shared": 1,
+                    "source_only": [],
+                    "client_only": [],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_lines": 149,
+                    "client_lines": 149
+                }
+            },
+            "overall_drift": 0,
+            "missing_files": []
+        },
+        "Section_Transfer": {
+            "module": "Section_Transfer",
+            "layers": {
+                "controller": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_section_transfer.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_section_transfer.php",
+                    "source_functions": 5,
+                    "client_functions": 5,
+                    "shared": 5,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 672,
+                    "client_lines": 672
+                },
+                "model": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_section_transfer_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_section_transfer_model.php",
+                    "source_functions": 14,
+                    "client_functions": 14,
+                    "shared": 14,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 412,
+                    "client_lines": 412
+                },
+                "js": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_section_transfer.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_section_transfer.js",
+                    "source_functions": 10,
+                    "client_functions": 10,
+                    "shared": 10,
+                    "source_only": [],
+                    "client_only": [],
+                    "source_lines": 1636,
+                    "client_lines": 1636,
+                    "line_delta": 0
+                },
+                "views": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_files": 1,
+                    "client_files": 1,
+                    "shared": 1,
+                    "source_only": [],
+                    "client_only": [],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "no_css",
+                    "detail": "No CSS file for this module"
+                }
+            },
+            "overall_drift": 0,
+            "missing_files": []
+        },
+        "Stock_Issue": {
+            "module": "Stock_Issue",
+            "layers": {
+                "controller": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_stock_issue.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_stock_issue.php",
+                    "source_functions": 13,
+                    "client_functions": 13,
+                    "shared": 13,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 1412,
+                    "client_lines": 1412
+                },
+                "model": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_stock_issue_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_stock_issue_model.php",
+                    "source_functions": 26,
+                    "client_functions": 26,
+                    "shared": 26,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 1372,
+                    "client_lines": 1372
+                },
+                "js": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_stock_issue.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\ret_stock_issue.js",
+                    "source_functions": 39,
+                    "client_functions": 39,
+                    "shared": 39,
+                    "source_only": [],
+                    "client_only": [],
+                    "source_lines": 12210,
+                    "client_lines": 12210,
+                    "line_delta": 0
+                },
+                "views": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_files": 4,
+                    "client_files": 4,
+                    "shared": 4,
+                    "source_only": [],
+                    "client_only": [],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_lines": 255,
+                    "client_lines": 255
+                }
+            },
+            "overall_drift": 0,
+            "missing_files": []
+        },
+        "Catalog_Inventory": {
+            "module": "Catalog_Inventory",
+            "layers": {
+                "controller": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_catalog.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/controllers\\admin_ret_catalog.php",
+                    "source_functions": 163,
+                    "client_functions": 163,
+                    "shared": 163,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 23578,
+                    "client_lines": 23578
+                },
+                "model": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_catalog_model.php",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/application/models\\ret_catalog_model.php",
+                    "source_functions": 358,
+                    "client_functions": 358,
+                    "shared": 358,
+                    "source_only": [],
+                    "client_only": [],
+                    "modified_count": 0,
+                    "source_lines": 8683,
+                    "client_lines": 8683
+                },
+                "js": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\catalog.js",
+                    "client_file": "d:\\XAMPP\\htdocs\\retail_v5\\admin/assets/js\\catalog.js",
+                    "source_functions": 6,
+                    "client_functions": 6,
+                    "shared": 6,
+                    "source_only": [],
+                    "client_only": [],
+                    "source_lines": 449,
+                    "client_lines": 449,
+                    "line_delta": 0
+                },
+                "views": {
+                    "drift": 0,
+                    "status": "ok",
+                    "source_files": 0,
+                    "client_files": 0,
+                    "shared": 0,
+                    "source_only": [],
+                    "client_only": [],
+                    "significantly_changed": 0
+                },
+                "css": {
+                    "drift": 0,
+                    "status": "no_css",
+                    "detail": "No CSS file for this module"
+                }
+            },
+            "overall_drift": 0,
+            "missing_files": []
+        }
+    }
+}

@@ -1,0 +1,3 @@
+Nambi Muthu Raja - 11-09-2025 - adding new feild for allow other issue 
+
+ALTER TABLE profile ADD allow_other_issue INT(1) NOT NULL DEFAULT '0' COMMENT 'BT other issue checkbox control' AFTER order_delivery_otp;

@@ -1,0 +1,53 @@
+
+.PDF_receipt_thermal *{
+
+font-family:sans-serif;
+
+}
+
+ 
+.plugin {
+	margin-top:-45px !important;
+	margin-left: -30.5px! important;
+    height: 20mm !important;
+    position: fixed;  
+    z-index: 1;
+    border-radius: 4px;
+	font-size:2.2px;
+	width: 100px! important;
+	
+}
+
+.tab_head
+{
+	margin-left: -13px! important;	
+}
+.purchase  td{
+	margin-top: -2px! important;
+}
+
+.cus_details .gold_rate,.silver_rate{
+	margin-top: -2px! important;
+}
+
+.cus_details
+{
+	margin-left: -10px! important;
+}
+
+.purchase
+{
+	margin-top: -2px! important;
+	margin-left: -12px! important;
+	margin-left: -9px! important;
+}
+
+.sales
+{
+	margin-top: -2px! important;	
+	margin-left: -9px! important;
+}
+
+.sales  td{
+	margin-top: -2px! important;
+}

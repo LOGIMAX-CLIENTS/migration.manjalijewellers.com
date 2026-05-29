@@ -1,0 +1,632 @@
+
+
+
+DROP TABLE IF EXISTS ret_import_tag_details;
+
+CREATE TABLE ret_import_tag_details (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    old_metal_id INT NULL,
+    old_category_id INT NULL,
+    old_product_id INT NULL,
+    old_design_id INT NULL,
+    old_sub_design_id INT NULL,
+    old_purity_id INT NULL,
+    old_branch_id INT NULL,
+    old_karigar_id INT NULL,
+    old_counter_id INT NULL,
+    old_size_id INT NULL,
+
+    metal_id INT NULL,
+    category_id INT NULL,
+    product_id INT NULL,
+    design_id INT NULL,
+    sub_design_id INT NULL,
+    purity_id INT NULL,
+    branch_id INT NULL,
+    karigar_id INT NULL,
+    counter_id INT NULL,
+    size_id INT NULL,
+
+    metal_name VARCHAR(255) NULL,
+    category_name VARCHAR(255) NULL,
+    product_name VARCHAR(255) NULL,
+    design_name VARCHAR(255) NULL,
+    sub_design_name VARCHAR(255) NULL,
+    purity_name VARCHAR(255) NULL,
+    branch_name VARCHAR(255) NULL,
+    karigar_name VARCHAR(255) NULL,
+    counter_name VARCHAR(255) NULL,
+    size_value VARCHAR(255) NULL,
+    size_name VARCHAR(255) NULL,
+
+    /* NUMERIC → VARCHAR for safe import */
+    pieces VARCHAR(50) NULL,
+    gross_wt VARCHAR(50) NULL,
+    net_wt VARCHAR(50) NULL,
+    less_wt VARCHAR(50) NULL,
+
+    sales_type VARCHAR(50) NULL,
+    prod_calc_based_on VARCHAR(50) NULL,
+    tag_calc_based_on VARCHAR(50) NULL,
+
+    wastage_per VARCHAR(50) NULL,
+    wastage_wt VARCHAR(50) NULL,
+
+    mc_type VARCHAR(20) NULL,
+    mc_value VARCHAR(50) NULL,
+
+    sales_value VARCHAR(50) NULL,
+    rate_per_gram VARCHAR(50) NULL,
+    sell_rate VARCHAR(50) NULL,
+
+    mfr_code VARCHAR(255) NULL,
+    style_code VARCHAR(255) NULL,
+    tag_number VARCHAR(255) NULL,
+    certification_no VARCHAR(255) NULL,
+    purchase_cost VARCHAR(50) NULL,
+
+    /* DATE → VARCHAR for safe import */
+    tag_date VARCHAR(50) NULL,
+
+    huid1 VARCHAR(255) NULL,
+    huid2 VARCHAR(255) NULL,
+
+    updatestatus TINYINT DEFAULT 0 COMMENT '0=Pending,1=Imported,5=Failed',
+    created_on DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_on DATETIME NULL,
+
+    INDEX idx_product (product_id),
+    INDEX idx_design (design_id),
+    INDEX idx_sub_design (sub_design_id),
+    INDEX idx_category (category_id),
+    INDEX idx_purity (purity_id),
+    INDEX idx_branch (branch_id),
+    INDEX idx_karigar (karigar_id),
+    INDEX idx_counter (counter_id),
+    INDEX idx_size (size_id),
+    INDEX idx_status (updatestatus)
+);
+
+
+CREATE INDEX idx_import_status ON ret_import_tag_details (updatestatus);
+CREATE INDEX idx_cat_name ON ret_import_tag_details (category_name);
+CREATE INDEX idx_pro_name ON ret_import_tag_details (product_name);
+CREATE INDEX idx_purity_name ON ret_import_tag_details (purity_name);
+
+ALTER TABLE ret_import_tag_details
+ADD COLUMN lot_wastage_percentage VARCHAR(50) NULL,
+ADD COLUMN lot_making_charge VARCHAR(50) NULL;
+
+ALTER TABLE ret_import_tag_details 
+ADD COLUMN error_code TINYINT NULL AFTER updatestatus,
+ADD COLUMN error_message TEXT NULL AFTER error_code;
+
+
+-----------------------------------------------
+
+
+INSERT INTO ret_import_tag_details (
+    old_metal_id, metal_id, metal_name,
+    old_category_id, category_id, category_name,
+    old_product_id, product_id, product_name,
+    old_design_id, design_id, design_name,
+    old_sub_design_id, sub_design_id, sub_design_name,
+    old_purity_id, purity_id, purity_name,
+    old_branch_id, branch_id, branch_name,
+    old_karigar_id, karigar_id, karigar_name,
+    old_counter_id, counter_id, counter_name,
+    old_size_id, size_id, size_value, size_name,
+
+    pieces, gross_wt, net_wt, less_wt,
+    sales_type, prod_calc_based_on, tag_calc_based_on,
+    wastage_per, wastage_wt,
+    mc_type, mc_value,
+    sales_value, rate_per_gram, sell_rate,
+
+    mfr_code, style_code, tag_number,
+    certification_no, purchase_cost,
+
+    tag_date, huid1, huid2,
+
+    updatestatus, created_on, updated_on
+)
+SELECT 
+  IFNULL(t.tag_id, ''),
+  NULL, IFNULL(m.metal, ''),
+
+  IFNULL(cat.id_ret_category, ''), NULL, IFNULL(cat.name, ''),
+
+  IFNULL(pro.pro_id, ''), NULL, IFNULL(pro.product_name, ''),
+
+  IFNULL(des.design_no, ''), NULL, IFNULL(des.design_name, ''),
+
+  IFNULL(des.design_no, ''), NULL, IFNULL(des.design_name, ''),
+
+  IFNULL(p.id_purity, ''), NULL, IFNULL(p.purity, ''),
+
+  IFNULL(b.id_branch, ''), NULL, IFNULL(b.name, ''),
+
+  IFNULL(kar.id_karigar, ''), NULL, IFNULL(kar.firstname, ''),
+
+  IFNULL(sec.id_section, ''), NULL, IFNULL(sec.section_name, ''),
+
+  IFNULL(s.id_size, ''), NULL, IFNULL(s.value, ''), IFNULL(s.name, ''),
+
+  IFNULL(t.piece, 0),
+  IFNULL(t.gross_wt, 0.000),
+  IFNULL(t.net_wt, 0.000),
+  IFNULL(t.less_wt, 0.000),
+
+  IFNULL(pro.sales_mode, ''),
+  IFNULL(pro.calculation_based_on, ''),
+  IFNULL(t.calculation_based_on, ''),
+
+  IFNULL(t.retail_max_wastage_percent, 0.000),
+  ROUND(IFNULL(t.net_wt, 0.000) * IFNULL(t.retail_max_wastage_percent, 0.000) / 100.0, 3),
+
+  IFNULL(t.tag_mc_type, ''),
+  IFNULL(t.tag_mc_value, 0.00),
+
+  IFNULL(t.sales_value, 0.00),
+  IFNULL(t.item_rate, 0.00),
+  IFNULL(t.sell_rate, 0.00),
+
+  NULL, NULL, IFNULL(t.tag_code, ''),
+  NULL, NULL,
+
+  IFNULL(t.tag_datetime, ''),
+  IFNULL(t.hu_id, ''), NULL,
+
+  '0', NOW(), NULL
+
+FROM ret_taging t 
+LEFT JOIN ret_product_master pro ON pro.pro_id = t.product_id
+LEFT JOIN ret_design_master des ON des.design_no = t.design_id
+LEFT JOIN ret_category cat ON cat.id_ret_category = pro.cat_id
+LEFT JOIN metal m ON m.id_metal = cat.id_metal
+LEFT JOIN ret_purity p ON p.id_purity = t.purity
+LEFT JOIN branch b ON b.id_branch = t.current_branch
+LEFT JOIN ret_lot_inwards l ON l.lot_no = t.tag_lot_id
+LEFT JOIN ret_karigar kar ON kar.id_karigar = l.gold_smith
+LEFT JOIN ret_section sec ON sec.id_section = t.counter
+LEFT JOIN ret_size s ON s.id_size = t.size
+WHERE t.tag_id IS NOT NULL 
+  AND t.tag_status = 0
+  AND cat.id_ret_category IS NOT NULL 
+  AND pro.pro_id IS NOT NULL;
+
+
+-----------------------------------------------------------
+
+
+DROP TABLE IF EXISTS ret_import_tag_details;
+
+CREATE TABLE balaji_prod_1.ret_import_tag_details AS SELECT * FROM balaji_jewelleryc_wcrm.ret_import_tag_details;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+DROP TABLE IF EXISTS ret_import_stone_details;
+
+CREATE TABLE ret_import_stone_details (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    tag_id VARCHAR(50) NULL,
+    tag_number VARCHAR(255) NULL,
+	is_less_id VARCHAR(50) NULL,
+
+    old_stone_type_id VARCHAR(50) NULL,
+    stone_type_id VARCHAR(50) NULL,
+    stone_type_name VARCHAR(255) NULL,
+
+    old_stone_id VARCHAR(50) NULL,
+    stone_id VARCHAR(50) NULL,
+    stone_name VARCHAR(255) NULL,
+
+    old_uom_id VARCHAR(50) NULL,
+    uom_id VARCHAR(50) NULL,
+    uom_name VARCHAR(255) NULL,
+
+    pieces VARCHAR(50) NULL,
+    stone_wt VARCHAR(50) NULL,
+    stone_calc_type VARCHAR(50) NULL,
+    rate_per_gram VARCHAR(50) NULL,
+    amount VARCHAR(50) NULL,
+
+    updatestatus VARCHAR(10) DEFAULT '0',
+    created_on VARCHAR(50) NULL,
+    updated_on VARCHAR(50) NULL,
+
+    INDEX idx_tag (tag_id),
+    INDEX idx_stone (stone_id),
+    INDEX idx_stonetype (stone_type_id),
+    INDEX idx_uom (uom_id),
+    INDEX idx_status (updatestatus)
+);
+
+ALTER TABLE ret_import_stone_details CHANGE tag_id old_tag_id INT;
+
+ALTER TABLE ret_import_stone_details ADD COLUMN tag_id INT;
+
+
+----------------------------------------
+
+INSERT INTO ret_import_stone_details (
+    tag_id, tag_number, is_less_id,
+    old_stone_type_id, stone_type_id, stone_type_name,
+    old_stone_id, stone_id, stone_name,
+    old_uom_id, uom_id, uom_name,
+    pieces, stone_wt, stone_calc_type, rate_per_gram, amount,
+    updatestatus, created_on
+)
+SELECT 
+  IFNULL(tst.tag_id, '') AS tag_id,
+  IFNULL(t.tag_code, '') AS tag_number,
+  IFNULL(tst.is_apply_in_lwt, 0) AS is_less_id,
+
+  IFNULL(rst.id_stone_type, '') AS old_stone_type_id,
+  NULL AS stone_type_id,
+  IFNULL(rst.stone_type, '') AS stone_type_name,
+
+  IFNULL(st.stone_id, '') AS old_stone_id,
+  NULL AS stone_id,
+  IFNULL(st.stone_name, '') AS stone_name,
+
+  IFNULL(u.uom_id, '') AS old_uom_id,
+  NULL AS uom_id,
+  IFNULL(u.uom_name, '') AS uom_name,
+
+  IFNULL(tst.pieces, 0) AS pieces,
+  IFNULL(tst.wt, 0.000) AS stone_wt,
+  IFNULL(tst.stone_cal_type, '') AS stone_calc_type,
+  IFNULL(tst.rate_per_gram, 0.000) AS rate_per_gram,
+  IFNULL(tst.amount, 0.000) AS amount,
+
+  '0' AS updatestatus,
+  NOW() AS created_on
+
+FROM ret_taging_stone tst
+LEFT JOIN ret_taging t ON t.tag_id = tst.tag_id
+LEFT JOIN ret_stone st ON st.stone_id = tst.stone_id
+LEFT JOIN ret_stone_type rst ON rst.id_stone_type = st.stone_type
+LEFT JOIN ret_uom u ON u.uom_id = tst.uom_id;
+
+
+----------------------------------------------------
+
+SELECT td.*, m.id_metal
+FROM ret_import_tag_details td
+INNER JOIN metal m ON m.metal = td.metal_name;
+
+
+
+UPDATE ret_import_tag_details td
+INNER JOIN metal m 
+    ON UPPER(TRIM(m.metal)) = UPPER(TRIM(td.metal_name))
+SET td.metal_id = m.id_metal;
+
+---------------------------------------------------------
+
+/* -------------------- CATEGORY -------------------- */
+UPDATE ret_import_tag_details td
+INNER JOIN ret_category c 
+    ON UPPER(TRIM(c.name)) = UPPER(TRIM(td.category_name))
+SET td.category_id = c.id_ret_category;
+
+/* -------------------- PRODUCT -------------------- */
+UPDATE ret_import_tag_details td
+INNER JOIN ret_product_master p 
+    ON UPPER(TRIM(p.product_name)) = UPPER(TRIM(td.product_name))
+SET td.product_id = p.pro_id
+WHERE td.product_id is NULL;
+
+/* -------------------- DESIGN -------------------- */
+UPDATE ret_import_tag_details td
+INNER JOIN ret_design_master d 
+    ON UPPER(TRIM(d.design_name)) = UPPER(TRIM(td.design_name))
+SET td.design_id = d.design_no
+WHERE td.design_id IS NULL;
+
+/* -------------------- SUB DESIGN -------------------- */
+UPDATE ret_import_tag_details td
+INNER JOIN ret_sub_design_master sd 
+    ON UPPER(TRIM(sd.sub_design_name)) = UPPER(TRIM(td.sub_design_name))
+SET td.sub_design_id = sd.id_sub_design;
+
+/* -------------------- PURITY -------------------- */
+UPDATE ret_import_tag_details td
+INNER JOIN ret_purity pu 
+    ON UPPER(TRIM(pu.purity)) = UPPER(TRIM(td.purity_name))
+SET td.purity_id = pu.id_purity;
+
+/* -------------------- BRANCH -------------------- */
+UPDATE ret_import_tag_details td
+INNER JOIN branch b 
+    ON UPPER(TRIM(b.name)) = UPPER(TRIM(td.branch_name))
+SET td.branch_id = b.id_branch;
+
+/* -------------------- KARIGAR -------------------- */
+UPDATE ret_import_tag_details td
+INNER JOIN ret_karigar k 
+    ON UPPER(TRIM(k.firstname)) = UPPER(TRIM(td.karigar_name))
+SET td.karigar_id = k.id_karigar;
+
+/* -------------------- COUNTER / SECTION -------------------- */
+UPDATE ret_import_tag_details td
+INNER JOIN ret_section sec 
+    ON UPPER(TRIM(sec.section_name)) = UPPER(TRIM(td.counter_name))
+SET td.counter_id = sec.id_section;
+
+/* -------------------- SIZE (depends on product_id) -------------------- */
+UPDATE ret_import_tag_details td
+INNER JOIN ret_size si 
+    ON UPPER(TRIM(si.value)) = UPPER(TRIM(td.size_value))
+   AND td.product_id = si.id_product
+SET td.size_id = si.id_size;
+--------------------------------------------------------------
+
+UPDATE ret_import_tag_details t
+JOIN ret_product_master p ON p.pro_id = t.product_id
+SET t.product_short_code = p.product_short_code
+WHERE t.product_short_code IS NULL OR t.product_short_code = '';
+
+
+
+size var -  Illegal mix of collations (utf8mb4_unicode_ci,IMPLICIT) and (utf8mb4_0900_ai_ci,IMPLICIT) for operation '=' - for size comparision
+
+UPDATE ret_import_tag_details td
+INNER JOIN ret_size si 
+    ON COALESCE(UPPER(TRIM(si.value)), '') COLLATE utf8mb4_unicode_ci
+       = COALESCE(UPPER(TRIM(td.size_value)), '') COLLATE utf8mb4_unicode_ci
+   AND td.product_id = si.id_product
+SET td.size_id = si.id_size;
+
+-------------------------------------------------------
+
+CREATE TABLE ret_import_charges (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+
+    -- External references
+    tag_number     VARCHAR(50) DEFAULT NULL,
+    charge_name    VARCHAR(100) DEFAULT NULL,
+    charge_value   DECIMAL(12,3) DEFAULT 0,
+
+    -- Resolved internal IDs
+    tag_id     BIGINT UNSIGNED DEFAULT NULL,
+    charge_id  INT DEFAULT NULL,
+
+    -- Import status tracking
+    updatestatus   TINYINT NOT NULL DEFAULT 0,
+    error_code     INT DEFAULT NULL,
+    error_message  VARCHAR(255) DEFAULT NULL,
+
+    created_on DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_on DATETIME DEFAULT NULL,
+
+    INDEX idx_status (updatestatus),
+    INDEX idx_tag_id (tag_id),
+    INDEX idx_charge_id (charge_id),
+    INDEX idx_tag_number (tag_number)
+);
+
+-----------
+
+UPDATE ret_import_charges c
+JOIN ret_taging t
+  ON t.old_tag_id = c.tag_number
+SET c.tag_id = t.tag_id
+WHERE c.tag_id IS NULL
+  AND c.updatestatus = 0;
+
+
+-------------- (Need to verify) ---------
+
+UPDATE ret_import_charges c
+JOIN ret_charges ch
+  ON ch.name_charge = c.charge_name
+SET c.charge_id = ch.id_charge
+WHERE c.charge_id IS NULL
+  AND c.updatestatus = 0;
+
+
+----------------
+
+SELECT *
+FROM ret_import_charges
+WHERE updatestatus = 0
+  AND (tag_id IS NULL OR charge_id IS NULL);
+
+
+---------
+
+post import verification
+------------
+
+-- All imported charges must exist
+SELECT COUNT(*)
+FROM ret_import_charges c
+JOIN ret_taging_charges tc
+  ON tc.tag_id = c.tag_id
+ AND tc.charge_id = c.charge_id
+WHERE c.updatestatus = 1;
+
+
+------
+
+post import verification
+------------
+
+-- No duplicates
+SELECT tag_id, charge_id, COUNT(*)
+FROM ret_taging_charges
+GROUP BY tag_id, charge_id
+HAVING COUNT(*) > 1;
+
+
+
+
+
+
+
+
+
+
+
+
+----------------------------------
+
+ALTER TABLE `ret_lot_inwards_detail` CHANGE `tax_percentage` `tax_percentage` DECIMAL(10,2) NULL DEFAULT NULL;
+
+
+ALTER TABLE ret_import_tag_details 
+ADD COLUMN error_code TINYINT NULL AFTER updatestatus,
+ADD COLUMN error_message TEXT NULL AFTER error_code;
+
+
+UPDATE ret_import_stone_details sd
+SET 
+    sd.stone_type_id = sd.old_stone_type_id,
+    sd.stone_id = sd.old_stone_id,
+    sd.uom_id = sd.old_uom_id
+WHERE 
+    sd.stone_type_id IS NULL
+    OR sd.stone_id IS NULL
+    OR sd.uom_id IS NULL;
+
+
+----------------------
+
+UPDATE ret_import_tag_details td
+SET td.updatestatus = 0
+WHERE td.updatestatus = 1;
+
+----------------------------------
+
+UPDATE ret_import_stone_details td
+SET td.updatestatus = 0
+WHERE td.updatestatus = 1;
+
+--------------------------------
+
+RENAME TABLE ret_lot_inwards TO ret_lot_inwards_old;
+
+RENAME TABLE ret_lot_inwards_detail TO ret_lot_inwards_detail_old;
+
+RENAME TABLE ret_taging TO ret_taging_old;
+
+RENAME TABLE ret_taging_status_log TO ret_taging_status_log_old;
+
+RENAME TABLE ret_section_tag_status_log TO ret_section_tag_status_log_old;
+
+RENAME TABLE ret_taging_stone TO ret_taging_stone_old;
+
+
+-------------------
+Backup - query to revert the rename
+--------------
+
+RENAME TABLE ret_lot_inwards_old TO ret_lot_inwards;
+
+RENAME TABLE ret_lot_inwards_detail_old TO ret_lot_inwards_detail;
+
+RENAME TABLE ret_taging_old TO ret_taging;
+
+RENAME TABLE ret_taging_status_log_old TO ret_taging_status_log;
+
+RENAME TABLE ret_section_tag_status_log_old TO ret_section_tag_status_log;
+
+RENAME TABLE ret_taging_stone_old TO ret_taging_stone;
+
+---------------------
+
+
+CREATE TABLE ret_lot_inwards_backup AS 
+SELECT * FROM ret_lot_inwards;
+
+CREATE TABLE ret_lot_inwards_detail_backup AS 
+SELECT * FROM ret_lot_inwards_detail;
+
+CREATE TABLE ret_taging_backup AS 
+SELECT * FROM ret_taging;
+
+CREATE TABLE ret_taging_status_log_backup AS 
+SELECT * FROM ret_taging_status_log;
+
+CREATE TABLE ret_section_tag_status_log_backup AS 
+SELECT * FROM ret_section_tag_status_log;
+
+CREATE TABLE ret_taging_stone_backup AS 
+SELECT * FROM ret_taging_stone;
+
+----------------------------------------------------
+
+
+DROP TABLE IF EXISTS ret_lot_inwards_backup;
+DROP TABLE IF EXISTS ret_lot_inwards_detail_backup;
+DROP TABLE IF EXISTS ret_taging_backup;
+DROP TABLE IF EXISTS ret_taging_status_log_backup;
+DROP TABLE IF EXISTS ret_section_tag_status_log_backup;
+DROP TABLE IF EXISTS ret_taging_stone_backup;
+
+
+---------------------------------------------------------
+
+
+CREATE TABLE ret_lot_inwards_backup LIKE ret_lot_inwards;
+INSERT INTO ret_lot_inwards_backup SELECT * FROM ret_lot_inwards;
+
+CREATE TABLE ret_lot_inwards_detail_backup LIKE ret_lot_inwards_detail;
+INSERT INTO ret_lot_inwards_detail_backup SELECT * FROM ret_lot_inwards_detail;
+
+CREATE TABLE ret_taging_backup LIKE ret_taging;
+INSERT INTO ret_taging_backup SELECT * FROM ret_taging;
+
+CREATE TABLE ret_taging_status_log_backup LIKE ret_taging_status_log;
+INSERT INTO ret_taging_status_log_backup SELECT * FROM ret_taging_status_log;
+
+CREATE TABLE ret_section_tag_status_log_backup LIKE ret_section_tag_status_log;
+INSERT INTO ret_section_tag_status_log_backup SELECT * FROM ret_section_tag_status_log;
+
+CREATE TABLE ret_taging_stone_backup LIKE ret_taging_stone;
+INSERT INTO ret_taging_stone_backup SELECT * FROM ret_taging_stone;
+
+
+-----------------------------------------------------
+For clean resore
+------------------
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+DROP TABLE IF EXISTS ret_lot_inwards;
+RENAME TABLE ret_lot_inwards_backup TO ret_lot_inwards;
+
+DROP TABLE IF EXISTS ret_lot_inwards_detail;
+RENAME TABLE ret_lot_inwards_detail_backup TO ret_lot_inwards_detail;
+
+DROP TABLE IF EXISTS ret_taging;
+RENAME TABLE ret_taging_backup TO ret_taging;
+
+DROP TABLE IF EXISTS ret_taging_status_log;
+RENAME TABLE ret_taging_status_log_backup TO ret_taging_status_log;
+
+DROP TABLE IF EXISTS ret_section_tag_status_log;
+RENAME TABLE ret_section_tag_status_log_backup TO ret_section_tag_status_log;
+
+DROP TABLE IF EXISTS ret_taging_stone;
+RENAME TABLE ret_taging_stone_backup TO ret_taging_stone;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+
+-------------------------

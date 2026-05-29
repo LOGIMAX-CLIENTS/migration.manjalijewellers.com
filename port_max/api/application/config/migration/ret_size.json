@@ -1,0 +1,44 @@
+{
+    "entity": "size",
+    "ai": {
+        "enabled": true,
+        "max_rows": 20
+    },
+    "validation": {
+        "required_file_name_pattern": "size*.xlsx",
+        "required_sheet_name": "port_size"
+    },
+    "file_path": "uploads/size.xlsx",
+    "migrations": [{
+        "destination_table": "ret_size",
+        "primary_key": null,
+        "mappings": {
+            "old_id": {
+                "source_column": "old_id",
+                "validations": { "type": "numeric", "min": 1, "required": false }
+            },
+            "id_product": {
+                "lookup": {
+                    "table": "ret_product_master",
+                    "source_column": "product_name",
+                    "match_column": "product_name",
+                    "return_column": "pro_id",
+                    "create_if_missing": false
+                },
+                "validations": { "type": "string", "max_length": 100, "required": true }
+            },
+            "name": {
+                "source_column": "size_uom",
+                "validations": { "type": "string", "max_length": 50, "required": true }
+            },
+            "value": {
+                "source_column": "size_value",
+                "validations": { "type": "string", "max_length": 50, "required": true }
+            },
+            "active": {
+                "source_column": "status",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            }
+        }
+    }]
+}

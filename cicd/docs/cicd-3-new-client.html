@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CI/CD - New Client Setup</title>
+    <script src="js/auth-check.js" data-require-role="viewer"></script>
+    <style>
+        :root { --primary: #0366d6; --success: #28a745; --warning: #ffc107; --danger: #e94560; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); min-height: 100vh; color: #fff; }
+        
+        .nav { background: rgba(0,0,0,0.3); padding: 15px 30px; display: flex; gap: 20px; justify-content: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .nav a { color: #888; text-decoration: none; padding: 10px 20px; border-radius: 8px; transition: all 0.3s; }
+        .nav a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .nav a.active { background: var(--danger); color: #fff; }
+        
+        .container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+        h1 { text-align: center; font-size: 2.5rem; margin-bottom: 10px; background: linear-gradient(90deg, #e94560, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 40px; }
+        
+        .section { background: rgba(255,255,255,0.05); border-radius: 16px; padding: 30px; margin-bottom: 30px; border: 1px solid rgba(255,255,255,0.1); }
+        .section h2 { color: #e94560; margin-bottom: 20px; font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
+        .section h3 { color: #ffc107; margin: 20px 0 10px; font-size: 1.1rem; }
+        
+        .step-number { background: var(--success); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
+        
+        .code-block { background: #0d1117; border-radius: 8px; padding: 20px; margin: 15px 0; font-family: 'Consolas', monospace; font-size: 0.9rem; overflow-x: auto; border-left: 3px solid var(--success); }
+        .code-block .comment { color: #6a737d; }
+        .code-block .command { color: #79c0ff; }
+        .code-block .var { color: #ffa657; }
+        
+        .note { background: rgba(40, 167, 69, 0.1); border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; border-radius: 0 8px 8px 0; }
+        .note strong { color: #28a745; }
+        
+        .warning { background: rgba(255, 193, 7, 0.1); border-left: 4px solid #ffc107; padding: 15px; margin: 15px 0; border-radius: 0 8px 8px 0; }
+        .warning strong { color: #ffc107; }
+        
+        .file-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .file-table th, .file-table td { padding: 12px; text-align: left; border: 1px solid rgba(255,255,255,0.1); }
+        .file-table th { background: rgba(0,0,0,0.3); color: #28a745; }
+        .file-table code { background: rgba(0,0,0,0.3); padding: 3px 8px; border-radius: 4px; font-size: 0.85rem; }
+        
+        .directory { background: #0d1117; border-radius: 8px; padding: 20px; font-family: monospace; margin: 15px 0; }
+        .directory .folder { color: #58a6ff; }
+        .directory .file { color: #8b949e; }
+        
+        .checklist { list-style: none; padding: 0; }
+        .checklist li { padding: 10px 0; padding-left: 35px; position: relative; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .checklist li::before { content: '☐'; position: absolute; left: 0; color: #888; font-size: 1.2rem; }
+        
+        .footer { text-align: center; padding: 30px; color: #666; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="cicd-1-flow.html">📊 Flow Explanation</a>
+        <a href="cicd-2-existing-client.html">🔧 Existing Client Setup</a>
+        <a href="cicd-3-new-client.html" class="active">🆕 New Client Setup</a>
+    </nav>
+    
+    <div class="container">
+        <h1>🆕 New Client Setup</h1>
+        <p class="subtitle">Complete setup for a brand new client from scratch</p>
+        
+        <!-- Overview -->
+        <div class="section">
+            <h2><span class="step-number">0</span> Overview</h2>
+            <p>Setting up a new client involves:</p>
+            <ul class="checklist">
+                <li>Create GitHub repo in LOGIMAX-CLIENTS</li>
+                <li>Setup server (cPanel or AWS)</li>
+                <li>Configure shared directories</li>
+                <li>Deploy CI/CD scripts</li>
+                <li>Initial code deployment</li>
+            </ul>
+        </div>
+        
+        <!-- Step 1 -->
+        <div class="section">
+            <h2><span class="step-number">1</span> Create GitHub Repository</h2>
+            
+            <div class="code-block">
+<span class="comment"># Using GitHub CLI</span>
+gh repo create LOGIMAX-CLIENTS/<span class="var">client-domain.com</span> --private
+
+<span class="comment"># Clone and setup</span>
+git clone git@github.com:LOGIMAX-CLIENTS/<span class="var">client-domain.com</span>.git
+cd <span class="var">client-domain.com</span>
+
+<span class="comment"># Copy base code from retail_v5</span>
+cp -r /path/to/retail_v5/* .
+
+<span class="comment"># Create branches</span>
+git checkout -b staging
+git push -u origin staging
+git checkout -b production
+git push -u origin production
+            </div>
+        </div>
+        
+        <!-- Step 2 -->
+        <div class="section">
+            <h2><span class="step-number">2</span> Setup Server Directory Structure</h2>
+            
+            <h3>For Production (Symlink Mode)</h3>
+            <div class="directory">
+<pre><span class="folder">/var/www/</span> (or /home/user/)
+├── <span class="folder">releases/</span>         <span style="color:#888"># Versioned releases</span>
+├── <span class="folder">shared/</span>           <span style="color:#888"># Persistent data</span>
+│   ├── <span class="folder">logs/</span>
+│   ├── <span class="folder">uploads/</span>
+│   ├── <span class="folder">img/</span>
+│   ├── <span class="folder">bill_qrcode/</span>
+│   ├── <span class="folder">admin/</span>
+│   │   ├── <span class="folder">log/</span>
+│   │   ├── <span class="folder">kyc/</span>
+│   │   └── <span class="folder">vendor_ack/</span>
+│   ├── <span class="file">database.php</span>
+│   ├── <span class="file">global_configs.php</span>
+│   └── <span class="file">config.php</span>
+└── <span class="folder">current/</span> → releases/latest/</pre>
+            </div>
+            
+            <div class="code-block">
+<span class="comment"># Create structure on server</span>
+ssh user@server
+
+<span class="comment"># Create directories</span>
+mkdir -p ~/releases ~/shared/{logs,uploads,img,bill_qrcode,esti_qrcode}
+mkdir -p ~/shared/admin/{log,kyc,vendor_ack,tagging_log}
+
+<span class="comment"># Create config files</span>
+cp database.php ~/shared/
+cp global_configs.php ~/shared/
+            </div>
+        </div>
+        
+        <!-- Step 3 -->
+        <div class="section">
+            <h2><span class="step-number">3</span> Deploy CI/CD Scripts</h2>
+            
+            <div class="code-block">
+<span class="comment"># From your local machine</span>
+
+<span class="comment"># Copy deployment scripts</span>
+scp scripts/unified-deploy.sh user@server:~/deploy.sh
+scp scripts/rollback.sh user@server:~/rollback.sh
+scp scripts/webhook-handler.php user@server:~/webhooks/deploy.php
+scp maintenance.html user@server:~/shared/maintenance.html
+
+<span class="comment"># Make executable</span>
+ssh user@server "chmod +x ~/deploy.sh ~/rollback.sh"
+            </div>
+        </div>
+        
+        <!-- Step 4 -->
+        <div class="section">
+            <h2><span class="step-number">4</span> Configure Environment Variables</h2>
+            
+            <h3>Generate Secrets</h3>
+            <div class="code-block">
+<span class="comment"># Generate webhook secret</span>
+WEBHOOK_SECRET=$(openssl rand -hex 32)
+echo "Webhook Secret: $WEBHOOK_SECRET"
+            </div>
+            
+            <h3>Server Configuration</h3>
+            <div class="code-block">
+<span class="comment"># Create ~/webhooks/.htaccess (cPanel)</span>
+SetEnv WEBHOOK_SECRET "<span class="var">your-generated-secret</span>"
+SetEnv REPO_PATH "/home/<span class="var">username</span>/current"
+SetEnv DEPLOY_SCRIPT "/home/<span class="var">username</span>/deploy.sh"
+SetEnv BASE_DIR "/home/<span class="var">username</span>"
+SetEnv RELEASES_DIR "/home/<span class="var">username</span>/releases"
+SetEnv SHARED_DIR "/home/<span class="var">username</span>/shared"
+SetEnv CURRENT_LINK "/home/<span class="var">username</span>/current"
+            </div>
+        </div>
+        
+        <!-- Step 5 -->
+        <div class="section">
+            <h2><span class="step-number">5</span> Add GitHub Secrets</h2>
+            
+            <table class="file-table">
+                <thead><tr><th>Secret</th><th>Value</th></tr></thead>
+                <tbody>
+                    <tr><td><code>STAGING_WEBHOOK_URL</code></td><td>https://client.com/webhooks/deploy.php</td></tr>
+                    <tr><td><code>STAGING_WEBHOOK_SECRET</code></td><td>(generated secret)</td></tr>
+                    <tr><td><code>PRODUCTION_WEBHOOK_URL</code></td><td>https://client.com/webhooks/deploy.php</td></tr>
+                    <tr><td><code>PRODUCTION_WEBHOOK_SECRET</code></td><td>(generated secret)</td></tr>
+                </tbody>
+            </table>
+            
+            <div class="code-block">
+<span class="comment"># Using GitHub CLI</span>
+gh secret set STAGING_WEBHOOK_URL --repo LOGIMAX-CLIENTS/<span class="var">client-domain.com</span>
+gh secret set STAGING_WEBHOOK_SECRET --repo LOGIMAX-CLIENTS/<span class="var">client-domain.com</span>
+gh secret set PRODUCTION_WEBHOOK_URL --repo LOGIMAX-CLIENTS/<span class="var">client-domain.com</span>
+gh secret set PRODUCTION_WEBHOOK_SECRET --repo LOGIMAX-CLIENTS/<span class="var">client-domain.com</span>
+            </div>
+        </div>
+        
+        <!-- Step 6 -->
+        <div class="section">
+            <h2><span class="step-number">6</span> Add Workflow File</h2>
+            
+            <div class="code-block">
+<span class="comment"># Create .github/workflows/deploy.yml</span>
+mkdir -p .github/workflows
+cp templates/client/deploy.yml .github/workflows/deploy.yml
+git add .github/
+git commit -m "Add CI/CD workflow"
+git push
+            </div>
+        </div>
+        
+        <!-- Step 7 -->
+        <div class="section">
+            <h2><span class="step-number">7</span> Setup GitHub Environment Protection</h2>
+            
+            <p>For production approval:</p>
+            <ol style="padding-left: 20px; color: #888;">
+                <li>Go to repo → Settings → Environments</li>
+                <li>Click "New environment" → Name: <code>production</code></li>
+                <li>Check "Required reviewers" → Add approvers</li>
+                <li>Under "Deployment branches" → Select "production" only</li>
+                <li>Save</li>
+            </ol>
+        </div>
+        
+        <!-- Step 8 -->
+        <div class="section">
+            <h2><span class="step-number">8</span> Initial Deployment</h2>
+            
+            <div class="code-block">
+<span class="comment"># Push to staging first</span>
+git checkout staging
+git push origin staging
+
+<span class="comment"># Watch GitHub Actions for status</span>
+gh run watch
+
+<span class="comment"># Once staging works, deploy to production</span>
+git checkout production
+git merge staging
+git push origin production
+
+<span class="comment"># Approve in GitHub → Actions → Pending deployments</span>
+            </div>
+            
+            <div class="note">
+                <strong>✅ Success!</strong> Your new client is now set up with full CI/CD!
+            </div>
+        </div>
+        
+        <!-- Checklist -->
+        <div class="section">
+            <h2>📋 Final Checklist</h2>
+            <ul class="checklist">
+                <li>GitHub repo created in LOGIMAX-CLIENTS</li>
+                <li>staging and production branches created</li>
+                <li>Server directories created (releases, shared)</li>
+                <li>Config files in shared/ directory</li>
+                <li>Deploy scripts copied to server</li>
+                <li>Webhook secret generated and configured</li>
+                <li>GitHub secrets added</li>
+                <li>Workflow file added</li>
+                <li>Production environment protection enabled</li>
+                <li>Staging deployment tested</li>
+                <li>Production deployment tested</li>
+            </ul>
+        </div>
+        
+        <div class="footer">Logimax CI/CD Pipeline | Page 3 of 3</div>
+    </div>
+</body>
+</html>

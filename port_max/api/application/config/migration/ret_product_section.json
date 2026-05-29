@@ -1,0 +1,38 @@
+{
+    "entity": "product_section",
+    "ai": {
+        "enabled": true,
+        "max_rows": 20
+    },
+    "validation": {
+        "required_file_name_pattern": "product_section*.xlsx",
+        "required_sheet_name": "port_product_section"
+    },
+    "file_path": "uploads/product_section.xlsx",
+    "migrations": [{
+        "destination_table": "ret_product_section",
+        "primary_key": null,
+        "mappings": {
+            "pro_id": {
+                "lookup": {
+                    "table": "ret_product_master",
+                    "source_column": "product_name",
+                    "match_column": "product_name",
+                    "return_column": "pro_id",
+                    "create_if_missing": false
+                },
+                "validations": { "type": "string", "max_length": 100, "required": true }
+            },
+            "id_section": {
+                "lookup": {
+                    "table": "ret_section",
+                    "source_column": "section_name",
+                    "match_column": "section_name",
+                    "return_column": "id_section",
+                    "create_if_missing": false
+                },
+                "validations": { "type": "string", "max_length": 100, "required": true }
+            }
+        }
+    }]
+}

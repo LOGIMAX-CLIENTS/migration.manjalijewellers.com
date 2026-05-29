@@ -1,0 +1,17 @@
+@charset "UTF-8";
+.body{
+	font-family: Calibri, Candara, Segoe, "Segoe UI", Optima, Arial, sans-serif !important;
+}
+
+.rd-navbar-minimal.rd-navbar-static .rd-navbar-nav > li > a, .rd-navbar-floated.rd-navbar-static .rd-navbar-nav > li > a, .rd-navbar-top-panel.rd-navbar-static .rd-navbar-nav > li > a{
+	padding: 19px 10px;
+}
+.section-md-67{
+	padding-top: 0px;
+    padding-bottom: 0px;
+	background: #ec606a;
+	padding:10px;
+}
+.text-white{
+	color: #fff;
+}

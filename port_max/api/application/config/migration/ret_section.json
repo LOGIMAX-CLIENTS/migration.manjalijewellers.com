@@ -1,0 +1,35 @@
+{
+    "entity": "section",
+    "ai": {
+        "enabled": true,
+        "max_rows": 20
+    },
+    "validation": {
+        "required_file_name_pattern": "section*.xlsx",
+        "required_sheet_name": "port_section"
+    },
+    "file_path": "uploads/section.xlsx",
+    "migrations": [{
+        "destination_table": "ret_section",
+        "primary_key": "id_section",
+        "mappings": {
+            "old_id": {
+                "source_column": "old_id",
+                "validations": { "type": "numeric", "min": 1, "required": false }
+            },
+            "section_name": {
+                "source_column": "section_name",
+                "validations": { "type": "string", "max_length": 100, "required": true },
+                "check_if_exists": true
+            },
+            "section_short_code": {
+                "source_column": "short_code",
+                "validations": { "type": "string", "max_length": 50, "required": false }
+            },
+            "is_home_bill_counter": {
+                "source_column": "is_home_bill_counter",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            }
+        }
+    }]
+}

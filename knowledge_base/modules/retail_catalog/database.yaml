@@ -1,0 +1,35 @@
+# Retail Catalog Database Schema
+
+## Core Product Entities
+- **product**: Main product table (Legacy/Mixed?).
+- **ret_product_master**: Retail-specific product definition.
+- **ret_sub_product_master**: Variants or sub-types of products.
+- **ret_product_sub_product**: Mapping between products and sub-products.
+- **product_details**: Extended attributes (Diamond info, Metal info).
+- **product_images**: Product imagery.
+
+## Classification & Organization
+- **category**: Top-level classification.
+- **sub_category**: Granular classification (linked to `category`).
+- **ret_uom**: Unit of Measure.
+
+## Diamond & Stone Attributes
+- **ret_stone**: Master list of stones.
+- **ret_clarity**: Diamond clarity grades.
+- **ret_cut**: Diamond cut grades.
+- **ret_color**: Diamond/Stone color grades.
+
+## Metal Attributes
+- **metal**: Metal types (Gold, Silver, Platinum).
+- **ret_purity**: Metal purity standards (22k, 18k, etc.).
+- **ret_material**: Raw materials.
+- **ret_material_rate**: Historical rates for materials.
+
+## Store Layout
+- **ret_branch_floor**: Floors within a branch.
+- **ret_branch_floor_counter**: Counters within a floor.
+
+## Miscellaneous
+- **ret_theme**: Design themes.
+- **ret_making_type**: Types of making charges/processes.
+- **ret_taxgroupmaster**: Tax grouping for products.

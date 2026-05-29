@@ -1,0 +1,4229 @@
+{
+  "module": "estimation_php",
+  "version": "2.0.0",
+  "indexed_at": "2026-01-29T23:22:27.478655",
+  "functions": [
+    {
+      "name": "Admin_ret_estimation::__construct",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 13,
+      "end_line": 49,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::index",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 51,
+      "end_line": 54,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::set_image",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 56,
+      "end_line": 73,
+      "params": [
+        "$id",
+        "$img_path",
+        "$file",
+        "$path"
+      ],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::upload_img",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 75,
+      "end_line": 131,
+      "params": [
+        "$outputImage",
+        "$dst",
+        "$img"
+      ],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::rrmdir",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 133,
+      "end_line": 152,
+      "params": [
+        "$path"
+      ],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::remove_img",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 154,
+      "end_line": 171,
+      "params": [
+        "$file",
+        "$id"
+      ],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_purities",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 179,
+      "end_line": 188,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::estimation",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 190,
+      "end_line": 2448,
+      "params": [
+        "$type",
+        "$id"
+      ],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::createNewCustomer",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2452,
+      "end_line": 2529,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::getCustomersBySearch",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2533,
+      "end_line": 2545,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::getTaggingBySearch",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2547,
+      "end_line": 2555,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::getTaggingScanBySearch",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2559,
+      "end_line": 2578,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::getTaggingSearchByCollection",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2582,
+      "end_line": 2590,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::getPartialTagSearch",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2594,
+      "end_line": 2602,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::getPartialTagSearch_old",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2604,
+      "end_line": 2612,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_order_details",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2614,
+      "end_line": 2623,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_ActiveProduct",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2627,
+      "end_line": 2636,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::getOrderBySearch",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2640,
+      "end_line": 2688,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::getProductBySearch",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2690,
+      "end_line": 2708,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::getCustomProductBySearch",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2732,
+      "end_line": 2742,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::getNonTagproducts",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2746,
+      "end_line": 2755,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::getProductDesignBySearch",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2759,
+      "end_line": 2777,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::getMetalTypes",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2781,
+      "end_line": 2789,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::getNonTagLots",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2791,
+      "end_line": 2799,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_scheme_accounts",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2803,
+      "end_line": 2814,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_stone_details",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2818,
+      "end_line": 2829,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_old_metal_stone_details",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2831,
+      "end_line": 2842,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_other_material_details",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2844,
+      "end_line": 2855,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_old_metal_rate",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2857,
+      "end_line": 2868,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_all_old_metal_rates",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2870,
+      "end_line": 2879,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::generate_invoice",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2913,
+      "end_line": 2971,
+      "params": [
+        "$est_id"
+      ],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::generate_brief_copy",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 2975,
+      "end_line": 3021,
+      "params": [
+        "$est_id"
+      ],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_employee",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3025,
+      "end_line": 3036,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_partial_details",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3040,
+      "end_line": 3049,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::ajax_get_village",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3053,
+      "end_line": 3062,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_customer",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3066,
+      "end_line": 3091,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::updateCustomer",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3095,
+      "end_line": 3169,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_old_metal_type",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3173,
+      "end_line": 3182,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_old_metal_types",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3184,
+      "end_line": 3193,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_old_metal_category",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3195,
+      "end_line": 3204,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_metal_purity_rate",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3206,
+      "end_line": 3215,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::getCustomerDet",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3221,
+      "end_line": 3229,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::getProductSubDesignBySearch",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3233,
+      "end_line": 3247,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_purity_rate",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3251,
+      "end_line": 3260,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::base64ToFile",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3262,
+      "end_line": 3288,
+      "params": [
+        "$imgBase64"
+      ],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::cancel_order_tag",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3296,
+      "end_line": 3343,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_non_tag_stock",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3347,
+      "end_line": 3356,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_tag_status_details",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3360,
+      "end_line": 3377,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_tag_img_by_id",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3379,
+      "end_line": 3385,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::isEmptySetDefault",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3387,
+      "end_line": 3395,
+      "params": [
+        "$value",
+        "$default"
+      ],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_village_by_pincode",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3398,
+      "end_line": 3403,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::old_get_village",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3405,
+      "end_line": 3427,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_village",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3429,
+      "end_line": 3467,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_sectionBranchwise",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3469,
+      "end_line": 3477,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::pan_available",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3479,
+      "end_line": 3488,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::gst_available",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3490,
+      "end_line": 3498,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::aadhar_available",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3500,
+      "end_line": 3509,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::passport_available",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3510,
+      "end_line": 3517,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::dl_available",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3518,
+      "end_line": 3525,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_old_metal_Product",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3526,
+      "end_line": 3531,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::get_va_range",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3532,
+      "end_line": 3538,
+      "params": [],
+      "language": "php"
+    },
+    {
+      "name": "Admin_ret_estimation::getFinancialYr",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\Admin_ret_estimation.php",
+      "line": 3540,
+      "end_line": 3547,
+      "params": [],
+      "language": "php"
+    }
+  ],
+  "calls": [
+    {
+      "source": "GLOBAL",
+      "target": "defined",
+      "line": 3,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::__construct",
+      "target": "__construct",
+      "line": 17,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::__construct",
+      "target": "ini_set",
+      "line": 19,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::__construct",
+      "target": "model",
+      "line": 21,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::__construct",
+      "target": "model",
+      "line": 23,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::__construct",
+      "target": "model",
+      "line": 25,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::__construct",
+      "target": "model",
+      "line": 27,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::__construct",
+      "target": "userdata",
+      "line": 29,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::__construct",
+      "target": "redirect",
+      "line": 31,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::__construct",
+      "target": "userdata",
+      "line": 32,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::__construct",
+      "target": "userdata",
+      "line": 32,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::__construct",
+      "target": "time",
+      "line": 34,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::__construct",
+      "target": "userdata",
+      "line": 36,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::__construct",
+      "target": "userdata",
+      "line": 38,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::__construct",
+      "target": "set_flashdata",
+      "line": 44,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::__construct",
+      "target": "redirect",
+      "line": 46,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::set_image",
+      "target": "is_dir",
+      "line": 60,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::set_image",
+      "target": "mkdir",
+      "line": 62,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::set_image",
+      "target": "upload_img",
+      "line": 69,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::upload_img",
+      "target": "getimagesize",
+      "line": 79,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::upload_img",
+      "target": "imagecreatefromgif",
+      "line": 93,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::upload_img",
+      "target": "imagecreatetruecolor",
+      "line": 95,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::upload_img",
+      "target": "imagecolorallocate",
+      "line": 97,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::upload_img",
+      "target": "imagefill",
+      "line": 99,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::upload_img",
+      "target": "imagecreatefromjpeg",
+      "line": 104,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::upload_img",
+      "target": "imagecreatetruecolor",
+      "line": 106,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::upload_img",
+      "target": "imagecreatefrompng",
+      "line": 111,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::upload_img",
+      "target": "imagecreatetruecolor",
+      "line": 113,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::upload_img",
+      "target": "imagecolorallocate",
+      "line": 115,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::upload_img",
+      "target": "imagefill",
+      "line": 117,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::upload_img",
+      "target": "imagecopyresampled",
+      "line": 126,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::upload_img",
+      "target": "imagejpeg",
+      "line": 128,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::rrmdir",
+      "target": "isFile",
+      "line": 142,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::rrmdir",
+      "target": "unlink",
+      "line": 144,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::rrmdir",
+      "target": "getRealPath",
+      "line": 144,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::rrmdir",
+      "target": "isDot",
+      "line": 145,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::rrmdir",
+      "target": "isDir",
+      "line": 145,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::rrmdir",
+      "target": "rrmdir",
+      "line": 147,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::rrmdir",
+      "target": "getRealPath",
+      "line": 147,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::rrmdir",
+      "target": "rmdir",
+      "line": 151,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::remove_img",
+      "target": "chmod",
+      "line": 159,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::remove_img",
+      "target": "unlink",
+      "line": 161,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::remove_img",
+      "target": "delete_prodimage",
+      "line": 165,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_purities",
+      "target": "get_Active_Purity",
+      "line": 185,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_profile_settings",
+      "line": 200,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "userdata",
+      "line": 200,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_empty_record",
+      "line": 201,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 203,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 205,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 207,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 209,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 211,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 213,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 215,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 217,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 219,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 221,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 223,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 225,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 227,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_stone_disc",
+      "line": 230,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 232,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_employee_settings",
+      "line": 234,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "userdata",
+      "line": 234,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "profileDB",
+      "line": 236,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "getUOMDetails",
+      "line": 240,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_access",
+      "line": 244,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "view",
+      "line": 246,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "view",
+      "line": 250,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_access",
+      "line": 258,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "view",
+      "line": 260,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_profile_settings",
+      "line": 267,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "userdata",
+      "line": 267,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "getBranchDayClosingData",
+      "line": 279,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_FinancialYear",
+      "line": 281,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "sizeof",
+      "line": 297,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "date",
+      "line": 299,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "date",
+      "line": 299,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "date",
+      "line": 299,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "generateEstiNo",
+      "line": 307,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "date",
+      "line": 325,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "date",
+      "line": 327,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "trans_begin",
+      "line": 344,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 346,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 446,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 488,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 542,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 552,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "updateData",
+      "line": 557,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 579,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 622,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_charges",
+      "line": 630,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "sizeof",
+      "line": 634,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 648,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "updateData",
+      "line": 711,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertBatchData",
+      "line": 716,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 792,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 826,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 847,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 874,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "isEmptySetDefault",
+      "line": 905,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 967,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 1005,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 1029,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 1115,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 1153,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 1183,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertBatchData",
+      "line": 1200,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertBatchData",
+      "line": 1236,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "date",
+      "line": 1247,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "date",
+      "line": 1247,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "date",
+      "line": 1247,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "array_filter",
+      "line": 1255,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertBatchData",
+      "line": 1274,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "trans_status",
+      "line": 1279,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "trans_commit",
+      "line": 1283,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "userdata",
+      "line": 1289,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "date",
+      "line": 1291,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "log_detail",
+      "line": 1303,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "set_flashdata",
+      "line": 1307,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "trans_rollback",
+      "line": 1310,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "set_flashdata",
+      "line": 1312,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "set_flashdata",
+      "line": 1323,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "set_flashdata",
+      "line": 1325,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_profile_settings",
+      "line": 1338,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "userdata",
+      "line": 1338,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 1340,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 1342,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 1344,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 1346,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 1348,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 1350,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 1352,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 1354,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 1356,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 1358,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 1360,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_ret_settings",
+      "line": 1362,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_employee_settings",
+      "line": 1364,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "userdata",
+      "line": 1364,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "profileDB",
+      "line": 1366,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_stone_disc",
+      "line": 1368,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "getUOMDetails",
+      "line": 1372,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_entry_records",
+      "line": 1374,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_employee",
+      "line": 1376,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "getUOMDetails",
+      "line": 1378,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "getOtherEstimateItemsDetails",
+      "line": 1380,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_employee_settings",
+      "line": 1382,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "userdata",
+      "line": 1382,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "view",
+      "line": 1391,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "view",
+      "line": 1393,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_entry_records",
+      "line": 1401,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_employee",
+      "line": 1403,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "getUOMDetails",
+      "line": 1405,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "getOtherEstimateItemsDetails",
+      "line": 1407,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_est_tag_details",
+      "line": 1409,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "est_non_tag_items",
+      "line": 1413,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "est_home_bill",
+      "line": 1415,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_chit_details",
+      "line": 1417,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "old_Metal",
+      "line": 1419,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "trans_begin",
+      "line": 1429,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "deleteData",
+      "line": 1431,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "deleteData",
+      "line": 1433,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "deleteData",
+      "line": 1435,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "deleteData",
+      "line": 1437,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "deleteData",
+      "line": 1439,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "deleteData",
+      "line": 1441,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "deleteData",
+      "line": 1443,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "trans_status",
+      "line": 1445,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "userdata",
+      "line": 1449,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "date",
+      "line": 1451,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "log_detail",
+      "line": 1463,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "trans_commit",
+      "line": 1465,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "set_flashdata",
+      "line": 1467,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "trans_rollback",
+      "line": 1470,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "set_flashdata",
+      "line": 1472,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "redirect",
+      "line": 1475,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_entry_records",
+      "line": 1484,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "trans_begin",
+      "line": 1512,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "updateData",
+      "line": 1514,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "deleteData",
+      "line": 1522,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "deleteData",
+      "line": 1540,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "deleteData",
+      "line": 1542,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "deleteData",
+      "line": 1544,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "deleteData",
+      "line": 1546,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "deleteData",
+      "line": 1548,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "deleteData",
+      "line": 1550,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 1653,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 1693,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 1742,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 1749,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "updateData",
+      "line": 1754,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 1776,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 1820,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_charges",
+      "line": 1828,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "sizeof",
+      "line": 1832,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 1846,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 1940,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 1974,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 1998,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 2092,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 2128,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 2152,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 2174,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 2234,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 2272,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertData",
+      "line": 2298,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertBatchData",
+      "line": 2315,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "insertBatchData",
+      "line": 2350,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "trans_status",
+      "line": 2357,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "userdata",
+      "line": 2361,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "date",
+      "line": 2363,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "log_detail",
+      "line": 2375,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "trans_commit",
+      "line": 2377,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "set_flashdata",
+      "line": 2379,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "trans_rollback",
+      "line": 2387,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "set_flashdata",
+      "line": 2389,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "set_flashdata",
+      "line": 2403,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "updateData",
+      "line": 2414,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "set_flashdata",
+      "line": 2418,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "set_flashdata",
+      "line": 2421,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "redirect",
+      "line": 2424,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "post",
+      "line": 2428,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "post",
+      "line": 2430,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "post",
+      "line": 2432,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "ajax_getEstimationList",
+      "line": 2434,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::estimation",
+      "target": "get_access",
+      "line": 2436,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::createNewCustomer",
+      "target": "createNewCustomer",
+      "line": 2460,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::createNewCustomer",
+      "target": "set_image",
+      "line": 2468,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::createNewCustomer",
+      "target": "sizeof",
+      "line": 2478,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::createNewCustomer",
+      "target": "base64ToFile",
+      "line": 2484,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::createNewCustomer",
+      "target": "is_dir",
+      "line": 2496,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::createNewCustomer",
+      "target": "mkdir",
+      "line": 2498,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::createNewCustomer",
+      "target": "upload_img",
+      "line": 2511,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::getCustomersBySearch",
+      "target": "getAvailableCustomers",
+      "line": 2542,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::getTaggingBySearch",
+      "target": "getTaggingBySearch",
+      "line": 2552,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::getTaggingScanBySearch",
+      "target": "getTaggingScanBySearch",
+      "line": 2566,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::getTaggingScanBySearch",
+      "target": "advance_details_order_no",
+      "line": 2570,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::getTaggingScanBySearch",
+      "target": "tag_reserve_check",
+      "line": 2572,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::getTaggingSearchByCollection",
+      "target": "getTaggingSearchByCollection",
+      "line": 2587,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::getPartialTagSearch",
+      "target": "getPartialTagSearch",
+      "line": 2599,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::getPartialTagSearch_old",
+      "target": "getPartialTagSearch",
+      "line": 2609,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_order_details",
+      "target": "order_details",
+      "line": 2620,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_ActiveProduct",
+      "target": "get_ActiveProduct",
+      "line": 2633,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::getOrderBySearch",
+      "target": "getOrderBySearch",
+      "line": 2652,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::getOrderBySearch",
+      "target": "get_order_details",
+      "line": 2658,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::getOrderBySearch",
+      "target": "advance_details_order_no",
+      "line": 2662,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::getProductBySearch",
+      "target": "getProductBySearch",
+      "line": 2705,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::getCustomProductBySearch",
+      "target": "getCustomProductBySearch",
+      "line": 2739,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::getNonTagproducts",
+      "target": "getNonTagproducts",
+      "line": 2752,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::getProductDesignBySearch",
+      "target": "getProductDesignBySearch",
+      "line": 2774,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::getMetalTypes",
+      "target": "getMetalTypes",
+      "line": 2786,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::getNonTagLots",
+      "target": "getNonTagLots",
+      "line": 2796,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_scheme_accounts",
+      "target": "post",
+      "line": 2809,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_scheme_accounts",
+      "target": "get_closed_accounts",
+      "line": 2811,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_stone_details",
+      "target": "post",
+      "line": 2824,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_stone_details",
+      "target": "get_stone_details",
+      "line": 2826,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_old_metal_stone_details",
+      "target": "post",
+      "line": 2837,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_old_metal_stone_details",
+      "target": "get_old_metal_stone_details",
+      "line": 2839,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_other_material_details",
+      "target": "post",
+      "line": 2850,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_other_material_details",
+      "target": "get_other_material_details",
+      "line": 2852,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_old_metal_rate",
+      "target": "post",
+      "line": 2863,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_old_metal_rate",
+      "target": "get_old_metal_rate",
+      "line": 2865,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_all_old_metal_rates",
+      "target": "get_all_old_metal_rates",
+      "line": 2876,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_invoice",
+      "target": "get_entry_records",
+      "line": 2921,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_invoice",
+      "target": "item",
+      "line": 2923,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_invoice",
+      "target": "item",
+      "line": 2925,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_invoice",
+      "target": "getOtherEstimateItemsDetails",
+      "line": 2927,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_invoice",
+      "target": "get_branchwise_rate",
+      "line": 2929,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_invoice",
+      "target": "getCompanyDetails",
+      "line": 2931,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_invoice",
+      "target": "library",
+      "line": 2933,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_invoice",
+      "target": "is_dir",
+      "line": 2937,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_invoice",
+      "target": "mkdir",
+      "line": 2939,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_invoice",
+      "target": "QRcode::png",
+      "line": 2948,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_invoice",
+      "target": "base_url",
+      "line": 2950,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_invoice",
+      "target": "view",
+      "line": 2954,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_invoice",
+      "target": "helper",
+      "line": 2960,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_invoice",
+      "target": "load_html",
+      "line": 2964,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_invoice",
+      "target": "set_paper",
+      "line": 2966,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_invoice",
+      "target": "render",
+      "line": 2968,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_invoice",
+      "target": "stream",
+      "line": 2970,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_brief_copy",
+      "target": "get_entry_records",
+      "line": 2981,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_brief_copy",
+      "target": "getOtherEstimateItemsDetails",
+      "line": 2983,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_brief_copy",
+      "target": "get_branchwise_rate",
+      "line": 2985,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_brief_copy",
+      "target": "helper",
+      "line": 2989,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_brief_copy",
+      "target": "view",
+      "line": 2993,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_brief_copy",
+      "target": "load_html",
+      "line": 2995,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_brief_copy",
+      "target": "set_paper",
+      "line": 2997,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_brief_copy",
+      "target": "render",
+      "line": 2999,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_brief_copy",
+      "target": "get_page_number",
+      "line": 3001,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_brief_copy",
+      "target": "get_canvas",
+      "line": 3001,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_brief_copy",
+      "target": "load_html",
+      "line": 3009,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_brief_copy",
+      "target": "set_paper",
+      "line": 3015,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_brief_copy",
+      "target": "render",
+      "line": 3017,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::generate_brief_copy",
+      "target": "stream",
+      "line": 3020,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_employee",
+      "target": "post",
+      "line": 3031,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_employee",
+      "target": "get_employee",
+      "line": 3033,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_partial_details",
+      "target": "get_partial_details",
+      "line": 3046,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::ajax_get_village",
+      "target": "get_village",
+      "line": 3059,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_customer",
+      "target": "post",
+      "line": 3072,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_customer",
+      "target": "get_customer",
+      "line": 3074,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_customer",
+      "target": "is_dir",
+      "line": 3078,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_customer",
+      "target": "base_url",
+      "line": 3082,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_customer",
+      "target": "base_url",
+      "line": 3087,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::updateCustomer",
+      "target": "updateCustomer",
+      "line": 3102,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::updateCustomer",
+      "target": "set_image",
+      "line": 3110,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::updateCustomer",
+      "target": "sizeof",
+      "line": 3120,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::updateCustomer",
+      "target": "base64ToFile",
+      "line": 3126,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::updateCustomer",
+      "target": "is_dir",
+      "line": 3138,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::updateCustomer",
+      "target": "mkdir",
+      "line": 3140,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::updateCustomer",
+      "target": "upload_img",
+      "line": 3153,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_old_metal_type",
+      "target": "get_old_metal_type",
+      "line": 3179,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_old_metal_types",
+      "target": "get_old_metal_types",
+      "line": 3190,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_old_metal_category",
+      "target": "get_old_metal_category",
+      "line": 3201,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_metal_purity_rate",
+      "target": "get_metal_purity_rate",
+      "line": 3212,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::getCustomerDet",
+      "target": "getCustomerDet",
+      "line": 3226,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::getProductSubDesignBySearch",
+      "target": "getProductSubDesignBySearch",
+      "line": 3244,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_purity_rate",
+      "target": "get_purity_rate",
+      "line": 3257,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::base64ToFile",
+      "target": "base64_decode",
+      "line": 3265,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::base64ToFile",
+      "target": "preg_replace",
+      "line": 3265,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::base64ToFile",
+      "target": "tempnam",
+      "line": 3267,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::base64ToFile",
+      "target": "sys_get_temp_dir",
+      "line": 3267,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::base64ToFile",
+      "target": "file_put_contents",
+      "line": 3269,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::base64ToFile",
+      "target": "getimagesize",
+      "line": 3271,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::base64ToFile",
+      "target": "uniqid",
+      "line": 3275,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::base64ToFile",
+      "target": "preg_replace",
+      "line": 3275,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::base64ToFile",
+      "target": "filesize",
+      "line": 3279,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::cancel_order_tag",
+      "target": "post",
+      "line": 3302,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::cancel_order_tag",
+      "target": "post",
+      "line": 3304,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::cancel_order_tag",
+      "target": "date",
+      "line": 3308,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::cancel_order_tag",
+      "target": "trans_begin",
+      "line": 3314,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::cancel_order_tag",
+      "target": "updateData",
+      "line": 3316,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::cancel_order_tag",
+      "target": "get_taggedorder_details",
+      "line": 3320,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::cancel_order_tag",
+      "target": "updateData",
+      "line": 3326,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::cancel_order_tag",
+      "target": "trans_status",
+      "line": 3330,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::cancel_order_tag",
+      "target": "trans_commit",
+      "line": 3332,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::cancel_order_tag",
+      "target": "trans_commit",
+      "line": 3337,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_non_tag_stock",
+      "target": "get_non_tag_stock_details",
+      "line": 3353,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_tag_status_details",
+      "target": "get_tag_status_details",
+      "line": 3366,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_tag_status_details",
+      "target": "sizeof",
+      "line": 3368,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_tag_img_by_id",
+      "target": "post",
+      "line": 3382,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_tag_img_by_id",
+      "target": "getTagImageDetails",
+      "line": 3383,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_village_by_pincode",
+      "target": "get_village_by_pincode",
+      "line": 3401,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::old_get_village",
+      "target": "post",
+      "line": 3410,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::old_get_village",
+      "target": "post",
+      "line": 3411,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::old_get_village",
+      "target": "date",
+      "line": 3414,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::old_get_village",
+      "target": "trans_begin",
+      "line": 3416,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::old_get_village",
+      "target": "insertData",
+      "line": 3417,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::old_get_village",
+      "target": "trans_status",
+      "line": 3419,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::old_get_village",
+      "target": "trans_commit",
+      "line": 3420,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::old_get_village",
+      "target": "trans_rollback",
+      "line": 3423,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_village",
+      "target": "post",
+      "line": 3433,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_village",
+      "target": "post",
+      "line": 3434,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_village",
+      "target": "strtolower",
+      "line": 3435,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_village",
+      "target": "select",
+      "line": 3437,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_village",
+      "target": "from",
+      "line": 3438,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_village",
+      "target": "where",
+      "line": 3439,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_village",
+      "target": "where",
+      "line": 3440,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_village",
+      "target": "get",
+      "line": 3441,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_village",
+      "target": "num_rows",
+      "line": 3443,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_village",
+      "target": "row_array",
+      "line": 3444,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_village",
+      "target": "date",
+      "line": 3451,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_village",
+      "target": "trans_begin",
+      "line": 3454,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_village",
+      "target": "insertData",
+      "line": 3455,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_village",
+      "target": "trans_status",
+      "line": 3457,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_village",
+      "target": "trans_commit",
+      "line": 3458,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_village",
+      "target": "trans_rollback",
+      "line": 3461,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_sectionBranchwise",
+      "target": "get_sectionBranchwise",
+      "line": 3474,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::pan_available",
+      "target": "pan_available",
+      "line": 3485,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::gst_available",
+      "target": "gst_available",
+      "line": 3495,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::aadhar_available",
+      "target": "aadhar_available",
+      "line": 3506,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::passport_available",
+      "target": "passport_available",
+      "line": 3514,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::dl_available",
+      "target": "dl_available",
+      "line": 3522,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_old_metal_Product",
+      "target": "get_old_metal_Product",
+      "line": 3529,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::get_va_range",
+      "target": "get_va_range",
+      "line": 3535,
+      "type": "calls"
+    },
+    {
+      "source": "Admin_ret_estimation::getFinancialYr",
+      "target": "GetFinancialYear",
+      "line": 3544,
+      "type": "calls"
+    }
+  ],
+  "ui_matches": [],
+  "level2": {
+    "getimagesize": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::upload_img",
+        "Admin_ret_estimation::base64ToFile"
+      ]
+    },
+    "imagecolorallocate": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::upload_img"
+      ]
+    },
+    "Admin_ret_estimation::get_va_range": {
+      "calls": [
+        "get_va_range"
+      ],
+      "called_by": []
+    },
+    "Admin_ret_estimation::get_scheme_accounts": {
+      "calls": [
+        "post",
+        "get_closed_accounts"
+      ],
+      "called_by": []
+    },
+    "getRealPath": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::rrmdir"
+      ]
+    },
+    "Admin_ret_estimation::get_purity_rate": {
+      "calls": [
+        "get_purity_rate"
+      ],
+      "called_by": []
+    },
+    "model": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::__construct"
+      ]
+    },
+    "get_chit_details": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation"
+      ]
+    },
+    "Admin_ret_estimation::getTaggingScanBySearch": {
+      "calls": [
+        "tag_reserve_check",
+        "advance_details_order_no",
+        "getTaggingScanBySearch"
+      ],
+      "called_by": []
+    },
+    "isDir": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::rrmdir"
+      ]
+    },
+    "updateData": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation",
+        "Admin_ret_estimation::cancel_order_tag"
+      ]
+    },
+    "render": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::generate_invoice",
+        "Admin_ret_estimation::generate_brief_copy"
+      ]
+    },
+    "get_page_number": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::generate_brief_copy"
+      ]
+    },
+    "get_old_metal_stone_details": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_old_metal_stone_details"
+      ]
+    },
+    "uniqid": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::base64ToFile"
+      ]
+    },
+    "set_paper": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::generate_invoice",
+        "Admin_ret_estimation::generate_brief_copy"
+      ]
+    },
+    "get_old_metal_Product": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_old_metal_Product"
+      ]
+    },
+    "get_partial_details": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_partial_details"
+      ]
+    },
+    "trans_status": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation",
+        "Admin_ret_estimation::old_get_village",
+        "Admin_ret_estimation::cancel_order_tag",
+        "Admin_ret_estimation::get_village"
+      ]
+    },
+    "get_old_metal_type": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_old_metal_type"
+      ]
+    },
+    "base64ToFile": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::createNewCustomer",
+        "Admin_ret_estimation::updateCustomer"
+      ]
+    },
+    "gst_available": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::gst_available"
+      ]
+    },
+    "load_html": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::generate_invoice",
+        "Admin_ret_estimation::generate_brief_copy"
+      ]
+    },
+    "Admin_ret_estimation::get_other_material_details": {
+      "calls": [
+        "post",
+        "get_other_material_details"
+      ],
+      "called_by": []
+    },
+    "getBranchDayClosingData": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation"
+      ]
+    },
+    "dl_available": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::dl_available"
+      ]
+    },
+    "get": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_village"
+      ]
+    },
+    "upload_img": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::updateCustomer",
+        "Admin_ret_estimation::createNewCustomer",
+        "Admin_ret_estimation::set_image"
+      ]
+    },
+    "get_other_material_details": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_other_material_details"
+      ]
+    },
+    "item": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::generate_invoice"
+      ]
+    },
+    "userdata": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation",
+        "Admin_ret_estimation::__construct"
+      ]
+    },
+    "Admin_ret_estimation::set_image": {
+      "calls": [
+        "is_dir",
+        "upload_img",
+        "mkdir"
+      ],
+      "called_by": []
+    },
+    "getTaggingBySearch": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::getTaggingBySearch"
+      ]
+    },
+    "getCompanyDetails": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::generate_invoice"
+      ]
+    },
+    "helper": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::generate_invoice",
+        "Admin_ret_estimation::generate_brief_copy"
+      ]
+    },
+    "Admin_ret_estimation::getFinancialYr": {
+      "calls": [
+        "GetFinancialYear"
+      ],
+      "called_by": []
+    },
+    "aadhar_available": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::aadhar_available"
+      ]
+    },
+    "trans_begin": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation",
+        "Admin_ret_estimation::old_get_village",
+        "Admin_ret_estimation::cancel_order_tag",
+        "Admin_ret_estimation::get_village"
+      ]
+    },
+    "where": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_village"
+      ]
+    },
+    "get_FinancialYear": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation"
+      ]
+    },
+    "Admin_ret_estimation::generate_invoice": {
+      "calls": [
+        "is_dir",
+        "get_branchwise_rate",
+        "view",
+        "render",
+        "item",
+        "base_url",
+        "get_entry_records",
+        "load_html",
+        "library",
+        "getOtherEstimateItemsDetails",
+        "set_paper",
+        "getCompanyDetails",
+        "helper",
+        "stream",
+        "mkdir",
+        "QRcode::png"
+      ],
+      "called_by": []
+    },
+    "generateEstiNo": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation"
+      ]
+    },
+    "view": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation",
+        "Admin_ret_estimation::generate_invoice",
+        "Admin_ret_estimation::generate_brief_copy"
+      ]
+    },
+    "get_metal_purity_rate": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_metal_purity_rate"
+      ]
+    },
+    "Admin_ret_estimation::pan_available": {
+      "calls": [
+        "pan_available"
+      ],
+      "called_by": []
+    },
+    "getNonTagproducts": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::getNonTagproducts"
+      ]
+    },
+    "array_filter": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation"
+      ]
+    },
+    "Admin_ret_estimation::get_old_metal_category": {
+      "calls": [
+        "get_old_metal_category"
+      ],
+      "called_by": []
+    },
+    "imagecreatefromgif": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::upload_img"
+      ]
+    },
+    "get_ActiveProduct": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_ActiveProduct"
+      ]
+    },
+    "Admin_ret_estimation::getPartialTagSearch": {
+      "calls": [
+        "getPartialTagSearch"
+      ],
+      "called_by": []
+    },
+    "get_tag_status_details": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_tag_status_details"
+      ]
+    },
+    "get_access": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation"
+      ]
+    },
+    "get_ret_settings": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation"
+      ]
+    },
+    "redirect": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation",
+        "Admin_ret_estimation::__construct"
+      ]
+    },
+    "trans_commit": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation",
+        "Admin_ret_estimation::old_get_village",
+        "Admin_ret_estimation::cancel_order_tag",
+        "Admin_ret_estimation::get_village"
+      ]
+    },
+    "getTaggingScanBySearch": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::getTaggingScanBySearch"
+      ]
+    },
+    "deleteData": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation"
+      ]
+    },
+    "ini_set": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::__construct"
+      ]
+    },
+    "tempnam": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::base64ToFile"
+      ]
+    },
+    "get_non_tag_stock_details": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_non_tag_stock"
+      ]
+    },
+    "Admin_ret_estimation::dl_available": {
+      "calls": [
+        "dl_available"
+      ],
+      "called_by": []
+    },
+    "get_taggedorder_details": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::cancel_order_tag"
+      ]
+    },
+    "getCustomerDet": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::getCustomerDet"
+      ]
+    },
+    "Admin_ret_estimation::createNewCustomer": {
+      "calls": [
+        "is_dir",
+        "upload_img",
+        "createNewCustomer",
+        "set_image",
+        "base64ToFile",
+        "sizeof",
+        "mkdir"
+      ],
+      "called_by": []
+    },
+    "file_put_contents": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::base64ToFile"
+      ]
+    },
+    "is_dir": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::updateCustomer",
+        "Admin_ret_estimation::set_image",
+        "Admin_ret_estimation::get_customer",
+        "Admin_ret_estimation::generate_invoice",
+        "Admin_ret_estimation::createNewCustomer"
+      ]
+    },
+    "imagecreatefromjpeg": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::upload_img"
+      ]
+    },
+    "Admin_ret_estimation::get_old_metal_rate": {
+      "calls": [
+        "post",
+        "get_old_metal_rate"
+      ],
+      "called_by": []
+    },
+    "Admin_ret_estimation::get_non_tag_stock": {
+      "calls": [
+        "get_non_tag_stock_details"
+      ],
+      "called_by": []
+    },
+    "Admin_ret_estimation::getProductSubDesignBySearch": {
+      "calls": [
+        "getProductSubDesignBySearch"
+      ],
+      "called_by": []
+    },
+    "preg_replace": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::base64ToFile"
+      ]
+    },
+    "profileDB": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation"
+      ]
+    },
+    "GLOBAL": {
+      "calls": [
+        "defined"
+      ],
+      "called_by": []
+    },
+    "getUOMDetails": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation"
+      ]
+    },
+    "getProductDesignBySearch": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::getProductDesignBySearch"
+      ]
+    },
+    "get_stone_disc": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation"
+      ]
+    },
+    "Admin_ret_estimation::cancel_order_tag": {
+      "calls": [
+        "trans_commit",
+        "post",
+        "date",
+        "trans_begin",
+        "trans_status",
+        "get_taggedorder_details",
+        "updateData"
+      ],
+      "called_by": []
+    },
+    "Admin_ret_estimation::get_ActiveProduct": {
+      "calls": [
+        "get_ActiveProduct"
+      ],
+      "called_by": []
+    },
+    "rmdir": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::rrmdir"
+      ]
+    },
+    "filesize": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::base64ToFile"
+      ]
+    },
+    "Admin_ret_estimation::getTaggingSearchByCollection": {
+      "calls": [
+        "getTaggingSearchByCollection"
+      ],
+      "called_by": []
+    },
+    "Admin_ret_estimation::get_old_metal_Product": {
+      "calls": [
+        "get_old_metal_Product"
+      ],
+      "called_by": []
+    },
+    "get_old_metal_category": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_old_metal_category"
+      ]
+    },
+    "isEmptySetDefault": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation"
+      ]
+    },
+    "updateCustomer": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::updateCustomer"
+      ]
+    },
+    "base64_decode": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::base64ToFile"
+      ]
+    },
+    "getOrderBySearch": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::getOrderBySearch"
+      ]
+    },
+    "imagecopyresampled": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::upload_img"
+      ]
+    },
+    "getNonTagLots": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::getNonTagLots"
+      ]
+    },
+    "strtolower": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_village"
+      ]
+    },
+    "get_customer": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_customer"
+      ]
+    },
+    "Admin_ret_estimation::getMetalTypes": {
+      "calls": [
+        "getMetalTypes"
+      ],
+      "called_by": []
+    },
+    "Admin_ret_estimation::get_old_metal_types": {
+      "calls": [
+        "get_old_metal_types"
+      ],
+      "called_by": []
+    },
+    "getAvailableCustomers": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::getCustomersBySearch"
+      ]
+    },
+    "Admin_ret_estimation::get_village": {
+      "calls": [
+        "trans_rollback",
+        "trans_commit",
+        "num_rows",
+        "post",
+        "date",
+        "insertData",
+        "strtolower",
+        "where",
+        "row_array",
+        "trans_begin",
+        "from",
+        "trans_status",
+        "select",
+        "get"
+      ],
+      "called_by": []
+    },
+    "getTaggingSearchByCollection": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::getTaggingSearchByCollection"
+      ]
+    },
+    "set_flashdata": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation",
+        "Admin_ret_estimation::__construct"
+      ]
+    },
+    "imagefill": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::upload_img"
+      ]
+    },
+    "post": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_employee",
+        "Admin_ret_estimation::get_tag_img_by_id",
+        "Admin_ret_estimation::get_old_metal_rate",
+        "Admin_ret_estimation::get_scheme_accounts",
+        "Admin_ret_estimation::get_old_metal_stone_details",
+        "Admin_ret_estimation::cancel_order_tag",
+        "Admin_ret_estimation::get_customer",
+        "Admin_ret_estimation::estimation",
+        "Admin_ret_estimation::old_get_village",
+        "Admin_ret_estimation::get_other_material_details",
+        "Admin_ret_estimation::get_stone_details",
+        "Admin_ret_estimation::get_village"
+      ]
+    },
+    "Admin_ret_estimation::getTaggingBySearch": {
+      "calls": [
+        "getTaggingBySearch"
+      ],
+      "called_by": []
+    },
+    "createNewCustomer": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::createNewCustomer"
+      ]
+    },
+    "Admin_ret_estimation::getCustomerDet": {
+      "calls": [
+        "getCustomerDet"
+      ],
+      "called_by": []
+    },
+    "Admin_ret_estimation::rrmdir": {
+      "calls": [
+        "rrmdir",
+        "isDot",
+        "getRealPath",
+        "rmdir",
+        "isDir",
+        "unlink",
+        "isFile"
+      ],
+      "called_by": []
+    },
+    "get_est_tag_details": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation"
+      ]
+    },
+    "Admin_ret_estimation::get_purities": {
+      "calls": [
+        "get_Active_Purity"
+      ],
+      "called_by": []
+    },
+    "get_employee": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation",
+        "Admin_ret_estimation::get_employee"
+      ]
+    },
+    "Admin_ret_estimation::aadhar_available": {
+      "calls": [
+        "aadhar_available"
+      ],
+      "called_by": []
+    },
+    "sys_get_temp_dir": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::base64ToFile"
+      ]
+    },
+    "GetFinancialYear": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::getFinancialYr"
+      ]
+    },
+    "unlink": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::remove_img",
+        "Admin_ret_estimation::rrmdir"
+      ]
+    },
+    "row_array": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_village"
+      ]
+    },
+    "time": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::__construct"
+      ]
+    },
+    "log_detail": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation"
+      ]
+    },
+    "isDot": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::rrmdir"
+      ]
+    },
+    "get_closed_accounts": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_scheme_accounts"
+      ]
+    },
+    "insertData": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation",
+        "Admin_ret_estimation::old_get_village",
+        "Admin_ret_estimation::get_village"
+      ]
+    },
+    "Admin_ret_estimation::getOrderBySearch": {
+      "calls": [
+        "get_order_details",
+        "getOrderBySearch",
+        "advance_details_order_no"
+      ],
+      "called_by": []
+    },
+    "get_old_metal_rate": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_old_metal_rate"
+      ]
+    },
+    "Admin_ret_estimation::get_tag_img_by_id": {
+      "calls": [
+        "post",
+        "getTagImageDetails"
+      ],
+      "called_by": []
+    },
+    "getPartialTagSearch": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::getPartialTagSearch",
+        "Admin_ret_estimation::getPartialTagSearch_old"
+      ]
+    },
+    "imagejpeg": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::upload_img"
+      ]
+    },
+    "old_Metal": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation"
+      ]
+    },
+    "Admin_ret_estimation::updateCustomer": {
+      "calls": [
+        "is_dir",
+        "upload_img",
+        "updateCustomer",
+        "set_image",
+        "base64ToFile",
+        "sizeof",
+        "mkdir"
+      ],
+      "called_by": []
+    },
+    "Admin_ret_estimation::get_customer": {
+      "calls": [
+        "post",
+        "get_customer",
+        "base_url",
+        "is_dir"
+      ],
+      "called_by": []
+    },
+    "Admin_ret_estimation::upload_img": {
+      "calls": [
+        "getimagesize",
+        "imagecreatefromjpeg",
+        "imagefill",
+        "imagecolorallocate",
+        "imagecreatetruecolor",
+        "imagecreatefromgif",
+        "imagejpeg",
+        "imagecopyresampled",
+        "imagecreatefrompng"
+      ],
+      "called_by": []
+    },
+    "Admin_ret_estimation::getPartialTagSearch_old": {
+      "calls": [
+        "getPartialTagSearch"
+      ],
+      "called_by": []
+    },
+    "Admin_ret_estimation::gst_available": {
+      "calls": [
+        "gst_available"
+      ],
+      "called_by": []
+    },
+    "Admin_ret_estimation::generate_brief_copy": {
+      "calls": [
+        "view",
+        "get_branchwise_rate",
+        "render",
+        "get_entry_records",
+        "get_page_number",
+        "getOtherEstimateItemsDetails",
+        "set_paper",
+        "helper",
+        "get_canvas",
+        "stream",
+        "load_html"
+      ],
+      "called_by": []
+    },
+    "delete_prodimage": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::remove_img"
+      ]
+    },
+    "get_charges": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation"
+      ]
+    },
+    "passport_available": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::passport_available"
+      ]
+    },
+    "get_empty_record": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation"
+      ]
+    },
+    "Admin_ret_estimation::get_tag_status_details": {
+      "calls": [
+        "sizeof",
+        "get_tag_status_details"
+      ],
+      "called_by": []
+    },
+    "Admin_ret_estimation::get_old_metal_type": {
+      "calls": [
+        "get_old_metal_type"
+      ],
+      "called_by": []
+    },
+    "Admin_ret_estimation::get_all_old_metal_rates": {
+      "calls": [
+        "get_all_old_metal_rates"
+      ],
+      "called_by": []
+    },
+    "insertBatchData": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation"
+      ]
+    },
+    "Admin_ret_estimation::getCustomProductBySearch": {
+      "calls": [
+        "getCustomProductBySearch"
+      ],
+      "called_by": []
+    },
+    "get_profile_settings": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation"
+      ]
+    },
+    "Admin_ret_estimation::getNonTagLots": {
+      "calls": [
+        "getNonTagLots"
+      ],
+      "called_by": []
+    },
+    "sizeof": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation",
+        "Admin_ret_estimation::createNewCustomer",
+        "Admin_ret_estimation::updateCustomer",
+        "Admin_ret_estimation::get_tag_status_details"
+      ]
+    },
+    "stream": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::generate_invoice",
+        "Admin_ret_estimation::generate_brief_copy"
+      ]
+    },
+    "order_details": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_order_details"
+      ]
+    },
+    "Admin_ret_estimation::get_employee": {
+      "calls": [
+        "post",
+        "get_employee"
+      ],
+      "called_by": []
+    },
+    "get_old_metal_types": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_old_metal_types"
+      ]
+    },
+    "get_sectionBranchwise": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_sectionBranchwise"
+      ]
+    },
+    "get_village_by_pincode": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_village_by_pincode"
+      ]
+    },
+    "get_village": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::ajax_get_village"
+      ]
+    },
+    "library": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::generate_invoice"
+      ]
+    },
+    "ajax_getEstimationList": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation"
+      ]
+    },
+    "getCustomProductBySearch": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::getCustomProductBySearch"
+      ]
+    },
+    "Admin_ret_estimation::old_get_village": {
+      "calls": [
+        "trans_rollback",
+        "trans_commit",
+        "post",
+        "insertData",
+        "date",
+        "trans_begin",
+        "trans_status"
+      ],
+      "called_by": []
+    },
+    "Admin_ret_estimation::__construct": {
+      "calls": [
+        "time",
+        "redirect",
+        "set_flashdata",
+        "ini_set",
+        "userdata",
+        "model",
+        "__construct"
+      ],
+      "called_by": []
+    },
+    "__construct": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::__construct"
+      ]
+    },
+    "Admin_ret_estimation::get_partial_details": {
+      "calls": [
+        "get_partial_details"
+      ],
+      "called_by": []
+    },
+    "est_home_bill": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation"
+      ]
+    },
+    "Admin_ret_estimation::passport_available": {
+      "calls": [
+        "passport_available"
+      ],
+      "called_by": []
+    },
+    "Admin_ret_estimation::get_stone_details": {
+      "calls": [
+        "post",
+        "get_stone_details"
+      ],
+      "called_by": []
+    },
+    "advance_details_order_no": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::getOrderBySearch",
+        "Admin_ret_estimation::getTaggingScanBySearch"
+      ]
+    },
+    "Admin_ret_estimation::get_order_details": {
+      "calls": [
+        "order_details"
+      ],
+      "called_by": []
+    },
+    "isFile": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::rrmdir"
+      ]
+    },
+    "defined": {
+      "calls": [],
+      "called_by": [
+        "GLOBAL"
+      ]
+    },
+    "Admin_ret_estimation::getNonTagproducts": {
+      "calls": [
+        "getNonTagproducts"
+      ],
+      "called_by": []
+    },
+    "Admin_ret_estimation::getCustomersBySearch": {
+      "calls": [
+        "getAvailableCustomers"
+      ],
+      "called_by": []
+    },
+    "get_purity_rate": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_purity_rate"
+      ]
+    },
+    "Admin_ret_estimation::remove_img": {
+      "calls": [
+        "delete_prodimage",
+        "chmod",
+        "unlink"
+      ],
+      "called_by": []
+    },
+    "pan_available": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::pan_available"
+      ]
+    },
+    "getMetalTypes": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::getMetalTypes"
+      ]
+    },
+    "Admin_ret_estimation::base64ToFile": {
+      "calls": [
+        "getimagesize",
+        "uniqid",
+        "preg_replace",
+        "base64_decode",
+        "tempnam",
+        "sys_get_temp_dir",
+        "filesize",
+        "file_put_contents"
+      ],
+      "called_by": []
+    },
+    "base_url": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::generate_invoice",
+        "Admin_ret_estimation::get_customer"
+      ]
+    },
+    "est_non_tag_items": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation"
+      ]
+    },
+    "Admin_ret_estimation::ajax_get_village": {
+      "calls": [
+        "get_village"
+      ],
+      "called_by": []
+    },
+    "Admin_ret_estimation::get_old_metal_stone_details": {
+      "calls": [
+        "post",
+        "get_old_metal_stone_details"
+      ],
+      "called_by": []
+    },
+    "mkdir": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::updateCustomer",
+        "Admin_ret_estimation::createNewCustomer",
+        "Admin_ret_estimation::set_image",
+        "Admin_ret_estimation::generate_invoice"
+      ]
+    },
+    "from": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_village"
+      ]
+    },
+    "get_Active_Purity": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_purities"
+      ]
+    },
+    "rrmdir": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::rrmdir"
+      ]
+    },
+    "chmod": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::remove_img"
+      ]
+    },
+    "getProductBySearch": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::getProductBySearch"
+      ]
+    },
+    "get_branchwise_rate": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::generate_invoice",
+        "Admin_ret_estimation::generate_brief_copy"
+      ]
+    },
+    "Admin_ret_estimation::getProductBySearch": {
+      "calls": [
+        "getProductBySearch"
+      ],
+      "called_by": []
+    },
+    "num_rows": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_village"
+      ]
+    },
+    "imagecreatetruecolor": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::upload_img"
+      ]
+    },
+    "getOtherEstimateItemsDetails": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation",
+        "Admin_ret_estimation::generate_invoice",
+        "Admin_ret_estimation::generate_brief_copy"
+      ]
+    },
+    "get_stone_details": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_stone_details"
+      ]
+    },
+    "date": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation",
+        "Admin_ret_estimation::old_get_village",
+        "Admin_ret_estimation::cancel_order_tag",
+        "Admin_ret_estimation::get_village"
+      ]
+    },
+    "set_image": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::createNewCustomer",
+        "Admin_ret_estimation::updateCustomer"
+      ]
+    },
+    "get_order_details": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::getOrderBySearch"
+      ]
+    },
+    "get_canvas": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::generate_brief_copy"
+      ]
+    },
+    "imagecreatefrompng": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::upload_img"
+      ]
+    },
+    "tag_reserve_check": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::getTaggingScanBySearch"
+      ]
+    },
+    "QRcode::png": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::generate_invoice"
+      ]
+    },
+    "getProductSubDesignBySearch": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::getProductSubDesignBySearch"
+      ]
+    },
+    "get_all_old_metal_rates": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_all_old_metal_rates"
+      ]
+    },
+    "Admin_ret_estimation::get_sectionBranchwise": {
+      "calls": [
+        "get_sectionBranchwise"
+      ],
+      "called_by": []
+    },
+    "trans_rollback": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation",
+        "Admin_ret_estimation::old_get_village",
+        "Admin_ret_estimation::get_village"
+      ]
+    },
+    "get_entry_records": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation",
+        "Admin_ret_estimation::generate_invoice",
+        "Admin_ret_estimation::generate_brief_copy"
+      ]
+    },
+    "Admin_ret_estimation::getProductDesignBySearch": {
+      "calls": [
+        "getProductDesignBySearch"
+      ],
+      "called_by": []
+    },
+    "Admin_ret_estimation::estimation": {
+      "calls": [
+        "redirect",
+        "trans_commit",
+        "log_detail",
+        "deleteData",
+        "insertData",
+        "get_chit_details",
+        "updateData",
+        "est_non_tag_items",
+        "old_Metal",
+        "profileDB",
+        "trans_status",
+        "getUOMDetails",
+        "get_charges",
+        "get_stone_disc",
+        "get_empty_record",
+        "getBranchDayClosingData",
+        "isEmptySetDefault",
+        "getOtherEstimateItemsDetails",
+        "userdata",
+        "date",
+        "insertBatchData",
+        "get_profile_settings",
+        "trans_begin",
+        "get_FinancialYear",
+        "sizeof",
+        "est_home_bill",
+        "generateEstiNo",
+        "view",
+        "set_flashdata",
+        "trans_rollback",
+        "get_entry_records",
+        "array_filter",
+        "post",
+        "get_est_tag_details",
+        "ajax_getEstimationList",
+        "get_employee_settings",
+        "get_employee",
+        "get_access",
+        "get_ret_settings"
+      ],
+      "called_by": []
+    },
+    "getTagImageDetails": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_tag_img_by_id"
+      ]
+    },
+    "get_employee_settings": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::estimation"
+      ]
+    },
+    "get_va_range": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_va_range"
+      ]
+    },
+    "Admin_ret_estimation::get_village_by_pincode": {
+      "calls": [
+        "get_village_by_pincode"
+      ],
+      "called_by": []
+    },
+    "select": {
+      "calls": [],
+      "called_by": [
+        "Admin_ret_estimation::get_village"
+      ]
+    },
+    "Admin_ret_estimation::get_metal_purity_rate": {
+      "calls": [
+        "get_metal_purity_rate"
+      ],
+      "called_by": []
+    }
+  }
+}

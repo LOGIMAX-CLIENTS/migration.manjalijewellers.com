@@ -1,0 +1,19 @@
+# Retail Catalog Architecture
+
+## Design Pattern
+-   **Framework**: CodeIgniter 3 (HMVC structure not strictly followed, seems standard MVC).
+-   **Controller Strategy**: Monolithic controller [admin_ret_catalog.php](file:///c:/xampp/htdocs/etail_v3/admin/application/controllers/admin_ret_catalog.php) acting as a "God Class" for all Master Data.
+-   **View Strategy**: `layout/template` wrapper with injected `main_content`. Views are organized in [master/](file:///c:/xampp/htdocs/etail_v3/admin/application/controllers/admin_ret_catalog.php#16156-16394) subdirectory.
+
+## Data Flow
+1.  **Request**: User accesses `admin_ret_catalog/method`.
+2.  **Permission**: Controller checks `is_logged` and `access_time`.
+3.  **Model**: Calls `ret_catalog_model` for CRUD.
+    -   **Reads**: Often Raw SQL.
+    -   **Writes**: [insertData](file:///c:/xampp/htdocs/etail_v3/admin/application/models/ret_catalog_model.php#48-83), [updateData](file:///c:/xampp/htdocs/etail_v3/admin/application/models/ret_catalog_model.php#84-121) helper methods in Model (generic wrappers).
+4.  **Logging**: [log_model](file:///c:/xampp/htdocs/etail_v3/admin/application/models/ret_catalog_model.php#5-8649) records the operation.
+5.  **View**: JSON response (for AJAX) or View load (for pages).
+
+## Key Components
+-   **Generic Persistence**: The model uses generic [insertData($data, $table)](file:///c:/xampp/htdocs/etail_v3/admin/application/models/ret_catalog_model.php#48-83) and [updateData](file:///c:/xampp/htdocs/etail_v3/admin/application/models/ret_catalog_model.php#84-121) methods, which is a good DRY pattern but reduces type safety.
+-   **Session Handing**: Heavy reliance on `$this->session->userdata` for branching logic and access control.

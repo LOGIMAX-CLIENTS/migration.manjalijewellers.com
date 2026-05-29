@@ -1,0 +1,19 @@
+# Retail Catalog Business Rules
+
+## Data Integrity
+-   **Deletion Constraints**:
+    -   **Purity**: Cannot be deleted if it is used in any Stock Items (`getItemsinTagDetails`).
+    -   **General**: Most master data (Color, Cut, etc.) likely follows similar integrity checks or soft-delete patterns (Status = 0).
+
+## Product Configuration
+-   **Sub-Category Linkage**: Products must be linked to a Sub-Category.
+-   **Metal Association**: Products are linked to a specific Metal type (Gold, Silver).
+-   **Customization**: Products can be flagged as `allow_customization`.
+
+## Pricing & Rates
+-   **Material Rates**: Base rates are defined per Material (Metal) and are effective by date.
+-   **Making Charges**: Can be defined as a fixed amount or percentage.
+-   **Taxation**: Products are assigned a `tax_group_id` to determine applicable taxes.
+
+## Operational Constraints
+-   **Login Time Access**: Users (Employees) have restricted access times (`access_time_from`, `access_time_to`). Validated in `__construct`.

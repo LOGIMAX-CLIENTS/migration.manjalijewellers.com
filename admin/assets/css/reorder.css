@@ -1,0 +1,48 @@
+.PDFReceipt *{
+
+
+
+font-family:sans-serif;
+
+
+
+font-size: 12px;
+
+
+
+}
+
+
+
+.PDF_CusReceipt *{
+
+
+
+font-family:sans-serif;
+
+
+
+font-size: 12px;
+
+
+
+}
+
+
+
+
+
+	
+
+
+
+.PDFReceipt table { font-size: 50%; table-layout: fixed; width: 100%; }
+
+
+
+.PDFReceipt table th {  }
+
+
+
+
+

@@ -1,0 +1,56 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true,
+    "jquery": true,
+    "node": true
+  },
+  "extends": ["eslint:recommended"],
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module"
+  },
+  "globals": {
+    "$": "readonly",
+    "jQuery": "readonly",
+    "Swal": "readonly",
+    "toastr": "readonly",
+    "DataTable": "readonly",
+    "Chart": "readonly",
+    "moment": "readonly",
+    "base_url": "readonly",
+    "admin_url": "readonly"
+  },
+  "rules": {
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "no-console": "warn",
+    "no-debugger": "error",
+    "eqeqeq": ["error", "smart"],
+    "no-var": "warn",
+    "prefer-const": "warn",
+    "no-undef": "error",
+    "no-redeclare": "error",
+    "no-duplicate-case": "error",
+    "no-empty": "warn",
+    "no-extra-semi": "error",
+    "no-unreachable": "error",
+    "no-constant-condition": "warn",
+    "no-dupe-keys": "error",
+    "no-dupe-args": "error",
+    "no-func-assign": "error",
+    "no-inner-declarations": "error",
+    "no-irregular-whitespace": "error",
+    "valid-typeof": "error",
+    "no-fallthrough": "warn",
+    "default-case": "warn",
+    "curly": ["warn", "multi-line"],
+    "dot-notation": "warn",
+    "no-multi-spaces": "warn",
+    "no-return-assign": "error",
+    "no-self-compare": "error",
+    "no-useless-concat": "warn",
+    "yoda": ["warn", "never"],
+    "no-shadow": "warn",
+    "no-use-before-define": ["error", { "functions": false }]
+  }
+}

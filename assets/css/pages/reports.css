@@ -1,0 +1,13 @@
+.info-box{background:#fff;border:1px solid #c9c9c9;-webkit-border-radius:3px;-moz-border-radius:3px;border-radius:3px;margin-bottom:30px}.stats-box{margin:40px 0;color:#5f5f5f}.stats-box-title{text-align:center;font-weight:700}.stats-box-all-info{text-align:center;font-weight:700;font-size:48px;margin-top:20px;margin-bottom:40px}.stats-box-all-info i{width:60px;height:60px}
+
+/* DGS-DCNM */
+.chit_detailslogo img{width:50% !important;}
+.chit_detailslogo{text-align:center !important}
+.chit_details{border-collapse: collapse !important;}
+.chit_details th{border:1px solid #000 !important;background: #fff !important;}
+.chit_details td{border:1px solid #000 !important;}
+.heading {font: bold 80% sans-serif;letter-spacing: 0.5em;text-transform: uppercase;background: #393939; border-radius: 0.25em; color: #FFF; margin: 0 0 1em; padding: 0.5em 0;height: 20px;text-align: center;}
+.chit_customer_details{border:none !important;border-collapse: collapse !important;}
+.chit_customer_details th{border:none !important;background: #fff !important;text-align:left;padding:5px;}
+.chit_customer_details td{border:none !important;background: #fff !important;text-align:left;padding:5px;}
+/* DGS-DCNM */

@@ -1,0 +1,48 @@
+# Database Schema: Retail Purchase
+
+## Key Tables: Masters
+**`ret_karigar` (Vendor Master)**
+-   **Purpose**: Unified master for Workers, Suppliers, and Service Providers.
+-   **Key Columns**:
+    -   `id_karigar` (PK)
+    -   `firstname`, `company`: Name details.
+    -   `karigar_type`: 0-Individual, 1-Company, 2-Firm.
+    -   `karigar_for`: 1-Manufacturer, 2-Supplier, etc.
+    -   `gst_number`, `pan_no`: Tax details.
+    -   `status_karigar`: Approval status.
+
+**`ret_supp_catalogue` (Purchase Item Master)**
+-   **Purpose**: Defines items available for purchase.
+-   **Key Columns**:
+    -   `id_supp_catalogue` (PK)
+    -   `product_id`, `design_id`: Link to retail product definitions.
+    -   `design_code`: Unique item code.
+
+## Key Tables: Transactions
+**`ret_purchase_order` (Supplier PO)**
+-   **Purpose**: Records a purchase transaction/order with a supplier.
+-   **Key Columns**:
+    -   `po_id` (PK)
+    -   `po_karigar_id`: FK to `ret_karigar` (The Supplier).
+    -   `po_ref_no`: Internal PO Reference.
+    -   `po_grn_id`: Link to GRN entry.
+    -   `po_type`: 1-Ornaments, 2-Bullion, 3-Stone.
+    -   `bill_status`, `is_approved`.
+
+**`ret_purchase_order_items`**
+-   **Purpose**: Line items in a PO.
+-   **Key Columns**:
+    -   `po_item_id` (PK)
+    -   `po_item_po_id` (FK)
+    -   `po_item_pro_id`, `po_item_des_id`: Item definition.
+    -   `gross_wt`, `net_wt`, `no_of_pcs`.
+    -   `mc_value`, `item_wastage`.
+
+**`customerorder` (Indent / Customer Request)**
+-   **Purpose**: Orders placed by customers that may trigger a purchase or job work.
+-   **Key Columns**:
+    -   `id_customerorder` (PK)
+    -   `pur_no`: Reference number.
+    -   `order_for`: 1-Stock, 2-Customer, 3-Repair.
+    -   `id_karigar`: Assigned worker/vendor (if applicable).
+

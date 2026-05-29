@@ -1,0 +1,22 @@
+Pseudocode_ID,Function_Name,File_Path,Method_Name,Line_Range,Critical
+ESTIMATION.CORE.MAIN_PROCESS,ProcessEstimation,admin/application/controllers/admin_ret_estimation.php,estimation('save'),273-1200,TRUE
+ESTIMATION.ADD.INITIALIZE_FORM,InitializeEstimationForm,admin/application/controllers/admin_ret_estimation.php,estimation('add'),199-252,FALSE
+ESTIMATION.ADD.SEARCH_TAG,SearchTagForEstimation,admin/application/models/ret_estimation_model.php,getTaggingBySearch(),N/A,FALSE
+ESTIMATION.ADD.CALCULATE_ITEM_COST,CalculateEstimationItemCost,admin/assets/js/ret_estimation.js,calculateTagCost(),N/A,TRUE
+ESTIMATION.ADD.PROCESS_OLD_METAL,ProcessOldMetalExchange,admin/assets/js/ret_estimation.js,calculateOldMetalValue(),N/A,TRUE
+ESTIMATION.ADD.SAVE_ESTIMATION,SaveEstimation,admin/application/controllers/admin_ret_estimation.php,estimation('save'),273-1200,TRUE
+ESTIMATION.ADD.HANDLE_DAY_CLOSED,HandleDayClosedScenario,admin/application/controllers/admin_ret_estimation.php,estimation('save'),297,FALSE
+ESTIMATION.ADD.HANDLE_TAG_UNAVAILABLE,HandleTagUnavailableScenario,admin/assets/js/ret_estimation.js,get_tag_data(),1393-1967,FALSE
+ESTIMATION.LIST.LOAD_LIST,LoadEstimationList,admin/application/models/ret_estimation_model.php,ajax_getEstimationList(),169-235,FALSE
+ESTIMATION.LIST.VIEW_DETAILS,ViewEstimationDetails,admin/application/models/ret_estimation_model.php,get_entry_records(),403-429,FALSE
+ESTIMATION.LIST.VIEW_DETAILS,ViewEstimationDetails,admin/application/models/ret_estimation_model.php,getOtherEstimateItemsDetails(),430-672,FALSE
+ESTIMATION.LIST.GENERATE_INVOICE,GenerateEstimationInvoice,admin/application/controllers/admin_ret_estimation.php,generate_invoice(),2913-2971,FALSE
+ESTIMATION.EDA.LOAD_LIST,LoadEDAList,admin/application/models/ret_eda_model.php,ajax_getEdaList(),101-209,FALSE
+ESTIMATION.EDA.APPROVE,ApproveEDA,admin/application/controllers/admin_ret_eda.php,eda('update') type=1,70-190,TRUE
+ESTIMATION.EDA.REJECT,RejectEDA,admin/application/controllers/admin_ret_eda.php,eda('update') type=2,191-210,TRUE
+ESTIMATION.EDA.HANDLE_TAG_NOT_FOUND,HandleTagNotFoundOnApproval,admin/application/controllers/admin_ret_eda.php,eda('update'),150-155,FALSE
+ESTIMATION.EDA.HANDLE_ALREADY_PROCESSED,HandleAlreadyProcessed,admin/application/controllers/admin_ret_eda.php,eda('update'),N/A,FALSE
+ESTIMATION.SCENARIO.HAPPY_PATH_SALE,StandardSaleWithoutDiscount,N/A,N/A,N/A,FALSE
+ESTIMATION.SCENARIO.DISCOUNT_APPROVAL,DiscountExceedingLimit,N/A,N/A,N/A,FALSE
+ESTIMATION.SCENARIO.OLD_METAL_EXCHANGE,SaleWithOldMetalExchange,N/A,N/A,N/A,FALSE
+ESTIMATION.SCENARIO.REJECTION_REWORK,RejectionAndResubmission,N/A,N/A,N/A,FALSE

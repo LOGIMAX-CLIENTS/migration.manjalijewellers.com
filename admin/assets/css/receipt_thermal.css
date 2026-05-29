@@ -1,0 +1,115 @@
+.PDF_receipt_thermal *{
+
+font-family : Arial, "Helvetica Neue", Helvetica, sans-serif;
+
+}
+
+
+
+
+  
+.plugin {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width:5cm !important;
+    height:4cm !important;
+    font-weight: 900;
+}
+
+.meta th {
+	
+    width: 2.2mm ;
+    height: 1.2mm ;
+   font-size: 1.3mm !important;
+}
+
+
+.gp_code td {
+	
+	 font-size: 1.3mm !important;
+}
+
+.rec_no td {
+	
+	 font-size:1.3mm !important;
+}
+
+.received_amt td {
+	
+	  
+	 font-size: 1.5mm !important;
+}
+
+.run_amount td {
+	
+	  
+	 font-size: 1.3mm !important;
+	 
+}
+.run_amount th {
+	
+	  
+	 margin-left: 10% !important;
+	 
+}
+.run_amount td {
+	
+	  
+	 margin-left: 3% !important;
+	 
+}
+.received_amt td {
+	
+	  
+	 margin-left: 3% !important;
+	 
+}
+.pay_date td {
+	
+	 font-size: 1.3mm !important;
+
+}
+
+.installment td {
+	
+	  font-size: 1.3mm !important;
+}
+
+
+
+.pay_amt td {
+	
+	  font-size: 1.3mm !important;
+}
+
+.rep_date td {
+	
+	 font-size: 1.3mm !important;
+}
+.gm{
+	
+	 font-size:1mm !important;
+	 font-weight: 900;
+}
+.cus p {
+	
+    width: 100% !important;
+    height:0.8mm ;
+   font-size: 1.3mm !important;
+   margin-left: 3% !important;
+}
+
+
+
+.acc_join td{
+	 font-size: 1mm !important;
+}
+
+
+.account_join th {
+	
+   width: 2mm ;
+    height: 2mm ;
+   font-size: 1mm !important;
+}

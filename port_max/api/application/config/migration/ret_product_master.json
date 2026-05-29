@@ -1,0 +1,69 @@
+{
+    "entity": "product",
+    "ai": {
+        "enabled": true,
+        "max_rows": 20
+    },
+    "validation": {
+        "required_file_name_pattern": "product*.xlsx",
+        "required_sheet_name": "port_product_master"
+    },
+    "file_path": "uploads/product_master.xlsx",
+    "migrations": [{
+        "destination_table": "ret_product_master",
+        "primary_key": "pro_id",
+        "mappings": {
+            "old_id": {
+                "source_column": "old_id",
+                "validations": { "type": "numeric", "min": 1, "required": false }
+            },
+            "product_name": {
+                "source_column": "product_name",
+                "validations": { "type": "string", "max_length": 100, "required": true },
+                "check_if_exists": true
+            },
+            "product_short_code": {
+                "source_column": "short_code",
+                "validations": { "type": "string", "max_length": 50, "required": false }
+            },
+            "hsn_code": {
+                "source_column": "hsn_code",
+                "validations": { "type": "string", "max_length": 8, "required": false }
+            },
+            "product_status": {
+                "source_column": "status",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "cat_id": {
+                "lookup": {
+                    "table": "ret_category",
+                    "source_column": "category_name",
+                    "match_column": "name",
+                    "return_column": "id_ret_category",
+                    "create_if_missing": false
+                },
+                "validations": { "type": "string", "max_length": 100, "required": true }
+            },
+            "metal_type": {
+                "lookup": {
+                    "table": "metal",
+                    "source_column": "metal_name",
+                    "match_column": "metal",
+                    "return_column": "id_metal",
+                    "create_if_missing": false
+                },
+                "validations": { "type": "string", "max_length": 50, "required": false }
+            },
+            "tgrp_id": {
+                "lookup": {
+                    "table": "ret_taxgroupmaster",
+                    "source_column": "tax_group",
+                    "match_column": "tgrp_name",
+                    "return_column": "tgrp_id",
+                    "create_if_missing": false
+                },
+                "validations": { "type": "string", "max_length": 100, "required": false }
+            }
+        }
+    }]
+}

@@ -1,0 +1,30 @@
+# Retail Catalog File Mapping
+
+## Controllers
+- `admin/application/controllers/admin_ret_catalog.php`: Main controller for retail catalog operations.
+
+## Models
+- `admin/application/models/ret_catalog_model.php`: primary data access layer for catalog entities.
+
+## Views
+### Master Data
+- `admin/application/views/master/purity/`
+- `admin/application/views/master/color/`
+- `admin/application/views/master/cut/`
+- `admin/application/views/master/clarity/`
+- `admin/application/views/master/metal/`
+- `admin/application/views/master/stone/`
+- `admin/application/views/master/uom/`
+- `admin/application/views/master/material/`
+- `admin/application/views/master/theme/`
+- `admin/application/views/master/making_type/`
+
+### Product Organization
+- `admin/application/views/master/category/`
+- `admin/application/views/master/sub_category/`
+- `admin/application/views/master/ret_product/` (Retail Product Master)
+- `admin/application/views/master/ret_sub_product/`
+
+### Store Layout
+- `admin/application/views/master/floor/`
+- `admin/application/views/master/floor_counter/`

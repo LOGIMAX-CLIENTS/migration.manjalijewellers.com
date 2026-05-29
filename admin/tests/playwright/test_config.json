@@ -1,0 +1,106 @@
+{
+    "base_url": "http://localhost/etail_v6/admin/",
+    "credentials": {
+        "username": "developer",
+        "password": "Dev#source@etail"
+    },
+    "login": {
+        "url_path": "index.php/admin_login",
+        "selectors": {
+            "username": "#user_name",
+            "password": "#password",
+            "submit": "#login_btn"
+        },
+        "success_indicator": ".content-wrapper"
+    },
+    "test_data": {
+        "issue_with_cash": {
+            "id": 5039,
+            "bill_no": "PI26-00010",
+            "type": "Issue",
+            "amount": 1000.00,
+            "current_split": "Cash:1000",
+            "comment": "Active issue with single cash payment — ideal for split testing"
+        },
+        "issue_with_cash_2": {
+            "id": 5038,
+            "bill_no": "PI26-00009",
+            "type": "Issue",
+            "amount": 1000.00,
+            "current_split": "Cash:1000",
+            "comment": "Second cash issue — use for multi-mode split testing"
+        },
+        "issue_with_cheque": {
+            "id": 5026,
+            "bill_no": "PI25-00014",
+            "type": "Issue",
+            "amount": 1200.00,
+            "current_split": "CHQ:1200",
+            "comment": "Issue paid by cheque — test cheque-to-cash conversion"
+        },
+        "receipt_with_cash": {
+            "id": 5032,
+            "bill_no": "PR26-00003",
+            "type": "Receipt",
+            "amount": 2500.00,
+            "current_split": "Cash:2500",
+            "comment": "Receipt with cash — verify receipt edit works same as issue"
+        },
+        "receipt_no_payment": {
+            "id": 5034,
+            "bill_no": "PR26-00005",
+            "type": "Receipt",
+            "amount": 1500.00,
+            "current_split": null,
+            "comment": "Receipt with zero payment rows — edge case"
+        },
+        "small_amount": {
+            "id": 5027,
+            "bill_no": "PI25-00118",
+            "type": "Issue",
+            "amount": 100.00,
+            "current_split": "Cash:100",
+            "comment": "Small amount — quick smoke test"
+        }
+    },
+    "urls": {
+        "issue_list": "index.php/admin_ret_billing/issue/list",
+        "receipt_list": "index.php/admin_ret_billing/receipt/list",
+        "issue_edit": "index.php/admin_ret_billing/issue/paymentmode_edit/{id}",
+        "receipt_edit": "index.php/admin_ret_billing/receipt/paymentmode_edit/{id}"
+    },
+    "selectors": {
+        "voucher_info": "#ir_voucher_info_row",
+        "info_billno": "#ir_info_billno",
+        "info_type": "#ir_info_type",
+        "info_party": "#ir_info_party",
+        "info_date": "#ir_info_date",
+        "info_amount": "#ir_info_amount",
+        "payment_section": "#ir_payDet",
+        "voucher_amount": "#ir_voucher_amount",
+        "cash_payment": "#ir_cash_payment",
+        "card_total": "#ir_cc_total_display",
+        "cheque_total": "#ir_chq_total_display",
+        "nb_total": "#ir_nb_total_display",
+        "card_modal_btn": "#ir_card_modal_btn",
+        "cheque_modal_btn": "#ir_cheque_modal_btn",
+        "nb_modal_btn": "#ir_net_bank_modal_btn",
+        "save_btn": "#ir_save_payment_edit",
+        "back_btn": "#ir_cancel_edit",
+        "card_modal": "#ir-card-detail-modal",
+        "cheque_modal": "#ir-cheque-detail-modal",
+        "nb_modal": "#ir-net-banking-modal",
+        "add_card_btn": "#ir_new_card",
+        "add_chq_btn": "#ir_new_chq",
+        "add_nb_btn": "#ir_new_net_bank",
+        "save_card_btn": "#ir_add_card_save",
+        "save_chq_btn": "#ir_add_chq_save",
+        "save_nb_btn": "#ir_add_nb_save",
+        "overlay": "#ir_page_overlay"
+    },
+    "timeouts": {
+        "page_load_ms": 5000,
+        "ajax_ms": 3000,
+        "modal_ms": 1000
+    }
+}

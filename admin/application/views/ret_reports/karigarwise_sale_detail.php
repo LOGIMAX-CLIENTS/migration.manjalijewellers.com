@@ -1,0 +1,169 @@
+  <!-- Content Wrapper. Contains page content -->
+  <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <section class="content-header">
+          <h1>
+            Reports
+			 <small>Karigar Wise Sales Report</small>
+          </h1>
+          <ol class="breadcrumb">
+            <li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li>
+            <li><a href="#">Retail Reports</a></li>
+            <li class="active">Karigar Wise Sales Report</li>
+          </ol>
+        </section>
+
+        <!-- Main content -->
+        <section class="content">
+          <div class="row">
+            <div class="col-xs-12">
+               
+               <div class="box box-primary">
+			    <div class="box-header with-border">
+                  <h3 class="box-title">Karigar Wise Sales Report</h3>  <span id="total_count" class="badge bg-green"></span>  
+                 
+                </div>
+                 <div class="box-body">  
+                     <div class="row">
+				  	<div class="col-md-offset-1 col-md-10">  
+	                  <div class="box box-default">  
+	                   <div class="box-body">  
+						   <div class="row">
+
+						   <div class="col-md-3"> 
+									 <div class="form-group">
+            		                    <div class="input-group">
+            		                        <br>
+            		                       <button class="btn btn-default btn_date_range" id="rpt_payment_date">
+            							    <span  style="display:none;" id="rpt_payments1"></span>
+            							    <span  style="display:none;" id="rpt_payments2"></span>
+            		                        <i class="fa fa-calendar"></i> Date range picker
+            		                        <i class="fa fa-caret-down"></i>
+            		                      </button>
+            		                    </div>
+            		                 </div><!-- /.form group -->
+								</div>
+
+								<!-- <div class="col-md-3"> 
+									<div class="form-group">    
+										<label>Select Branch</label> 
+										<select id="branch_select" class="form-control" style="width:100%;"></select>
+									</div> 
+								</div> -->
+								<?php if($this->session->userdata('branch_settings')==1 && $this->session->userdata('id_branch')==0){?>
+
+								<div class="col-md-3"> 
+
+									<div class="form-group tagged">
+
+										<label class="trans_centre">Select Branch</label>
+
+										<select id="branch_select" class="form-control branch_filter"></select>
+
+									</div> 
+
+								</div> 
+
+
+
+								<?php }else{?>
+
+								<input type="hidden" id="branch_filter"  value="<?php echo $this->session->userdata('id_branch') ?>"> 
+
+								<?php }?>
+
+								<div class="col-md-3"> 
+									<div class="form-group">    
+										<label>Select Product</label> 
+										<select id="prod_select" class="form-control" style="width:100%;"></select>
+									</div> 
+								</div>
+
+								<div class="col-md-3"> 
+									<div class="form-group">    
+										<label>Select Design</label> 
+										<select id="des_select" class="form-control" style="width:100%;"></select>
+									</div> 
+								</div>
+
+								<div class="col-md-3"> 
+									<div class="form-group">    
+										<label>Select Sub Design</label> 
+										<select id="sub_des_select" class="form-control" style="width:100%;"></select>
+									</div> 
+								</div>
+
+								<div class="col-md-3"> 
+									<div class="form-group">    
+										<label>Select Karigar </label> 
+										<select id="karigar" class="form-control" style="width:100%;"></select>
+									</div> 
+								</div>
+
+								<div class="col-md-2"> 
+									<label></label>
+									<div class="form-group">
+										<button type="button" id="karigar_wise_sales_summary" class="btn btn-info">Search</button>   
+									</div>
+								</div>
+							</div>
+						 </div>
+	                   </div> 
+	                  </div> 
+                   </div>
+                	   	<div class="box box-info stock_details">
+						<div class="box-header with-border">
+						  <h3 class="box-title">Karigar Wise Sales List</h3>
+						  <div class="box-tools pull-right">
+							<button class="btn btn-box-tool" data-widget="collapse" data-toggle="tooltip" title="Collapse"><i class="fa fa-minus"></i></button>
+						  </div>
+						</div>
+						<div class="box-body">
+							<div class="row">
+								<div class="box-body">
+								   <div class="table-responsive">
+									  <table id="karigar_wise_sales_list" class="table table-bordered table-striped text-center">
+										 <thead>
+            							  <tr>
+            							    <th>Karigar Name</th>
+											<th>Product</th>
+											<th>Design</th>
+											<th>Sub Design</th>
+            							    <th>Received Pcs</th>
+            							    <th>Received Weight</th>
+            							    <th>Sold Pcs</th>
+            							    <th>Sold Weight</th>
+											<th>Available Pcs</th>
+											<th>Available Weight</th>
+            							   
+            							  </tr>
+		                            </thead> 
+		                             <tbody></tbody>
+									 <tfoot>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+									 </tfoot>
+									 </table>
+								  </div>
+								</div> 
+							</div> 
+						</div>
+					</div>
+                </div><!-- /.box-body -->
+                <div class="overlay" style="display:none">
+				  <i class="fa fa-refresh fa-spin"></i>
+				</div>
+              </div>
+            </div><!-- /.col -->
+          </div><!-- /.row -->
+        </section><!-- /.content -->
+      </div><!-- /.content-wrapper -->
+

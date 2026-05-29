@@ -1,0 +1,31 @@
+.PDF_receipt_thermal *{
+
+font-family : Arial, "Helvetica Neue", Helvetica, sans-serif;
+
+}
+
+  
+.plugin {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width:10cm !important;
+    height: 6cm !important;
+    font-weight: 900;
+}
+
+.meta th {
+	
+    width:5mm ;
+    height:1mm ;
+   font-size: 1.3mm !important;   
+}
+
+.installment td {
+	
+	  font-size: 1.3mm !important;
+}
+
+
+
+

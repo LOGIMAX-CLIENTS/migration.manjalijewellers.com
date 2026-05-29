@@ -1,0 +1,38 @@
+{
+    "entity": "product_mapping",
+    "ai": {
+        "enabled": true,
+        "max_rows": 20
+    },
+    "validation": {
+        "required_file_name_pattern": "product_mapping*.xlsx",
+        "required_sheet_name": "port_product_mapping"
+    },
+    "file_path": "uploads/product_mapping.xlsx",
+    "migrations": [{
+        "destination_table": "ret_product_mapping",
+        "primary_key": null,
+        "mappings": {
+            "pro_id": {
+                "lookup": {
+                    "table": "ret_product_master",
+                    "source_column": "product_name",
+                    "match_column": "product_name",
+                    "return_column": "pro_id",
+                    "create_if_missing": false
+                },
+                "validations": { "type": "string", "max_length": 100, "required": true }
+            },
+            "id_design": {
+                "lookup": {
+                    "table": "ret_design_master",
+                    "source_column": "design_name",
+                    "match_column": "design_name",
+                    "return_column": "design_no",
+                    "create_if_missing": false
+                },
+                "validations": { "type": "string", "max_length": 100, "required": true }
+            }
+        }
+    }]
+}

@@ -1,0 +1,479 @@
+================================================================================
+  PRINT TEMPLATE MODULE — FILE & DATABASE DOCUMENTATION
+  Module URLs:
+    1) /print-templates                (Template Listing Page)
+    2) /print-templates/designer/{id}  (Template Designer/Editor Page)
+  Generated: 2026-04-05
+================================================================================
+
+
+================================================================================
+SECTION 1: FILES INVOLVED
+================================================================================
+
+Total Files: 19
+  - PHP (Controller):   1 file
+  - PHP (Model):        1 file
+  - PHP (Views):        5 files
+  - JavaScript:         9 files
+  - CSS:                1 file
+  - Config (Routes):    1 file
+  - CDN (External):     3 libraries
+
+--------------------------------------------------------------------------------
+A. CONTROLLER (1 file)
+--------------------------------------------------------------------------------
+
+1. admin\application\controllers\admin_print_template.php
+   Size: ~104 KB | Lines: ~1941
+   Purpose: Main controller for the entire Print Template module.
+   Handles ALL HTTP routes for both the listing page and designer page.
+   
+   Key Methods:
+   - index()             → Renders the template listing page (URL #1)
+   - ajax_list()         → AJAX endpoint for DataTables listing
+   - add()               → Renders the "New Template" form
+   - save()              → Saves a new template from the form
+   - designer($id)       → Renders the designer page (URL #2)
+   - load_design($id)    → AJAX: Returns GrapesJS/Block data as JSON
+   - save_design($id)    → AJAX: Saves design (creates new version, deactivates old)
+   - preview($id)        → Renders print preview with sample data
+   - preview_live($id)   → Live preview with actual data
+   - toggle_active($id)  → AJAX: Activates a template version, deactivates others
+   - delete($id)         → Deletes a template
+   - bulk_delete()       → AJAX: Batch delete multiple templates
+   - set_default($id)    → Sets a template as the default for its category
+   - get_fields($cat)    → AJAX: Returns available placeholders/variables
+   - get_block_templates → AJAX: Returns pre-built HTML block templates
+   - get_custom_blocks() → AJAX: Returns user-saved custom blocks
+   - save_custom_block() → AJAX: Saves a custom block to DB
+
+   Block Compilation Methods (private):
+   - _compile_blocks()               → Converts block array to HTML
+   - _get_block_template_map()       → Default HTML templates per block type
+   - _compile_block_from_settings()  → Settings-driven HTML generation
+   - _compile_customer_info()        → Customer info block renderer
+   - _compile_items_table()          → Items table block renderer
+   - _compile_tax_summary()          → Tax summary block renderer
+   - _compile_payment_info()         → Payment info block renderer
+   - _compile_signature()            → Signature block renderer
+   - _compile_amount_words()         → Amount-in-words block renderer
+   - _normalize_column_defs()        → Normalizes column definitions
+
+   V2 Designer Methods:
+   - designer_v2($id)            → V2 designer page
+   - get_fields_v2($cat)         → V2 field registry (grouped & typed)
+   - save_design_v2($id)         → V2 save endpoint
+   - preview_live_v2($id)        → V2 live preview
+   - get_mc_va_config($branch)   → MC/VA configuration for a branch
+   - save_mc_va_config()         → Save MC/VA config
+   - load_default_template($id)  → Load default template blocks
+
+--------------------------------------------------------------------------------
+B. MODEL (1 file)
+--------------------------------------------------------------------------------
+
+2. admin\application\models\print_template_model.php
+   Size: ~69 KB | Lines: ~1287
+   Purpose: Database abstraction layer for all print template operations.
+   Contains the Mustache template rendering engine and expression evaluator.
+   
+   Key Methods:
+   - get_all()                          → Get all templates with optional filters
+   - get_all_ajax()                     → Lightweight listing for DataTables
+   - get_by_id($id)                     → Get single template by ID
+   - get_default($category, $branch)    → Get default template for category/branch
+   - insert($data)                      → Insert new template record
+   - update($id, $data)                 → Update template record
+   - delete($id)                        → Delete template record
+   - bulk_delete($ids)                  → Batch delete by IDs
+   - deactivate_by_code()               → Deactivate by template_code
+   - deactivate_by_group_code()         → Deactivate by group code
+   - activate_and_deactivate_others()   → Activate one, deactivate rest
+   - set_default($id)                   → Set a template as category default
+   - get_placeholders($category)        → Get V1 placeholders
+   - get_sample_data($category)         → Get sample data for preview
+   - render($category, $data, $branch)  → Full render engine (returns HTML doc)
+   - render_string_template($html, $data) → Mustache-style template rendering
+   - get_mc_va_config()                 → Get MC/VA configuration
+   - save_mc_va_config()                → Save MC/VA configuration  
+   - get_default_templates($category)   → Get default template blocks
+   - get_placeholders_v2($category)     → V2 placeholder registry (grouped)
+   - evaluate_formula($formula, $data)  → Formula evaluation for calculated columns
+
+   Template Engine (standalone functions at bottom of file):
+   - _tpl_apply_functions()      → Template functions: money(), fixed(), upper(), lower()
+   - _tpl_indian_number_format() → Indian number formatting (1,23,456.75)
+   - _tpl_tokenize()             → Tokenizer for math expressions
+   - _tpl_parse_additive()       → Recursive descent parser (+ -)
+   - _tpl_parse_multiplicative() → Recursive descent parser (* /)
+   - _tpl_parse_factor()         → Recursive descent parser (atoms, parens)
+   - _tpl_eval_expr()            → Main expression evaluator entry point
+
+   Constants:
+   - CATEGORIES = [0..15] → Maps category IDs to names (Sales, Purchase, etc.)
+
+--------------------------------------------------------------------------------
+C. VIEWS (5 files)
+--------------------------------------------------------------------------------
+
+3. admin\application\views\print_templates\list.php
+   Size: ~17 KB | Lines: 359
+   Purpose: Template listing page view (URL #1).
+   Displays a DataTable of all templates with columns: ID, Name, Code,
+   Category, Paper Size, Default status, Active status, and Actions.
+   Includes modals for: Delete confirmation, Activate confirmation, 
+   Bulk Delete confirmation.
+   Features: Select All, Bulk Delete, individual Activate toggle.
+
+4. admin\application\views\print_templates\designer.php
+   Size: ~164 KB | Lines: 3441
+   Purpose: The main designer/editor page (URL #2). This is by far the 
+   largest file — a self-contained single-page application.
+   Contains: Block Editor UI, GrapesJS integration (block-level customization),
+   drag-and-drop block ordering, custom component types (dynamic-table,
+   resizable-block, table-wrapper), all border/style handling logic,
+   variable picker, custom blocks management, save/apply/cancel flow.
+   
+   Key sections:
+   - Lines 1-20:       HTML head, CSS/JS includes
+   - Lines 20-1700:    CSS styles (Block Designer modal, panels, etc.)
+   - Lines 1700-1820:  GrapesJS canvas styles
+   - Lines 1820-1970:  GrapesJS initialization + style manager config
+   - Lines 1970-2110:  Border trait definitions + style maps
+   - Lines 2110-2170:  Border auto-detection from HTML (detectBordersFromHTML)
+   - Lines 2170-2400:  dynamic-table component type registration
+   - Lines 2400-2520:  component:selected auto-convert handler
+   - Lines 2520-3000:  Block Editor JavaScript (save, load, render blocks)
+   - Lines 3000-3410:  Custom blocks management
+   - Lines 3410-3441:  Custom save modal + closing tags
+
+5. admin\application\views\print_templates\form.php
+   Size: ~4 KB | Lines: 80
+   Purpose: "New Template" creation form. Collects: template name, code,
+   category, paper size, orientation, branch. Submits to save() which
+   redirects to designer.
+
+6. admin\application\views\print_templates\preview.php
+   Size: ~0.5 KB | Lines: 24
+   Purpose: Print preview wrapper. Sets @page CSS rules and embeds the
+   rendered HTML output. Includes auto-print trigger (currently commented out).
+
+7. admin\application\views\print_templates\designer_v2.php
+   Size: ~11 KB | Lines: ~200
+   Purpose: V2 designer view (alternative/newer designer interface).
+
+--------------------------------------------------------------------------------
+D. JAVASCRIPT FILES (9 files)
+--------------------------------------------------------------------------------
+
+   All located in: admin\assets\js\print-designer\
+
+8. block-editor.js
+   Size: ~75 KB
+   Purpose: Core Block Editor logic. Handles block rendering, drag-and-drop
+   ordering (via SortableJS), block settings panel, enable/disable toggles,
+   block duplication, deletion, and the "Customize" button that opens
+   the GrapesJS block designer modal.
+
+9. block-definitions.js
+   Size: ~32 KB
+   Purpose: Defines all available block types for the V1 designer.
+   Each block type has: name, icon, category, default HTML template,
+   settings schema (toggles, selectors, field pickers), and default values.
+   Block types include: company-header, customer-info, items-table,
+   tax-summary, payment-info, signature-block, divider lines, spacer,
+   page-break, conditional sections, etc.
+
+10. custom-blocks.js
+    Size: ~64 KB
+    Purpose: Pre-built table templates and complex block HTML templates
+    used by the GrapesJS block designer. Contains inline-styled HTML for
+    various table layouts (sales, purchase, return, payment, order, etc.)
+    with Mustache-style placeholders. These are the blocks that get
+    dragged into the GrapesJS canvas during block customization.
+
+11. designer-init.js
+    Size: ~15 KB
+    Purpose: GrapesJS initialization helper. Sets up editor configuration,
+    panel layout, toolbar buttons, and device switching (Desktop/Tablet/Mobile).
+
+12. variable-plugin.js
+    Size: ~3 KB
+    Purpose: GrapesJS plugin that adds the "Variables" panel. Allows users
+    to drag-and-drop template variables ({{placeholder_name}}) into the
+    GrapesJS canvas as styled placeholder tags.
+
+13. invoice-components.js
+    Size: ~15 KB
+    Purpose: Custom GrapesJS component types for invoice-specific elements.
+    Registers specialized components like editable cells, formula fields,
+    and invoice line items with custom traits and behaviors.
+
+14. block-definitions-v2.js
+    Size: ~27 KB
+    Purpose: V2 block type definitions with enhanced settings schemas
+    and column picker integration.
+
+15. builder-v2.js
+    Size: ~18 KB
+    Purpose: V2 Block Builder logic. Alternative implementation of the
+    block editor with improved UI and additional features.
+
+16. designer-v2.js
+    Size: ~50 KB
+    Purpose: V2 GrapesJS designer integration. Enhanced version with
+    better component handling, improved save/load, and V2 API endpoints.
+
+--------------------------------------------------------------------------------
+E. CSS FILES (1 file)
+--------------------------------------------------------------------------------
+
+17. admin\assets\css\block-editor.css
+    Purpose: Styles for the Block Editor UI on the designer page.
+    Covers: block cards, settings panel, toolbar, drag handles, 
+    block type icons, responsive layout, and modal overlays.
+
+--------------------------------------------------------------------------------
+F. CONFIGURATION (1 file)
+--------------------------------------------------------------------------------
+
+18. admin\application\config\routes.php (lines 1858-1885)
+    Purpose: URL routing for all print template endpoints.
+    
+    Routes defined (28 routes total):
+    
+    V1 Designer:
+    - print-templates                        → index (listing)
+    - print-templates/ajax-list              → ajax_list
+    - print-templates/add                    → add
+    - print-templates/save                   → save
+    - print-templates/designer/(:num)        → designer
+    - print-templates/save-design/(:num)     → save_design
+    - print-templates/load-design/(:num)     → load_design
+    - print-templates/preview/(:num)         → preview
+    - print-templates/preview-live/(:num)    → preview_live
+    - print-templates/delete/(:num)          → delete
+    - print-templates/set-default/(:num)     → set_default
+    - print-templates/fields/(:any)          → get_fields
+    - print-templates/custom-blocks          → get_custom_blocks
+    - print-templates/toggle-active/(:num)   → toggle_active
+    - print-templates/bulk-delete            → bulk_delete
+    - admin_print_template/get_custom_blocks → get_custom_blocks
+    - admin_print_template/save_custom_block → save_custom_block
+    - admin_print_template/get_block_templates → get_block_templates
+    
+    V2 Designer:
+    - print-templates/designer-v2/(:num)     → designer_v2
+    - print-templates/mc-va-config/(:num)    → get_mc_va_config
+    - print-templates/save-mc-va-config      → save_mc_va_config
+    - print-templates/default-template/(:num)→ load_default_template
+    - print-templates/fields-v2/(:any)       → get_fields_v2
+    - print-templates/save-design-v2/(:num)  → save_design_v2
+    - print-templates/preview-live-v2/(:num) → preview_live_v2
+
+--------------------------------------------------------------------------------
+G. EXTERNAL CDN DEPENDENCIES (3 libraries)
+--------------------------------------------------------------------------------
+
+19. GrapesJS v0.21.13
+    - CSS: https://unpkg.com/grapesjs@0.21.13/dist/css/grapes.min.css
+    - JS: https://unpkg.com/grapesjs@0.21.13 (loaded in designer.php)
+    Purpose: Core visual editor for block-level customization. Provides
+    canvas, drag-and-drop, style manager, layer manager, and component system.
+
+    jQuery v3.6.0
+    - https://code.jquery.com/jquery-3.6.0.min.js
+    Purpose: DOM manipulation, AJAX calls, event handling.
+
+    SortableJS v1.15.0
+    - https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js
+    Purpose: Drag-and-drop block ordering in the Block Editor.
+
+
+================================================================================
+SECTION 2: DATABASE TABLES
+================================================================================
+
+Total Tables: 4
+
+--------------------------------------------------------------------------------
+TABLE 1: print_templates (PRIMARY TABLE)
+--------------------------------------------------------------------------------
+
+Purpose: Stores all print templates — their metadata, design data, and 
+compiled HTML/CSS. Supports versioning (multiple versions per template group)
+with active/inactive status.
+
+Key Columns (inferred from model code):
+  - id_template        (PK, AUTO_INCREMENT) — Unique template ID
+  - template_code      (UNIQUE) — Unique code per version (e.g. "BILL_STD_A4_1712345678")
+  - code               — Grouping code shared across all versions of same template
+  - template_name      — Human-readable name (e.g. "Standard Sales Invoice")
+  - template_category  — Category ID (0-15, maps to CATEGORIES constant)
+  - paper_size         — Paper size (A4, A5, Letter, Thermal-58mm, Thermal-80mm, Custom)
+  - page_orientation   — Portrait or Landscape
+  - id_branch          — Branch ID (NULL = global/all branches)
+  - is_default         — Whether this is the default template for its category/branch
+  - is_active          — Whether this version is currently active (0/1)
+  - version_number     — Sequential version number within the group
+  - parent_template_id — ID of the previous version
+  - template_html      — Compiled HTML output (Mustache-style with {{placeholders}})
+  - template_css       — Compiled CSS for the template
+  - gjs_data           — GrapesJS/Block Editor data as JSON (full design state)
+  - updated_at         — Timestamp of last update
+
+Used by: Both URL #1 (listing) and URL #2 (designer). Queried for listing,
+read for designer load, written on save.
+
+Versioning Model: Each save creates a NEW row with incremented version_number,
+deactivates all other rows with the same `code`. This provides full version history.
+
+--------------------------------------------------------------------------------
+TABLE 2: print_template_placeholders
+--------------------------------------------------------------------------------
+
+Purpose: Stores available template placeholder variables ({{variable_name}})
+that can be inserted into templates. Organized by category and group.
+
+Key Columns (inferred from model code):
+  - placeholder_key    — Variable key (e.g. "customer_name", "invoice_no")
+  - placeholder_label  — Display label (e.g. "Customer Name")
+  - sample_value       — Sample value for preview
+  - category           — Template category this placeholder belongs to
+  - placeholder_group  — Grouping (e.g. "Customer", "Bill Details", "Tax & Totals")
+  - display_order      — Sort order within group
+  - field_type         — Field type (text, number, etc.) — used by V2
+  - is_loop_field      — Whether this field belongs to a loop (0/1) — used by V2
+  - parent_loop        — Parent loop key if is_loop_field=1 — used by V2
+
+Used by: Both the designer (Variable picker panel) and controller (get_fields endpoint).
+NOTE: Dynamic placeholders are also generated in code (hardcoded in the model)
+and merged with DB records. DB records take precedence.
+
+--------------------------------------------------------------------------------
+TABLE 3: print_template_mc_va_config
+--------------------------------------------------------------------------------
+
+Purpose: Stores MC (Making Charges) and VA (Value Addition) column configuration
+per branch and document type. Controls how MC/VA columns appear in print templates.
+
+Key Columns (inferred from model code):
+  - id                 (PK) — Config ID
+  - id_branch          — Branch ID (NULL = global)
+  - document_type      — Document type this config applies to
+  - [config columns]   — MC/VA display settings (show/hide, labels, formatting)
+
+Used by: V2 designer only. Branch-specific with global fallback.
+
+--------------------------------------------------------------------------------
+TABLE 4: print_template_defaults
+--------------------------------------------------------------------------------
+
+Purpose: Stores pre-built default template definitions that can be loaded
+as starting points when creating a new template. System-defined defaults
+are prioritized over user-created ones.
+
+Key Columns (inferred from model code):
+  - id                 (PK) — Default template ID
+  - template_category  — Category this default belongs to
+  - is_system          — Whether this is a system-provided default (1 = system, 0 = user)
+  - [template data]    — Block definitions JSON / HTML content
+
+Used by: V2 designer (load_default_template endpoint).
+
+--------------------------------------------------------------------------------
+TABLE 5: print_template_custom_blocks
+--------------------------------------------------------------------------------
+
+Purpose: Stores user-saved custom blocks that can be reused across templates.
+When a user customizes a block and clicks "Save as Block", it is stored here.
+Table is auto-created if it doesn't exist.
+
+Key Columns (from controller CREATE TABLE):
+  - id                 (PK, AUTO_INCREMENT)
+  - block_name         — User-given name for the custom block
+  - block_html         — Full HTML content of the block
+  - block_css          — CSS styles for the block
+  - category           — Template category
+  - created_at         — Timestamp
+
+Used by: Designer page — "Save as Block" feature and custom block sidebar panel.
+
+
+================================================================================
+SECTION 3: WHICH FILES SERVE WHICH URL
+================================================================================
+
+URL #1: /print-templates (Template Listing Page)
+─────────────────────────────────────────────────
+Files loaded:
+  1. admin_print_template.php → index() method
+  2. print_template_model.php → get_all(), get_template_categories()
+  3. layout/header.php        → Standard admin header (navigation, CSS)
+  4. print_templates/list.php → The listing view
+  5. layout/footer.php        → Standard admin footer (JS includes)
+
+DB Tables queried:
+  - print_templates (SELECT all templates)
+
+URL #2: /print-templates/designer/{id} (Designer Page)
+────────────────────────────────────────────────────────
+Files loaded:
+  1. admin_print_template.php → designer() method
+  2. print_template_model.php → get_by_id()
+  3. print_templates/designer.php → Full designer view (standalone HTML page)
+  4. assets/css/block-editor.css → Block editor styles
+  5. assets/js/print-designer/block-editor.js → Block editor logic
+  6. assets/js/print-designer/block-definitions.js → Block type definitions
+  7. assets/js/print-designer/custom-blocks.js → Pre-built block templates
+  8. assets/js/print-designer/designer-init.js → GrapesJS init helper
+  9. assets/js/print-designer/variable-plugin.js → Variable picker plugin
+  10. assets/js/print-designer/invoice-components.js → Custom components
+  11. GrapesJS v0.21.13 (CDN) → Visual editor core
+  12. jQuery v3.6.0 (CDN) → DOM/AJAX
+  13. SortableJS v1.15.0 (CDN) → Drag-and-drop
+
+AJAX endpoints called by the designer:
+  - load-design/{id}       → Reads from print_templates
+  - save-design/{id}       → Writes to print_templates (new version)
+  - fields/{category}      → Reads from print_template_placeholders
+  - get_block_templates    → Returns hardcoded HTML from controller
+  - get_custom_blocks      → Reads from print_template_custom_blocks
+  - save_custom_block      → Writes to print_template_custom_blocks
+
+DB Tables queried by designer:
+  - print_templates
+  - print_template_placeholders
+  - print_template_custom_blocks
+
+
+================================================================================
+SECTION 4: SUMMARY COUNTS
+================================================================================
+
+  FILES
+  ─────
+  PHP Controllers:   1
+  PHP Models:        1
+  PHP Views:         5
+  JavaScript:        9
+  CSS:               1
+  Config (routes):   1
+  External CDN:      3 libraries
+  ─────────────────────
+  TOTAL:             19 local files + 3 CDN libraries
+
+  DATABASE TABLES
+  ───────────────
+  1. print_templates               (primary — templates + versions)
+  2. print_template_placeholders   (variables/fields registry)
+  3. print_template_mc_va_config   (MC/VA column configuration)
+  4. print_template_defaults       (pre-built default templates)
+  5. print_template_custom_blocks  (user-saved custom blocks)
+  ─────────────────────
+  TOTAL:             5 tables
+
+================================================================================
+END OF DOCUMENTATION
+================================================================================

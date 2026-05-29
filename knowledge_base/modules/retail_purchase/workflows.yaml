@@ -1,0 +1,58 @@
+# Workflows: Retail Purchase
+
+## 1. Purchase Entry (Inwarding)
+**Goal**: Record incoming goods from a Supplier (Karigar).
+**Actor**: Store Manager / Purchase Manager.
+**Steps**:
+1.  Navigate to Purchase Entry (`purchase_add`).
+2.  Select **Supplier** (from `ret_karigar`).
+3.  Select **Purchase Type** (Ornaments/Bullion/Stone).
+4.  Add **Line Items**:
+    -   Select Product/Design (from `ret_supp_catalogue` or generic Master).
+    -   Enter Weight (Gross, Net), Pcs.
+    -   Enter Costing (MC, VA).
+5.  Link to **GRN** (Goods Receipt Note) if applicable.
+6.  **Save**: Creates record in `ret_purchase_order` and `ret_purchase_order_items`.
+7.  **Approval** (Optional): If the value exceeds limits or requires verification, it goes to `admin_ret_purchase_approval`.
+
+## 2. Customer Indent Creation
+**Goal**: Take a special order from a customer.
+**Actor**: Sales Staff.
+**Steps**:
+1.  Navigate to Order Form (`add` action in `admin_ret_purchase`).
+2.  Enter Customer Details (or link existing).
+3.  Enter Item Details (Design, Weight, Due Date).
+4.  **Save**: Creates record in `customerorder` table.
+5.  **Status Tracking**: "Order Status" is updated as it moves through "Assigned to Smith", "In Production", "Ready".
+
+## 4. Purchase Approval
+**Goal**: Verify and Authorize high-value or specific purchases.
+**Actor**: Manager / Admin.
+**Steps**:
+1.  Navigate to `admin_ret_purchase_approval` (mapped to `purchase_entry_list` view in Approval Mode).
+2.  Review pending POs.
+3.  **Approve**: Updates `ret_purchase_order` status (e.g., `is_approved=1`).
+4.  **Stock Update**: Only upon approval does the stock explicitly move to confirmed inventory (from Suspense).
+
+## 5. Stock Issue (Outward)
+**Goal**: Issue stock to a Branch, Karigar, or Employee.
+**Actor**: Inventory Manager.
+**Steps**:
+1.  Navigate to Stock Issue Form (`admin_ret_stock_issue/add`).
+2.  Select **Issue Type** (Issue vs Receipt) and **Recipient** (Branch/Karigar/Emp).
+3.  **Select Items**:
+    -   **Tagged**: Scan/Enter Tag IDs (`ret_taging`). System validates status.
+    -   **Non-Tagged**: Select Product/Category and Weight/Pcs.
+4.  **Save**:
+    -   Creates `ret_stock_issue` record.
+    -   Updates `ret_taging` tag_status to '7' (Issued).
+    -   Updates `ret_nontag_item` (deducts weight).
+    -   Logs transaction in `ret_taging_status_log` or `ret_nontag_item_log`.
+
+## 6. Stock Receipt (Inward Return)
+**Goal**: Receive stock back from issue.
+**Steps**:
+1.  Select Issue Receipt Type = 2 (Receipt).
+2.  Select Original Issue ID.
+3.  Process items back into stock (Reverses status to Active/Available).
+

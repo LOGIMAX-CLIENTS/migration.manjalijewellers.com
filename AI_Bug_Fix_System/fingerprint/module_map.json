@@ -1,0 +1,184 @@
+{
+    "modules": {
+        "Purchase": {
+            "controller": "admin_ret_purchase.php",
+            "model": "ret_purchase_order_model.php",
+            "js": "ret_purchase_order.js",
+            "view_dir": "ret_purchase",
+            "css": "purchase_entry.css"
+        },
+        "LOT": {
+            "controller": "admin_ret_lot.php",
+            "model": "ret_lot_model.php",
+            "js": "ret_lot.js",
+            "view_dir": "lot",
+            "css": "lot_ack.css"
+        },
+        "Tagging": {
+            "controller": "admin_ret_tagging.php",
+            "model": "ret_tag_model.php",
+            "js": "ret_tagging.js",
+            "view_dir": "tagging",
+            "css": null
+        },
+        "Customer_Order": {
+            "controller": "admin_ret_order.php",
+            "model": "ret_order_model.php",
+            "js": "ret_order.js",
+            "view_dir": "order",
+            "css": "order_ack.css"
+        },
+        "Branch_Transfer": {
+            "controller": "admin_ret_brntransfer.php",
+            "model": "ret_brntransfer_model.php",
+            "js": "ret_branch_transfer.js",
+            "view_dir": "branch_transfer",
+            "css": "bt_ack.css"
+        },
+        "Estimation": {
+            "controller": "admin_ret_estimation.php",
+            "model": "ret_estimation_model.php",
+            "js": "ret_estimation.js",
+            "view_dir": "estimation",
+            "css": "estimation.css"
+        },
+        "Billing": {
+            "controller": "admin_ret_billing.php",
+            "model": "ret_billing_model.php",
+            "js": "ret_billing.js",
+            "view_dir": "billing",
+            "css": "billing_receipt.css"
+        },
+        "Reports": {
+            "controller": "admin_ret_reports.php",
+            "model": "ret_reports_model.php",
+            "js": "ret_reports.js",
+            "view_dir": "ret_reports",
+            "css": null
+        },
+        "Dashboard": {
+            "controller": "admin_ret_dashboard.php",
+            "model": "ret_dashboard_model.php",
+            "js": "ret_dashboard.js",
+            "view_dir": "ret_dashboard",
+            "css": "cockpit.css"
+        },
+        "Other_Inventory": {
+            "controller": "admin_ret_other_inventory.php",
+            "model": "ret_other_inventory_model.php",
+            "js": "ret_other_inventory.js",
+            "view_dir": "other_inventory",
+            "css": null
+        },
+        "Old_Metal_Process": {
+            "controller": "admin_ret_metal_process.php",
+            "model": "ret_metal_process_model.php",
+            "js": "ret_metal_process.js",
+            "view_dir": "ret_metal_process",
+            "css": "process_ack.css"
+        },
+        "Section_Transfer": {
+            "controller": "admin_ret_section_transfer.php",
+            "model": "ret_section_transfer_model.php",
+            "js": "ret_section_transfer.js",
+            "view_dir": "section_transfer",
+            "css": null
+        },
+        "Stock_Issue": {
+            "controller": "admin_ret_stock_issue.php",
+            "model": "ret_stock_issue_model.php",
+            "js": "ret_stock_issue.js",
+            "view_dir": "ret_stock_issue",
+            "css": "stock_issue_ack.css"
+        },
+        "Catalog_Inventory": {
+            "controller": "admin_ret_catalog.php",
+            "model": "ret_catalog_model.php",
+            "js": "catalog.js",
+            "view_dir": "catalog",
+            "css": null
+        },
+        "Settings": {
+            "controller": "admin_settings.php",
+            "model": "admin_settings_model.php",
+            "js": "admin_settings.js",
+            "view_dir": "settings",
+            "css": null
+        },
+        "Scheme_Chit": {
+            "controller": "admin_scheme.php",
+            "model": "scheme_model.php",
+            "js": "scheme.js",
+            "view_dir": "scheme",
+            "css": null
+        },
+        "Customer": {
+            "controller": "admin_customer.php",
+            "model": "customer_model.php",
+            "js": "customer.js",
+            "view_dir": "dashboard",
+            "css": null
+        },
+        "Payment": {
+            "controller": "admin_payment.php",
+            "model": "payment_model.php",
+            "js": "payment.js",
+            "view_dir": "payment",
+            "css": null
+        },
+        "Gift_Voucher": {
+            "controller": "admin_gift_vocuher.php",
+            "model": "gift_voucher_model.php",
+            "js": "gift_voucher.js",
+            "view_dir": "gift_voucher",
+            "css": null
+        },
+        "Sales_Transfer": {
+            "controller": "admin_ret_sales_transfer.php",
+            "model": "ret_sales_transfer_model.php",
+            "js": "ret_sales_transfer.js",
+            "view_dir": "ret_reports",
+            "css": null
+        },
+        "EDA": {
+            "controller": "admin_ret_eda.php",
+            "model": "ret_eda_model.php",
+            "js": "ret_eda.js",
+            "view_dir": "ret_reports",
+            "css": null
+        }
+    },
+    "paths": {
+        "controller_dir": "admin/application/controllers",
+        "model_dir": "admin/application/models",
+        "js_dir": "admin/assets/js",
+        "view_dir": "admin/application/views",
+        "css_dir": "admin/assets/css"
+    },
+    "weights": {
+        "controller": 0.25,
+        "model": 0.30,
+        "js": 0.25,
+        "views": 0.15,
+        "css": 0.05
+    },
+    "thresholds": {
+        "level_1_max": 10,
+        "level_2_max": 40,
+        "function_body_change_threshold": 20
+    },
+    "version_markers": {
+        "v2025_Q4": {
+            "description": "Dec 2025 features — billing insurance, bank ledger, rate type updates",
+            "functions": ["billing_insurance", "bank_ledger_transfer", "update_order_rate_type"]
+        },
+        "v2026_Q1": {
+            "description": "Jan-Mar 2026 features — credit history print, POS device, discount allocations",
+            "functions": ["get_credit_history_for_print", "savePOSDevice", "calculateDiscountAllocations", "get_total_returned_amount_by_bill"]
+        },
+        "v2026_Q1_late": {
+            "description": "Mar 2026 features — purchase payment improvements, stock v2",
+            "functions": ["getPending_payment_po_bills", "get_po_ratecut_balance_details", "stock_details_v2", "get_stock_details_v1"]
+        }
+    }
+}

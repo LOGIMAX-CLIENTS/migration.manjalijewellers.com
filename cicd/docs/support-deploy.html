@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deploy Portal | Logimax CI/CD</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/dashboard-extra.css">
+    <script src="js/auth-check.js" data-require-role="deployer"></script>
+    <script src="js/toast.js"></script>
+    <style>
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            width: 260px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border-color);
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 12px;
+            margin-bottom: 32px;
+            font-weight: 700;
+            font-size: 18px;
+        }
+        
+        .sidebar-logo svg {
+            width: 32px;
+            height: 32px;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+        }
+        
+        .nav-item:hover {
+            background: rgba(0,0,0,0.03);
+        }
+        
+        .nav-item.active {
+            background: var(--accent);
+            color: white;
+        }
+        
+        .nav-item svg {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 32px;
+            overflow-y: auto;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .page-title h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .page-title p {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+        
+        .deploy-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .deploy-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 28px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .deploy-card h3 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 14px;
+            font-family: inherit;
+            background: white;
+        }
+        
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.1);
+        }
+        
+        .btn-deploy {
+            width: 100%;
+            padding: 16px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-deploy:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .btn-deploy:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .history-section h2 {
+            font-size: 18px;
+            margin-bottom: 16px;
+        }
+        
+        .history-table {
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+        
+        .history-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .history-table th,
+        .history-table td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .history-table th {
+            background: rgba(0,0,0,0.02);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+        }
+        
+        .history-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-badge.success { background: #dcfce7; color: #166534; }
+        .status-badge.pending { background: #fef3c7; color: #92400e; }
+        .status-badge.failed { background: #fee2e2; color: #991b1b; }
+        .status-badge.running { background: #dbeafe; color: #1e40af; }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: rgba(0,0,0,0.02);
+            border-radius: 12px;
+            margin-top: auto;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .user-details {
+            flex: 1;
+        }
+        
+        .user-details strong {
+            display: block;
+            font-size: 14px;
+        }
+        
+        .user-details span {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        
+        .logout-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 1024px) {
+            .sidebar { display: none; }
+            .deploy-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M8 8L16 4L24 8V16L16 20L8 16V8Z"/>
+                    <path d="M8 16L16 20L24 16V24L16 28L8 24V16Z"/>
+                </svg>
+                Logimax
+            </div>
+            
+            <nav>
+                <a href="index.html" class="nav-item" data-require-role="admin">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/>
+                        <rect x="14" y="14" width="7" height="7" rx="1"/>
+                    </svg>
+                    Admin Dashboard
+                </a>
+                <a href="support-dashboard.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                    Quick Sync
+                </a>
+                <a href="support-deploy.html" class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                        <path d="M2 17l10 5 10-5"/>
+                        <path d="M2 12l10 5 10-5"/>
+                    </svg>
+                    Deployments
+                </a>
+                <a href="clients.html" class="nav-item" data-require-role="admin">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 010 7.75"/>
+                    </svg>
+                    Clients
+                </a>
+            </nav>
+            
+            <div class="user-info" id="user-info">
+                <div class="user-avatar" id="user-avatar">AD</div>
+                <div class="user-details">
+                    <strong id="user-name">Admin</strong>
+                    <span id="user-role">deployer</span>
+                </div>
+                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            </div>
+        </aside>
+        
+        <main class="main-content">
+            <div class="page-header">
+                <div class="page-title">
+                    <h1>Deploy Portal</h1>
+                    <p>Deploy and sync code to environments</p>
+                </div>
+            </div>
+            
+            <div class="deploy-grid">
+                <!-- Deploy to Environment -->
+                <div class="deploy-card">
+                    <h3>🚀 Deploy to Environment</h3>
+                    <form id="deploy-form" onsubmit="handleDeploy(event)">
+                        <div class="form-group">
+                            <label>Environment</label>
+                            <select id="deploy-env" required>
+                                <option value="">Select environment...</option>
+                                <option value="develop">Develop</option>
+                                <option value="qa">QA</option>
+                                <option value="support">Support</option>
+                                <option value="production">Production</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Branch</label>
+                            <select id="deploy-branch" required>
+                                <option value="">Select branch...</option>
+                                <option value="Retail_1.1.1.0001">Retail_1.1.1.0001</option>
+                                <option value="QA">QA</option>
+                                <option value="Production">Production</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-deploy" id="deploy-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                <path d="M2 17l10 5 10-5"/>
+                                <path d="M2 12l10 5 10-5"/>
+                            </svg>
+                            Deploy Now
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Sync to Client -->
+                <div class="deploy-card">
+                    <h3>🔄 Sync to Client</h3>
+                    <form id="sync-form" onsubmit="handleSync(event)">
+                        <div class="form-group">
+                            <label>Client</label>
+                            <select id="sync-client" required>
+                                <option value="">Loading clients...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Source Branch</label>
+                            <select id="sync-branch" required>
+                                <option value="Production">Production</option>
+                                <option value="QA">QA</option>
+                                <option value="Retail_1.1.1.0001">Retail_1.1.1.0001</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-deploy" id="sync-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 4v6h-6"/>
+                                <path d="M1 20v-6h6"/>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                            </svg>
+                            Sync Now
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Recent Deployments -->
+            <div class="history-section">
+                <h2>Recent Deployments</h2>
+                <div class="history-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Action</th>
+                                <th>Target</th>
+                                <th>Branch</th>
+                                <th>Status</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body">
+                            <tr>
+                                <td>Deploy</td>
+                                <td>Production</td>
+                                <td>Retail_1.1.1.0001</td>
+                                <td><span class="status-badge success">Success</span></td>
+                                <td>2 hours ago</td>
+                            </tr>
+                            <tr>
+                                <td>Sync</td>
+                                <td>SR-Jewellery</td>
+                                <td>Production</td>
+                                <td><span class="status-badge success">Success</span></td>
+                                <td>3 hours ago</td>
+                            </tr>
+                            <tr>
+                                <td>Deploy</td>
+                                <td>QA</td>
+                                <td>QA</td>
+                                <td><span class="status-badge running">Running</span></td>
+                                <td>Just now</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+<script>
+// Load clients for sync dropdown
+async function loadClients() {
+    try {
+        const res = await fetch('../../clients/registry.json');
+        const data = await res.json();
+        const clients = data.clients || [];
+        
+        const select = document.getElementById('sync-client');
+        select.innerHTML = '<option value="">Select client...</option>' +
+            clients.map(c => `<option value="${c.repo}">${c.name}</option>`).join('');
+    } catch(e) {
+        console.error('Failed to load clients:', e);
+    }
+}
+
+// Update user info from session
+function updateUserInfo() {
+    const user = window.cicdAuth?.getUser();
+    if (user) {
+        document.getElementById('user-name').textContent = user.username || 'Admin';
+        document.getElementById('user-role').textContent = user.role || 'deployer';
+        document.getElementById('user-avatar').textContent = 
+            (user.username || 'AD').substring(0, 2).toUpperCase();
+    }
+}
+
+// Handle deploy
+async function handleDeploy(e) {
+    e.preventDefault();
+    const env = document.getElementById('deploy-env').value;
+    const branch = document.getElementById('deploy-branch').value;
+    const btn = document.getElementById('deploy-btn');
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Deploying...';
+    
+    // Simulate deploy (replace with actual API call)
+    setTimeout(() => {
+        addHistoryRow('Deploy', env, branch, 'running');
+        btn.disabled = false;
+        btn.innerHTML = '🚀 Deploy Now';
+        showToast(`Deploying ${branch} to ${env}...`, 'info');
+    }, 1000);
+}
+
+// Handle sync
+async function handleSync(e) {
+    e.preventDefault();
+    const client = document.getElementById('sync-client').value;
+    const branch = document.getElementById('sync-branch').value;
+    const btn = document.getElementById('sync-btn');
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Syncing...';
+    
+    // Simulate sync (replace with actual API call)
+    setTimeout(() => {
+        addHistoryRow('Sync', client, branch, 'running');
+        btn.disabled = false;
+        btn.innerHTML = '🔄 Sync Now';
+        showToast(`Syncing ${branch} to ${client}...`, 'info');
+    }, 1000);
+}
+
+// Add row to history
+function addHistoryRow(action, target, branch, status) {
+    const tbody = document.getElementById('history-body');
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td>${action}</td>
+        <td>${target}</td>
+        <td>${branch}</td>
+        <td><span class="status-badge ${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span></td>
+        <td>Just now</td>`;
+    tbody.insertBefore(row, tbody.firstChild);
+}
+
+// showToast is now provided by js/toast.js
+
+// Logout
+function handleLogout() {
+    window.cicdAuth.logout();
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    loadClients();
+    updateUserInfo();
+});
+</script>
+</body>
+</html>

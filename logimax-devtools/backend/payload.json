@@ -1,0 +1,5 @@
+{
+  "type": "BUGFIX",
+  "files": ["backend/app/main.py"],
+  "index_name": "test_index"
+}

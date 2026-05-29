@@ -1,0 +1,63 @@
+{
+    "entity": "category",
+    "ai": {
+        "enabled": true,
+        "max_rows": 20
+    },
+    "validation": {
+        "required_file_name_pattern": "category*.xlsx",
+        "required_sheet_name": "port_category"
+    },
+    "file_path": "uploads/category.xlsx",
+    "migrations": [{
+        "destination_table": "ret_category",
+        "primary_key": "id_ret_category",
+        "mappings": {
+            "old_id": {
+                "source_column": "old_id",
+                "validations": { "type": "numeric", "min": 1, "required": false }
+            },
+            "name": {
+                "source_column": "category_name",
+                "validations": { "type": "string", "max_length": 100, "required": true },
+                "check_if_exists": true
+            },
+            "hsn_code": {
+                "source_column": "hsn_code",
+                "validations": { "type": "string", "max_length": 8, "required": false }
+            },
+            "cat_code": {
+                "source_column": "short_code",
+                "validations": { "type": "string", "max_length": 50, "required": false }
+            },
+            "cat_type": {
+                "source_column": "category_type",
+                "validations": { "type": "string", "max_length": 50, "required": false }
+            },
+            "description": {
+                "source_column": "description",
+                "validations": { "type": "string", "max_length": 255, "required": false }
+            },
+            "id_metal": {
+                "lookup": {
+                    "table": "metal",
+                    "source_column": "metal_name",
+                    "match_column": "metal",
+                    "return_column": "id_metal",
+                    "create_if_missing": false
+                },
+                "validations": { "type": "string", "max_length": 50, "required": true }
+            },
+            "tgrp_id": {
+                "lookup": {
+                    "table": "ret_taxgroupmaster",
+                    "source_column": "tax_group",
+                    "match_column": "tgrp_name",
+                    "return_column": "tgrp_id",
+                    "create_if_missing": false
+                },
+                "validations": { "type": "string", "max_length": 100, "required": false }
+            }
+        }
+    }]
+}

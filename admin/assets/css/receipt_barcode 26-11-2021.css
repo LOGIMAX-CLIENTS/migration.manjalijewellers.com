@@ -1,0 +1,33 @@
+@page { size: 78mm 30mm } /* output size */
+
+.printBody {
+    font-size: 7px; 
+    font-weight: bold; 
+    /*font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;*/
+    font-family: Bodoni, Courier, Proxima Nova;
+}
+.PDF_CusReceipt {
+    page-break-after: always; 
+    margin-top: -42px; 
+    margin-left: -35px;
+}
+.printable {
+    border-spacing: 0 px; 
+    border-collapse: collapse; 
+    width: 100%;
+}
+.qrImg img {
+    width:40px;
+    height:40px; 
+    margin-bottom: -5px;
+    margin-top: -5px; 
+    margin-left: -35px;
+}
+.tag-product-design {
+    margin-left: -13px;
+    font-size: 10px;
+}
+.tag-code{
+    font-weight:bold;
+    font-size:10px;
+}

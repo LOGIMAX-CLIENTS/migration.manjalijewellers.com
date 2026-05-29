@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insights | Logimax CI/CD</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="js/auth-check.js" data-require-role="viewer"></script>
+    <script src="js/toast.js"></script>
+    <link rel="stylesheet" href="css/dashboard-extra.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #f5f5f5;
+            --bg-card: rgba(255, 255, 255, 0.9);
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --text-muted: #999999;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --accent: #7c3aed;
+            --accent-light: #a78bfa;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --info: #06b6d4;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+            --radius-sm: 12px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .app-container { display: flex; min-height: 100vh; }
+
+        /* Sidebar */
+        .sidebar {
+            width: 220px;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            background: transparent;
+            position: fixed;
+            height: 100vh;
+        }
+
+        .logo { display: flex; align-items: center; gap: 10px; padding: 0 12px; margin-bottom: 32px; }
+        .logo-icon { width: 32px; height: 32px; }
+        .logo-text { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+
+        .nav-section { margin-bottom: 24px; }
+        .nav-section-title { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; padding: 0 12px; margin-bottom: 8px; }
+
+        .nav-item {
+            display: flex; align-items: center; gap: 12px; padding: 12px;
+            border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease;
+            color: var(--text-secondary); font-size: 14px; font-weight: 500; text-decoration: none;
+        }
+        .nav-item:hover { background: var(--bg-card); }
+        .nav-item.active { background: var(--accent); color: white; }
+        .nav-item svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+        .sidebar-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border-color); }
+
+        /* Main Content */
+        .main-content { flex: 1; padding: 24px 32px; margin-left: 220px; }
+
+        /* Header */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .header-left h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+        .header-left p { color: var(--text-muted); font-size: 14px; }
+        .header-actions { display: flex; align-items: center; gap: 12px; }
+        
+        .date-range {
+            display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 50px; font-size: 14px; color: var(--text-secondary);
+        }
+        .date-range select { border: none; background: none; font-size: 14px; color: var(--text-primary); cursor: pointer; }
+
+        .avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; }
+
+        /* Stats Overview */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 32px; }
+        
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+        .stat-card .icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 24px; }
+        .stat-card .icon.purple { background: rgba(124, 58, 237, 0.1); }
+        .stat-card .icon.green { background: rgba(34, 197, 94, 0.1); }
+        .stat-card .icon.orange { background: rgba(245, 158, 11, 0.1); }
+        .stat-card .icon.blue { background: rgba(6, 182, 212, 0.1); }
+        .stat-card .label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .stat-card .value { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+        .stat-card .change { font-size: 13px; display: flex; align-items: center; gap: 4px; }
+        .stat-card .change.up { color: var(--success); }
+        .stat-card .change.down { color: var(--error); }
+
+        /* Charts Grid */
+        .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 32px; }
+        
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            border: 1px solid var(--border-color);
+        }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .card-title { font-size: 16px; font-weight: 600; }
+        .card-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+        .chart-container { height: 280px; position: relative; }
+
+        /* Pie Chart Legend */
+        .pie-legend { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+        .legend-item { display: flex; align-items: center; justify-content: space-between; }
+        .legend-label { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .legend-value { font-weight: 600; }
+
+        /* Bottom Grid */
+        .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+        /* Top Clients */
+        .client-list { display: flex; flex-direction: column; gap: 12px; }
+        .client-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(0,0,0,0.02); border-radius: var(--radius-sm); }
+        .client-avatar { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px; }
+        .client-info { flex: 1; }
+        .client-name { font-weight: 500; font-size: 14px; }
+        .client-deploys { font-size: 12px; color: var(--text-muted); }
+        .client-trend { font-size: 12px; display: flex; align-items: center; gap: 4px; }
+        .client-trend.up { color: var(--success); }
+
+        /* Recent Activity */
+        .activity-list { display: flex; flex-direction: column; gap: 16px; }
+        .activity-item { display: flex; align-items: flex-start; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color); }
+        .activity-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .activity-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+        .activity-dot.success { background: var(--success); }
+        .activity-dot.failed { background: var(--error); }
+        .activity-dot.pending { background: var(--warning); }
+        .activity-content { flex: 1; }
+        .activity-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+        .activity-meta { font-size: 12px; color: var(--text-muted); }
+        .activity-time { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+
+        /* Loading skeleton */
+        .skeleton { background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%); background-size: 200% 100%; animation: skeleton-pulse 1.5s infinite; border-radius: 4px; }
+        @keyframes skeleton-pulse { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        @media (max-width: 1200px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .charts-grid { grid-template-columns: 1fr; }
+            .bottom-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; }
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <svg class="logo-icon" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#1a1a1a"/>
+                    <path d="M8 16L14 22L24 10" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="logo-text">Logimax</span>
+            </div>
+
+            <nav class="nav-section">
+                <div class="nav-section-title">Menu</div>
+                <a href="index.html" class="nav-item" data-require-role="admin">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                    Admin Dashboard
+                </a>
+                <a href="support-dashboard.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                    Quick Sync
+                </a>
+                <a href="support-deploy.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                    Deployments
+                </a>
+                <a href="insights.html" class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+                    Insights
+                </a>
+                <a href="clients.html" class="nav-item" data-require-role="admin">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+                    Clients
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="settings.html" class="nav-item" data-require-role="admin">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                    Settings
+                </a>
+                <a href="#" class="nav-item" id="logout-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    Logout
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <div class="header-left">
+                    <h1>Insights</h1>
+                    <p>Deployment analytics and performance metrics</p>
+                </div>
+                <div class="header-actions">
+                    <div class="date-range">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        <select id="date-range-select">
+                            <option value="7">Last 7 days</option>
+                            <option value="30" selected>Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                        </select>
+                    </div>
+                    <div class="avatar" id="user-avatar">U</div>
+                </div>
+            </header>
+
+            <!-- Stats Overview -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="icon purple">📦</div>
+                    <div class="label">Total Deployments</div>
+                    <div class="value" id="stat-total">--</div>
+                    <div class="change up" id="stat-total-change">↑ 0% from last period</div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon green">✓</div>
+                    <div class="label">Success Rate</div>
+                    <div class="value" id="stat-success">--%</div>
+                    <div class="change up" id="stat-success-change">↑ 0% from last period</div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon orange">⏱</div>
+                    <div class="label">Avg Deploy Time</div>
+                    <div class="value" id="stat-time">--</div>
+                    <div class="change down" id="stat-time-change">↓ 0% faster</div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon blue">👥</div>
+                    <div class="label">Active Clients</div>
+                    <div class="value" id="stat-clients">--</div>
+                    <div class="change up" id="stat-clients-change">↑ 0 new this period</div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">Deployment Trend</div>
+                            <div class="card-subtitle">Daily deployments over time</div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">Status Distribution</div>
+                            <div class="card-subtitle">Deployment outcomes</div>
+                        </div>
+                    </div>
+                    <div class="chart-container" style="height: 180px;">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                    <div class="pie-legend" id="status-legend"></div>
+                </div>
+            </div>
+
+            <!-- Bottom Section -->
+            <div class="bottom-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Top Clients</div>
+                    </div>
+                    <div class="client-list" id="top-clients">
+                        <div style="text-align: center; padding: 20px; color: var(--text-muted);">Loading...</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Recent Activity</div>
+                    </div>
+                    <div class="activity-list" id="recent-activity">
+                        <div style="text-align: center; padding: 20px; color: var(--text-muted);">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = 'api';
+        let trendChart, statusChart;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            loadInsights();
+            document.getElementById('date-range-select').addEventListener('change', loadInsights);
+        });
+
+        async function loadInsights() {
+            const days = document.getElementById('date-range-select').value;
+            await Promise.all([
+                loadStats(days),
+                loadTrendChart(days),
+                loadStatusChart(days),
+                loadTopClients(days),
+                loadRecentActivity()
+            ]);
+        }
+
+        async function loadStats(days) {
+            try {
+                const res = await fetch(`${API_BASE}/stats.php?action=overview&days=${days}`);
+                const data = await res.json();
+                
+                if (data.success && data.stats) {
+                    const s = data.stats;
+                    document.getElementById('stat-total').textContent = s.total_deployments?.value || '0';
+                    document.getElementById('stat-success').textContent = s.success_rate?.value || '0%';
+                    document.getElementById('stat-time').textContent = s.avg_time?.value || '0s';
+                    document.getElementById('stat-clients').textContent = s.active_clients?.value || '0';
+                    
+                    // Update change indicators
+                    const totalChange = s.total_deployments?.change || 0;
+                    document.getElementById('stat-total-change').innerHTML = totalChange >= 0 
+                        ? `<span style="color: var(--success)">↑ ${totalChange}%</span> from last period`
+                        : `<span style="color: var(--error)">↓ ${Math.abs(totalChange)}%</span> from last period`;
+                }
+            } catch (e) {
+                console.warn('Failed to load stats:', e);
+                Toast.error('Load Error', 'Failed to fetch overview statistics');
+            }
+        }
+
+        async function loadTrendChart(days) {
+            try {
+                const res = await fetch(`${API_BASE}/stats.php?action=sparklines&days=${days}`);
+                const data = await res.json();
+                
+                const ctx = document.getElementById('trendChart').getContext('2d');
+                
+                if (trendChart) trendChart.destroy();
+                
+                const labels = data.sparklines?.deployments?.map((_, i) => {
+                    const d = new Date();
+                    d.setDate(d.getDate() - (data.sparklines.deployments.length - 1 - i));
+                    return d.toLocaleDateString('en-US', { weekday: 'short' });
+                }) || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                
+                trendChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Deployments',
+                            data: data.sparklines?.deployments || [0, 0, 0, 0, 0, 0, 0],
+                            borderColor: '#7c3aed',
+                            backgroundColor: 'rgba(124, 58, 237, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }, {
+                            label: 'Success Rate %',
+                            data: data.sparklines?.success_rate || [0, 0, 0, 0, 0, 0, 0],
+                            borderColor: '#22c55e',
+                            backgroundColor: 'transparent',
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            yAxisID: 'y1'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { intersect: false, mode: 'index' },
+                        plugins: { legend: { position: 'top', align: 'end' } },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                            y1: { position: 'right', beginAtZero: true, max: 100, grid: { display: false } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            } catch (e) {
+                console.warn('Failed to load trend chart:', e);
+            }
+        }
+
+        async function loadStatusChart(days) {
+            try {
+                const res = await fetch(`${API_BASE}/stats.php?action=client-status&days=${days}`);
+                const data = await res.json();
+                
+                const ctx = document.getElementById('statusChart').getContext('2d');
+                
+                if (statusChart) statusChart.destroy();
+                
+                const statusData = data.distribution || { synced: 0, pending: 0, outdated: 0, failed: 0 };
+                const total = Object.values(statusData).reduce((a, b) => a + b, 0) || 1;
+                
+                statusChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Synced', 'Pending', 'Outdated', 'Failed'],
+                        datasets: [{
+                            data: [statusData.synced || 0, statusData.pending || 0, statusData.outdated || 0, statusData.failed || 0],
+                            backgroundColor: ['#22c55e', '#f59e0b', '#06b6d4', '#ef4444'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '70%',
+                        plugins: { legend: { display: false } }
+                    }
+                });
+                
+                // Update legend
+                const legend = document.getElementById('status-legend');
+                legend.innerHTML = [
+                    { label: 'Synced', value: statusData.synced || 0, color: '#22c55e' },
+                    { label: 'Pending', value: statusData.pending || 0, color: '#f59e0b' },
+                    { label: 'Outdated', value: statusData.outdated || 0, color: '#06b6d4' },
+                    { label: 'Failed', value: statusData.failed || 0, color: '#ef4444' }
+                ].map(item => `
+                    <div class="legend-item">
+                        <span class="legend-label"><span class="legend-dot" style="background: ${item.color}"></span>${item.label}</span>
+                        <span class="legend-value">${item.value} (${Math.round(item.value / total * 100)}%)</span>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.warn('Failed to load status chart:', e);
+            }
+        }
+
+        async function loadTopClients(days) {
+            try {
+                const res = await fetch(`${API_BASE}/stats.php?action=top-clients&days=${days}&limit=5`);
+                const data = await res.json();
+                
+                const container = document.getElementById('top-clients');
+                
+                if (data.success && data.clients?.length > 0) {
+                    container.innerHTML = data.clients.map(client => `
+                        <div class="client-item">
+                            <div class="client-avatar">${(client.name || client.client_id || 'U')[0].toUpperCase()}</div>
+                            <div class="client-info">
+                                <div class="client-name">${client.name || client.client_id}</div>
+                                <div class="client-deploys">${client.deploy_count || 0} deployments</div>
+                            </div>
+                            <div class="client-trend up">↑ ${client.success_rate || 0}%</div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);">No client data available</div>';
+                }
+            } catch (e) {
+                document.getElementById('top-clients').innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);">Failed to load clients</div>';
+            }
+        }
+
+        async function loadRecentActivity() {
+            try {
+                const res = await fetch(`${API_BASE}/deployment-history.php?limit=5`);
+                const data = await res.json();
+                
+                const container = document.getElementById('recent-activity');
+                
+                if (data.deployments?.length > 0) {
+                    container.innerHTML = data.deployments.map(d => `
+                        <div class="activity-item">
+                            <div class="activity-dot ${d.status === 'success' ? 'success' : d.status === 'failed' ? 'failed' : 'pending'}"></div>
+                            <div class="activity-content">
+                                <div class="activity-title">${d.client_name || d.client_id}</div>
+                                <div class="activity-meta">${d.environment || 'production'} • ${d.branch || 'main'}</div>
+                            </div>
+                            <div class="activity-time">${formatTimeAgo(d.started_at)}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);">No recent activity</div>';
+                }
+            } catch (e) {
+                document.getElementById('recent-activity').innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);">Failed to load activity</div>';
+            }
+        }
+
+        function formatTimeAgo(dateStr) {
+            if (!dateStr) return '';
+            const diff = Math.floor((new Date() - new Date(dateStr)) / 1000);
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+            return `${Math.floor(diff / 86400)}d ago`;
+        }
+
+        // Logout handler
+        document.getElementById('logout-btn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            Toast.confirm('Logout', 'Are you sure you want to logout?').then(confirmed => {
+                if (confirmed) {
+                    window.cicdAuth.logout();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

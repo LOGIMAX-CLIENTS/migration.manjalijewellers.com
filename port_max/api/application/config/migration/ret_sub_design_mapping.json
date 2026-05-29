@@ -1,0 +1,48 @@
+{
+    "entity": "sub_design_mapping",
+    "ai": {
+        "enabled": true,
+        "max_rows": 20
+    },
+    "validation": {
+        "required_file_name_pattern": "sub_design_mapping*.xlsx",
+        "required_sheet_name": "port_sub_design_mapping"
+    },
+    "file_path": "uploads/sub_design_mapping.xlsx",
+    "migrations": [{
+        "destination_table": "ret_sub_design_mapping",
+        "primary_key": null,
+        "mappings": {
+            "id_product": {
+                "lookup": {
+                    "table": "ret_product_master",
+                    "source_column": "product_name",
+                    "match_column": "product_name",
+                    "return_column": "pro_id",
+                    "create_if_missing": false
+                },
+                "validations": { "type": "string", "max_length": 100, "required": true }
+            },
+            "id_design": {
+                "lookup": {
+                    "table": "ret_design_master",
+                    "source_column": "design_name",
+                    "match_column": "design_name",
+                    "return_column": "design_no",
+                    "create_if_missing": false
+                },
+                "validations": { "type": "string", "max_length": 100, "required": true }
+            },
+            "id_sub_design": {
+                "lookup": {
+                    "table": "ret_sub_design_master",
+                    "source_column": "sub_design_name",
+                    "match_column": "sub_design_name",
+                    "return_column": "id_sub_design",
+                    "create_if_missing": false
+                },
+                "validations": { "type": "string", "max_length": 100, "required": true }
+            }
+        }
+    }]
+}

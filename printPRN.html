@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Print to PRN</title>
+  <script>
+    function createPRNFile() {
+      // Generate the PRN content
+      var prnContent = `^xa
+^lh005,00
+^MD+03
+^fo170,15^a0n,27,27^fd1-44228^fs
+^fo170,115^by1^bcn,30,n,n,n^fd144228^fs
+^fo170,40^a0n,27,27^fdWt:64.030g ^fs
+^fo280,10^a0n,20,27^fdSSM^fs
+^fo170,149^a0n,27,27^fdCHAIN               ^fs
+^fo320,110^a0r,20,20^fd916^fs
+^fo340,110^a0r,20,20^fdMP^fs
+^fo180,67^a0n,24,24^fdV08^fs
+^pq1
+^XZ
+`;
+
+      // Create a Blob from the PRN content
+      var blob = new Blob([prnContent], { type: 'text/plain' });
+
+      // Create a temporary link element
+      var link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+
+      // Set the filename for the PRN file
+      link.download = 'print.prn';
+
+      // Simulate a click on the link to initiate the download
+      link.click();
+
+      // Cleanup
+      window.URL.revokeObjectURL(link.href);
+    }
+  </script>
+</head>
+<body>
+  <h1>Print to PRN</h1>
+  <button onclick="createPRNFile()">Print</button>
+</body>
+</html>

@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PortMax — User Manual</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+    line-height: 1.8;
+    font-size: 14px;
+  }
+
+  @media print {
+    body { background: #fff; font-size: 12px; }
+    .sidebar { display: none; }
+    .main { margin-left: 0 !important; padding: 20px !important; }
+    .step-card { page-break-inside: avoid; }
+    h2 { page-break-before: always; }
+    h2:first-of-type { page-break-before: avoid; }
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: 260px;
+    height: 100vh;
+    background: #0f172a;
+    color: #cbd5e1;
+    padding: 24px 0;
+    overflow-y: auto;
+    z-index: 100;
+  }
+  .sidebar .logo {
+    text-align: center;
+    padding: 0 20px 20px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    margin-bottom: 16px;
+  }
+  .sidebar .logo h2 {
+    color: #60a5fa;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .sidebar .logo p {
+    color: #64748b;
+    font-size: 12px;
+    margin-top: 2px;
+  }
+  .sidebar nav a {
+    display: block;
+    padding: 9px 24px;
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all .2s;
+    border-left: 3px solid transparent;
+  }
+  .sidebar nav a:hover,
+  .sidebar nav a.active {
+    color: #e2e8f0;
+    background: rgba(255,255,255,.04);
+    border-left-color: #3b82f6;
+  }
+  .sidebar nav .section-title {
+    padding: 16px 24px 6px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #475569;
+    font-weight: 700;
+  }
+
+  /* MAIN */
+  .main {
+    margin-left: 260px;
+    padding: 32px 48px 60px;
+    max-width: 960px;
+  }
+
+  /* COVER */
+  .cover {
+    background: linear-gradient(135deg, #1e40af, #7c3aed);
+    color: #fff;
+    padding: 40px 36px;
+    border-radius: 16px;
+    margin-bottom: 36px;
+  }
+  .cover h1 { font-size: 28px; font-weight: 700; }
+  .cover p { color: #c7d2fe; margin-top: 6px; font-size: 15px; }
+  .cover .version {
+    margin-top: 16px;
+    display: flex; gap: 20px;
+    font-size: 12px; color: #a5b4fc;
+  }
+
+  /* HEADINGS */
+  h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-top: 44px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e2e8f0;
+  }
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e40af;
+    margin-top: 24px;
+    margin-bottom: 10px;
+  }
+
+  p { margin-bottom: 10px; }
+
+  /* STEP CARDS */
+  .step-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 16px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+  }
+  .step-card .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: #2563eb;
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    border-radius: 50%;
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
+  .step-card .step-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .step-card p { color: #475569; font-size: 13px; }
+
+  /* LISTS */
+  ul, ol {
+    padding-left: 24px;
+    margin-bottom: 12px;
+  }
+  li { margin: 5px 0; font-size: 13px; color: #475569; }
+
+  /* CALLOUTS */
+  .callout {
+    padding: 14px 18px;
+    border-radius: 8px;
+    margin: 14px 0;
+    font-size: 13px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .callout .icon { font-size: 18px; flex-shrink: 0; }
+  .callout-info { background: #eff6ff; border-left: 4px solid #3b82f6; color: #1e40af; }
+  .callout-warn { background: #fffbeb; border-left: 4px solid #f59e0b; color: #92400e; }
+  .callout-tip { background: #f0fdf4; border-left: 4px solid #22c55e; color: #166534; }
+  .callout-danger { background: #fef2f2; border-left: 4px solid #ef4444; color: #991b1b; }
+
+  /* TABLE */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 13px;
+  }
+  th {
+    background: #1e40af;
+    color: #fff;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+  }
+  td {
+    padding: 9px 14px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  tr:nth-child(even) td { background: #f8fafc; }
+
+  /* CODE */
+  code {
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #dc2626;
+    font-family: monospace;
+  }
+
+  /* KEYBOARD */
+  kbd {
+    background: #e2e8f0;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-family: monospace;
+    box-shadow: 0 1px 0 #94a3b8;
+  }
+
+  .flow-diagram {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    margin: 16px 0;
+  }
+  .flow-diagram .flow-items {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .flow-box {
+    background: #2563eb;
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .flow-arrow {
+    color: #94a3b8;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  /* FAQ */
+  .faq-item {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 10px 0;
+  }
+  .faq-item .question {
+    font-weight: 600;
+    color: #0f172a;
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+  .faq-item .answer {
+    color: #475569;
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="logo">
+    <h2>📘 User Manual</h2>
+    <p>PortMax Guide</p>
+  </div>
+  <nav>
+    <div class="section-title">Getting Started</div>
+    <a href="#overview">Overview</a>
+    <a href="#workflow">Workflow Overview</a>
+    <a href="#login">Step 1: Login</a>
+
+    <div class="section-title">Migration Process</div>
+    <a href="#upload">Step 2: Upload File</a>
+    <a href="#validate">Step 3: Validate</a>
+    <a href="#fix-errors">Fixing Errors</a>
+    <a href="#backup">Step 4: Backup</a>
+    <a href="#import">Step 5: Import</a>
+
+    <div class="section-title">Reports & Export</div>
+    <a href="#report">Step 6: View Report</a>
+    <a href="#export-report">Export Report</a>
+    <a href="#export-data">Export Database Data</a>
+    <a href="#export-combined">Combined Export</a>
+
+    <div class="section-title">Reference</div>
+    <a href="#templates">Config Templates</a>
+    <a href="#file-formats">Supported File Formats</a>
+    <a href="#faq">FAQ & Troubleshooting</a>
+  </nav>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+  <!-- COVER -->
+  <div class="cover">
+    <h1>PortMax — User Manual</h1>
+    <p>Step-by-step guide for importing data from Excel files into your destination database</p>
+    <div class="version">
+      <span>📋 Version 2.1</span>
+      <span>📅 April 2026</span>
+      <span>🏢 Logimax</span>
+    </div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <h2 id="overview">Overview</h2>
+  <p><strong>PortMax</strong> is a web-based data migration tool that helps you import bulk data from Excel spreadsheets into your destination database. It validates every row before inserting, detects duplicates, resolves references (like city/state names to IDs), and gives you detailed reports after each import.</p>
+
+  <div class="callout callout-info">
+    <span class="icon">💡</span>
+    <div>The tool automatically backs up your database tables in <strong>both Excel and SQL format</strong> before importing, and again after importing (on the report page), so you can safely restore if needed.</div>
+  </div>
+
+  <!-- WORKFLOW -->
+  <h2 id="workflow">Workflow Overview</h2>
+  <div class="flow-diagram">
+    <div class="flow-items">
+      <div class="flow-box">🔐 Login</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box">🔍 Select Entity</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box">📄 Upload Excel</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box">✅ Validate</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box">💾 Backup (Excel + SQL)</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box">⬆️ Import</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box">📊 Report</div>
+    </div>
+  </div>
+
+  <!-- STEP 1: LOGIN -->
+  <h2 id="login">Step 1: Login</h2>
+
+  <div class="step-card">
+    <div class="step-title"><span class="step-num">1</span> Enter Your Credentials</div>
+    <p>Enter your <strong>username</strong> and <strong>password</strong> (same as your application login). The system connects to your company database automatically.</p>
+    <ul>
+      <li>Your <strong>Client Name</strong> (company name) will be displayed after successful login</li>
+      <li>The session persists even if you refresh the page</li>
+    </ul>
+  </div>
+
+  <div class="callout callout-warn">
+    <span class="icon">⚠️</span>
+    <div>If you see "Invalid username or password", verify your credentials. The password is case-sensitive.</div>
+  </div>
+
+  <!-- STEP 2: SELECT ENTITY + UPLOAD -->
+  <h2 id="upload">Step 2: Select Entity & Upload File</h2>
+
+  <div class="step-card">
+    <div class="step-title"><span class="step-num">2a</span> Select Entity (Searchable Dropdown)</div>
+    <p>Click on the entity selector to open a <strong>searchable dropdown</strong>. You can type to filter entities in real-time:</p>
+    <table>
+      <tr><th>Entity</th><th>Use For</th><th>Required Sheet Name</th></tr>
+      <tr><td>customer</td><td>Customer + Address data</td><td>port_customer</td></tr>
+      <tr><td>employee</td><td>Employee/Staff data</td><td>port_employee</td></tr>
+      <tr><td>account</td><td>Account data</td><td>port_account</td></tr>
+      <tr><td>payment</td><td>Payment records</td><td>port_payment</td></tr>
+      <tr><td>allfieldcustomer</td><td>Full customer data (all fields)</td><td>port_customer</td></tr>
+    </table>
+    <p>The dropdown supports <strong>keyboard navigation</strong> (↑/↓ arrows, Enter to select, Esc to close) and closes automatically when you click outside.</p>
+  </div>
+
+  <div class="step-card">
+    <div class="step-title"><span class="step-num">2b</span> Download Template (Optional)</div>
+    <p>Click the <strong>"📥 Download Template"</strong> button to generate and download an Excel template with:</p>
+    <ul>
+      <li>✅ All required column headers pre-filled in the first row</li>
+      <li>✅ A <strong>Validation Rules</strong> row showing Type, Required/Optional, Max Length, and Format for each column</li>
+    </ul>
+    <p>Use this template to prepare your data with the correct columns and formatting before uploading.</p>
+  </div>
+
+  <div class="step-card">
+    <div class="step-title"><span class="step-num">2c</span> Upload the File (Auto-Upload)</div>
+    <p>Files are <strong>auto-uploaded on selection</strong>. You can upload in two ways:</p>
+    <ul>
+      <li><strong>Drag & Drop:</strong> Drag the file directly onto the upload area</li>
+      <li><strong>Browse:</strong> Click on the upload area to open the file browser</li>
+    </ul>
+    <p>The file is uploaded immediately after you select it — no separate upload button needed.</p>
+  </div>
+
+  <div class="step-card">
+    <div class="step-title"><span class="step-num">🔄</span> Reset</div>
+    <p>Click the <strong>"🔄 Reset"</strong> button (located next to the Download Template button) to clear the current entity selection, uploaded file, and all validation results. This lets you start over without refreshing the page.</p>
+  </div>
+
+  <div class="callout callout-tip">
+    <span class="icon">📎</span>
+    <div><strong>Supported formats:</strong> <code>.xlsx</code>, <code>.xls</code>, <code>.ods</code>, <code>.csv</code><br>
+    Make sure your Excel file has the correct sheet name as required by the selected entity config.</div>
+  </div>
+
+  <div class="callout callout-info">
+    <span class="icon">📖</span>
+    <div>You can access this User Manual anytime by clicking the <strong>"📖 User Manual"</strong> button in the top-right corner of the PortMax page. It opens in a new browser tab.</div>
+  </div>
+
+  <div class="callout callout-info">
+    <span class="icon">🗄️</span>
+    <div>The <strong>Destination DB</strong> badge is displayed at the top of the page, showing the database name that data will be imported into.</div>
+  </div>
+
+  <div class="callout callout-warn">
+    <span class="icon">⚠️</span>
+    <div><strong>Disclaimer:</strong> A yellow warning banner is displayed on the PortMax page at all times reminding you to ensure all configuration and setup has been completed before proceeding. After import, contact the developer for any data modifications.</div>
+  </div>
+
+  <!-- STEP 3: VALIDATE -->
+  <h2 id="validate">Step 3: Validate Data</h2>
+
+  <div class="step-card">
+    <div class="step-title"><span class="step-num">3</span> Click "Validate" to Start</div>
+    <p>The system checks every single row in your Excel file against the rules defined in the config template:</p>
+    <ul>
+      <li>✅ <strong>Required fields:</strong> Ensures mandatory columns are not empty</li>
+      <li>✅ <strong>Data types:</strong> Validates numbers, text, and dates</li>
+      <li>✅ <strong>Length limits:</strong> Checks maximum character length</li>
+      <li>✅ <strong>Lookups:</strong> Resolves names like City, State, Village to database IDs</li>
+      <li>✅ <strong>Duplicate check:</strong> Detects if records already exist in the database</li>
+    </ul>
+    <p>A <strong>progress bar</strong> shows real-time validation progress. This runs in the background — please wait until it completes.</p>
+  </div>
+
+  <h3>Validation Results</h3>
+  <table>
+    <tr><th>Result</th><th>What Happens</th></tr>
+    <tr><td>✅ <strong>No Errors</strong></td><td>Backup starts automatically, then Import button appears</td></tr>
+    <tr><td>⚠️ <strong>Has Errors (with valid rows)</strong></td><td>User is prompted to choose: <strong>Skip Errors & Import</strong> valid rows, or <strong>Fix Errors First</strong></td></tr>
+    <tr><td>❌ <strong>All Errors</strong></td><td>Error table is shown with row numbers and error details. Import is blocked — all rows must be fixed.</td></tr>
+  </table>
+
+  <h3>Skip or Fix Prompt</h3>
+  <div class="step-card">
+    <div class="step-title"><span class="step-num">⚠️</span> When Errors Are Found With Valid Rows</div>
+    <p>If some rows have errors but others are valid, the system shows two buttons:</p>
+    <ul>
+      <li><strong>✅ Skip Errors & Import N Valid Row(s)</strong> — Skips error rows and proceeds to backup + import with only the valid rows</li>
+      <li><strong>🔧 Fix Errors First</strong> — Stops the process and shows error details with a download button so you can fix the Excel and re-upload</li>
+    </ul>
+    <p>This is useful when you have a large file with a few errors and want to import the valid data immediately, then fix and re-import the errors later.</p>
+  </div>
+
+  <!-- FIX ERRORS -->
+  <h2 id="fix-errors">Fixing Validation Errors</h2>
+
+  <div class="step-card">
+    <div class="step-title"><span class="step-num">!</span> Download & Fix Errors</div>
+    <p>If validation finds errors:</p>
+    <ol>
+      <li>Click <strong>"Download Errors"</strong> to get the Excel file with an added <strong>Error</strong> column</li>
+      <li>Open the file and check the Error column for each row's specific issues</li>
+      <li>Fix the issues in your <strong>original</strong> Excel file</li>
+      <li>Re-upload the corrected file and validate again</li>
+    </ol>
+  </div>
+
+  <div class="callout callout-info">
+    <span class="icon">📝</span>
+    <div><strong>Error Column Prefixes:</strong> Each entry in the Error column is prefixed to indicate the type:
+      <ul>
+        <li><code>Skipped:</code> — Row was skipped due to a duplicate record already existing in the database</li>
+        <li><code>Error:</code> — Row has validation errors (required field missing, invalid type, lookup not found, etc.)</li>
+        <li><code>Child Error:</code> — Error is in a child record (e.g., address fields)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Common Error Types</h3>
+  <table>
+    <tr><th>Error</th><th>Cause</th><th>Fix</th></tr>
+    <tr><td>Required field is empty</td><td>A mandatory column has no value</td><td>Fill in the missing data</td></tr>
+    <tr><td>Invalid numeric value</td><td>Column expects a number but found text</td><td>Enter only numeric values</td></tr>
+    <tr><td>Value too long</td><td>Text exceeds maximum allowed length</td><td>Shorten the text</td></tr>
+    <tr><td>Invalid date format</td><td>Date not in expected format</td><td>Use YYYY-MM-DD format</td></tr>
+    <tr><td>Lookup not found</td><td>City/State name doesn't exist in database</td><td>Use exact name from the system or add it first</td></tr>
+    <tr><td>ID not available</td><td>A referenced ID (e.g., branch ID) doesn't exist in the lookup table</td><td>Use a valid ID that exists in the system</td></tr>
+    <tr><td>Duplicate record</td><td>A record with the same mobile/ID already exists</td><td>Remove the duplicate row from Excel</td></tr>
+  </table>
+
+  <!-- STEP 4: BACKUP -->
+  <h2 id="backup">Step 4: Auto Backup (Pre-Import)</h2>
+
+  <div class="step-card">
+    <div class="step-title"><span class="step-num">4</span> Automatic Dual Backup (Before Import)</div>
+    <p>When validation succeeds with <strong>zero errors</strong>, the system automatically creates <strong>two backups</strong> of all related destination database tables <strong>before</strong> importing:</p>
+    <ul>
+      <li>⏳ You'll see <strong>"Backing up entity tables..."</strong> message</li>
+      <li>✅ Once done, a green card shows each table name and row count</li>
+      <li>📥 <strong>Excel Backup</strong> button — downloads an <code>.xlsx</code> file with each table as a separate sheet (human-readable)</li>
+      <li>🗃️ <strong>SQL Backup</strong> button — downloads a <code>.sql</code> file with full CREATE TABLE + INSERT statements (restore-ready)</li>
+      <li>📁 Backups are saved at: <code>tmp/backups/</code></li>
+    </ul>
+  </div>
+
+  <div class="callout callout-info">
+    <span class="icon">🛡️</span>
+    <div><strong>Both download buttons</strong> appear in the green backup result card. The Excel backup lets you review data in spreadsheet format, while the SQL backup can be used by your DBA to fully restore tables if anything goes wrong during import.</div>
+  </div>
+
+  <div class="callout callout-tip">
+    <span class="icon">🔄</span>
+    <div><strong>Post-Import Backup:</strong> An additional backup is also taken automatically <strong>after import</strong> when the report page loads. This gives you two restore points — one before and one after import.</div>
+  </div>
+
+  <!-- STEP 5: IMPORT -->
+  <h2 id="import">Step 5: Import Data</h2>
+
+  <div class="step-card">
+    <div class="step-title"><span class="step-num">5</span> Click "⚡ Import N Row(s) Now"</div>
+    <p>After backup completes, a prominent <strong>full-width orange-red button</strong> appears showing the exact row count:</p>
+    <p style="text-align:center; margin:12px 0;"><code>⚡ Import 12 Row(s) Now</code></p>
+    <p>Clicking this button opens a <strong>confirmation modal</strong>:</p>
+    <ul>
+      <li>⚠️ Shows the <strong>entity name</strong> and <strong>row count</strong> being imported</li>
+      <li>Warns that data will be inserted <strong>directly into the production database</strong></li>
+      <li>Two buttons: <strong>"Cancel"</strong> to abort, or <strong>"Yes, Import Now"</strong> to proceed</li>
+    </ul>
+    <p>After confirming, the import starts:</p>
+    <ul>
+      <li>The <strong>Import progress card</strong> appears with a real-time <strong>progress bar</strong></li>
+      <li>Parent records are inserted first (e.g., Customer), then child records (e.g., Address)</li>
+      <li>All inserts happen within a <strong>database transaction</strong> — if any critical error occurs, everything is rolled back</li>
+      <li>If a database error occurs (e.g., constraint violation), the <strong>error message is displayed to the user</strong> instead of failing silently</li>
+    </ul>
+  </div>
+
+  <div class="callout callout-danger">
+    <span class="icon">🚫</span>
+    <div><strong>Do NOT close the browser or navigate away</strong> while import is in progress. Wait for the progress to reach 100%.</div>
+  </div>
+
+  <h3>Import Results</h3>
+  <table>
+    <tr><th>Result</th><th>Description</th></tr>
+    <tr><td>✅ <strong>Success</strong></td><td>All rows imported. "Generate Report" button appears.</td></tr>
+    <tr><td>❌ <strong>Database Error</strong></td><td>Error message is shown to the user (e.g., duplicate key, constraint violation). Transaction is rolled back.</td></tr>
+    <tr><td>❌ <strong>Failed</strong></td><td>Import errors are displayed. Transaction is rolled back.</td></tr>
+  </table>
+
+  <!-- STEP 6: REPORT -->
+  <h2 id="report">Step 6: View Import Report</h2>
+
+  <div class="step-card">
+    <div class="step-title"><span class="step-num">6</span> Review the Report</div>
+    <p>After a successful import, click <strong>"View Report"</strong> to see the migration summary. The report page has:</p>
+    <ul>
+      <li>📊 <strong>Summary cards:</strong> Total Rows (Excel), Imported, Skipped, and Errors counts</li>
+      <li>📥 <strong>Error/Skipped download:</strong> If any rows were skipped or had errors, a <strong>"📥 Download Error / Skipped Rows Report"</strong> button appears below the summary cards — click it to download the Excel file with the Error column</li>
+      <li>💾 <strong>Auto backup:</strong> A post-import backup runs automatically when the report loads</li>
+      <li>📋 <strong>Report tables:</strong> Aggregated data grouped by branch, source, etc. with totals</li>
+      <li>📈 Numbers are displayed with comma formatting (e.g., 1,234)</li>
+    </ul>
+  </div>
+
+  <!-- EXPORT REPORT -->
+  <h2 id="export-report">Export Report as Excel</h2>
+
+  <div class="step-card">
+    <div class="step-title"><span class="step-num">📥</span> Download Report XLSX</div>
+    <p>Click the <strong>"Export Excel"</strong> button on the report page to download a styled spreadsheet. The file is named with the entity name, e.g., <code>Customer_report_2026-03-20_183546.xlsx</code>:</p>
+    <ul>
+      <li>🔵 <strong>Title row:</strong> Dark blue background with entity name</li>
+      <li>🟢 <strong>Header row:</strong> Green background with white bold text</li>
+      <li>⬜ <strong>Data rows:</strong> Numbers right-aligned with comma formatting</li>
+      <li>⬛ <strong>Total row:</strong> Bold with gray background</li>
+    </ul>
+  </div>
+
+  <!-- EXPORT DATA -->
+  <h2 id="export-data">Export Database Table Data</h2>
+
+  <div class="step-card">
+    <div class="step-title"><span class="step-num">📁</span> Export Raw Table Data</div>
+    <p>On the report page, you'll find the <strong>"Export Raw Table Data"</strong> section:</p>
+    <ol>
+      <li>Select a table from the dropdown (e.g., <code>customer</code>, <code>address</code>)</li>
+      <li>Click <strong>"Export All Columns"</strong></li>
+      <li>Downloads a complete XLSX file with all data from that table</li>
+    </ol>
+  </div>
+
+  <!-- COMBINED EXPORT -->
+  <h2 id="export-combined">Combined Data Export</h2>
+
+  <div class="step-card">
+    <div class="step-title"><span class="step-num">🔗</span> Export Combined Main + Child Tables</div>
+    <p>The <strong>"Export Combined Data"</strong> section lets you export data from related tables (e.g., Customer + Address) in a single file:</p>
+    <ol>
+      <li>You'll see columns grouped by table name (e.g., <strong>CUSTOMER</strong>, <strong>ADDRESS</strong>)</li>
+      <li>Each column has a <strong>checkbox</strong> — uncheck columns you don't need</li>
+      <li>Click <strong>"Export Combined"</strong></li>
+      <li>The system performs a LEFT JOIN and exports only selected columns</li>
+    </ol>
+  </div>
+
+  <div class="callout callout-tip">
+    <span class="icon">💡</span>
+    <div>Combined export is useful when you need customer data with their addresses in a single spreadsheet, with only the columns you care about.</div>
+  </div>
+
+  <!-- CONFIG TEMPLATES -->
+  <h2 id="templates">Config Templates Reference</h2>
+
+  <h3>Customer Template (customer.json)</h3>
+  <table>
+    <tr><th>Excel Column</th><th>Database Column</th><th>Type</th><th>Required</th><th>Notes</th></tr>
+    <tr><td>id_branch</td><td>id_branch</td><td>Numeric</td><td>✅ Yes</td><td>Min value: 1</td></tr>
+    <tr><td>date_of_registration</td><td>date_add</td><td>Date</td><td>No</td><td>Format: YYYY-MM-DD</td></tr>
+    <tr><td>first_name</td><td>firstname</td><td>String</td><td>✅ Yes</td><td>Max 50 chars</td></tr>
+    <tr><td>last_name</td><td>lastname</td><td>String</td><td>No</td><td>Max 10 chars</td></tr>
+    <tr><td>mobile</td><td>mobile</td><td>Numeric</td><td>✅ Yes</td><td>10 digits, duplicate check</td></tr>
+    <tr><td>area_name</td><td>id_village</td><td>Lookup</td><td>No</td><td>Auto-creates if missing</td></tr>
+    <tr><td>added_by</td><td>added_by</td><td>Numeric</td><td>✅ Yes</td><td>User ID who added</td></tr>
+  </table>
+
+  <h3>Customer Address (child table)</h3>
+  <table>
+    <tr><th>Excel Column</th><th>Database Column</th><th>Type</th><th>Required</th><th>Notes</th></tr>
+    <tr><td>address_line1</td><td>address1</td><td>String</td><td>✅ Yes</td><td>Max 255 chars</td></tr>
+    <tr><td>address_line2</td><td>address2</td><td>String</td><td>No</td><td>Max 255 chars</td></tr>
+    <tr><td>address_line3</td><td>address3</td><td>String</td><td>No</td><td>Max 255 chars</td></tr>
+    <tr><td>pincode</td><td>pincode</td><td>Numeric</td><td>No</td><td>6 digits</td></tr>
+    <tr><td>city</td><td>id_city</td><td>Lookup</td><td>No</td><td>Must exist in city table</td></tr>
+    <tr><td>state</td><td>id_state</td><td>Lookup</td><td>No</td><td>Must exist in state table</td></tr>
+    <tr><td>country</td><td>id_country</td><td>Lookup</td><td>No</td><td>Must exist in country table</td></tr>
+    <tr><td>added_by</td><td>added_by</td><td>Numeric</td><td>✅ Yes</td><td></td></tr>
+  </table>
+
+  <!-- FILE FORMATS -->
+  <h2 id="file-formats">Supported File Formats</h2>
+  <table>
+    <tr><th>Format</th><th>Extension</th><th>Notes</th></tr>
+    <tr><td>Microsoft Excel</td><td><code>.xlsx</code></td><td>✅ Recommended format</td></tr>
+    <tr><td>Legacy Excel</td><td><code>.xls</code></td><td>Supported (older format)</td></tr>
+    <tr><td>OpenDocument Spreadsheet</td><td><code>.ods</code></td><td>LibreOffice/OpenOffice format</td></tr>
+    <tr><td>CSV</td><td><code>.csv</code></td><td>Comma-separated values</td></tr>
+  </table>
+
+  <div class="callout callout-warn">
+    <span class="icon">⚠️</span>
+    <div><strong>Important:</strong> The Excel file must contain a sheet with the exact name specified in the template (e.g., <code>port_customer</code>). The column headers in the first row must match the <code>source_column</code> names defined in the config.</div>
+  </div>
+
+  <!-- FAQ -->
+  <h2 id="faq">FAQ & Troubleshooting</h2>
+
+  <div class="faq-item">
+    <div class="question">Q: My file uploads but validation fails immediately. Why?</div>
+    <div class="answer">A: Check that your Excel file has the correct <strong>sheet name</strong>. For example, the customer template requires a sheet named <code>port_customer</code>. Also verify you selected the right config template.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="question">Q: Validation is slow for large files. Is that normal?</div>
+    <div class="answer">A: Yes, each row is validated individually with database lookups. For 10,000+ records, validation may take 1-3 minutes. The progress bar shows real-time progress. Do not close the browser.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="question">Q: I see "Lookup not found" errors. What should I do?</div>
+    <div class="answer">A: This means the city/state/village name in your Excel doesn't match any record in the database lookup table. Check for typos or add the missing entries to the lookup table first. Some lookups have <code>create_if_missing</code> enabled (like Village) which auto-creates the entry.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="question">Q: Can I import the same file twice?</div>
+    <div class="answer">A: If duplicate detection is enabled (e.g., <code>check_if_exists</code> on mobile number), duplicate rows will be skipped automatically. They'll appear in the "Skipped Rows" count.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="question">Q: The import failed halfway. Is my data corrupted?</div>
+    <div class="answer">A: No. Imports run inside a <strong>database transaction</strong>. If the import fails, all changes are automatically rolled back. Additionally, both an <code>.xlsx</code> and <code>.sql</code> backup were created before the import started. You can download them from the backup result card, or contact your DBA to restore using the SQL file.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="question">Q: Where are the backup files stored?</div>
+    <div class="answer">A: Backup files are saved in the <code>tmp/backups/</code> directory on the server. Each backup creates two files — e.g., <code>customer_backup_20260404_184628.xlsx</code> and <code>customer_backup_20260404_184628.sql</code>. You can also download them directly from the green backup card in the UI.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="question">Q: How do I start a new migration after viewing the report?</div>
+    <div class="answer">A: Click the <strong>"Start New Migration"</strong> button on the report page. This takes you back to the upload screen.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="question">Q: The page refreshed and I lost my progress. What now?</div>
+    <div class="answer">A: The tool saves your session state. After refresh, you should return to the same step. If you were mid-validation or mid-import, you may need to restart that step.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="question">Q: How do I download skipped/error row details from the report page?</div>
+    <div class="answer">A: If any rows were skipped or had errors, a <strong>"📥 Download Error / Skipped Rows Report"</strong> button appears below the summary cards. Click it to download the Excel file with the Error column showing why each row was skipped or errored. Each entry is prefixed with <code>Skipped:</code> or <code>Error:</code> for clarity.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="question">Q: Can I import valid rows even if some rows have errors?</div>
+    <div class="answer">A: Yes! When validation finds errors but also valid rows, the system shows two options: <strong>"Skip Errors & Import"</strong> to proceed with only the valid rows, or <strong>"Fix Errors First"</strong> to stop and correct the data. The error rows will be excluded from the import, and you can download the error report from the report page after import.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="question">Q: What backup formats are available?</div>
+    <div class="answer">A: Before import, PortMax creates <strong>two backup files</strong>: an <strong>Excel (.xlsx)</strong> backup (each table as a separate sheet for easy review) and a <strong>SQL (.sql)</strong> backup (full CREATE TABLE + INSERT statements for database restore). Both are downloadable from the green backup card. A second SQL backup is also created after import when the report page loads.</div>
+  </div>
+
+  <br><br>
+  <hr style="border: 1px solid #e2e8f0;">
+  <p style="text-align:center; color:#94a3b8; font-size:12px; margin-top:20px;">
+    PortMax v2.1 — User Manual — Logimax © 2026
+  </p>
+
+</div>
+
+</body>
+</html>

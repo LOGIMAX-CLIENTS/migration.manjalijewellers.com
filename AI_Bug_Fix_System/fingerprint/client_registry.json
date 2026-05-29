@@ -1,0 +1,39 @@
+{
+    "clients": [
+        {"name": "srjewellery", "github_org": "LOGIMAX-CLIENTS", "github_repo": "erp.srjewellery.in", "default_branch": "STAGING", "active": true, "local_path": "d:\\XAMPP\\htdocs\\srjewellery"},
+        {"name": "vetrijewellers", "github_org": "LOGIMAX-CLIENTS", "github_repo": "erp.vetrijewellers.com", "default_branch": "STAGING", "active": true, "local_path": "d:\\XAMPP\\htdocs\\vetrijewellers"},
+        {"name": "KLSNLIVE", "github_org": "LOGIMAX-CLIENTS", "github_repo": "erp.lakshmanaacharison.in", "default_branch": "STAGING", "active": true, "local_path": "d:\\XAMPP\\htdocs\\KLSNLIVE"},
+        {"name": "theniNPR", "github_org": "Logimax-Technologies", "github_repo": "theniNPR_newversion", "default_branch": "staging", "active": true, "local_path": "d:\\XAMPP\\htdocs\\theniNPR_newversion"},
+        {"name": "ashoka", "github_org": "LOGIMAX-CLIENTS", "github_repo": "erp.ashokajewellery.com", "default_branch": "STAGING", "active": true, "local_path": null},
+        {"name": "chiraak", "github_org": "LOGIMAX-CLIENTS", "github_repo": "chiraakjewelleryhouse.in", "default_branch": "STAGING", "active": true, "local_path": null},
+        {"name": "dcnm", "github_org": "LOGIMAX-CLIENTS", "github_repo": "www.dcnmjewels.com", "default_branch": "STAGING", "active": true, "local_path": null},
+        {"name": "konika", "github_org": "LOGIMAX-CLIENTS", "github_repo": "erp.konikajewellery.com", "default_branch": "staging", "active": true, "local_path": null},
+        {"name": "harris", "github_org": "LOGIMAX-CLIENTS", "github_repo": "harrisnadarjewellery.com", "default_branch": "STAGING", "active": true, "local_path": null},
+        {"name": "manjali", "github_org": "LOGIMAX-CLIENTS", "github_repo": "manjalijewellers.in", "default_branch": "staging", "active": true, "local_path": null},
+        {"name": "ragavendra", "github_org": "LOGIMAX-CLIENTS", "github_repo": "ragavendrajewellers.in", "default_branch": "staging", "active": true, "local_path": null},
+        {"name": "sriganesh", "github_org": "LOGIMAX-CLIENTS", "github_repo": "erp.sriganeshjewels.com", "default_branch": "STAGING", "active": true, "local_path": null},
+        {"name": "anb", "github_org": "LOGIMAX-CLIENTS", "github_repo": "anbgoldanddiamonds.com", "default_branch": "main", "active": true, "local_path": null},
+        {"name": "kovai", "github_org": "LOGIMAX-CLIENTS", "github_repo": "kovainprjewellery.com", "default_branch": "staging", "active": true, "local_path": null},
+        {"name": "ssm", "github_org": "LOGIMAX-CLIENTS", "github_repo": "retail.ssmjewellery.in", "default_branch": "STAGING", "active": true, "local_path": null},
+        {"name": "manepally", "github_org": "LOGIMAX-CLIENTS", "github_repo": "erp.manepally.com", "default_branch": "staging", "active": true, "local_path": null},
+        {"name": "sarangapani", "github_org": "LOGIMAX-CLIENTS", "github_repo": "sarangapani", "default_branch": "main", "active": true, "local_path": null},
+        {"name": "ovc", "github_org": "LOGIMAX-CLIENTS", "github_repo": "www.ovcjewellers.com", "default_branch": "staging", "active": true, "local_path": null},
+        {"name": "sktm", "github_org": "LOGIMAX-CLIENTS", "github_repo": "sktmonline.com", "default_branch": "staging", "active": true, "local_path": null},
+        {"name": "khimji", "github_org": "LOGIMAX-CLIENTS", "github_repo": "khimjidhanlaxmi.com", "default_branch": "staging", "active": true, "local_path": null},
+        {"name": "kamadhenu", "github_org": "LOGIMAX-CLIENTS", "github_repo": "kamadhenujewelstvm.com", "default_branch": "staging", "active": true, "local_path": null},
+        {"name": "sayar", "github_org": "LOGIMAX-CLIENTS", "github_repo": "sayarjewellers.com", "default_branch": "staging", "active": true, "local_path": null},
+        {"name": "adams", "github_org": "LOGIMAX-CLIENTS", "github_repo": "adamsjewellers.com", "default_branch": "staging", "active": true, "local_path": null},
+        {"name": "gulab", "github_org": "LOGIMAX-CLIENTS", "github_repo": "gulabparadise.com", "default_branch": "staging", "active": true, "local_path": null},
+        {"name": "cpl", "github_org": "LOGIMAX-CLIENTS", "github_repo": "cpljewellers.com", "default_branch": "staging", "active": true, "local_path": null},
+        {"name": "namasrinivasa", "github_org": "LOGIMAX-CLIENTS", "github_repo": "namasrinivasajewellers.com", "default_branch": "staging", "active": true, "local_path": null},
+        {"name": "thangalakshmi", "github_org": "LOGIMAX-CLIENTS", "github_repo": "www.thangalakshmijewellery.com", "default_branch": "staging", "active": true, "local_path": null},
+        {"name": "jaimahaveer", "github_org": "LOGIMAX-CLIENTS", "github_repo": "jaimahaveerjewellery.com", "default_branch": "staging", "active": true, "local_path": null},
+        {"name": "nac", "github_org": "LOGIMAX-CLIENTS", "github_repo": "nacquickplan.com", "default_branch": "STAGING", "active": true, "local_path": null}
+    ],
+    "source": {
+        "github_org": "Logimax-Technologies",
+        "github_repo": "etail_development_src",
+        "default_branch": "master",
+        "local_path": "d:\\XAMPP\\htdocs\\retail_v5"
+    }
+}

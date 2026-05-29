@@ -1,0 +1,31 @@
+{
+    "entity": "design_master",
+    "ai": {
+        "enabled": true,
+        "max_rows": 20
+    },
+    "validation": {
+        "required_file_name_pattern": "design*.xlsx",
+        "required_sheet_name": "port_design_master"
+    },
+    "file_path": "uploads/design_master.xlsx",
+    "migrations": [{
+        "destination_table": "ret_design_master",
+        "primary_key": "design_no",
+        "mappings": {
+            "old_id": {
+                "source_column": "old_id",
+                "validations": { "type": "numeric", "min": 1, "required": false }
+            },
+            "design_name": {
+                "source_column": "design_name",
+                "validations": { "type": "string", "max_length": 100, "required": true },
+                "check_if_exists": true
+            },
+            "design_code": {
+                "source_column": "short_code",
+                "validations": { "type": "string", "max_length": 50, "required": false }
+            }
+        }
+    }]
+}

@@ -1,0 +1,249 @@
+/*CHIT REPORTS STYLES STARTS*/
+.report-sub-total{
+  color:#2727c7;
+  font-weight:bold;
+  font-size: 14px;
+}
+.report-grand-total{
+  color:green;
+  font-weight:bold;
+  font-size: 15px;
+}
+.report-key{
+  color:black;
+  font-weight:bold;
+  font-size: 14px;
+}
+.outstanding-hide-col{
+    display:none;
+}
+/*CHIT REPORT STYLE ENDS*/
+
+.uom{
+	height: inherit; 
+	border: none;
+}
+.no-padding{
+	padding: 0px !important;
+}
+.error{
+	color: red !important;
+}
+hr.dashed {
+  border:none;
+  border-top:1px dashed #000; 
+}
+.access-table .parent_menu {
+	background: #f9f9f9;
+	font-weight: bold;
+}
+.cus-due-date {
+    width: 400px; /* Adjust the width as needed */
+}
+
+.order-date {
+    width: 550px; /* Adjust the width as needed */
+}
+
+.radio-label{
+	font-weight: normal !important;
+}
+.resendotp {
+    background:none!important;
+     border:none; 
+     padding:0!important;
+    font-family:arial,sans-serif; /*input has OS specific font-family*/
+     color:#069;
+     text-decoration:underline;
+     cursor:pointer;
+}
+.login-title{
+	font-size: 25px;
+	text-align: center;
+}
+.rate_block_body{
+	background-color: #e7d765;
+    color: #000;
+}
+.small-btn {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+.rate_block_footer{
+	background-color: #dcc942 !important;
+    color: #000 !important;
+    padding: 5px !important;
+}
+/*.rate_block_button{
+	background-color: #FF9800  !important;
+}
+.rate_block_button1{
+	color: #ffffff !important;
+}*/
+.header_rate{
+/*	color: #ffffff !important;*/
+	font-size: 17px !important;
+}
+.input_text,.titlecase{text-transform: capitalize;}
+.ucase {text-transform: uppercase;}
+#payment_container #tableRow,#tableHead{
+	width:100%;
+}	
+#payment_container #tableRow td,#tableHead th{
+	width:20%;
+}	
+#payment_container #tableRow{
+	margin-top: -21px;
+}
+.footer-login.center.loginfooter {
+background: #1F1F1F;
+padding: 6px;
+color: #fff;
+border-top: 1px solid #d2d6de;
+position: fixed;
+left: 0;
+bottom: -9px;
+width: 100%;
+}
+/* .dataTables_wrapper .dt-buttons {
+  float:none !important;  
+  text-align:center !important;
+} */
+header_rate{
+	color: #ffffff !important;
+	font-size: 17px !important;
+}
+.blink {
+  -webkit-animation-name: blink;
+     -moz-animation-name: blink;
+       -o-animation-name: blink;
+          animation-name: blink;
+  -webktit-animation-timing-function: linear;
+      -moz-animation-timing-function: linear;
+        -o-animation-timing-function: linear;
+           animation-timing-function: linear;
+  -webkit-animation-duration: 1s;
+     -moz-animation-duration: 1s;
+       -o-animation-duration: 1s;
+          animation-duration: 1s;
+}
+.blink-infinite {
+  -webkit-animation-iteration-count: infinite;
+     -moz-animation-iteration-count: infinite;
+       -o-animation-iteration-count: infinite;
+          animation-iteration-count: infinite;
+}
+@-webkit-keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+@-moz-keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+@-o-keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+:focus {
+  border: 2px solid blue !important;
+  font-weight: bold !important;
+}
+button:focus, .btn:focus {
+  background-color: lightblue !important;
+  color: black !important;
+  border: 2px solid blue !important;
+  font-weight: bold !important;
+}
+
+
+/* wallet_table DGS-DCNM css */
+.wallet_table{width:90%;margin-left:5%}
+.wallet_table th{border: 1px solid #ddd;border-top: 1px solid #ddd !important}
+.wallet_table td{border: 1px solid #ddd;border-top: 1px solid #ddd !important;}
+.wallet_table1{text-align: center;border: 1px solid #ddd;margin-bottom: 0px;border-bottom: 0px;padding: 8px; font-weight: bold;width: 90%;margin-left: 5%;}
+.modalwallet-header{border-bottom-color: #f4f4f4;background: rgb(27, 191, 114);text-align: center;color: #fff;font-weight: bold;}
+.modalwallet-header .close{color: #fff;opacity: 1;}
+
+
+.button1{border-radius:10px;line-height:27px;padding:0 15px;margin-left:10px;border:0;background:#fff;float:left;margin-bottom:5px;margin-top:10px}
+.text-red{color:#000;font-weight: bold;font-size: 14px;}
+.button1
+.blink-hard{animation:blinker 1s step-end infinite;color: #eb4e17;}
+.blink-soft{animation:blinker 1.5s linear infinite}
+@keyframes blinker{50%{color:#f2b101}}
+.select2-container{
+  width: 100% !important;
+}
+
+
+/* =======================
+   PAY DEVICE FILTER ROW FIX
+   ======================= */
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 10px; /* space between filters */
+  margin-bottom: 15px;
+}
+
+.filter-row .form-group {
+  margin-bottom: 0;
+}
+
+.filter-row select,
+.filter-row input {
+  height: 34px !important;
+  line-height: 34px;
+}
+
+.filter-row button {
+  height: 34px !important;
+  line-height: 20px;
+  margin-top: 0 !important;
+}
+
+/* Keep consistent column width for filters */
+.filter-row .col-md-2,
+.filter-row .col-md-3 {
+  flex: 1 1 18%;
+  max-width: 18%;
+  min-width: 150px;
+}
+
+/* Responsive adjustment for smaller screens */
+@media (max-width: 992px) {
+  .filter-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+
+#pay_device_list th,
+#pay_device_list td {
+  text-align: left;
+}
+
+#pay_device_list th:last-child,
+#pay_device_list td:last-child {
+  text-align: right;
+}

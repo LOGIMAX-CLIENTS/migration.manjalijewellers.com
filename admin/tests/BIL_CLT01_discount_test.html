@@ -1,0 +1,848 @@
+<!doctype html>
+<html>
+  <head>
+    <title>BIL-CLT01 Discount Allocation Test</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+      body {
+        font-family: monospace;
+        padding: 20px;
+        background: #1a1a2e;
+        color: #eee;
+      }
+      .pass {
+        color: #00ff41;
+        font-weight: bold;
+      }
+      .fail {
+        color: #ff4444;
+        font-weight: bold;
+      }
+      .info {
+        color: #66ccff;
+      }
+      .section {
+        border: 1px solid #333;
+        padding: 10px;
+        margin: 10px 0;
+        background: #16213e;
+      }
+      h2 {
+        color: #e94560;
+      }
+      table {
+        border-collapse: collapse;
+        margin: 10px 0;
+      }
+      td,
+      th {
+        border: 1px solid #444;
+        padding: 4px 8px;
+        text-align: right;
+      }
+      th {
+        background: #0f3460;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>BIL-CLT01: Two-Tier Discount Allocation Tests</h1>
+
+    <!-- Hidden DOM elements that the functions read from -->
+    <div style="display: none">
+      <input id="summary_discount_amt" value="0" />
+      <input id="bill_discount_type" value="2" />
+      <input id="bill_discount_apply_on" value="2" />
+      <table id="billing_sale_details">
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+      // ===== COPY OF THE FUNCTIONS UNDER TEST =====
+      // (Exact copy from ret_billing.js — calculateDiscountAllocations + _distributeDiscountToTier)
+
+      function calculateDiscountAllocations() {
+        var disc_amt = parseFloat($("#summary_discount_amt").val()) || 0;
+        var bill_discount_type = $("#bill_discount_type").val();
+        var bill_discount_apply_on = $("#bill_discount_apply_on").val();
+
+        if (disc_amt <= 0 || bill_discount_type != 2) {
+          return {};
+        }
+
+        var items = [];
+        $("#billing_sale_details > tbody tr").each(function (idx) {
+          var curRow = $(this);
+
+          var gross_wt = parseFloat(curRow.find(".bill_gross_val").val()) || 0;
+          var less_wt = parseFloat(curRow.find(".bill_less_val").val()) || 0;
+          var net_wt = parseFloat((gross_wt - less_wt).toFixed(3));
+          var rate_per_grm =
+            parseFloat(curRow.find(".per_grm_amount").val()) || 0;
+          var calculation_type =
+            parseInt(curRow.find(".sale_cal_type").val()) || 0;
+          var mc_cal_type =
+            curRow.find(".bill_mctype").val() ||
+            curRow.find(".mc_cal_type").val();
+
+          var retail_max_mc = parseFloat(curRow.find(".bill_mc").val()) || 0;
+          var tot_wastage = parseFloat(curRow.find(".bill_wastage").val()) || 0;
+
+          var min_retail_max_mc =
+            parseFloat(curRow.find(".mc_limit").val()) || 0;
+          var min_wastage_per = parseFloat(curRow.find(".va_limit").val()) || 0;
+
+          var mc_type = 0;
+          var wast_wgt_amt = 0;
+          var min_mc_type = 0;
+          var min_wast_wgt_amt = 0;
+          var rate_with_mc =
+            parseFloat(curRow.find(".bill_taxable_amt").val()) || 0;
+
+          if (calculation_type == 0) {
+            var wast_wgt = parseFloat(gross_wt * (tot_wastage / 100)).toFixed(
+              5,
+            );
+            wast_wgt_amt = parseFloat(
+              parseFloat(wast_wgt) * rate_per_grm,
+            ).toFixed(2);
+            wast_wgt_amt = parseFloat(wast_wgt_amt);
+
+            if (mc_cal_type != 3) {
+              mc_type = parseFloat(
+                mc_cal_type == 2 ? retail_max_mc * gross_wt : retail_max_mc * 1,
+              );
+            } else {
+              mc_type = parseFloat(
+                rate_per_grm *
+                  (parseFloat(wast_wgt) + net_wt) *
+                  (retail_max_mc / 100),
+              );
+            }
+
+            var min_wast_wgt = parseFloat(
+              gross_wt * (min_wastage_per / 100),
+            ).toFixed(5);
+            min_wast_wgt_amt = parseFloat(
+              parseFloat(min_wast_wgt) * rate_per_grm,
+            );
+            if (mc_cal_type != 3) {
+              min_mc_type = parseFloat(
+                mc_cal_type == 2
+                  ? min_retail_max_mc * gross_wt
+                  : min_retail_max_mc * 1,
+              );
+            } else {
+              min_mc_type = parseFloat(
+                rate_per_grm *
+                  (parseFloat(min_wast_wgt) + net_wt) *
+                  (min_retail_max_mc / 100),
+              );
+            }
+          } else if (calculation_type == 1 || calculation_type == 2) {
+            var wast_wgt = parseFloat(net_wt * (tot_wastage / 100)).toFixed(5);
+            wast_wgt_amt = parseFloat(parseFloat(wast_wgt) * rate_per_grm);
+
+            if (mc_cal_type != 3) {
+              mc_type = parseFloat(
+                mc_cal_type == 2 ? retail_max_mc * net_wt : retail_max_mc * 1,
+              );
+            } else {
+              mc_type = parseFloat(
+                rate_per_grm *
+                  (parseFloat(wast_wgt) + net_wt) *
+                  (retail_max_mc / 100),
+              );
+            }
+
+            var min_wast_wgt = parseFloat(
+              net_wt * (min_wastage_per / 100),
+            ).toFixed(5);
+            min_wast_wgt_amt = parseFloat(
+              parseFloat(min_wast_wgt) * rate_per_grm,
+            );
+            if (mc_cal_type != 3) {
+              min_mc_type = parseFloat(
+                mc_cal_type == 2
+                  ? min_retail_max_mc * net_wt
+                  : min_retail_max_mc * 1,
+              );
+            } else {
+              min_mc_type = parseFloat(
+                rate_per_grm *
+                  (parseFloat(min_wast_wgt) + net_wt) *
+                  (min_retail_max_mc / 100),
+              );
+            }
+          }
+
+          var actual_mc_va = parseFloat(mc_type) + parseFloat(wast_wgt_amt);
+          var min_mc_va =
+            parseFloat(min_mc_type) + parseFloat(min_wast_wgt_amt);
+          var tier1_cap = Math.max(actual_mc_va - min_mc_va, 0);
+          var tier2_cap = Math.max(min_mc_va, 0);
+
+          items.push({
+            idx: idx,
+            mc_type: parseFloat(mc_type),
+            wast_wgt_amt: parseFloat(wast_wgt_amt),
+            min_mc_type: parseFloat(min_mc_type),
+            min_wast_wgt_amt: parseFloat(min_wast_wgt_amt),
+            rate_with_mc: rate_with_mc,
+            rate_per_grm: rate_per_grm,
+            eligible: actual_mc_va > 0,
+            tier1_cap: tier1_cap,
+            tier2_cap: tier2_cap,
+            tier1_used: 0,
+            tier2_used: 0,
+            blc_discount: 0,
+            allocated: 0,
+          });
+        });
+
+        var remaining = disc_amt;
+        remaining = _distributeDiscountToTier(
+          items,
+          remaining,
+          "tier1_cap",
+          "tier1_used",
+        );
+
+        if (remaining > 0.005) {
+          remaining = _distributeDiscountToTier(
+            items,
+            remaining,
+            "tier2_cap",
+            "tier2_used",
+          );
+        }
+
+        if (remaining > 0.005) {
+          var totalEligibleValue = 0;
+          items.forEach(function (item) {
+            if (item.eligible) {
+              totalEligibleValue += item.rate_with_mc;
+            }
+          });
+          if (totalEligibleValue > 0) {
+            items.forEach(function (item) {
+              if (!item.eligible) {
+                return;
+              }
+              var share = parseFloat(
+                (item.rate_with_mc / totalEligibleValue) * remaining,
+              ).toFixed(2);
+              item.blc_discount = parseFloat(share);
+              item.allocated += parseFloat(share);
+            });
+          }
+        }
+
+        var allocations = {};
+        items.forEach(function (item) {
+          if (item.allocated <= 0) {
+            return;
+          }
+
+          var total_disc = parseFloat(item.allocated.toFixed(2));
+          var mc_discount = 0;
+          var wastage_discount = 0;
+          var item_blc_discount = parseFloat(item.blc_discount.toFixed(2));
+          var discount_weight = 0;
+          var disc_for_mc_va = parseFloat(
+            (total_disc - item_blc_discount).toFixed(2),
+          );
+
+          if (bill_discount_apply_on == 2) {
+            if (disc_for_mc_va <= item.mc_type) {
+              mc_discount = disc_for_mc_va;
+            } else {
+              mc_discount = item.mc_type;
+              var va_share = parseFloat(
+                (disc_for_mc_va - mc_discount).toFixed(2),
+              );
+              wastage_discount = Math.min(va_share, item.wast_wgt_amt);
+            }
+          } else {
+            if (disc_for_mc_va <= item.wast_wgt_amt) {
+              wastage_discount = disc_for_mc_va;
+            } else {
+              wastage_discount = item.wast_wgt_amt;
+              var mc_share = parseFloat(
+                (disc_for_mc_va - wastage_discount).toFixed(2),
+              );
+              mc_discount = Math.min(mc_share, item.mc_type);
+            }
+          }
+
+          if (wastage_discount > 0 && item.rate_per_grm > 0) {
+            discount_weight = parseFloat(
+              (wastage_discount / item.rate_per_grm).toFixed(3),
+            );
+          }
+
+          allocations[item.idx] = {
+            discount: total_disc,
+            mc_discount: parseFloat(mc_discount.toFixed(2)),
+            wastage_discount: parseFloat(wastage_discount.toFixed(2)),
+            item_blc_discount: item_blc_discount,
+            discount_weight: discount_weight,
+          };
+        });
+
+        return allocations;
+      }
+
+      function _distributeDiscountToTier(items, remaining, capKey, usedKey) {
+        var maxPasses = 10;
+        var pass = 0;
+
+        while (remaining > 0.005 && pass < maxPasses) {
+          pass++;
+          var totalEligibleValue = 0;
+
+          items.forEach(function (item) {
+            if (item.eligible && item[capKey] > 0.005) {
+              totalEligibleValue += item.rate_with_mc;
+            }
+          });
+
+          if (totalEligibleValue <= 0) {
+            break;
+          }
+
+          var overflow = 0;
+          var distributed = 0;
+
+          items.forEach(function (item) {
+            if (!item.eligible || item[capKey] <= 0.005) {
+              return;
+            }
+
+            var share = parseFloat(
+              (item.rate_with_mc / totalEligibleValue) * remaining,
+            );
+
+            if (share > item[capKey]) {
+              overflow += parseFloat((share - item[capKey]).toFixed(2));
+              share = item[capKey];
+            }
+
+            share = parseFloat(share.toFixed(2));
+            item[usedKey] += share;
+            item[capKey] = parseFloat((item[capKey] - share).toFixed(2));
+            item.allocated += share;
+            distributed += share;
+          });
+
+          remaining = parseFloat(overflow.toFixed(2));
+          if (overflow < 0.005) {
+            break;
+          }
+        }
+
+        return remaining;
+      }
+
+      // ===== TEST FRAMEWORK =====
+      var testResults = [];
+      var totalTests = 0;
+      var passedTests = 0;
+
+      function assert(condition, testName, details) {
+        totalTests++;
+        if (condition) {
+          passedTests++;
+          testResults.push('<span class="pass">✅ PASS</span> — ' + testName);
+        } else {
+          testResults.push(
+            '<span class="fail">❌ FAIL</span> — ' +
+              testName +
+              " — " +
+              (details || ""),
+          );
+        }
+      }
+
+      function assertClose(actual, expected, tolerance, testName) {
+        var diff = Math.abs(actual - expected);
+        assert(
+          diff <= tolerance,
+          testName,
+          "Expected ~" +
+            expected +
+            ", got " +
+            actual +
+            " (diff=" +
+            diff.toFixed(4) +
+            ")",
+        );
+      }
+
+      function setupMockBillRows(items) {
+        // Clear existing rows
+        $("#billing_sale_details > tbody").empty();
+
+        items.forEach(function (item) {
+          // For simplicity, use calculation_type=1 (per-piece MC, percentage VA on net_wt)
+          // mc_cal_type=1 means MC is per-piece (mc_value * 1)
+          // VA is percentage of net_wt
+          var row = $(
+            "<tr>" +
+              '<td><input class="bill_gross_val" value="' +
+              item.gross_wt +
+              '" /></td>' +
+              '<td><input class="bill_less_val" value="' +
+              item.less_wt +
+              '" /></td>' +
+              '<td><input class="per_grm_amount" value="' +
+              item.rate_per_grm +
+              '" /></td>' +
+              '<td><input class="sale_cal_type" value="' +
+              (item.calc_type || 0) +
+              '" /></td>' +
+              '<td><input class="bill_mctype" value="' +
+              (item.mc_cal_type || 1) +
+              '" /></td>' +
+              '<td><input class="bill_mc" value="' +
+              item.mc +
+              '" /></td>' +
+              '<td><input class="bill_wastage" value="' +
+              item.va +
+              '" /></td>' +
+              '<td><input class="mc_limit" value="' +
+              item.min_mc +
+              '" /></td>' +
+              '<td><input class="va_limit" value="' +
+              item.min_va +
+              '" /></td>' +
+              '<td><input class="bill_taxable_amt" value="' +
+              item.taxable_amt +
+              '" /></td>' +
+              '<td><input class="mc_cal_type" value="' +
+              (item.mc_cal_type || 1) +
+              '" /></td>' +
+              "</tr>",
+          );
+          $("#billing_sale_details > tbody").append(row);
+        });
+      }
+
+      function resetDiscount(amt) {
+        $("#summary_discount_amt").val(amt);
+        $("#bill_discount_type").val("2");
+        $("#bill_discount_apply_on").val("2"); // MC first
+      }
+
+      // ===== TEST CASES =====
+
+      function runTests() {
+        var out = document.getElementById("results");
+
+        // ------ TEST 1: Items with MC=0, VA=0 get zero discount ------
+        testResults.push(
+          "<h2>Test 1: Items with MC=0, VA=0 get zero discount</h2>",
+        );
+
+        setupMockBillRows([
+          // Item A: has MC+VA
+          {
+            gross_wt: 10,
+            less_wt: 0,
+            rate_per_grm: 5000,
+            mc: 800,
+            va: 10,
+            min_mc: 200,
+            min_va: 3,
+            taxable_amt: 50000,
+            calc_type: 0,
+            mc_cal_type: 1,
+          },
+          // Item B: MC=0, VA=0 (plain biscuit)
+          {
+            gross_wt: 10,
+            less_wt: 0,
+            rate_per_grm: 5000,
+            mc: 0,
+            va: 0,
+            min_mc: 0,
+            min_va: 0,
+            taxable_amt: 30000,
+            calc_type: 3,
+            mc_cal_type: 1,
+          },
+        ]);
+        resetDiscount(500);
+
+        var alloc1 = calculateDiscountAllocations();
+
+        assert(alloc1[0] !== undefined, "Item A (with MC+VA) gets allocation");
+        assert(
+          alloc1[1] === undefined,
+          "Item B (MC=0, VA=0) gets NO allocation (skipped)",
+        );
+        if (alloc1[0]) {
+          assertClose(
+            alloc1[0].discount,
+            500,
+            1,
+            "Item A absorbs full ₹500 discount",
+          );
+          assert(
+            alloc1[0].item_blc_discount === 0,
+            "Item A has zero item_blc_discount",
+          );
+        }
+
+        // ------ TEST 2: Overflow redistributes between items ------
+        testResults.push(
+          "<h2>Test 2: Overflow redistributes to items with remaining capacity</h2>",
+        );
+
+        // Item A: MC=800(per-piece), VA=10% of 10g gross = 1g * 5000 = 5000 VA → total MC+VA=5800
+        //         Min MC=200, Min VA=3% of 10g = 0.3g * 5000 = 1500 → min total=1700
+        //         Tier1 = 5800-1700 = 4100
+        // Item B: MC=50(per-piece), VA=2% of 5g = 0.1g * 6000 = 600 VA → total MC+VA=650
+        //         Min MC=30, Min VA=1% of 5g = 0.05g * 6000 = 300 → min total=330
+        //         Tier1 = 650-330 = 320
+        setupMockBillRows([
+          {
+            gross_wt: 10,
+            less_wt: 0,
+            rate_per_grm: 5000,
+            mc: 800,
+            va: 10,
+            min_mc: 200,
+            min_va: 3,
+            taxable_amt: 50000,
+            calc_type: 0,
+            mc_cal_type: 1,
+          },
+          {
+            gross_wt: 5,
+            less_wt: 0,
+            rate_per_grm: 6000,
+            mc: 50,
+            va: 2,
+            min_mc: 30,
+            min_va: 1,
+            taxable_amt: 40000,
+            calc_type: 0,
+            mc_cal_type: 1,
+          },
+        ]);
+        resetDiscount(500);
+
+        var alloc2 = calculateDiscountAllocations();
+
+        assert(alloc2[0] !== undefined, "Item A gets allocation");
+        assert(alloc2[1] !== undefined, "Item B gets allocation");
+
+        var totalDisc2 =
+          (alloc2[0] ? alloc2[0].discount : 0) +
+          (alloc2[1] ? alloc2[1].discount : 0);
+        assertClose(totalDisc2, 500, 1, "Total discount sums to ₹500");
+
+        var totalBlc2 =
+          (alloc2[0] ? alloc2[0].item_blc_discount : 0) +
+          (alloc2[1] ? alloc2[1].item_blc_discount : 0);
+        assert(
+          totalBlc2 === 0,
+          "No item_blc_discount when MC+VA capacity available (total blc=" +
+            totalBlc2 +
+            ")",
+        );
+
+        // ------ TEST 3: Tier 2 distribution after Tier 1 exhausted ------
+        testResults.push(
+          "<h2>Test 3: Tier 2 kicks in after Tier 1 exhausted</h2>",
+        );
+
+        // Using same items as Test 2
+        // Total Tier1 = 4100 + 320 = 4420
+        // Set discount to 4500 → exceeds Tier 1, should use Tier 2
+        setupMockBillRows([
+          {
+            gross_wt: 10,
+            less_wt: 0,
+            rate_per_grm: 5000,
+            mc: 800,
+            va: 10,
+            min_mc: 200,
+            min_va: 3,
+            taxable_amt: 50000,
+            calc_type: 0,
+            mc_cal_type: 1,
+          },
+          {
+            gross_wt: 5,
+            less_wt: 0,
+            rate_per_grm: 6000,
+            mc: 50,
+            va: 2,
+            min_mc: 30,
+            min_va: 1,
+            taxable_amt: 40000,
+            calc_type: 0,
+            mc_cal_type: 1,
+          },
+        ]);
+        resetDiscount(4500);
+
+        var alloc3 = calculateDiscountAllocations();
+
+        var totalDisc3 =
+          (alloc3[0] ? alloc3[0].discount : 0) +
+          (alloc3[1] ? alloc3[1].discount : 0);
+        assertClose(totalDisc3, 4500, 1, "Total discount sums to ₹4500");
+
+        var totalBlc3 =
+          (alloc3[0] ? alloc3[0].item_blc_discount : 0) +
+          (alloc3[1] ? alloc3[1].item_blc_discount : 0);
+        assert(
+          totalBlc3 === 0,
+          "Still no item_blc_discount (Tier 2 has capacity) — total blc=" +
+            totalBlc3,
+        );
+
+        // ------ TEST 4: item_blc_discount only when both tiers exhausted ------
+        testResults.push(
+          "<h2>Test 4: item_blc_discount ONLY when all tiers exhausted</h2>",
+        );
+
+        // Total MC+VA = 5800 + 650 = 6450
+        // Set discount to 6500 → exceeds total capacity by 50
+        setupMockBillRows([
+          {
+            gross_wt: 10,
+            less_wt: 0,
+            rate_per_grm: 5000,
+            mc: 800,
+            va: 10,
+            min_mc: 200,
+            min_va: 3,
+            taxable_amt: 50000,
+            calc_type: 0,
+            mc_cal_type: 1,
+          },
+          {
+            gross_wt: 5,
+            less_wt: 0,
+            rate_per_grm: 6000,
+            mc: 50,
+            va: 2,
+            min_mc: 30,
+            min_va: 1,
+            taxable_amt: 40000,
+            calc_type: 0,
+            mc_cal_type: 1,
+          },
+        ]);
+        resetDiscount(6500);
+
+        var alloc4 = calculateDiscountAllocations();
+
+        var totalDisc4 =
+          (alloc4[0] ? alloc4[0].discount : 0) +
+          (alloc4[1] ? alloc4[1].discount : 0);
+        assertClose(totalDisc4, 6500, 2, "Total discount sums to ₹6500");
+
+        var totalBlc4 =
+          (alloc4[0] ? alloc4[0].item_blc_discount : 0) +
+          (alloc4[1] ? alloc4[1].item_blc_discount : 0);
+        assert(
+          totalBlc4 > 0,
+          "item_blc_discount exists when tiers exhausted — total blc=" +
+            totalBlc4.toFixed(2),
+        );
+
+        // ------ TEST 5: Type 1 (General) returns empty (unchanged behavior) ------
+        testResults.push(
+          "<h2>Test 5: Type 1 (General Discount) returns empty allocations</h2>",
+        );
+
+        setupMockBillRows([
+          {
+            gross_wt: 10,
+            less_wt: 0,
+            rate_per_grm: 5000,
+            mc: 800,
+            va: 10,
+            min_mc: 200,
+            min_va: 3,
+            taxable_amt: 50000,
+            calc_type: 0,
+            mc_cal_type: 1,
+          },
+        ]);
+        $("#summary_discount_amt").val(500);
+        $("#bill_discount_type").val("1"); // Type 1 = General
+
+        var alloc5 = calculateDiscountAllocations();
+        assert(
+          Object.keys(alloc5).length === 0,
+          "Type 1 returns empty allocations (existing logic used)",
+        );
+
+        // ------ TEST 6: Zero discount returns empty ------
+        testResults.push("<h2>Test 6: Zero discount returns empty</h2>");
+        resetDiscount(0);
+        var alloc6 = calculateDiscountAllocations();
+        assert(
+          Object.keys(alloc6).length === 0,
+          "Zero discount returns empty allocations",
+        );
+
+        // ------ TEST 7: Single eligible item gets full discount ------
+        testResults.push(
+          "<h2>Test 7: Single eligible item gets full discount</h2>",
+        );
+        setupMockBillRows([
+          {
+            gross_wt: 10,
+            less_wt: 0,
+            rate_per_grm: 5000,
+            mc: 800,
+            va: 10,
+            min_mc: 200,
+            min_va: 3,
+            taxable_amt: 50000,
+            calc_type: 0,
+            mc_cal_type: 1,
+          },
+        ]);
+        resetDiscount(300);
+        var alloc7 = calculateDiscountAllocations();
+        assert(alloc7[0] !== undefined, "Single item gets allocation");
+        assertClose(
+          alloc7[0].discount,
+          300,
+          1,
+          "Single item absorbs full ₹300 discount",
+        );
+        assert(alloc7[0].item_blc_discount === 0, "No item_blc_discount");
+
+        // ------ TEST 8: MC/VA split respects bill_discount_apply_on ------
+        testResults.push("<h2>Test 8: MC first vs VA first split</h2>");
+
+        setupMockBillRows([
+          {
+            gross_wt: 10,
+            less_wt: 0,
+            rate_per_grm: 5000,
+            mc: 500,
+            va: 5,
+            min_mc: 100,
+            min_va: 1,
+            taxable_amt: 50000,
+            calc_type: 0,
+            mc_cal_type: 1,
+          },
+        ]);
+
+        // MC first
+        resetDiscount(300);
+        $("#bill_discount_apply_on").val("2");
+        var allocMC = calculateDiscountAllocations();
+        if (allocMC[0]) {
+          assert(
+            allocMC[0].mc_discount > 0,
+            "MC first → mc_discount > 0 (" + allocMC[0].mc_discount + ")",
+          );
+          assert(
+            allocMC[0].mc_discount >= allocMC[0].wastage_discount,
+            "MC first → mc_discount >= wastage_discount",
+          );
+        }
+
+        // VA first
+        resetDiscount(300);
+        $("#bill_discount_apply_on").val("1");
+        var allocVA = calculateDiscountAllocations();
+        if (allocVA[0]) {
+          assert(
+            allocVA[0].wastage_discount > 0,
+            "VA first → wastage_discount > 0 (" +
+              allocVA[0].wastage_discount +
+              ")",
+          );
+        }
+
+        // ------ SUMMARY ------
+        testResults.push(
+          "<hr><h2>Summary: " +
+            passedTests +
+            " / " +
+            totalTests +
+            " tests passed</h2>",
+        );
+
+        // Display detailed allocations for debugging
+        testResults.push(
+          '<div class="section"><h3>Test 2 Detail (₹500, 2 items):</h3>',
+        );
+        if (alloc2[0])
+          testResults.push(
+            "Item A: disc=" +
+              alloc2[0].discount +
+              ", mc_disc=" +
+              alloc2[0].mc_discount +
+              ", va_disc=" +
+              alloc2[0].wastage_discount +
+              ", blc=" +
+              alloc2[0].item_blc_discount +
+              "<br>",
+          );
+        if (alloc2[1])
+          testResults.push(
+            "Item B: disc=" +
+              alloc2[1].discount +
+              ", mc_disc=" +
+              alloc2[1].mc_discount +
+              ", va_disc=" +
+              alloc2[1].wastage_discount +
+              ", blc=" +
+              alloc2[1].item_blc_discount,
+          );
+        testResults.push("</div>");
+
+        testResults.push(
+          '<div class="section"><h3>Test 4 Detail (₹6500, exceeds capacity):</h3>',
+        );
+        if (alloc4[0])
+          testResults.push(
+            "Item A: disc=" +
+              alloc4[0].discount +
+              ", mc_disc=" +
+              alloc4[0].mc_discount +
+              ", va_disc=" +
+              alloc4[0].wastage_discount +
+              ", blc=" +
+              alloc4[0].item_blc_discount +
+              "<br>",
+          );
+        if (alloc4[1])
+          testResults.push(
+            "Item B: disc=" +
+              alloc4[1].discount +
+              ", mc_disc=" +
+              alloc4[1].mc_discount +
+              ", va_disc=" +
+              alloc4[1].wastage_discount +
+              ", blc=" +
+              alloc4[1].item_blc_discount,
+          );
+        testResults.push("</div>");
+
+        out.innerHTML = testResults.join("<br>");
+      }
+
+      $(document).ready(function () {
+        runTests();
+      });
+    </script>
+  </body>
+</html>

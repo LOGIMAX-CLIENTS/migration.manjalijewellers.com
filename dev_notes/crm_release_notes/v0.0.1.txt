@@ -1,0 +1,113 @@
+Rahul J - 13/06/2025
+
+    Updated the files to fix the bugs which comes when tkv fixing:
+    1)payment_model.php :
+        A)Fix the bug for payment allowing condition. Previously only check the $allow_advance_in => 1(admin) , now add on the 4(all) for the condition checking .
+        B)Set initially inside of that installment cycle value condition checking , $allowed_due = 0 to prevent the previously calculated $allowed_due above to inside of installment cycle value condition.
+        C)Fixed the $canPay_pending calculation.
+    2)payment.js:
+        A)Type caste the amount string to integer because the upcoming validations based on integer.
+        B)Add the new condition (amount > data.max_amount || amount < data.min_amount) in that else if , because that always runs if that fleci_type 1 or 2 or 5.
+        C)Finally fixed the variable name(firstPayamt_as_payamt) previously misused by wrong name(firstPayamt_payable).
+    3)mobile_api.php:
+        A)Add the new conditions to calculate the [ND,PD,AD], if that due_type is AN or PN. Because we cant use that AN or PN in our tables.
+    4)mobile_api_model.php: 
+        A)In this model also works like that payment_model.php.
+
+
+Rahul J - 16/06/2025
+
+    The updates which for the issue credit card payments not shown ledger in hari.
+
+    After analyzation the data which comes from gateway for credit card must comes like "CREDIT_CARD" but comes like "credit_card". And that credit_card must be stores in CC , but that in db that stored "credit_card". Like this happened for "upi","net_banking" so lots of datas are mis saved information. This lead to in payment_mode_details table that payment_mode have structure as varchar(10). So that "credit_card" cant save in pmd table. Thats why we cant see that information in customer ledger.
+
+    Steps taken to resolve:
+    For Existing Datas:
+    Find the valid datas which are in payment table but not in pmd table. Changed the structure value for pmd table to varchar(15). Then moved them to payment_mode_table.
+
+    ALTER TABLE `payment_mode_details` CHANGE `payment_mode` `payment_mode` VARCHAR(15) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL;
+
+    For upcoming datas:
+    In auto,manual verify and payment saving changes thee belown functions:
+
+    mobile_api.php => cashfreeResponse_post()
+    admin_services.php => verify_cashfreepayment()
+    admin_payment.php => verify_cashfreepayment()
+
+    "payment_mode"       => (strtolower($response->paymentMode)== "credit_card" ? "CC":(strtolower($response->paymentMode) == "debit_card" ? "DC":(strtolower($response->paymentMode) == "net_banking" ? "NB":(strtolower($response->paymentMode) == "na" ? "-":"UPI")))),  For payment and payment_mode_table data entry
+
+Rahul J - 18/06/2025
+
+    Payment form employee filter option and branch id storing for account creation and credit card updated queried:
+    
+    Worked for employee option in payment form 
+
+
+--------------------------------------------------------------------------------------------------------------------
+Karthikai Kumaran - 06/08/2025
+
+Client requirement to source update
+
+   1) From Amman - Multiple emi print option
+    
+   2) From SR and Sarangapani - Customer Unpaid report, Show branch and employees based on branch_settings 
+
+   Commit Id : 89fb4929f872aaff5f8e0880c1d8ac490fccfd7f
+
+    1) Net banking ref number is not coming on edit 
+--------------------------------------------------------------------------------------------------------------------
+
+Karthikai Kumaran - 07/08/2025
+
+Vinsmera :
+    1) Bond print update for vinsmera
+
+From NSK to source
+    1) Customer outstanding report 
+
+
+---------------------------------------------------------------------------------
+
+Karthikai Kumaran - 16/08/2025
+
+Aiswaryam Thanga Maligai
+
+    1) Advance Adjustment Refined - (Ref:- For this there is new column added)
+    Commit Id - f158ccdab03f027b64479c7e439824af63706d21
+
+Karthikai Kumaran - 27/01/2026
+
+1) Digi silver implemtation 
+    1) Metal rate changed to dynamic
+    2) Commodity API for future digi updates
+
+    Commit Id : 7fd30738eaec5cbe44f6078b4a5bcf0f6075606b
+                f5a88c528027d9cb4537a0e2c5916675fa0585af
+                bdf5d0f491554b8b880fcdb9963e283ba787b6df
+
+Karthikai Kumaran - 05/02/2026
+1) Dynamic decimal for metal weight
+    Impacts
+        1)	Dashboard
+        2)	Account 
+            a.	Ledger
+            b.	Passbook print
+        3)	Payment
+            a.	While payment save 
+            b.	Payment listing
+            c.	Payment form 
+            d.	Receipt print 
+        4)	Closing
+            a.	Closed account listing
+            b.	Closing form
+            c.	While save a closing form (benefit weight)
+        5)	Reports
+            a.	Source Wise report
+            b.	Online payment report
+            c.	Maturity report
+            d.	Outstanding report
+                i.	Details 
+                ii.	Detailed excel Download
+                iii.	Summary excel
+                iv.	Print summary
+        e.	Closed account Reports

@@ -1,0 +1,117 @@
+{
+    "patterns": [
+        {
+            "id": "PAT-SEC-001",
+            "name": "SQL Injection via raw POST",
+            "severity": "CRITICAL",
+            "description": "Raw $_POST values interpolated into SQL query strings",
+            "regex": "\\$_POST\\[.*\\].*(?:where|select|insert|update|delete|order by|group by)",
+            "files": ["controllers/*.php", "models/*.php"],
+            "fix_recipe": null
+        },
+        {
+            "id": "PAT-SEC-002",
+            "name": "OTP bypass via loose comparison",
+            "severity": "CRITICAL",
+            "description": "OTP/password checks using == instead of === allow type juggling bypass",
+            "regex": "\\$.*otp.*==\\s",
+            "regex_flags": "i",
+            "files": ["controllers/*.php"],
+            "fix_recipe": "recipe_otp_strict_compare"
+        },
+        {
+            "id": "PAT-SEC-003",
+            "name": "No auth check on destructive operation",
+            "severity": "CRITICAL",
+            "description": "Functions like clear_database, db_backup without role/auth check",
+            "regex": "function\\s+(clear_database|db_backup|truncate_table)",
+            "files": ["controllers/*.php"],
+            "fix_recipe": "recipe_clear_database_auth"
+        },
+        {
+            "id": "PAT-TXN-001",
+            "name": "trans_commit on failure branch",
+            "severity": "HIGH",
+            "description": "trans_commit() called after error check — should be trans_rollback()",
+            "regex": "trans_commit",
+            "context_check": "Check if called inside error/failure branch",
+            "files": ["controllers/*.php", "models/*.php"],
+            "fix_recipe": null
+        },
+        {
+            "id": "PAT-TXN-002",
+            "name": "trans_complete instead of begin/commit",
+            "severity": "HIGH",
+            "description": "CI2 trans_complete() auto-commits regardless of errors — should use trans_begin/commit/rollback",
+            "regex": "trans_complete\\(\\)",
+            "files": ["controllers/*.php"],
+            "fix_recipe": "recipe_trans_complete"
+        },
+        {
+            "id": "PAT-VAL-001",
+            "name": "Direct $_POST usage",
+            "severity": "MEDIUM",
+            "description": "$_POST used instead of $this->input->post() — no XSS filtering",
+            "regex": "\\$_POST\\[",
+            "files": ["controllers/*.php"],
+            "fix_recipe": "recipe_direct_post_usage"
+        },
+        {
+            "id": "PAT-DEAD-001",
+            "name": "Date-suffixed method copy",
+            "severity": "MEDIUM",
+            "description": "Legacy method copy with date suffix (e.g., getBillDetails_30_08_2025) — old version may be called",
+            "regex": "function\\s+\\w+_\\d{2}_\\d{2}_\\d{4}\\s*\\(",
+            "files": ["controllers/*.php", "models/*.php"],
+            "fix_recipe": "recipe_dead_code_cleanup"
+        },
+        {
+            "id": "PAT-DEAD-002",
+            "name": "Commented-out function body",
+            "severity": "LOW",
+            "description": "Large blocks of commented code inside functions (debug residue)",
+            "regex": "/\\*\\s*function",
+            "files": ["controllers/*.php", "models/*.php"],
+            "fix_recipe": null
+        },
+        {
+            "id": "PAT-FILE-001",
+            "name": "rate.txt Array bug",
+            "severity": "CRITICAL",
+            "description": "file_put_contents writes 'Array' string instead of json_encode — breaks mobile API",
+            "regex": "file_put_contents.*rate\\.txt.*\\$.*(?!json_encode)",
+            "files": ["controllers/admin_settings.php"],
+            "fix_recipe": "recipe_rate_txt_fix"
+        },
+        {
+            "id": "PAT-CANCEL-001",
+            "name": "Journal not reversed on cancel",
+            "severity": "CRITICAL",
+            "description": "cancel_bill() does not reverse ret_journal entries — financial data orphaned",
+            "regex": "cancel_bill|cancel_service_bill",
+            "context_check": "Verify ret_journal reversal exists in cancel function",
+            "files": ["controllers/admin_ret_billing.php"],
+            "fix_recipe": "recipe_journal_reversal"
+        },
+        {
+            "id": "PAT-STOCK-001",
+            "name": "Purchase cancel stock inversion",
+            "severity": "CRITICAL",
+            "description": "cancel_bill() adds NT stock back (correct for sales) but wrong for purchase cancel (should subtract)",
+            "regex": "updateNTData.*\\+",
+            "context_check": "Check if bill_type=4 uses same stock logic as type=1",
+            "files": ["controllers/admin_ret_billing.php"],
+            "fix_recipe": "recipe_purchase_stock_cancel"
+        },
+        {
+            "id": "PAT-LOOP-001",
+            "name": "Variable used outside foreach loop",
+            "severity": "HIGH",
+            "description": "Loop variable used after foreach ends — only references last iteration",
+            "regex": "foreach.*as.*\\$([a-z_]+)\\).*\\}.*\\$\\1",
+            "context_check": "Check if variable from foreach is used after closing brace",
+            "files": ["controllers/*.php"],
+            "fix_recipe": null
+        }
+    ]
+}

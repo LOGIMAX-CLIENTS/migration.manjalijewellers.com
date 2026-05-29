@@ -1,0 +1,324 @@
+.PDFReceipt *{
+
+font-family:sans-serif;
+
+font-size: 11px;
+
+}
+
+.PDF_CusReceipt *{
+
+font-family:sans-serif;
+
+font-size: 10px;
+
+}
+
+.PDF_receipt_thermal *{
+
+font-family:sans-serif;
+
+font-size: 6px;
+
+}
+
+.margin {margin: -20px !important;}
+
+article,.PDF_CusReceipt.meta table, .PDFReceipt .inventory table { margin: 0 0 1em; }
+
+article,.PDF_receipt_thermal.meta table, .PDFReceipt .inventory table { margin: 0 0 1em; }
+
+article,.PDFReceipt.meta table, .PDFReceipt .inventory table { margin: 0 0 3em; }
+
+article:after { clear: both; content: ""; display: table; }
+
+
+
+.PDFReceipt .meta:after, .PDFReceipt .balance:after { clear: both; content: ""; display: table; }
+
+
+
+/* table meta */
+
+
+
+.PDFReceipt .meta th { width: 20%; }
+
+.PDFReceipt .meta td { width: 30%;font-size:10px !important; }
+
+
+.PDF_CusReceipt .meta th,.name { width: 20%; }
+
+.PDF_receipt_thermal .meta th,.name { width: 20%; }
+
+.PDF_CusReceipt .meta td { width: 30%; }
+
+.PDF_receipt_thermal .meta td { width: 30%; }
+
+
+
+/* table items */
+
+
+
+.PDFReceipt .inventory { clear: both; width: 100%; }
+
+.PDFReceipt .inventory th {  text-align: center; }
+
+.PDF_CusReceipt .meta th {  text-align: left; }
+
+.PDF_receipt_thermal .meta th {  text-align: left; }
+
+
+
+
+.PDFReceipt .inventory td:nth-child(1) { width: 26%; }
+
+.PDFReceipt .inventory td:nth-child(2) { width: 38%; }
+
+.PDFReceipt .inventory td:nth-child(3) { text-align: right; width: 12%; }
+
+.PDFReceipt .inventory td:nth-child(4) { text-align: right; width: 12%; }
+
+.PDFReceipt .inventory td:nth-child(5) { text-align: right; width: 12%; }
+
+
+
+/* table balance */
+
+
+
+.PDFReceipt .balance th{ width: 40%;}
+
+ .PDFReceipt .balance td { width: 36%; }
+
+.PDFReceipt .balance td { text-align: right; }
+
+
+
+
+
+
+
+.PDFReceipt table tr td{
+
+  height:1px;
+
+  font-size: 11px !important;
+
+}
+
+.PDF_CusReceipt table tr td{
+
+  height:1px;
+
+  font-size: 11px !important;
+
+}
+.PDF_receipt_thermal table tr td{
+
+  height:1px;
+
+  /* font-size: 8px !important; */
+
+}
+
+
+
+
+.receiptDts div{
+
+	height:30px;
+
+	text-align:center;
+
+	border-left:none
+
+}
+
+.PDFReceipt .address{
+
+	vertical-align:top;
+
+	font-size: 12px;
+
+	padding-top: 8px;
+
+	border-top: 1px solid #939393;
+
+}
+
+.PDFReceipt .cus_details
+{
+	margin-top: 100px !important;
+}
+
+
+
+.PDFReceipt .heading {
+
+	 font: sans-serif;
+
+	  letter-spacing: 0.5em;
+
+	  text-transform: uppercase;
+
+	background: #393939; border-radius: 0.25em; color: #FFF; margin: 0 0 1em; padding: 0.5em 0;
+
+	height: 20px;text-align: center;
+
+}
+
+.PDFReceipt .values {
+
+background-color:#fff;
+
+color:#676767;
+
+}
+
+.PDFReceipt .txtAckowlege{
+
+	height:40px ;
+
+	text-align:left;
+
+	padding-top: 15px;
+
+	border-top: 1px solid #939393;
+
+	font:bold 80% sans-serif ;
+
+}
+
+.PDFReceipt p{
+
+	height:4px;
+
+}
+
+
+
+.PDFReceipt .alignText{
+
+	float:right;
+
+	}
+
+.PDFReceipt .useraddr {
+
+	margin-bottom:80px;
+
+	font-size:15px !important;
+
+
+	}
+
+.item_dashed
+{
+	border-top:1px dashed black;
+	border-bottom:0px;
+	margin-left:0px !important;
+    width:700px !important;
+	padding-top:-1px !important;
+}
+
+.order_item_dashed
+{
+	border-top:1px dashed black;
+	border-bottom:0px;
+	margin-left:0px !important;
+	width:95% !important;
+	padding-top:-1px !important;
+}
+
+.order_tr_item_dashed
+{
+	border-top:1px dashed black;
+	border-bottom:0px;
+	margin-left:0px !important;
+	width:1500% !important;
+	padding-top:-1px !important;
+}
+
+.header_dashed
+{
+	border-top:1px dashed black;
+	border-bottom:0px;
+	margin-left:0px !important;
+	margin-top:-14px !important;
+	width:100% !important;
+}
+
+.old_metal_dashed
+{
+	border-top:1px dashed black;
+	border-bottom:0px;
+	margin-left:0px !important;
+	width:700% !important;
+}
+
+.old_metal_header_dashed
+{
+	border-top:1px dashed black;
+	border-bottom:0px;
+	margin-left:0px !important;
+	width:99% !important;
+}
+
+.return_dashed
+{
+	border-top:1px dashed black;
+	border-bottom:0px;
+	margin-left:0px !important;
+	width:900% !important;
+}
+
+.PDFReceipt table pp { font-size: 10px; table-layout: fixed; width: 100%; }
+
+.PDFReceipt table { font-size: 10%; table-layout: fixed; width: 100%; }
+
+.PDFReceipt table { border-collapse: separate; border-spacing: 0px; }
+
+.PDFReceipt th, td { border-width: 1px; padding-bottom: 0em; position: relative; text-align: left; }
+
+.PDFReceipt th, td { border-style: solid; border: 0px solid #ddd;}
+
+/*.PDFReceipt th { background: #EEE;}*/
+
+.PDFReceipt tfoot td { border: none;border-bottom:0.5pt solid black;}
+
+.PDFReceipt td {  }
+
+.hare_krishna {
+	text-align: center;
+	font-size: 10px;
+	margin-top: -40px;
+}
+
+.header_top {
+	width: 100%;
+	height: 125px;
+}
+
+.header_top_left {
+	width: 50%;
+	display: inline-block;
+	vertical-align: middle;
+}
+
+.header_top_right {
+	width: 50%;
+	display: inline-block;
+	text-align: right;
+	vertical-align: middle;
+}
+
+.header_top_right img {
+	width: 50%;
+}
+
+.pay_mode_totals {
+	margin-top: 10px;
+	margin-bottom: 10px;
+}

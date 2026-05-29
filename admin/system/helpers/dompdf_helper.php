@@ -1,0 +1,1 @@
+<?php if (!defined('BASEPATH')) exit('No direct script access allowed');    //require_once("dompdf/dompdf_config.inc.php");        // Dompdf Version 1.0.2    require_once(APPPATH.'libraries/dompdf/autoload.inc.php');    use Dompdf\Dompdf;?>

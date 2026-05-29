@@ -1,0 +1,720 @@
+/*------------------------------------------------------------------
+Bootstrap Admin Template by EGrappler.com
+------------------------------------------------------------------*/
+
+
+
+/*------------------------------------------------------------------
+[1. Shortcuts / .shortcuts]
+*/
+#payModal .modal-header{
+	 text-transform: uppercase;
+	text-align:center;
+	color:#FFFFFF;
+	background-color:#877E78;
+}
+#payModal .modal-body{
+	padding-left: 10px;
+}
+
+#payModal #installs{
+ width:50px;
+}
+
+
+.shortcuts {
+	text-align: center;	
+}
+
+.shortcuts .shortcut { 
+	width: 22.50%;
+	display: inline-block;
+	padding: 12px 0;
+	margin: 0 .9% 1em;
+	vertical-align: top;	
+	
+	text-decoration: none;
+	
+	background: #f9f6f1;
+	
+	border-radius: 5px;
+}
+
+.shortcuts .shortcut .shortcut-icon {
+	margin-top: .25em;
+	margin-bottom: .25em;
+	
+	font-size: 32px;
+	color: #545454;
+}
+
+.shortcuts .shortcut:hover {
+	background: #00ba8b;
+}
+
+.shortcuts .shortcut:hover span{
+	color: #fff;
+}
+
+.shortcuts .shortcut:hover .shortcut-icon {
+	color: #fff;
+}
+
+.shortcuts .shortcut-label {
+	display: block;
+	
+	font-weight: 400;
+	color: #545454;
+}
+
+
+
+/*------------------------------------------------------------------
+[2. Stats / .stats]
+*/
+
+.stats {
+	width: 100%;
+	display: table;
+	padding: 0 0 0 10px;
+	margin-top: .5em;
+	margin-bottom: 1.9em;
+}
+
+.stats .stat {
+	display: table-cell;
+	width: 40%;
+	vertical-align: top;
+	
+	font-size: 11px;
+	font-weight: bold;
+	color: #999;
+}
+
+.stat-value {
+	display: block;
+	margin-bottom: .55em;
+	
+	font-size: 30px;
+	font-weight: bold;
+	letter-spacing: -2px;
+	color: #444;
+}
+
+.stat-time {
+	text-align: center;
+	padding-top: 1.5em;
+}
+
+.stat-time .stat-value {
+	color: #19bc9c;
+	font-size: 40px;
+}
+
+.stats #donut-chart {
+	height: 100px;
+	margin-left: -20px;	
+}
+
+
+
+
+
+/*------------------------------------------------------------------
+[3. News Item / .news-items]
+*/
+
+.news-items {
+	margin: 1em 0 0;
+}
+
+.news-items li {
+	display: table;
+	padding: 0 2em 0 1.5em;
+	padding-bottom: 1em;
+	margin-bottom: 1em;
+	border-bottom: 1px dotted #CCC;
+}
+
+.news-items li:last-child { padding-bottom: 0; border: none; }
+
+.news-item-date {
+	display: table-cell;
+}
+
+.news-item-detail {
+	display: table-cell;
+}
+
+.news-item-title {
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.news-item-date {
+	width: 75px;
+	vertical-align: middle;
+	text-align: center;
+	
+}
+
+.news-item-day {
+	display: block;
+	margin-bottom: .25em;
+	
+	font-size: 24px;
+	color: #888;
+}
+
+.news-item-preview {
+	margin-bottom: 0;
+	
+	color: #777;
+}
+
+.news-item-month {
+	display: block;
+	padding-right: 1px;	
+	
+	font-size: 12px;
+	font-weight: 600;
+	color: #888;
+}
+
+
+
+/*------------------------------------------------------------------
+[4. Action Table / .action-table]
+*/
+
+.action-table .btn-small {
+	padding: 4px 5px 5px;
+	
+	font-size: 10px;
+}
+
+.action-table .td-actions { 
+	width: 80px; 
+	
+	text-align: center; 
+}
+
+	.action-table .td-actions .btn { 
+		margin-right: .5em;		
+	}
+	
+	.action-table .td-actions .btn:last-child { 
+		margin-rigth: 0; 		
+	}
+	
+	
+	
+#big_stats 
+{ 
+	width: 100%; 
+	display: table;
+	margin-top: 1.5em;
+	
+	
+}
+
+.big-stats-container .widget-content {
+	border:0;
+}
+
+#big_stats .stat
+{
+	width: 25%;
+	height: 90px;
+	text-align: center;
+	display: table-cell;
+	padding: 0;
+	position: relative;
+	
+	border-right: 1px solid #CCC;
+	border-left: 1px solid #FFF;
+}
+#big_stats  i { font-size:30px; display:block; line-height: 40px; color:#b2afaa;}
+#big_stats .stat:hover i {color:#19bc9c;}
+
+h6.bigstats{margin: 20px;
+border-bottom: 1px solid #eee;
+padding-bottom: 20px;
+margin-bottom: 26px;}
+
+#big_stats .stat:first-child {
+	border-left: none;
+}
+
+#big_stats .stat:last-child {
+	border-right: none;
+}
+
+#big_stats .stat h4
+{
+	font-size: 11px;
+	font-weight: bold;
+	color: #777;
+	margin-bottom: 1.5em;
+}
+
+#big_stats .stat .value
+{
+	font-size: 45px;
+	font-weight: bold;
+	color: #545454;
+	line-height: 1em;
+}
+
+#schemPayList .titleHead{
+	font-weight:bold;
+	color:#000000;
+	font-size:14px;
+	text-align:center;
+}
+#schemPayList .schemeType{
+	margin-left:1%;
+	font-weight:bold;
+}
+#schemPayList .schemeTable tr td,#schemPayList .schemeTable tr th{
+	text-align:center;
+}
+#schemPayList #schemeDts_amt{
+	width:50%
+}
+#schemPayList  .heading{
+	font-weight:bold;
+	color:#000;
+}
+#schemPayList .description{
+	padding:1% 2% 2% 2%;
+}
+.register #scheme_modal .modal-header{
+	text-align:center;
+	color:#FFFFFF;
+	background-color:#00BA8B;
+}
+#scheme_modal .schemeName{
+	font-weight:bold;
+	color:#000000;
+	font-size:14px;
+	text-align:center;
+}
+#scheme_modal .schemeType{
+	margin-left:1%;
+	font-weight:bold;
+}
+ #scheme_modal #scheme-amount tr td{
+	text-align:center;
+}
+#scheme_modal .heading{
+	font-weight:bold;
+	color:#000;
+}
+ #scheme_modal .description{
+	padding:2%;
+}
+.schemeDetails{
+	cursor:pointer;
+	color:#00BA8B !important;
+	font-size:12px;
+	font-weight:bold;
+}
+.schemeDetails:hover{
+	text-decoration:underline;
+}
+#schemeTable table tr th, #schemeTable table tr td{
+	text-align:center;
+}
+#weight {
+	width:70%;
+}
+#spinnerDiv{
+	height: 150px;
+	line-height:120px; 
+	position:absolute; 
+	z-index:999;
+	margin-left: 550px;
+	display:none;
+}
+#payment_modal{
+	 /* new custom width */
+    width: 850px;
+    /* must be half of the width, minus scrollbar on the left (30px) */
+    margin-left: -425px;
+}
+#payment_modal #myModalLabel{
+	text-align:center;
+	color:#FFFFFF;
+}	
+#payment_modal .modal-header{
+	background-color:#00BA8B;
+}
+
+#payment_modal .modal-body{
+height:390px;
+}
+#payment_modal .totAmt{
+width:100%;
+height:40px;
+line-height:40px;
+}
+#payment_modal .payMethod{
+width:100%;
+text-align:left;
+font-size:16px;
+}
+#payment_modal .amount{
+width:20%;
+text-align:right;
+font-size:16px;
+
+}
+#payment_modal .colon{
+width:10%;
+text-align:right;
+font-size:20px;
+}
+#payment_modal .payAmt{
+width:30%;
+text-align:right;
+font-size:20px;
+}
+#payment_modal .amount, #payment_modal .colon, #payment_modal .payAmt{
+display:inline-block;
+}
+#payment_modal .pay_details{
+width:100%;
+border-top:1px solid #DDDDDD;
+}
+#payment_modal .details{
+margin:  0 15px 15px 15px;
+}
+#payment_modal .pay_options, #payment_modal .details{
+display:inline-block;
+}
+#payment_modal .pay_options{
+width:30%;
+height:350px;
+line-height:60px;
+color:#fafafa;
+background-color:#F9F9F9;
+}
+#payment_modal .pay_options  > div:nth-of-type(1){
+ border-top: none !important;
+  border:1px solid #EEEEEE;
+}
+#payment_modal .pay_options  > div:nth-of-type(2){
+ border:1px solid #EEEEEE;
+}
+#payment_modal .pay_options  > div {
+ height:40px;
+ line-height:40px;
+ text-align:center;
+ cursor:pointer;
+ background-color:#F9F9F9;
+ color:#000;
+ text-transform:uppercase;
+ }
+#payment_modal .details{
+width:65%;
+vertical-align:top;
+text-align:center;
+}
+#payment_modal  .detailsHead{
+	text-align:center;
+	width:100%;
+	font-size:14px;
+	font-weight:bold;
+	height:40px;
+	line-height:40px;
+}
+#payment_modal #chargeDetail{
+	display:none;
+	width:100%;
+}
+#payment_modal #chargeDetail tr th,#payment_modal #chargeDetail tr td{
+	width:25% !important;
+}
+#payment_modal #chargeDetail tr th,#payment_modal #chargeDetail tr td,#payment_modal #accDetail tr th,#payment_modal #accDetail tr td{
+	text-align:center;
+	text-transform:uppercase;
+}
+#payment_modal input{
+	width:150px;
+}
+#payment_modal .pay_options .active {
+	border-right:#FFFFFF !important;
+	border-left:3px solid #00BA8B  !important;
+	background-color:#FFFFFF !important;
+}
+#payment_modal .payNote{
+text-align:left;
+}
+#payment_modal .payBtn{
+	float:right;
+	margin-right:5%;
+	height:60px;
+	line-height:60px;
+}
+#payment_modal .update_submit{
+	float:right;
+	margin-right:5%;
+}
+#payment_modal .otherpay_desc{
+	height:40px;
+	line-height:40px;
+	font-size:16px;
+	font-family:Calibri;
+}
+#payment_modal .gateWayDiv{
+text-align:right;
+}
+
+#payment_modal .gateWayDiv {
+	font-size:14px;
+	width:65%;
+	margin:20px;
+}
+#payment_modal .gateWayDiv .rows{
+	height:30px;
+}
+#payment_modal .gateWayDiv .rows{
+	text-align:right;
+}
+#payment_modal .gateWayDiv .rows div{
+	display:inline-block;
+}
+#payment_modal .gateWayDiv .crg-label{
+	width:50%;
+	text-align:left;
+	font-weight:bold;
+}
+#payment_modal .gateWayDiv .value{
+	width:30%;
+	text-align:right;
+}
+#payment_modal .gateWayDiv .colon{
+	width:20%;
+	text-align:center;
+}
+#otherPay .description{
+	font-size:16px;
+	color:#333;
+	border-bottom:1px solid #E6E6E6;
+	font-family:Calibri;
+	height:40px;
+	line-height:40px;
+}
+
+#otherPay .mainDiv{
+	width:50%;
+	margin-left:auto;
+	margin-right:auto;
+	border:1px solid #ccc;
+	text-align:center;
+	background-color:#F9F9F9;
+	margin-bottom:20px;
+	box-shadow:0 0 2px #dadada, 0 -3px 0 #e6e6e6 inset;
+}
+#otherPay .innerDiv{
+	width:90%;
+	margin-left:auto;
+	margin-right:auto;
+	margin:3%;
+}
+#otherPay .innerDiv label{
+	display:inline-block;
+	text-align:right;
+	width:200px;
+	margin-right:10%;
+}
+#otherPay .inputDiv {
+	height:50px;
+}
+#otherPay .update_submit {
+	height:30px;
+	line-height:30px;
+}
+#ag-dash-history th, #ag-dash-history td{
+	text-align:center;
+}
+#ag-dash-history .selectGroup div.inner-group{
+	display:inline-block;
+	margin:5px;
+}
+#ag-dash-history legend{
+margin-bottom:15px;
+}
+
+@media all and (max-width: 950px) and (min-width: 1px) {
+	
+	#big_stats {
+		display: block;
+		margin-bottom: -40px;
+	}
+	
+	#big_stats .stat {
+		width: 49%;
+		display: block;
+		margin-bottom: 3em;
+		float: left;
+	}	
+	
+	#big_stats .stat:nth-child(2) {
+		border-right: none;
+	}
+	
+	#big_stats .stat:nth-child(3) {
+		border-left: none;
+	}
+	
+}
+
+@media (max-width: 767px) {
+	#big_stats .stat .value {
+		font-size: 40px;
+	}
+}
+	
+@media (max-width: 979px) {
+	
+	.shortcuts .shortcut {
+		width: 31%;
+	}
+	#otherPay .innerDiv label{
+	text-align:left;
+	}
+	#otherPay .mainDiv{
+	width:80%;
+}
+}
+
+
+@media (max-width: 480px) {
+	
+	.stats .stat {
+		
+		margin-bottom: 3em;
+	}
+	
+	.stats .stat .stat-value {
+		margin-bottom: .15em;
+		
+		font-size: 20px;
+	}
+	
+	.stats {
+		float: left;
+		
+		display: block;
+		
+		margin-bottom: 0;
+	}
+	
+	#chart-stats {
+		margin: 2em 0 1em;		
+	}
+	
+	.shortcuts .shortcut {
+		width: 48%;
+	}
+	#otherPay .mainDiv{
+	width:100%;
+}
+	#otherPay .innerDiv label{
+	text-align:left;
+	}
+	#payment_modal{
+    margin-left: 0;
+}
+}
+
+
+
+th.sorting_desc{
+    height: 30px;
+}
+th.sorting_asc{
+    height: 30px;
+}
+tr.odd{
+    height: 30px;
+    background:#ffffff !important;
+}
+tr.even{
+    height: 30px;
+    background:#ffffff !important;
+}
+tr {
+    height: 30px;
+}
+
+table, th, td {
+  border: 0.5px solid #8C1F48 !important;
+}
+.sorting_1 {
+    background:#ffffff !important;
+}
+
+.sorting .sorting_asc .sorting_desc{
+    color:#ffffff !important;
+}
+
+table.dataTable thead .sorting_asc:after {
+    color: #8c1f48 !important;
+}
+table.dataTable thead .sorting:after {
+    color: #8c1f48 !important;
+}
+table.dataTable thead  .sorting_desc:after {
+    color: #8c1f48 !important;
+}
+
+#conversion_table_filter input[type="search"] {
+    border-color: #8c1f48 !important;
+}
+
+#conversion_table_length select{
+    border-color: #8c1f48;
+}
+#unpaid_list_filter input[type="search"] {
+    border-color: #8c1f48 !important;
+}
+#unpaid_list_length select{
+    border-color: #8c1f48;
+}
+
+#referral_list_filter  input[type="search"] {
+    border-color: #8c1f48 !important;
+}
+#referral_list_length  select{
+    border-color: #8c1f48;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover{
+    border: 1px solid #8C1F48;
+    background:#ffffff !important;
+}
+#ag-dash-history th, #ag-dash-history td {
+    text-align: center;
+    color: #8C1F48;
+}
+/*
+#ag-dash-history th {
+    background: #8c1f48;
+    color: #ffffff;
+}.dataTables_wrapper:after
+
+#ag-dash-history td {
+    border-color: #8c1f48;
+}
+
+.table-striped>tbody>tr:nth-child(odd) {
+    background-color: #fff;
+}
+
+thead {
+    border-bottom: 1px solid #8c1f48;
+    letter-spacing: 1px;
+} */
+

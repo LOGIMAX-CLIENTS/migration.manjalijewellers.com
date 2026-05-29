@@ -1,0 +1,19 @@
+-- Migration: Add columns to `metal_rates`
+-- Source: database_queries.sql
+-- Safe: Each column checked via INFORMATION_SCHEMA before adding
+
+-- UP
+
+-- goldrate_14ct (database_queries.sql:1405 by DEVADHARSHINI)
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'metal_rates' AND COLUMN_NAME = 'goldrate_14ct');
+SET @sql = IF(@col_exists = 0, 'ALTER TABLE `metal_rates` ADD `goldrate_14ct` DECIMAL(10,2 ) NULL DEFAULT NULL AFTER `platinum_1g`', 'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- goldrate_9ct (database_queries.sql:1413 by DEVADHARSHINI)
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'metal_rates' AND COLUMN_NAME = 'goldrate_9ct');
+SET @sql = IF(@col_exists = 0, 'ALTER TABLE `metal_rates` ADD `goldrate_9ct` DECIMAL(10,2 ) NULL DEFAULT NULL AFTER `platinum_1g`', 'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;

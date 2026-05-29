@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LCA Cockpit - Intelligence Platform</title>
+
+    <!-- Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Libraries -->
+    <script
+      type="text/javascript"
+      src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"
+    ></script>
+    <!-- Mermaid.js for Mind Map -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+    <!-- App Styles -->
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body data-density="medium">
+    <div id="app">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="brand">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M12 2L2 7L12 12L22 7L12 2Z"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M2 17L12 22L22 17"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M2 12L12 17L22 12"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          LCA Cockpit
+        </div>
+
+        <nav>
+          <a href="#" class="nav-link active" data-view="dashboard">
+            <span>📊</span> Dashboard
+          </a>
+          <a href="#" class="nav-link" data-view="modules">
+            <span>🕸️</span> Module Map
+          </a>
+          <a href="#" class="nav-link" data-view="search">
+            <span>🔍</span> Search & Impact
+          </a>
+          <a href="#" class="nav-link" data-view="suggestions">
+            <span>💀</span> Dead Code
+          </a>
+        </nav>
+
+        <div class="sidebar-footer">
+          <a href="#" class="nav-link" id="toggle-theme">
+            <span>🌓</span> Toggle Theme
+          </a>
+          <a href="#" class="nav-link" id="toggle-density">
+            <span>📏</span> Toggle Density
+          </a>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Toolbar -->
+        <header class="toolbar">
+          <h1 class="page-title" id="page-title">Dashboard</h1>
+
+          <div class="actions">
+            <input
+              type="text"
+              id="global-search"
+              class="search-input"
+              placeholder="Quick Search Function..."
+              style="width: 300px"
+            />
+          </div>
+        </header>
+
+        <!-- Views -->
+        <div id="views-container" style="padding: 2rem">
+          <!-- Dashboard View -->
+          <section id="view-dashboard" class="view-section active">
+            <div id="dashboard-stats">
+              <div class="card">
+                <h3>Total Modules</h3>
+                <div class="stat-value">65</div>
+              </div>
+              <div class="card">
+                <h3>Functions Indexed</h3>
+                <div class="stat-value">~12,500</div>
+              </div>
+              <div class="card">
+                <h3>Connections</h3>
+                <div class="stat-value">~54,000</div>
+              </div>
+              <div class="card" style="border-color: var(--danger)">
+                <h3>Dead Code Candidates</h3>
+                <div class="stat-value" style="color: var(--danger)">3,970</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>System Health</h3>
+              <p style="color: var(--text-secondary)">
+                Index is loaded and active. Use the sidebar to explore.
+              </p>
+            </div>
+          </section>
+
+          <!-- Modules View -->
+          <section id="view-modules" class="view-section">
+            <div id="graph-container" style="height: 80vh"></div>
+          </section>
+
+          <!-- Search/Impact View -->
+          <!-- Search/Impact View -->
+          <section id="view-search" class="view-section">
+            <div class="search-hero" style="max-width: 600px; margin: 0 auto 2rem auto; text-align: center;">
+                <h2 style="margin-bottom: 1rem;">Explore Codebase</h2>
+                <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                    <input type="text" id="page-search" class="search-input" placeholder="Enter function name (e.g. Admin_ret_purchase)..." style="flex: 1; padding: 1rem;">
+                    <button id="page-search-btn" class="btn btn-primary" style="padding: 0 1.5rem;">Search</button>
+                </div>
+                <p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.9em;">Supports prefixes like <code>js_assets::</code></p>
+            </div>
+            <div id="search-results"></div>
+          </section>
+
+          <!-- Impact Detail View (Dynamic) -->
+          <section id="view-impact" class="view-section">
+            <button class="btn" onclick="App.loadView('search')">
+              ← Back to Search
+            </button>
+            <div
+              id="impact-graph"
+              style="
+                height: 70vh;
+                margin-top: 1rem;
+                border: 1px solid var(--border-color);
+                border-radius: 12px;
+              "
+            ></div>
+          </section>
+
+          <!-- Dead Code View -->
+          <section id="view-suggestions" class="view-section">
+            <div class="card">
+              <p>
+                Dead Code Browser coming in v2. Use CLI `lca reaper` for now.
+              </p>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- App Logic -->
+    <script src="/static/js/app.js"></script>
+  </body>
+</html>

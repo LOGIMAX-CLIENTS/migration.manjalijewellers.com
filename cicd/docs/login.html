@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | CI/CD Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/design-system.css">
+    <script src="js/toast.js"></script>
+    <style>
+        /* Page-specific overrides */
+        :root {
+            --bg-body: #f5f5f7;
+            --bg-card: #ffffff;
+            --accent: #7c3aed;
+            --accent-hover: #6d28d9;
+            --accent-light: #a78bfa;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --text-muted: #9ca3af;
+            --border: #e5e7eb;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08);
+            --shadow-lg: 0 25px 50px -12px rgba(0,0,0,0.15);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-body);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+        }
+        
+        /* Logo */
+        .logo-section {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .logo {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 16px;
+            box-shadow: 0 10px 30px rgba(124, 58, 237, 0.3);
+        }
+        .logo-section h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .logo-section p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Card */
+        .login-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+        }
+        
+        /* Form */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.2s;
+            background: var(--bg-body);
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+            background: var(--bg-card);
+        }
+        .form-group input::placeholder {
+            color: var(--text-muted);
+        }
+        
+        /* Password toggle */
+        .password-wrapper {
+            position: relative;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+        .password-toggle:hover { color: var(--text-secondary); }
+        
+        /* Button */
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-login:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        .btn-login:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Error message */
+        .error-msg {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+        .error-msg.show { display: flex; }
+        
+        /* Remember me & Forgot */
+        .form-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            font-size: 0.85rem;
+        }
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+        }
+        .remember-me input {
+            accent-color: var(--accent);
+            width: 16px;
+            height: 16px;
+        }
+        .forgot-link {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        .forgot-link:hover { text-decoration: underline; }
+        
+        /* Divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 24px 0;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+        
+        /* Role badges */
+        .role-info {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+        .role-info p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+        .role-badges {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+        .role-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .role-badge.admin { background: rgba(124,58,237,0.1); color: var(--accent); }
+        .role-badge.deployer { background: rgba(6,182,212,0.1); color: #06b6d4; }
+        .role-badge.viewer { background: rgba(34,197,94,0.1); color: var(--success); }
+        
+        /* Loading spinner */
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* Footer */
+        .page-footer {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .page-footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo-section">
+            <div class="logo">🚀</div>
+            <h1>CI/CD Dashboard</h1>
+            <p>Sign in to manage deployments</p>
+        </div>
+        
+        <div class="login-card">
+            <div class="error-msg" id="error-msg" style="display: none;">
+                <span>⚠️</span>
+                <span id="error-text">Invalid username or password</span>
+            </div>
+            
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" placeholder="Enter your username" required autocomplete="username">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="password" name="password" placeholder="Enter your password" required autocomplete="current-password">
+                        <button type="button" class="password-toggle" onclick="togglePassword()">👁️</button>
+                    </div>
+                </div>
+                
+                <div class="form-footer">
+                    <label class="remember-me">
+                        <input type="checkbox" id="remember" name="remember">
+                        Remember me
+                    </label>
+                    <a href="#" class="forgot-link" onclick="showForgotInfo()">Forgot password?</a>
+                </div>
+                
+                <button type="submit" class="btn-login" id="btn-login">
+                    <span id="btn-text">Sign In</span>
+                </button>
+            </form>
+            
+            <div class="role-info">
+                <p>Access levels</p>
+                <div class="role-badges">
+                    <span class="role-badge admin">👑 Admin</span>
+                    <span class="role-badge deployer">🚀 Deployer</span>
+                    <span class="role-badge viewer">👁️ Viewer</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="page-footer">
+            <p>Logimax Technologies © 2026</p>
+        </div>
+    </div>
+
+<script>
+const API_BASE = 'api/';
+
+async function handleLogin(e) {
+    e.preventDefault();
+    
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const remember = document.getElementById('remember').checked;
+    const btn = document.getElementById('btn-login');
+    const btnText = document.getElementById('btn-text');
+    const errorEl = document.getElementById('error-msg');
+    
+    // Hide previous error
+    errorEl.classList.remove('show');
+    
+    // Show loading
+    btn.disabled = true;
+    btnText.innerHTML = '<span class="spinner"></span>';
+    
+    try {
+        const res = await fetch(API_BASE + 'auth.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                action: 'login',
+                username: username,
+                password: password,
+                remember: remember
+            })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            // Store session info
+            sessionStorage.setItem('cicd_user', JSON.stringify(data.user));
+            
+            // Redirect based on role
+            const redirectMap = {
+                'admin': 'index.html',
+                'deployer': 'support-deploy.html',
+                'viewer': 'index.html'
+            };
+            
+            const redirect = new URLSearchParams(window.location.search).get('redirect');
+            window.location.href = redirect || redirectMap[data.user.role] || 'index.html';
+        } else {
+            showError(data.error || 'Invalid username or password');
+        }
+    } catch(err) {
+        showError('Connection error. Please try again.');
+    }
+    
+    btn.disabled = false;
+    btnText.textContent = 'Sign In';
+}
+
+function showError(msg) {
+    Toast.error('Login Failed', msg);
+}
+
+function togglePassword() {
+    const pwd = document.getElementById('password');
+    const btn = document.querySelector('.password-toggle');
+    if (pwd.type === 'password') {
+        pwd.type = 'text';
+        btn.textContent = '🙈';
+    } else {
+        pwd.type = 'password';
+        btn.textContent = '👁️';
+    }
+}
+
+function showForgotInfo() {
+    alert('Please contact your administrator to reset your password.');
+}
+
+// Check if already logged in
+document.addEventListener('DOMContentLoaded', () => {
+    const cachedUser = sessionStorage.getItem('cicd_user');
+    if (cachedUser) {
+        try {
+            const user = JSON.parse(cachedUser);
+            const redirect = new URLSearchParams(window.location.search).get('redirect');
+            const redirectMap = {
+                'admin': 'index.html',
+                'deployer': 'support-deploy.html',
+                'viewer': 'index.html'
+            };
+            window.location.href = redirect || redirectMap[user.role] || 'index.html';
+            return;
+        } catch(e) {}
+    }
+    
+    // Focus username field
+    document.getElementById('username').focus();
+});
+</script>
+</body>
+</html>

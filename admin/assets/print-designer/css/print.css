@@ -1,0 +1,135 @@
+/* ============================================================
+   PRINT DESIGNER — Print Styles
+   Applied to clean preview/print pages only
+   ============================================================ */
+
+/* Hide everything except the print content */
+@media print {
+    body * { visibility: hidden; }
+    .pd-print-page, .pd-print-page * { visibility: visible; }
+    .pd-print-page {
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+    .pd-print-controls { display: none !important; }
+}
+
+/* ─── Page Size Presets ─────────────────────────────────── */
+@page { margin: 0; }
+
+body.page-A4        { }
+body.page-A3        { }
+body.page-A5        { }
+body.page-Letter    { }
+body.page-Legal     { }
+body.page-80mm      { }
+body.page-58mm      { }
+
+@media print {
+    body.page-A4.portrait  @page { size: A4 portrait; }
+    body.page-A4.landscape @page { size: A4 landscape; }
+    body.page-A3.portrait  @page { size: A3 portrait; }
+    body.page-A3.landscape @page { size: A3 landscape; }
+    body.page-A5.portrait  @page { size: A5 portrait; }
+    body.page-A5.landscape @page { size: A5 landscape; }
+    body.page-Letter.portrait  @page { size: letter portrait; }
+    body.page-Letter.landscape @page { size: letter landscape; }
+    body.page-Legal.portrait  @page { size: legal portrait; }
+    body.page-Legal.landscape @page { size: legal landscape; }
+    body.page-80mm @page { size: 80mm 297mm; }
+    body.page-58mm @page { size: 58mm 210mm; }
+}
+
+/* ─── Preview Page Container ────────────────────────────── */
+.pd-print-page {
+    position: relative;
+    background: #fff;
+    color: #000;
+    overflow: hidden;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+/* ─── Element Rendering ─────────────────────────────────── */
+.pd-print-element {
+    position: absolute;
+    overflow: hidden;
+}
+
+.pd-print-element.pd-type-text {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.pd-print-element.pd-type-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.pd-print-element.pd-type-rect {
+    border: 1px solid #000;
+}
+
+.pd-print-element.pd-type-line {
+    border-top: 1px solid #000;
+}
+
+.pd-print-element.pd-type-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.pd-print-element.pd-type-table td,
+.pd-print-element.pd-type-table th {
+    border: 1px solid #333;
+    padding: 4px 6px;
+    font-size: inherit;
+}
+
+/* ─── Variable Highlights (only in editor preview) ────── */
+.pd-var-highlight {
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px dashed rgba(99, 102, 241, 0.4);
+    border-radius: 3px;
+    padding: 0 3px;
+    font-family: 'Consolas', monospace;
+    color: #6366f1;
+}
+
+/* ─── Preview Controls Bar ──────────────────────────────── */
+.pd-print-controls {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #1a1d27;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+.pd-print-controls button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+}
+.pd-print-controls .pd-btn-print {
+    background: #6366f1;
+    color: #fff;
+}
+.pd-print-controls .pd-btn-close {
+    background: #ef4444;
+    color: #fff;
+}
+.pd-print-controls .pd-btn-pdf {
+    background: #22c55e;
+    color: #fff;
+}

@@ -1,0 +1,2052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logimax CI/CD Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="js/auth-check.js" data-require-role="admin"></script>
+    <script src="js/toast.js"></script>
+    <link rel="stylesheet" href="css/dashboard-extra.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #f5f5f5;
+            --bg-card: rgba(255, 255, 255, 0.85);
+            --bg-card-hover: rgba(255, 255, 255, 0.95);
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --text-muted: #999999;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --accent: #1a1a1a;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+            --radius-sm: 12px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Background decoration */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            right: -30%;
+            width: 80%;
+            height: 150%;
+            background: linear-gradient(135deg, #e8e8e8 0%, #d4d4d4 50%, #e0e0e0 100%);
+            border-radius: 50%;
+            z-index: -1;
+            opacity: 0.6;
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 220px;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            background: transparent;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 12px;
+            margin-bottom: 32px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .nav-section {
+            margin-bottom: 24px;
+        }
+
+        .nav-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0 12px;
+            margin-bottom: 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-card);
+        }
+
+        .nav-item.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .nav-item svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .nav-item.active svg {
+            stroke: white;
+        }
+
+        .team-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 4px;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 24px 32px;
+            overflow-y: auto;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .greeting {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-create {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-create:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .icon-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .icon-btn:hover {
+            background: var(--bg-card-hover);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr 280px;
+            grid-template-rows: auto auto auto;
+            gap: 20px;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .card-action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: transparent;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+
+        .card-action-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        /* Overall Information Card */
+        .overall-card {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        .big-stats {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .big-stat {
+            text-align: center;
+        }
+
+        .big-stat-number {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .big-stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-box-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .stat-box-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Weekly Progress Card */
+        .weekly-card {
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        .chart-legend {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .chart-container {
+            height: 120px;
+            position: relative;
+        }
+
+        .chart-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .chart-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+            padding: 0 8px;
+        }
+
+        .chart-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .chart-label.active {
+            background: var(--accent);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Month Progress Card */
+        .month-card {
+            grid-column: 3;
+            grid-row: 1;
+        }
+
+        .progress-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .progress-ring-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .progress-ring {
+            width: 100px;
+            height: 100px;
+            position: relative;
+        }
+
+        .progress-ring svg {
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring-bg {
+            fill: none;
+            stroke: rgba(0, 0, 0, 0.08);
+            stroke-width: 8;
+        }
+
+        .progress-ring-fill {
+            fill: none;
+            stroke: var(--accent);
+            stroke-width: 8;
+            stroke-linecap: round;
+            stroke-dasharray: 251.2;
+            stroke-dashoffset: calc(251.2 - (251.2 * var(--progress)) / 100);
+            transition: stroke-dashoffset 1s ease;
+        }
+
+        .progress-ring-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .progress-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .progress-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .download-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: rgba(0, 0, 0, 0.03);
+            border: none;
+            border-radius: 50px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            margin-top: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .download-btn:hover {
+            background: rgba(0, 0, 0, 0.08);
+        }
+
+        /* Month Goals Card */
+        .goals-card {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        .goal-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .goal-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .goal-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .goal-checkbox.checked {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .goal-checkbox.checked svg {
+            stroke: white;
+        }
+
+        /* Tasks Card */
+        .tasks-card {
+            grid-column: 2;
+            grid-row: 2;
+        }
+
+        .tasks-container {
+            display: flex;
+            gap: 16px;
+        }
+
+        .task-item {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            position: relative;
+        }
+
+        .task-menu-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+        }
+
+        .task-menu-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .task-icon {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .task-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .task-date {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .add-task-btn {
+            min-width: 140px;
+            background: transparent;
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .add-task-btn:hover {
+            border-color: var(--text-secondary);
+            color: var(--text-secondary);
+        }
+
+        /* Context Menu */
+        .context-menu {
+            position: absolute;
+            top: 40px;
+            right: 8px;
+            background: white;
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-lg);
+            padding: 8px 0;
+            min-width: 120px;
+            z-index: 100;
+            display: none;
+        }
+
+        .context-menu.active {
+            display: block;
+        }
+
+        .context-menu-item {
+            padding: 8px 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .context-menu-item:hover {
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        /* Open Archive Link */
+        .open-archive {
+            grid-column: 3;
+            grid-row: 2;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0 8px;
+        }
+
+        .open-archive:hover {
+            color: var(--text-primary);
+        }
+
+        /* Sync Manager */
+        .sync-manager-section {
+            grid-column: 1 / -1;
+            grid-row: 3;
+        }
+
+        .sync-controls {
+            display: flex;
+            gap: 16px;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: var(--radius-md);
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .control-group { display: flex; flex-direction: column; gap: 4px; }
+        .control-group label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .control-group select { padding: 10px 14px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 14px; min-width: 160px; }
+        .control-group select:focus { outline: none; border-color: var(--accent); }
+
+        .sync-btn {
+            padding: 10px 20px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-left: auto;
+        }
+        .sync-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+        .sync-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .clients-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        .clients-table th { padding: 12px; text-align: left; font-size: 11px; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border-color); }
+        .clients-table td { padding: 12px; border-bottom: 1px solid var(--border-color); font-size: 14px; }
+        .clients-table tr:hover td { background: rgba(0, 0, 0, 0.02); }
+
+        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 50px; font-size: 11px; font-weight: 500; }
+        .status-synced { background: rgba(34,197,94,0.1); color: var(--success); }
+        .status-outdated { background: rgba(245,158,11,0.1); color: var(--warning); }
+        .status-pending { background: rgba(6,182,212,0.1); color: #06b6d4; }
+
+        .client-checkbox { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
+        .client-name-cell { font-weight: 500; }
+        .client-repo-text { font-size: 12px; color: var(--text-muted); }
+
+        .toast { position: fixed; top: 24px; right: 24px; padding: 14px 20px; background: white; border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); display: none; z-index: 300; }
+        .toast.show { display: flex; }
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.error { border-left: 4px solid var(--error); }
+
+        /* Projects Section */
+        .projects-section {
+            grid-column: 1 / -1;
+            grid-row: 3;
+        }
+
+        .projects-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .sort-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sort-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--text-muted);
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 4px;
+        }
+
+        .view-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+        }
+
+        .view-btn.active {
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--text-primary);
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .project-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .project-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .project-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .project-refresh {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .project-refresh:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .project-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .status-dot.in-progress {
+            background: var(--warning);
+        }
+
+        .status-dot.completed {
+            background: var(--success);
+        }
+
+        .project-description {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .overall-card { grid-column: 1; grid-row: 1; }
+            .weekly-card { grid-column: 2; grid-row: 1; }
+            .month-card { grid-column: 1; grid-row: 2; }
+            .goals-card { grid-column: 2; grid-row: 2; }
+            .tasks-card { grid-column: 1 / -1; grid-row: 3; }
+            .open-archive { display: none; }
+            .projects-section { grid-column: 1 / -1; grid-row: 4; }
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                display: none;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .overall-card, .weekly-card, .month-card, 
+            .goals-card, .tasks-card, .projects-section {
+                grid-column: 1;
+                grid-row: auto;
+            }
+            
+            .projects-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .main-content {
+                padding: 16px;
+            }
+            
+            .projects-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tasks-container {
+                flex-direction: column;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.15s; }
+        .card:nth-child(3) { animation-delay: 0.2s; }
+        .card:nth-child(4) { animation-delay: 0.25s; }
+        .card:nth-child(5) { animation-delay: 0.3s; }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            z-index: 10000;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            max-width: 400px;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .toast.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        .toast.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        .toast.info {
+            background: linear-gradient(135deg, #7c3aed, #6366f1);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <svg class="logo-icon" viewBox="0 0 32 32" fill="none">
+                    <path d="M8 8L16 4L24 8V16L16 20L8 16V8Z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M8 16L16 20L24 16V24L16 28L8 24V16Z" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                <span class="logo-text">Logimax</span>
+            </div>
+
+            <nav class="nav-section">
+                <a href="index.html" class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/>
+                        <rect x="14" y="14" width="7" height="7" rx="1"/>
+                    </svg>
+                    Admin Dashboard
+                </a>
+                <a href="support-dashboard.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+                    </svg>
+                    Quick Sync
+                </a>
+                <a href="support-deploy.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                    </svg>
+                    Deployments
+                </a>
+                <a href="insights.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 20V10"/>
+                        <path d="M12 20V4"/>
+                        <path d="M6 20v-6"/>
+                    </svg>
+                    Insights
+                </a>
+                <a href="clients.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                        <path d="M14 2v6h6"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                    Clients
+                </a>
+            </nav>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Integrations</div>
+                <a class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+                    </svg>
+                    GitHub
+                </a>
+                <a class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/>
+                        <path d="M9 18c-4.51 2-5-2-7-2"/>
+                    </svg>
+                    Webhooks
+                </a>
+                <a class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    Add new plugin
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Teams</div>
+                <a class="nav-item">
+                    <span class="team-dot" style="background: #22c55e;"></span>
+                    LOGIMAX-CLIENTS
+                </a>
+                <a class="nav-item">
+                    <span class="team-dot" style="background: #3b82f6;"></span>
+                    Logimax-Technologies
+                </a>
+            </div>
+
+            <div class="sidebar-footer">
+                <a href="settings.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                    Settings
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <h1 class="greeting">Hi, <span id="user-display-name">User</span>!</h1>
+                <div class="header-actions">
+                    <button class="btn-create">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Create
+                    </button>
+                    <button class="icon-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                    </button>
+                    <button class="icon-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                    </button>
+                    <div class="avatar">LX</div>
+                </div>
+            </header>
+
+            <!-- Dashboard Grid -->
+            <div class="dashboard-grid">
+                <!-- Overall Information -->
+                <div class="card overall-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Overall Information</h3>
+                        <div class="card-actions">
+                            <button class="card-action-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                                    <polyline points="16 6 12 2 8 6"/>
+                                    <line x1="12" y1="2" x2="12" y2="15"/>
+                                </svg>
+                            </button>
+                            <button class="card-action-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="1"/>
+                                    <circle cx="19" cy="12" r="1"/>
+                                    <circle cx="5" cy="12" r="1"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="big-stats">
+                        <div class="big-stat">
+                            <div class="big-stat-number" id="totalDeployments">--</div>
+                            <div class="big-stat-label">Deploys done<br>this month</div>
+                        </div>
+                        <div class="big-stat">
+                            <div class="big-stat-number" id="successRate">--</div>
+                            <div class="big-stat-label">success<br>rate</div>
+                        </div>
+                    </div>
+                    <div class="stat-grid">
+                        <div class="stat-box">
+                            <div class="stat-box-number" id="totalClients">--</div>
+                            <div class="stat-box-label">Active Clients</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-box-number" id="avgTime">--</div>
+                            <div class="stat-box-label">Avg Time</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-box-number" id="weeklyTotal">--</div>
+                            <div class="stat-box-label">This Week</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weekly Progress -->
+                <div class="card weekly-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Weekly progress</h3>
+                        <button class="card-action-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                                <path d="M15 3h6v6"/>
+                                <path d="M10 14L21 3"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <span class="legend-dot" style="background: #1a1a1a;"></span>
+                            Deployments
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot" style="background: #d4d4d4;"></span>
+                            Syncs
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <svg class="chart-svg" viewBox="0 0 400 120" preserveAspectRatio="none">
+                            <!-- Grid lines -->
+                            <line x1="0" y1="30" x2="400" y2="30" stroke="#f0f0f0" stroke-width="1"/>
+                            <line x1="0" y1="60" x2="400" y2="60" stroke="#f0f0f0" stroke-width="1"/>
+                            <line x1="0" y1="90" x2="400" y2="90" stroke="#f0f0f0" stroke-width="1"/>
+                            
+                            <!-- Deployments line (dynamic) -->
+                            <path id="weekly-deployments-line" d="M0,90 C50,90 100,90 150,90 C200,90 250,90 300,90 C350,90 400,90 400,90" 
+                                  fill="none" stroke="#1a1a1a" stroke-width="2"/>
+                            
+                            <!-- Syncs line (dynamic) -->
+                            <path id="weekly-syncs-line" d="M0,100 C50,100 100,100 150,100 C200,100 250,100 300,100 C350,100 400,100 400,100" 
+                                  fill="none" stroke="#d4d4d4" stroke-width="2"/>
+                            
+                            <!-- Current day dot -->
+                            <circle id="weekly-current-dot" cx="320" cy="90" r="4" fill="#1a1a1a"/>
+                        </svg>
+                    </div>
+                    <div class="chart-labels" id="weekly-day-labels">
+                        <span class="chart-label">M</span>
+                        <span class="chart-label">T</span>
+                        <span class="chart-label">W</span>
+                        <span class="chart-label">T</span>
+                        <span class="chart-label">F</span>
+                        <span class="chart-label">S</span>
+                        <span class="chart-label">S</span>
+                    </div>
+                </div>
+
+                <!-- Month Progress -->
+                <div class="card month-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Month progress</h3>
+                        <button class="card-action-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                                <path d="M15 3h6v6"/>
+                                <path d="M10 14L21 3"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="progress-subtitle" id="month-progress-subtitle">Calculating...</p>
+                    <div class="progress-ring-container">
+                        <div class="progress-ring" id="month-progress-ring" style="--progress: 0">
+                            <svg width="100" height="100" viewBox="0 0 100 100">
+                                <circle class="progress-ring-bg" cx="50" cy="50" r="40"/>
+                                <circle class="progress-ring-fill" cx="50" cy="50" r="40"/>
+                            </svg>
+                            <span class="progress-ring-text" id="month-progress-text">0%</span>
+                        </div>
+                        <div class="progress-legend">
+                            <div class="progress-legend-item">
+                                <span class="legend-dot" style="background: #1a1a1a;"></span>
+                                Deployments
+                            </div>
+                            <div class="progress-legend-item">
+                                <span class="legend-dot" style="background: #666;"></span>
+                                Syncs
+                            </div>
+                            <div class="progress-legend-item">
+                                <span class="legend-dot" style="background: #ccc;"></span>
+                                Clients
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px; margin-top: 16px;">
+                        <button class="icon-btn" style="width: 36px; height: 36px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                                <polyline points="16 6 12 2 8 6"/>
+                                <line x1="12" y1="2" x2="12" y2="15"/>
+                            </svg>
+                        </button>
+                        <button class="download-btn">
+                            Download Report
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Month Goals (Dynamic) -->
+                <div class="card goals-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Month goals:</h3>
+                        <div class="card-actions">
+                            <button class="card-action-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                            </button>
+                            <button class="card-action-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="8" x2="12" y2="16"/>
+                                    <line x1="8" y1="12" x2="16" y2="12"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="goal-list" id="goals-list">
+                        <div style="text-align: center; padding: 20px; color: var(--text-muted);">Loading goals...</div>
+                    </div>
+                </div>
+
+                <!-- Tasks in Process (Dynamic) -->
+                <div class="card tasks-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Task In process (<span id="tasks-count">0</span>)</h3>
+                    </div>
+                    <div class="tasks-container" id="tasks-container">
+                        <div style="text-align: center; padding: 30px; color: var(--text-muted);">Loading tasks...</div>
+                    </div>
+                </div>
+
+                <!-- Open Archive Link -->
+                <div class="open-archive">
+                    Open archive
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"/>
+                    </svg>
+                </div>
+
+                <!-- Sync Manager Section -->
+                <div class="card sync-manager-section">
+                    <div class="card-header">
+                        <h3 class="card-title">Sync Manager</h3>
+                        <div class="card-actions">
+                            <button class="card-action-btn" onclick="loadSyncClients()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0115.17-3.36L23 10M1 14l4.32 4.36A9 9 0 0020.49 15"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="sync-controls">
+                        <div class="control-group">
+                            <label>Source Branch</label>
+                            <select id="source-branch">
+                                <option value="">Loading branches...</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label>Target Branch</label>
+                            <select id="target-branch">
+                                <option value="main">main</option>
+                                <option value="staging">staging</option>
+                                <option value="STAGING">STAGING</option>
+                                <option value="production">production</option>
+                                <option value="master">master</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="auto-merge" checked style="accent-color: var(--accent); width: 16px; height: 16px;">
+                                Auto-merge
+                            </label>
+                        </div>
+                        <button class="sync-btn" id="sync-btn" onclick="syncSelectedClients()" disabled>
+                            Sync Selected (<span id="selected-count">0</span>)
+                        </button>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                            <input type="checkbox" id="select-all" class="client-checkbox" onchange="toggleSelectAll()">
+                            Select All
+                        </label>
+                        <input type="text" id="client-search" placeholder="Search clients..." style="padding: 8px 14px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 14px; width: 200px;" oninput="filterSyncClients()">
+                    </div>
+                    <div style="max-height: 340px; overflow-y: auto;">
+                        <table class="clients-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;"></th>
+                                    <th>Client</th>
+                                    <th>Status</th>
+                                    <th>Last Sync</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sync-clients-tbody">
+                                <tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--text-muted);">Loading clients...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Sync History Section -->
+                <div class="card" style="grid-column: 1 / -1; margin-top: 16px;">
+                    <div class="card-header">
+                        <h3 class="card-title">Sync History</h3>
+                        <div class="card-actions">
+                            <select id="history-status-filter" onchange="loadSyncHistory()" style="padding: 6px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 13px;">
+                                <option value="">All</option>
+                                <option value="success">✓ Success</option>
+                                <option value="failed">✗ Failed</option>
+                                <option value="conflict">⚠ Conflict</option>
+                                <option value="pending">◐ Pending</option>
+                            </select>
+                            <button class="card-action-btn" onclick="loadSyncHistory()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0115.17-3.36L23 10M1 14l4.32 4.36A9 9 0 0020.49 15"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div style="max-height: 280px; overflow-y: auto;">
+                        <table class="clients-table">
+                            <thead>
+                                <tr>
+                                    <th>Client</th>
+                                    <th>Branch</th>
+                                    <th>Status</th>
+                                    <th>Time</th>
+                                    <th>PR</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sync-history-tbody">
+                                <tr><td colspan="5" style="text-align: center; padding: 30px; color: var(--text-muted);">Loading history...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Last Projects -->
+                <div class="projects-section">
+                    <div class="projects-header">
+                        <h2 class="section-title">Last Deployments</h2>
+                        <div class="sort-controls">
+                            <button class="sort-btn">
+                                Sort by
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"/>
+                                </svg>
+                            </button>
+                            <div class="view-toggle">
+                                <button class="view-btn active">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="7" height="7"/>
+                                        <rect x="14" y="3" width="7" height="7"/>
+                                        <rect x="3" y="14" width="7" height="7"/>
+                                        <rect x="14" y="14" width="7" height="7"/>
+                                    </svg>
+                                </button>
+                                <button class="view-btn">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="8" y1="6" x2="21" y2="6"/>
+                                        <line x1="8" y1="12" x2="21" y2="12"/>
+                                        <line x1="8" y1="18" x2="21" y2="18"/>
+                                        <line x1="3" y1="6" x2="3.01" y2="6"/>
+                                        <line x1="3" y1="12" x2="3.01" y2="12"/>
+                                        <line x1="3" y1="18" x2="3.01" y2="18"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="projects-grid">
+                        <div class="project-card">
+                            <div class="project-header">
+                                <h4 class="project-title">SR Jewellery Deploy</h4>
+                                <button class="project-refresh">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M23 4v6h-6"/>
+                                        <path d="M1 20v-6h6"/>
+                                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="project-status">
+                                <span class="status-dot in-progress"></span>
+                                In progress
+                            </div>
+                            <p class="project-description">Done: Deploy new version for SR Jewellery; Update database; Configure webhooks...</p>
+                        </div>
+                        <div class="project-card">
+                            <div class="project-header">
+                                <h4 class="project-title">NSK Jewels Sync</h4>
+                                <button class="project-refresh">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M23 4v6h-6"/>
+                                        <path d="M1 20v-6h6"/>
+                                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="project-status">
+                                <span class="status-dot completed"></span>
+                                Completed
+                            </div>
+                            <p class="project-description">Synced Production branch to staging environment successfully.</p>
+                        </div>
+                        <div class="project-card">
+                            <div class="project-header">
+                                <h4 class="project-title">Balaji Migration</h4>
+                                <button class="project-refresh">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M23 4v6h-6"/>
+                                        <path d="M1 20v-6h6"/>
+                                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="project-status">
+                                <span class="status-dot in-progress"></span>
+                                In progress
+                            </div>
+                            <p class="project-description">Migration to new version 2025 in progress...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Goal checkbox toggle
+        document.querySelectorAll('.goal-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('click', () => {
+                checkbox.classList.toggle('checked');
+                if (checkbox.classList.contains('checked') && !checkbox.querySelector('svg')) {
+                    checkbox.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>`;
+                } else if (!checkbox.classList.contains('checked')) {
+                    checkbox.innerHTML = '';
+                }
+            });
+        });
+
+        // View toggle
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        // Nav items
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                if (!item.closest('.sidebar-footer')) {
+                    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                }
+            });
+        });
+
+        // Animate numbers on load
+        function animateValue(element, start, end, duration) {
+            const startTime = performance.now();
+            const update = (currentTime) => {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const current = Math.floor(start + (end - start) * progress);
+                element.textContent = current;
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                }
+            };
+            requestAnimationFrame(update);
+        }
+
+        // ========== Role-Based UI Control ==========
+        function applyRoleBasedUI() {
+            const user = window.cicdAuth?.getUser();
+            const role = user?.role || 'viewer';
+            const displayName = user?.display_name || user?.username || 'User';
+            
+            // Update greeting with actual user name
+            const nameEl = document.getElementById('user-display-name');
+            if (nameEl) nameEl.textContent = displayName;
+            
+            // Update avatar initials
+            const avatarEl = document.querySelector('.avatar');
+            if (avatarEl && displayName) {
+                const initials = displayName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+                avatarEl.textContent = initials || 'U';
+            }
+            
+            // Role-based visibility - hide elements based on role
+            const settingsLink = document.querySelector('a[href="settings.html"]');
+            if (settingsLink && role !== 'admin') {
+                settingsLink.style.display = 'none';
+            }
+            
+            // Non-admins get redirected to support dashboard as their home page
+            // but they can still view index.html if they land here
+            
+            // Show/hide admin-only sections
+            document.querySelectorAll('.admin-only').forEach(el => {
+                el.style.display = role === 'admin' ? '' : 'none';
+            });
+            
+            // Disable sync buttons for viewers
+            if (role === 'viewer') {
+                const syncBtn = document.getElementById('sync-btn');
+                if (syncBtn) {
+                    syncBtn.disabled = true;
+                    syncBtn.title = 'Viewers cannot trigger syncs';
+                }
+            }
+        }
+        
+        // ========== Load Stats from API ==========
+        async function loadDashboardStats() {
+            try {
+                // Fetch overview stats
+                const response = await fetch('api/stats.php?action=overview');
+                const data = await response.json();
+                
+                if (data.success && data.stats) {
+                    const stats = data.stats;
+                    
+                    // Animate the main stats
+                    animateValue(document.getElementById('totalDeployments'), 0, stats.total_deployments?.raw || 0, 1000);
+                    
+                    // Success rate (display as percentage text)
+                    const successRateEl = document.getElementById('successRate');
+                    if (successRateEl) {
+                        successRateEl.textContent = stats.success_rate?.value || '0%';
+                    }
+                    
+                    // Active clients
+                    animateValue(document.getElementById('totalClients'), 0, stats.active_clients?.raw || 0, 1200);
+                    
+                    // Avg time (display as text)
+                    const avgTimeEl = document.getElementById('avgTime');
+                    if (avgTimeEl) {
+                        avgTimeEl.textContent = stats.avg_time?.value || '0s';
+                    }
+                    
+                    // Load dynamic goals based on stats
+                    loadGoals(stats);
+                }
+                
+                // Fetch weekly summary for "This Week" stat
+                const weeklyRes = await fetch('api/stats.php?action=weekly');
+                const weeklyData = await weeklyRes.json();
+                
+                if (weeklyData.success && weeklyData.summary) {
+                    animateValue(document.getElementById('weeklyTotal'), 0, weeklyData.summary.total || 0, 900);
+                }
+                
+                // Load weekly chart
+                loadWeeklyChart();
+                
+                // Load month progress
+                loadMonthProgress();
+                
+                // Load active tasks
+                loadActiveTasks();
+                
+            } catch (e) {
+                console.warn('Failed to load stats:', e);
+                // Show fallback values
+                document.getElementById('totalDeployments').textContent = '--';
+                document.getElementById('successRate').textContent = '--';
+                document.getElementById('totalClients').textContent = '--';
+                document.getElementById('avgTime').textContent = '--';
+                document.getElementById('weeklyTotal').textContent = '--';
+            }
+        }
+        
+        // ========== Weekly Chart ==========
+        async function loadWeeklyChart() {
+            try {
+                const response = await fetch('api/stats.php?action=sparklines&days=7');
+                const data = await response.json();
+                
+                if (data.success && data.sparklines) {
+                    const deployments = data.sparklines.deployments || [0, 0, 0, 0, 0, 0, 0];
+                    const successRates = data.sparklines.success_rate || [0, 0, 0, 0, 0, 0, 0];
+                    
+                    // Convert data to SVG path
+                    const maxVal = Math.max(...deployments, 1);
+                    const deploymentsPath = generateSVGPath(deployments, maxVal, 100);
+                    const syncsPath = generateSVGPath(successRates, 100, 110); // Success rate as "syncs"
+                    
+                    document.getElementById('weekly-deployments-line').setAttribute('d', deploymentsPath);
+                    document.getElementById('weekly-syncs-line').setAttribute('d', syncsPath);
+                    
+                    // Update current day dot position
+                    const todayIndex = 6; // Last position
+                    const todayY = 110 - (deployments[todayIndex] / maxVal * 90);
+                    const todayX = (todayIndex / 6) * 400;
+                    document.getElementById('weekly-current-dot').setAttribute('cx', todayX);
+                    document.getElementById('weekly-current-dot').setAttribute('cy', todayY);
+                    
+                    // Highlight current day in labels
+                    const dayOfWeek = new Date().getDay(); // 0 = Sunday
+                    const dayLabels = document.querySelectorAll('#weekly-day-labels .chart-label');
+                    dayLabels.forEach((label, i) => {
+                        const adjustedDay = (i + 1) % 7; // M=1, T=2, ... S=0
+                        if (adjustedDay === dayOfWeek) {
+                            label.classList.add('active');
+                        } else {
+                            label.classList.remove('active');
+                        }
+                    });
+                }
+            } catch (e) {
+                console.warn('Failed to load weekly chart:', e);
+            }
+        }
+        
+        function generateSVGPath(data, maxValue, baseline) {
+            if (!data || data.length === 0) return `M0,${baseline} L400,${baseline}`;
+            
+            const points = data.map((val, i) => {
+                const x = (i / (data.length - 1)) * 400;
+                const y = baseline - (val / maxValue * 80);
+                return { x, y };
+            });
+            
+            // Create smooth curve
+            let path = `M${points[0].x},${points[0].y}`;
+            for (let i = 1; i < points.length; i++) {
+                const prev = points[i - 1];
+                const curr = points[i];
+                const cpx = (prev.x + curr.x) / 2;
+                path += ` C${cpx},${prev.y} ${cpx},${curr.y} ${curr.x},${curr.y}`;
+            }
+            return path;
+        }
+        
+        // ========== Month Progress ==========
+        async function loadMonthProgress() {
+            try {
+                const response = await fetch('api/stats.php?action=overview&days=30');
+                const data = await response.json();
+                
+                if (data.success && data.stats) {
+                    const current = data.stats.total_deployments?.raw || 0;
+                    const change = data.stats.total_deployments?.change || 0;
+                    
+                    // Calculate progress percentage (goal: 50 deployments per month)
+                    const monthlyGoal = 50;
+                    const progressPct = Math.min(Math.round((current / monthlyGoal) * 100), 200);
+                    
+                    // Update the ring
+                    const ring = document.getElementById('month-progress-ring');
+                    if (ring) {
+                        ring.style.setProperty('--progress', progressPct);
+                    }
+                    
+                    document.getElementById('month-progress-text').textContent = progressPct + '%';
+                    
+                    // Update subtitle
+                    const subtitle = document.getElementById('month-progress-subtitle');
+                    if (change >= 0) {
+                        subtitle.textContent = `+${change}% compared to last month`;
+                    } else {
+                        subtitle.textContent = `${change}% compared to last month`;
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to load month progress:', e);
+                document.getElementById('month-progress-text').textContent = '0%';
+                document.getElementById('month-progress-subtitle').textContent = 'No data available';
+            }
+        }
+        
+        // ========== Dynamic Goals ==========
+        function loadGoals(stats) {
+            const goalsContainer = document.getElementById('goals-list');
+            if (!goalsContainer) return;
+            
+            const totalDeploys = stats.total_deployments?.raw || 0;
+            const successRate = parseFloat(stats.success_rate?.value) || 0;
+            const activeClients = stats.active_clients?.raw || 0;
+            const avgTime = parseFloat(stats.avg_time?.value) || 0;
+            
+            const goals = [
+                { text: `${totalDeploys}/50 monthly deployments`, done: totalDeploys >= 50 },
+                { text: `${successRate}% success rate (goal: 95%)`, done: successRate >= 95 },
+                { text: `${activeClients} active clients`, done: activeClients >= 5 },
+                { text: `Avg deploy time: ${avgTime}s`, done: avgTime > 0 && avgTime < 120 }
+            ];
+            
+            goalsContainer.innerHTML = goals.map(goal => `
+                <div class="goal-item">
+                    <div class="goal-checkbox ${goal.done ? 'checked' : ''}">
+                        ${goal.done ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+                    </div>
+                    ${goal.text}
+                </div>
+            `).join('');
+        }
+        
+        // ========== Active Tasks ==========
+        async function loadActiveTasks() {
+            try {
+                const response = await fetch('api/deployment-history.php?limit=5&status=running,pending');
+                const data = await response.json();
+                
+                const container = document.getElementById('tasks-container');
+                const countEl = document.getElementById('tasks-count');
+                
+                const tasks = data.deployments || [];
+                countEl.textContent = tasks.length;
+                
+                if (tasks.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 30px; color: var(--text-muted);">
+                            No active tasks
+                        </div>
+                        <button class="add-task-btn" onclick="window.location.href='support-deploy.html'">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            New deployment
+                        </button>
+                    `;
+                } else {
+                    container.innerHTML = tasks.map(task => `
+                        <div class="task-item">
+                            <button class="task-menu-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
+                                </svg>
+                            </button>
+                            <div class="task-icon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                </svg>
+                            </div>
+                            <h4 class="task-title">${task.client_name || task.client_id} - ${task.environment || 'prod'}</h4>
+                            <span class="task-date">${formatTaskDate(task.started_at)}</span>
+                        </div>
+                    `).join('') + `
+                        <button class="add-task-btn" onclick="window.location.href='support-deploy.html'">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Add task
+                        </button>
+                    `;
+                }
+            } catch (e) {
+                console.warn('Failed to load active tasks:', e);
+                document.getElementById('tasks-container').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">Failed to load tasks</div>';
+            }
+        }
+        
+        function formatTaskDate(dateStr) {
+            if (!dateStr) return 'Unknown';
+            const d = new Date(dateStr);
+            const today = new Date();
+            if (d.toDateString() === today.toDateString()) return 'Today';
+            return d.toLocaleDateString();
+        }
+        
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            // Wait for auth to complete
+            setTimeout(() => {
+                applyRoleBasedUI();
+                loadDashboardStats();
+            }, 100);
+            
+            // Load branches and sync clients
+            loadBranches();
+            loadSyncClients();
+        });
+        
+        // Also listen for auth ready event
+        window.addEventListener('cicd:auth-ready', (e) => {
+            applyRoleBasedUI();
+        });
+
+        // ========== Sync Manager ==========
+        let syncClients = [];
+        let selectedSyncClients = new Set();
+
+        // Load source branches from GitHub API
+        async function loadBranches() {
+            const select = document.getElementById('source-branch');
+            try {
+                const response = await fetch('api/version-tracker.php?action=branches');
+                const data = await response.json();
+                if (data.success && data.branches && data.branches.length > 0) {
+                    select.innerHTML = data.branches.map(branch => 
+                        `<option value="${branch}" ${branch === 'Production' ? 'selected' : ''}>${branch}</option>`
+                    ).join('');
+                } else {
+                    // Fallback to default branches
+                    select.innerHTML = `
+                        <option value="Production" selected>Production</option>
+                        <option value="QA">QA</option>
+                        <option value="support">Support</option>
+                    `;
+                }
+            } catch (e) {
+                // Fallback on error
+                select.innerHTML = `
+                    <option value="Production" selected>Production</option>
+                    <option value="QA">QA</option>
+                    <option value="support">Support</option>
+                `;
+            }
+        }
+
+        async function loadSyncClients() {
+            try {
+                const response = await fetch('api/version-tracker.php?action=status');
+                const data = await response.json();
+                if (data.success) {
+                    syncClients = data.clients;
+                    renderSyncClients();
+                } else {
+                    document.getElementById('sync-clients-tbody').innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--text-muted);">Failed to load clients</td></tr>';
+                }
+            } catch (e) {
+                document.getElementById('sync-clients-tbody').innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--text-muted);">Connection error</td></tr>';
+            }
+        }
+
+        function renderSyncClients() {
+            const tbody = document.getElementById('sync-clients-tbody');
+            const search = (document.getElementById('client-search')?.value || '').toLowerCase();
+            let filtered = search ? syncClients.filter(c => c.name.toLowerCase().includes(search) || c.repo.toLowerCase().includes(search)) : syncClients;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--text-muted);">No clients found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.slice(0, 50).map(client => {
+                const isSelected = selectedSyncClients.has(client.repo);
+                const statusClass = client.sync_status === 'synced' ? 'status-synced' : client.sync_status === 'pending_merge' ? 'status-pending' : 'status-outdated';
+                const statusLabel = client.sync_status === 'synced' ? '✓ Synced' : client.sync_status === 'pending_merge' ? '◐ Pending' : '⚠ Outdated';
+                const lastSync = client.last_sync_date ? formatSyncDate(client.last_sync_date) : 'Never';
+                return `<tr><td><input type="checkbox" class="client-checkbox sync-client-cb" data-repo="${client.repo}" ${isSelected ? 'checked' : ''} onchange="toggleSyncClient('${client.repo}')"></td><td><div class="client-name-cell">${client.name}</div><div class="client-repo-text">${client.repo}</div></td><td><span class="status-badge ${statusClass}">${statusLabel}</span></td><td style="color: var(--text-muted);">${lastSync}</td></tr>`;
+            }).join('');
+        }
+
+        function formatSyncDate(dateStr) {
+            const d = new Date(dateStr);
+            const now = new Date();
+            const diff = Math.floor((now - d) / (1000 * 60 * 60 * 24));
+            if (diff === 0) return 'Today';
+            if (diff === 1) return 'Yesterday';
+            if (diff < 7) return diff + ' days ago';
+            return d.toLocaleDateString();
+        }
+
+        function toggleSyncClient(repo) {
+            if (selectedSyncClients.has(repo)) selectedSyncClients.delete(repo);
+            else selectedSyncClients.add(repo);
+            updateSyncCount();
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('select-all').checked;
+            selectedSyncClients.clear();
+            document.querySelectorAll('.sync-client-cb').forEach(cb => {
+                cb.checked = selectAll;
+                if (selectAll) selectedSyncClients.add(cb.dataset.repo);
+            });
+            updateSyncCount();
+        }
+
+        function updateSyncCount() {
+            const count = selectedSyncClients.size;
+            document.getElementById('selected-count').textContent = count;
+            document.getElementById('sync-btn').disabled = count === 0;
+        }
+
+        function filterSyncClients() { renderSyncClients(); }
+
+        async function syncSelectedClients() {
+            if (selectedSyncClients.size === 0) return;
+            if (selectedSyncClients.size > 10) { alert('Maximum 10 clients per batch'); return; }
+
+            const sourceBranch = document.getElementById('source-branch').value;
+            const targetBranch = document.getElementById('target-branch').value;
+            const autoMerge = document.getElementById('auto-merge').checked;
+
+            document.getElementById('sync-btn').disabled = true;
+            document.getElementById('sync-btn').textContent = 'Syncing...';
+
+            try {
+                const response = await fetch('api/trigger-sync.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        clients: Array.from(selectedSyncClients),
+                        source_branch: sourceBranch,
+                        target_branch: targetBranch,
+                        auto_merge: autoMerge
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showSyncToast('Sync triggered for ' + selectedSyncClients.size + ' clients!', 'success');
+                    selectedSyncClients.clear();
+                    updateSyncCount();
+                    document.getElementById('select-all').checked = false;
+                    document.querySelectorAll('.sync-client-cb').forEach(cb => cb.checked = false);
+                    if (data.actions_url) {
+                        setTimeout(() => {
+                            if (confirm('View sync progress on GitHub Actions?')) window.open(data.actions_url, '_blank');
+                        }, 1000);
+                    }
+                } else {
+                    showSyncToast(data.error || 'Sync failed', 'error');
+                }
+            } catch (e) {
+                showSyncToast('Connection error', 'error');
+            } finally {
+                document.getElementById('sync-btn').disabled = selectedSyncClients.size === 0;
+                document.getElementById('sync-btn').innerHTML = 'Sync Selected (<span id="selected-count">' + selectedSyncClients.size + '</span>)';
+            }
+        }
+
+        function showSyncToast(message, type) {
+            let toast = document.getElementById('sync-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'sync-toast';
+                toast.className = 'toast';
+                toast.innerHTML = '<span id="sync-toast-msg"></span>';
+                document.body.appendChild(toast);
+            }
+            document.getElementById('sync-toast-msg').textContent = message;
+            toast.className = 'toast show ' + type;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // ========== Sync History ==========
+        async function loadSyncHistory() {
+            const statusFilter = document.getElementById('history-status-filter')?.value || '';
+            const url = statusFilter 
+                ? `api/sync-history.php?action=list&limit=30&status=${statusFilter}`
+                : 'api/sync-history.php?action=list&limit=30';
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.success && data.history) {
+                    renderSyncHistory(data.history);
+                } else {
+                    document.getElementById('sync-history-tbody').innerHTML = 
+                        '<tr><td colspan="5" style="text-align: center; padding: 30px; color: var(--text-muted);">No history found</td></tr>';
+                }
+            } catch (e) {
+                document.getElementById('sync-history-tbody').innerHTML = 
+                    '<tr><td colspan="5" style="text-align: center; padding: 30px; color: var(--text-muted);">Failed to load history</td></tr>';
+            }
+        }
+
+        function renderSyncHistory(history) {
+            const tbody = document.getElementById('sync-history-tbody');
+            if (!history.length) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 30px; color: var(--text-muted);">No sync history yet</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = history.map(item => {
+                const statusClass = item.status === 'success' ? 'status-synced' 
+                    : item.status === 'conflict' ? 'status-outdated' 
+                    : item.status === 'pending' || item.status === 'syncing' ? 'status-pending' 
+                    : 'status-outdated';
+                const statusLabel = item.status === 'success' ? '✓ Success' 
+                    : item.status === 'conflict' ? '⚠ Conflict' 
+                    : item.status === 'pending' ? '◐ Pending'
+                    : item.status === 'syncing' ? '⏳ Syncing'
+                    : '✗ Failed';
+                const time = formatSyncDate(item.created_at);
+                const prLink = item.pr_url 
+                    ? `<a href="${item.pr_url}" target="_blank" style="color: var(--accent);">#${item.pr_number}</a>` 
+                    : '-';
+                
+                return `<tr>
+                    <td><div class="client-name-cell">${item.client_name || item.client_id}</div></td>
+                    <td style="color: var(--text-muted);">${item.source_branch} → ${item.target_branch}</td>
+                    <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+                    <td style="color: var(--text-muted);">${time}</td>
+                    <td>${prLink}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        // Load history on page load
+        window.addEventListener('load', () => {
+            setTimeout(loadSyncHistory, 500);
+        });
+
+    </script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

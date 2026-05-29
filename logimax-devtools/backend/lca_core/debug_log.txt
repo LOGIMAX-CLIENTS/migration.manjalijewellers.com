@@ -1,0 +1,8 @@
+Mapping Modules using index: lca_index.json
+[DEBUG] Total Functions mapped: 6137
+[DEBUG] Total Calls processed: 53916
+[DEBUG] Modules found: 0
++-------------------------+
+|  Module Coupling Report |
++- Architectural Dependen-+
+No module dependencies found.

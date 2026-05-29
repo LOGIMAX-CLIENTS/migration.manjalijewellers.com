@@ -1,0 +1,15 @@
+# Business Rules: Retail Purchase
+
+## Vendor Management
+-   **Concept**: Vendors are managed as "Karigars".
+-   **Validation**: A generic Karigar must have `karigar_for` set to correct Supplier type (e.g., 'Jewel Supplier') to appear in Purchase lookups.
+-   **Tax**: Purchases from Unregistered Dealers (URD) vs Registered Dealers (RD) trigger different tax calculations (TDS/TCS).
+
+## Purchase Order
+-   **Ref No**: Generated based on Financial Year. Format: `[FinYear]-[Sequence]`.
+-   **Date Range**: PO Date cannot be in a closed financial year.
+-   **Weight validation**: `Net Weight` + `Loss` + `Stone Wt` should approx match `Gross Weight`.
+
+## Stock Updates
+-   **Approval Required**: Purchase Entries usually require an "Approval" step (`is_approved=1`) before they update the main Stock Master (`ret_stock_master`).
+-   **Suspense Stock**: Some items enter a "Suspense Stock" state (`is_suspense_stock=1`) pending QC or Final Verification.

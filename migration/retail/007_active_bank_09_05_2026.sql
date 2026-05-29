@@ -1,0 +1,3 @@
+ALTER TABLE bank
+ADD COLUMN active_bank TINYINT(1) NOT NULL DEFAULT 1
+AFTER bank_name;

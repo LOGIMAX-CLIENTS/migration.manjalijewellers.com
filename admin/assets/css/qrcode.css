@@ -1,0 +1,37 @@
+.PDF_receipt_thermal *{
+
+font-family:sans-serif;
+
+}
+
+
+
+.PDF_receipt_thermal .meta th { font-weight: 600; text-align: left !important; } 
+  
+.plugin {
+	margin-top:-45px !important;
+	margin-left: -47.5px! important;
+    height: 20mm !important;
+    position: fixed;  
+    z-index: 1;
+    border-radius: 4px;
+	font-size:2.8px;
+}
+ .meta{
+		margin-top:-2px !important;
+		width:120px !important;
+		font-size:1.5px !important;
+	} 
+	
+   .cus_name th {
+	   
+	   width:18% !important;
+	   
+	   
+   }  
+ .pro_id td{
+ 	padding-top: -2px !important;	
+ }
+ .net_wt td{
+ 	padding-top: -2px !important;	
+ }

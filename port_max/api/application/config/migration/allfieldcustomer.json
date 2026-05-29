@@ -1,0 +1,223 @@
+{
+    "entity": "customer",
+    "validation": {
+      "required_file_name_pattern": "customer*.ods",
+      "required_sheet_name": "port_customer"
+    },
+    "file_path" : "uploads/customer_data.xlsx",
+    "migrations": [
+      {
+        "destination_table": "customer",
+        "primary_key": "id_customer",
+        "mappings": {
+          "lastname": {
+            "source_column": "last_name",
+            "validations": { "type": "string", "max_length": 10, "required": true }
+          },
+          "firstname": {
+            "source_column": "first_name",
+            "validations": { "type": "string", "max_length": 50, "required": true }
+          },
+          "id_branch": {
+            "lookup": {
+              "table": "branch",
+              "source_column": "id_branch",
+              "match_column": "short_name",
+              "return_column": "id_branch",
+              "create_if_missing": false
+            },
+            "validations": { "type": "string", "max_length": 100, "required": true }
+          },
+          "id_village": {
+            "lookup": {
+              "table": "village",
+              "source_column": "area_name",
+              "match_column": "village_name",
+              "return_column": "id_village",
+              "create_if_missing": true
+            },
+            "validations": { "type": "string", "max_length": 100, "required": true }
+          },
+          "date_of_birth": {
+            "source_column": "date_of_birth",
+            "validations": { "type": "date", "format": "YYYY-MM-DD", "required": false }
+          },
+          "date_of_wed": {
+            "source_column": "date_of_wed",
+            "validations": { "type": "date", "format": "YYYY-MM-DD", "required": true }
+          },
+          "gender": {
+            "source_column": "gender",
+            "validations": { "type": "string", "max_length": 20, "required": true }
+          },
+          "mobile": {
+            "source_column": "mobile",
+            "validations": { "type": "numeric", "length": 10, "required": true }
+          },
+          "phone": {
+            "source_column": "phone",
+            "validations": { "type": "string", "max_length": 30, "required": true }
+          },
+          "email": {
+            "source_column": "email",
+            "validations": { "type": "email", "max_length": 150, "required": false }
+          },
+          "nominee_name": {
+            "source_column": "nominee_name",
+            "validations": { "type": "string", "max_length": 100, "required": true }
+          },
+          "nominee_relationship": {
+            "source_column": "nominee_relationship",
+            "validations": { "type": "string", "max_length": 100, "required": true }
+          },
+          "nominee_mobile": {
+            "source_column": "nominee_mobile",
+            "validations": { "type": "string", "max_length": 100, "required": true }
+          },
+          "pan": {
+            "source_column": "pan_number",
+            "validations": { "type": "string", "max_length": 100, "required": true }
+          },
+          "voterid": {
+            "source_column": "voterid_number",
+            "validations": { "type": "string", "max_length": 100, "required": true }
+          },
+          "rationcard": {
+            "source_column": "rationcard_number",
+            "validations": { "type": "string", "max_length": 100, "required": true }
+          },
+          "comments": {
+            "source_column": "comments",
+            "validations": { "type": "string", "max_length": 100, "required": true }
+          },
+          "passwd": {
+            "source_column": "passwd",
+            "validations": { "type": "string", "max_length": 100, "required": true }
+          },
+          "date_add": {
+            "source_column": "date_of_registration",
+            "validations": { "type": "date", "format": "YYYY-MM-DD", "required": false }
+          },
+          "id_profession": {
+            "lookup": {
+              "table": "profession",
+              "source_column": "profession",
+              "match_column": "name",
+              "return_column": "id_profession",
+              "create_if_missing": true
+            },
+            "validations": { "type": "string", "max_length": 100, "required": true }
+          },
+          "gst_number": {
+            "source_column": "gst_number",
+            "validations": { "type": "string", "max_length": 100, "required": true }
+          },
+          "religion": {
+            "source_column": "religion",
+            "validations": { "type": "string", "max_length": 100, "required": true }
+          },
+          "cus_type": {
+            "source_column": "cus_type",
+            "validations": { "type": "string", "max_length": 100, "required": true }
+          },
+          "aadharid": {
+            "source_column": "aadharid_number",
+            "validations": { "type": "string", "max_length": 100, "required": true }
+          },
+          "driving_license_no": {
+            "source_column": "driving_license_no",
+            "validations": { "type": "string", "max_length": 100, "required": true }
+          },
+          "passport_no": {
+            "source_column": "passport_no",
+            "validations": { "type": "string", "max_length": 100, "required": true }
+          },
+          "nominee_address1": {
+            "source_column": "nominee_address1",
+            "validations": { "type": "string", "max_length": 100, "required": true }
+          },
+          "nominee_address2": {
+            "source_column": "nominee_address2",
+            "validations": { "type": "string", "max_length": 100, "required": true }
+          },
+          "pin_no": {
+            "source_column": "mpin_no",
+            "validations": { "type": "string", "max_length": 100, "required": true }
+          },
+          "nominee_pan": {
+            "source_column": "nominee_pan",
+            "validations": { "type": "string", "max_length": 100, "required": true }
+          },
+          "marital_status": {
+            "source_column": "marital_status",
+            "validations": { "type": "string", "max_length": 100, "required": true }
+          },
+          "languages_known": {
+            "lookup": {
+              "table": "languages",
+              "source_column": "languages_known",
+              "match_column": "name",
+              "return_column": "id_language",
+              "create_if_missing": false
+            },
+            "validations": { "type": "string", "max_length": 100, "required": true }
+          }
+        },
+        "children": [
+          {
+            "destination_table": "address",
+            "foreign_key": "id_customer",
+            "mappings": {
+              "address1": {
+                "source_column": "address_line1",
+                "validations": { "type": "string", "max_length": 255, "required": true }
+              },
+              "address2": {
+                "source_column": "address_line2",
+                "validations": { "type": "string", "max_length": 255, "required": false }
+              },
+              "address3": {
+                "source_column": "address_line3",
+                "validations": { "type": "string", "max_length": 255, "required": false }
+              },
+              "pincode": {
+                "source_column": "pincode",
+                "validations": { "type": "numeric", "length": 6, "required": false }
+              },
+              "id_city": {
+                "lookup": {
+                  "table": "city",
+                  "source_column": "city",
+                  "match_column": "name",
+                  "return_column": "id_city",
+                  "create_if_missing": false
+                },
+                "validations": { "type": "string", "max_length": 100, "required": false }
+              },
+              "id_state": {
+                "lookup": {
+                  "table": "state",
+                  "source_column": "state",
+                  "match_column": "name",
+                  "return_column": "id_state",
+                  "create_if_missing": false
+                },
+                "validations": { "type": "string", "max_length": 100, "required": false }
+              },
+              "id_country": {
+                "lookup": {
+                  "table": "country",
+                  "source_column": "country",
+                  "match_column": "name",
+                  "return_column": "id_country",
+                  "create_if_missing": false
+                },
+                "validations": { "type": "string", "max_length": 100, "required": false }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+  

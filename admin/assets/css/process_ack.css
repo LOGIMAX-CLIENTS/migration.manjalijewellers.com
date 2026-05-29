@@ -1,0 +1,149 @@
+.PDFReceipt *{
+
+font-family:sans-serif;
+
+font-size: 11px;
+
+}
+
+.PDF_CusReceipt *{
+
+font-family:sans-serif;
+
+font-size: 11px;
+
+}
+
+.PDF_receipt_thermal *{
+
+font-family:sans-serif;
+
+font-size: 6px;
+
+}
+
+.margin {margin: -20px !important;}
+
+article,.PDF_CusReceipt.meta table, .PDFReceipt .inventory table { margin: 0 0 1em; }
+
+article,.PDF_receipt_thermal.meta table, .PDFReceipt .inventory table { margin: 0 0 1em; }
+
+article,.PDFReceipt.meta table, .PDFReceipt .inventory table { margin: 0 0 3em; }
+
+article:after { clear: both; content: ""; display: table; }
+
+
+
+.PDFReceipt .meta:after, .PDFReceipt .balance:after { clear: both; content: ""; display: table; }
+
+
+
+/* table meta */
+
+
+
+.PDFReceipt .meta th { width: 20%; }
+
+.PDFReceipt .meta td { width: 30%; }
+
+
+.PDF_CusReceipt .meta th,.name { width: 20%; }
+
+.PDF_receipt_thermal .meta th,.name { width: 20%; }
+
+.PDF_CusReceipt .meta td { width: 30%; }
+
+.PDF_receipt_thermal .meta td { width: 30%; }
+
+
+
+/* table items */
+
+
+
+.PDFReceipt .inventory { clear: both; width: 100%; }
+
+.PDFReceipt .inventory th { font-weight: bold; text-align: center; }
+
+.PDF_CusReceipt .meta th { font-weight: bold; text-align: left; }
+
+.PDF_receipt_thermal .meta th { font-weight: bold; text-align: left; }
+
+
+
+
+.PDFReceipt .inventory td:nth-child(1) { width: 26%; }
+
+.PDFReceipt .inventory td:nth-child(2) { width: 38%; }
+
+.PDFReceipt .inventory td:nth-child(3) { text-align: right; width: 12%; }
+
+.PDFReceipt .inventory td:nth-child(4) { text-align: right; width: 12%; }
+
+.PDFReceipt .inventory td:nth-child(5) { text-align: right; width: 12%; }
+
+
+
+/* table balance */
+
+
+
+.PDFReceipt .balance th{ width: 40%;}
+
+ .PDFReceipt .balance td { width: 36%; }
+
+.PDFReceipt .balance td { text-align: right; }
+
+
+
+
+
+
+
+.PDFReceipt table tr td{
+
+  height:1px;
+
+  font-size: 11px !important;
+
+}
+
+.PDF_CusReceipt table tr td{
+
+  height:1px;
+
+  font-size: 11px !important;
+
+}
+.PDF_receipt_thermal table tr td{
+
+  height:1px;
+
+  /* font-size: 8px !important; */
+
+}
+
+.header_dashed
+{
+	border-top:1.2px dashed black;
+	border-bottom:0px;
+	margin-left:0px !important;
+	margin-top:-14px !important;
+	width:100% !important;
+}
+
+.item_dashed
+{
+	border-top:1px dashed black;
+	border-bottom:0px;
+	margin-left:0px !important;
+    width:700px !important;
+	padding-top:-1px !important;
+}
+
+
+
+.PDFReceipt table { font-size: 50%; table-layout: fixed; width: 100%; }
+
+.PDFReceipt table {  }
+

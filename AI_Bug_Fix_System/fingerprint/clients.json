@@ -1,0 +1,34 @@
+{
+    "clients": [
+        {
+            "name": "KLSNLIVE",
+            "path": "d:\\XAMPP\\htdocs\\KLSNLIVE",
+            "active": true,
+            "github_repo": "LOGIMAX-CLIENTS/erp.lakshmanaacharison.in"
+        },
+        {
+            "name": "srjewellery",
+            "path": "d:\\XAMPP\\htdocs\\srjewellery",
+            "active": true,
+            "github_repo": "LOGIMAX-CLIENTS/erp.srjewellery.in"
+        },
+        {
+            "name": "vetrijewellers",
+            "path": "d:\\XAMPP\\htdocs\\vetrijewellers",
+            "active": true,
+            "github_repo": "LOGIMAX-CLIENTS/erp.vetrijewellers.com"
+        },
+        {
+            "name": "theniNPR_newversion",
+            "path": "d:\\XAMPP\\htdocs\\theniNPR_newversion",
+            "active": true,
+            "github_repo": "Logimax-Technologies/theniNPR_newversion"
+        }
+    ],
+    "exclude_dirs": [
+        "retail_v5",
+        "devops-tool",
+        "source_mono_repo"
+    ],
+    "source_path": "d:\\XAMPP\\htdocs\\retail_v5"
+}

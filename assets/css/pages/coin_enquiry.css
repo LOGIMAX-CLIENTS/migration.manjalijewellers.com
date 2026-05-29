@@ -1,0 +1,14 @@
+#coin_enquiry{position:fixed;top:50px;left:-282px;z-index:999;background:#F8F8F8}
+#coin_enquiry form{float:left;border:1px solid #999;padding:10px;border-radius:5px}
+#coin_enquiry .pull_feedback{font-family:Calibri;background:#4B5E71;border-bottom-left-radius:1em;border-bottom-right-radius:1em;height:35px;line-height:35px;width:50%;right:-88px;position:absolute;text-decoration:none;color:#fff;font-size:18px;top:40%;margin-top:5%;text-align:center;transform:rotate(-90deg);-webkit-transform:rotate(-90deg);-moz-transform:rotate(-90deg);-o-transform:rotate(-90deg);filter:progid:DXImageTransform.Microsoft.BasicImage(rotation=3);_display:block!important}
+#coin_enquiry .pull_feedback:hover{background-position:center right;background:#80171f;color:#fff}
+#coin_enquiry #tab-text{top:150px}
+#dth form input[type="button"]{float:right;background:#0079C0}
+#coin_enquiry form textarea{width:250px;height:70px;border:1px solid #D9D9D9;font-size:inherit}
+#coin_enquiry form input[type="text"],#coin_enquiry form input[type="email"]{width:250px;height:30px;border:1px solid #D9D9D9;font-size:inherit}
+#coin_enquiry h4{font-size:16px;height:30px;text-align:center;line-height:30px;display:block;border-bottom:1px solid #EEE}
+#coin_enquiry .contactDts{height:40px;font-weight:700;color:#000}
+#coin_enquiry .contactDts img{padding:15px}
+#coin_enquiry .captchaDts{padding:10px}
+#coin_enquiry .errText{text-align:center;color:red}
+#coin_enquiry .successText{text-align:center}

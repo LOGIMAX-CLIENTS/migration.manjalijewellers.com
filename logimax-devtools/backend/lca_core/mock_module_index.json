@@ -1,0 +1,40 @@
+{
+  "module": "mock_erp",
+  "version": "1.0",
+  "functions": [
+    {"name": "func1", "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\sales\\Orders.php", "line": 10},
+    {"name": "check_stock", "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\models\\inventory\\Stock_model.php", "line": 50},
+    {"name": "unused_helper", "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\helpers\\Unused_helper.php", "line": 10},
+    {"name": "login", "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\auth\\Login.php", "line": 20}
+  ],
+  "calls": [
+    {
+      "source": "func1", 
+      "target": "check_stock", 
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\sales\\Orders.php",
+      "target_file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\models\\inventory\\Stock_model.php",
+      "call_type": "calls"
+    },
+    {
+       "source": "func1",
+       "target": "check_stock", 
+       "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\sales\\Orders.php",
+       "target_file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\models\\inventory\\Stock_model.php",
+       "call_type": "calls"
+    },
+    {
+      "source": "func1",
+      "target": "login",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\sales\\Orders.php",
+       "target_file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\controllers\\auth\\Login.php",
+      "call_type": "calls"
+    },
+    {
+      "source": "check_stock",
+      "target": "TABLE:products",
+      "file": "c:\\xampp\\htdocs\\etail_v3\\admin\\application\\models\\inventory\\Stock_model.php",
+      "target_file": "TABLE:products",
+      "call_type": "calls"
+    }
+  ]
+}

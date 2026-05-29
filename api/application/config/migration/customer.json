@@ -1,0 +1,106 @@
+{
+    "entity": "customer",
+    "validation": {
+        "required_file_name_pattern": "customer*.xlsx",
+        "required_sheet_name": "port_customer"
+    },
+    "file_path": "uploads/avsr/customer.ods",
+    "migrations": [{
+        "destination_table": "customer",
+        "primary_key": "id_customer",
+        "mappings": {
+            "id_branch": {
+                "source_column": "id_branch",
+                "validations": { "type": "numeric", "min": 1, "required": true }
+            },
+            "date_add": {
+                "source_column": "date_of_registration",
+                "validations": { "type": "date", "format": "Y-m-d", "required": false }
+            },
+            "firstname": {
+                "source_column": "first_name",
+                "validations": { "type": "string", "max_length": 50, "required": true }
+            },
+            "lastname": {
+                "source_column": "last_name",
+                "validations": { "type": "string", "max_length": 10, "required": false }
+            },
+            "mobile": {
+                "source_column": "mobile",
+                "validations": { "type": "numeric", "length": 10, "required": true },
+                "check_if_exists": true
+            },
+            "id_village": {
+                "lookup": {
+                    "table": "village",
+                    "source_column": "area_name",
+                    "match_column": "village_name",
+                    "return_column": "id_village",
+                    "create_if_missing": true
+                },
+                "validations": { "type": "string", "max_length": 100, "required": false }
+            },
+            "added_by": {
+                "source_column": "added_by",
+                "validations": { "type": "numeric", "min": 1, "required": true }
+            }
+
+        },
+        "children": [{
+            "destination_table": "address",
+            "foreign_key": "id_customer",
+            "mappings": {
+                "address1": {
+                    "source_column": "address_line1",
+                    "validations": { "type": "string", "max_length": 255, "required": true }
+                },
+                "address2": {
+                    "source_column": "address_line2",
+                    "validations": { "type": "string", "max_length": 255, "required": false }
+                },
+                "address3": {
+                    "source_column": "address_line3",
+                    "validations": { "type": "string", "max_length": 255, "required": false }
+                },
+                "pincode": {
+                    "source_column": "pincode",
+                    "validations": { "type": "numeric", "length": 6, "required": false }
+                },
+                "id_city": {
+                    "lookup": {
+                        "table": "city",
+                        "source_column": "city",
+                        "match_column": "name",
+                        "return_column": "id_city",
+                        "create_if_missing": false
+                    },
+                    "validations": { "type": "string", "max_length": 100, "required": false }
+                },
+                "id_state": {
+                    "lookup": {
+                        "table": "state",
+                        "source_column": "state",
+                        "match_column": "name",
+                        "return_column": "id_state",
+                        "create_if_missing": false
+                    },
+                    "validations": { "type": "string", "max_length": 100, "required": false }
+                },
+                "id_country": {
+                    "lookup": {
+                        "table": "country",
+                        "source_column": "country",
+                        "match_column": "name",
+                        "return_column": "id_country",
+                        "create_if_missing": false
+                    },
+                    "validations": { "type": "string", "max_length": 100, "required": false }
+                },
+                "added_by": {
+                    "source_column": "added_by",
+                    "validations": { "type": "numeric", "max_length": 1, "required": true }
+                }
+            }
+        }]
+    }]
+}

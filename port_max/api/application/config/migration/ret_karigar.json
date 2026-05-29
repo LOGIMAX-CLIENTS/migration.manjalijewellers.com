@@ -1,0 +1,105 @@
+{
+    "entity": "karigar",
+    "ai": {
+        "enabled": true,
+        "max_rows": 20
+    },
+    "validation": {
+        "required_file_name_pattern": "karigar*.xlsx",
+        "required_sheet_name": "port_karigar"
+    },
+    "file_path": "uploads/karigar.xlsx",
+    "migrations": [{
+        "destination_table": "ret_karigar",
+        "primary_key": "id_karigar",
+        "mappings": {
+            "old_id": {
+                "source_column": "old_id",
+                "validations": { "type": "numeric", "min": 1, "required": false }
+            },
+            "karigar_type": {
+                "source_column": "karigar_type",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "firstname": {
+                "source_column": "first_name",
+                "validations": { "type": "string", "max_length": 100, "required": true }
+            },
+            "lastname": {
+                "source_column": "last_name",
+                "validations": { "type": "string", "max_length": 100, "required": false }
+            },
+            "company": {
+                "source_column": "company_name",
+                "validations": { "type": "string", "max_length": 200, "required": false }
+            },
+            "code_karigar": {
+                "source_column": "short_code",
+                "validations": { "type": "string", "max_length": 50, "required": false }
+            },
+            "contactno1": {
+                "source_column": "mobile",
+                "validations": { "type": "numeric", "length": 10, "required": false },
+                "check_if_exists": true
+            },
+            "address1": {
+                "source_column": "address1",
+                "validations": { "type": "string", "max_length": 255, "required": false }
+            },
+            "address2": {
+                "source_column": "address2",
+                "validations": { "type": "string", "max_length": 255, "required": false }
+            },
+            "address3": {
+                "source_column": "address3",
+                "validations": { "type": "string", "max_length": 255, "required": false }
+            },
+            "id_country": {
+                "lookup": {
+                    "table": "country",
+                    "source_column": "country_name",
+                    "match_column": "name",
+                    "return_column": "id_country",
+                    "create_if_missing": false
+                },
+                "validations": { "type": "string", "max_length": 100, "required": false }
+            },
+            "id_state": {
+                "lookup": {
+                    "table": "state",
+                    "source_column": "state_name",
+                    "match_column": "name",
+                    "return_column": "id_state",
+                    "create_if_missing": false
+                },
+                "validations": { "type": "string", "max_length": 100, "required": false }
+            },
+            "id_city": {
+                "lookup": {
+                    "table": "city",
+                    "source_column": "city_name",
+                    "match_column": "name",
+                    "return_column": "id_city",
+                    "create_if_missing": false
+                },
+                "validations": { "type": "string", "max_length": 100, "required": false }
+            },
+            "is_tcs": {
+                "source_column": "is_tcs",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "is_tds": {
+                "source_column": "is_tds",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "fin_year_code": {
+                "source_column": "fin_year_code",
+                "validations": { "type": "string", "max_length": 20, "required": false }
+            },
+            "opening_balance_amount": {
+                "source_column": "opening_amount",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            }
+        }
+    }]
+}

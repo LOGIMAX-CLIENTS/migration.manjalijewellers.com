@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CI/CD - Existing Client Setup</title>
+    <script src="js/auth-check.js" data-require-role="viewer"></script>
+    <style>
+        :root { --primary: #0366d6; --success: #28a745; --warning: #ffc107; --danger: #e94560; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); min-height: 100vh; color: #fff; }
+        
+        .nav { background: rgba(0,0,0,0.3); padding: 15px 30px; display: flex; gap: 20px; justify-content: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .nav a { color: #888; text-decoration: none; padding: 10px 20px; border-radius: 8px; transition: all 0.3s; }
+        .nav a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .nav a.active { background: var(--danger); color: #fff; }
+        
+        .container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+        h1 { text-align: center; font-size: 2.5rem; margin-bottom: 10px; background: linear-gradient(90deg, #e94560, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 40px; }
+        
+        .section { background: rgba(255,255,255,0.05); border-radius: 16px; padding: 30px; margin-bottom: 30px; border: 1px solid rgba(255,255,255,0.1); }
+        .section h2 { color: #e94560; margin-bottom: 20px; font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
+        .section h3 { color: #ffc107; margin: 20px 0 10px; font-size: 1.1rem; }
+        
+        .step-number { background: var(--danger); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
+        
+        .code-block { background: #0d1117; border-radius: 8px; padding: 20px; margin: 15px 0; font-family: 'Consolas', monospace; font-size: 0.9rem; overflow-x: auto; border-left: 3px solid var(--primary); }
+        .code-block .comment { color: #6a737d; }
+        .code-block .command { color: #79c0ff; }
+        .code-block .string { color: #a5d6ff; }
+        .code-block .var { color: #ffa657; }
+        
+        .note { background: rgba(255, 193, 7, 0.1); border-left: 4px solid #ffc107; padding: 15px; margin: 15px 0; border-radius: 0 8px 8px 0; }
+        .note strong { color: #ffc107; }
+        
+        .warning { background: rgba(220, 53, 69, 0.1); border-left: 4px solid #dc3545; padding: 15px; margin: 15px 0; border-radius: 0 8px 8px 0; }
+        .warning strong { color: #dc3545; }
+        
+        .checklist { list-style: none; padding: 0; }
+        .checklist li { padding: 10px 0; padding-left: 35px; position: relative; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .checklist li::before { content: '☐'; position: absolute; left: 0; color: #888; font-size: 1.2rem; }
+        
+        .file-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .file-table th, .file-table td { padding: 12px; text-align: left; border: 1px solid rgba(255,255,255,0.1); }
+        .file-table th { background: rgba(0,0,0,0.3); color: #e94560; }
+        .file-table code { background: rgba(0,0,0,0.3); padding: 3px 8px; border-radius: 4px; font-size: 0.85rem; }
+        
+        .footer { text-align: center; padding: 30px; color: #666; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="cicd-1-flow.html">📊 Flow Explanation</a>
+        <a href="cicd-2-existing-client.html" class="active">🔧 Existing Client Setup</a>
+        <a href="cicd-3-new-client.html">🆕 New Client Setup</a>
+    </nav>
+    
+    <div class="container">
+        <h1>🔧 Existing Client Setup</h1>
+        <p class="subtitle">Add CI/CD to an existing client repo that's already deployed</p>
+        
+        <!-- Prerequisites -->
+        <div class="section">
+            <h2><span class="step-number">0</span> Prerequisites</h2>
+            <ul class="checklist">
+                <li>Client repo exists in <code>LOGIMAX-CLIENTS</code> organization</li>
+                <li>Server already has code deployed (cPanel or AWS)</li>
+                <li>SSH access to client server</li>
+                <li>GitHub admin access to client repo</li>
+            </ul>
+        </div>
+        
+        <!-- Step 1 -->
+        <div class="section">
+            <h2><span class="step-number">1</span> Copy Scripts to Server</h2>
+            <p>SSH to the client server and copy the deployment scripts:</p>
+            
+            <h3>Option A: cPanel Server</h3>
+            <div class="code-block">
+<span class="comment"># Connect to server</span>
+ssh username@client-domain.com
+
+<span class="comment"># Create webhooks directory</span>
+mkdir -p ~/public_html/webhooks
+
+<span class="comment"># Copy files (run from your local machine)</span>
+scp scripts/unified-deploy.sh user@server:~/public_html/deploy.sh
+scp scripts/webhook-handler.php user@server:~/public_html/webhooks/deploy.php
+scp scripts/rollback.sh user@server:~/public_html/rollback.sh
+scp maintenance.html user@server:~/public_html/maintenance.html
+
+<span class="comment"># Make scripts executable</span>
+chmod +x ~/public_html/deploy.sh ~/public_html/rollback.sh
+            </div>
+            
+            <h3>Option B: AWS Server</h3>
+            <div class="code-block">
+<span class="comment"># Connect to server</span>
+ssh -i key.pem ubuntu@ec2-xxx.amazonaws.com
+
+<span class="comment"># Create directories</span>
+sudo mkdir -p /var/www/html/webhooks
+sudo mkdir -p /var/www/releases /var/www/shared
+
+<span class="comment"># Copy files</span>
+scp scripts/unified-deploy.sh user@server:/var/www/html/deploy.sh
+scp scripts/webhook-handler.php user@server:/var/www/html/webhooks/deploy.php
+
+<span class="comment"># Set permissions</span>
+sudo chown -R www-data:www-data /var/www
+            </div>
+        </div>
+        
+        <!-- Step 2 -->
+        <div class="section">
+            <h2><span class="step-number">2</span> Configure Environment</h2>
+            
+            <h3>Generate Webhook Secret</h3>
+            <div class="code-block">
+<span class="comment"># Generate a random secret</span>
+openssl rand -hex 32
+<span class="comment"># Output: a1b2c3d4e5f6... (save this!)</span>
+            </div>
+            
+            <h3>cPanel: Add to .htaccess</h3>
+            <div class="code-block">
+<span class="comment"># Create ~/public_html/webhooks/.htaccess</span>
+SetEnv WEBHOOK_SECRET "<span class="var">your-secret-here</span>"
+SetEnv REPO_PATH "/home/<span class="var">username</span>/public_html"
+SetEnv DEPLOY_SCRIPT "/home/<span class="var">username</span>/public_html/deploy.sh"
+SetEnv LOG_FILE "/home/<span class="var">username</span>/deploy.log"
+            </div>
+            
+            <h3>AWS: Create Environment File</h3>
+            <div class="code-block">
+<span class="comment"># Create /var/www/.deploy-env</span>
+export WEBHOOK_SECRET="<span class="var">your-secret-here</span>"
+export REPO_PATH="/var/www/html"
+export DEPLOY_SCRIPT="/var/www/html/deploy.sh"
+export RELEASES_DIR="/var/www/releases"
+export SHARED_DIR="/var/www/shared"
+            </div>
+        </div>
+        
+        <!-- Step 3 -->
+        <div class="section">
+            <h2><span class="step-number">3</span> Add GitHub Secrets</h2>
+            <p>Go to client repo → Settings → Secrets → Actions:</p>
+            
+            <table class="file-table">
+                <thead>
+                    <tr><th>Secret Name</th><th>Value</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>STAGING_WEBHOOK_URL</code></td>
+                        <td>https://client-domain.com/webhooks/deploy.php</td>
+                    </tr>
+                    <tr>
+                        <td><code>STAGING_WEBHOOK_SECRET</code></td>
+                        <td>(the secret you generated)</td>
+                    </tr>
+                    <tr>
+                        <td><code>PRODUCTION_WEBHOOK_URL</code></td>
+                        <td>https://client-domain.com/webhooks/deploy.php</td>
+                    </tr>
+                    <tr>
+                        <td><code>PRODUCTION_WEBHOOK_SECRET</code></td>
+                        <td>(the secret you generated)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Step 4 -->
+        <div class="section">
+            <h2><span class="step-number">4</span> Add Workflow to Client Repo</h2>
+            <p>Create <code>.github/workflows/deploy.yml</code> in the client repo:</p>
+            
+            <div class="code-block">
+<span class="comment"># Copy from: templates/client/deploy.yml</span>
+<span class="comment"># Or create manually:</span>
+
+name: 🚀 Deploy
+
+on:
+  push:
+    branches: [staging, production]
+
+jobs:
+  deploy-staging:
+    if: github.ref == 'refs/heads/staging'
+    uses: <span class="string">Logimax-Technologies/retail_v5/.github/workflows/deploy-reusable.yml@main</span>
+    with:
+      environment: staging
+      deploy_mode: simple
+      maintenance_mode: false
+      client_name: ${{ github.event.repository.name }}
+    secrets:
+      WEBHOOK_URL: ${{ secrets.STAGING_WEBHOOK_URL }}
+      WEBHOOK_SECRET: ${{ secrets.STAGING_WEBHOOK_SECRET }}
+
+  deploy-production:
+    if: github.ref == 'refs/heads/production'
+    uses: <span class="string">Logimax-Technologies/retail_v5/.github/workflows/deploy-reusable.yml@main</span>
+    with:
+      environment: production
+      deploy_mode: symlink
+      maintenance_mode: true
+      client_name: ${{ github.event.repository.name }}
+    secrets:
+      WEBHOOK_URL: ${{ secrets.PRODUCTION_WEBHOOK_URL }}
+      WEBHOOK_SECRET: ${{ secrets.PRODUCTION_WEBHOOK_SECRET }}
+            </div>
+        </div>
+        
+        <!-- Step 5 -->
+        <div class="section">
+            <h2><span class="step-number">5</span> Add Maintenance Check</h2>
+            <p>Add this to the top of <code>index.php</code>:</p>
+            
+            <div class="code-block">
+&lt;?php
+<span class="comment">// Maintenance mode check</span>
+if (file_exists('.maintenance')) {
+    header('HTTP/1.1 503 Service Unavailable');
+    include 'maintenance.html';
+    exit;
+}
+            </div>
+        </div>
+        
+        <!-- Step 6 -->
+        <div class="section">
+            <h2><span class="step-number">6</span> Test Deployment</h2>
+            
+            <div class="code-block">
+<span class="comment"># Test staging (auto-deploy)</span>
+git checkout staging
+git commit --allow-empty -m "Test CI/CD"
+git push
+
+<span class="comment"># Check GitHub Actions tab for workflow status</span>
+            </div>
+            
+            <div class="note">
+                <strong>💡 Tip:</strong> Check the deploy.log on the server if something fails.
+            </div>
+        </div>
+        
+        <div class="footer">Logimax CI/CD Pipeline | Page 2 of 3</div>
+    </div>
+</body>
+</html>

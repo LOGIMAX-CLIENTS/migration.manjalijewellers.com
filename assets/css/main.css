@@ -1,0 +1,95 @@
+body{font-family:'Open Sans',sans-serif;overflow-x:hidden;font-size:12px;background:#fff!important;-webkit-background-size:cover;-moz-background-size:cover;-o-background-size:cover;background-size:cover;margin:0;padding:0;border:#000 0 solid;letter-spacing:.35px!important}
+.theme-bg{background:#69090A!important;color:#fff!important}
+.theme-txt{color:#69090A!important}
+.btn{letter-spacing:1px!important;text-transform:uppercase!important}
+.bold{font-weight:700}
+.progress{height:18px;margin-bottom:0}
+.resendOTP{background:none!important;border:none;padding:0!important;font-family:arial,sans-serif;color:#069;text-decoration:underline;cursor:pointer}
+.progress .skill{font:normal 13px "Open Sans Web";line-height:20px;padding:0;margin:0 0 0 10px;text-transform:uppercase}
+.progress .skill .val{float:right;font-style:normal;margin:0 1px 0 0}
+.progress-bar{text-align:left;transition-duration:3s}
+.noPadding{padding:0}
+.noMargin{margin:0}
+.noPaddingLeft{padding-left:0}
+.noPaddingRight{padding-right:0}
+.noPaddingTop{padding-top:0}
+.noPaddingBottom{padding-bottom:0}
+.noMarginBottom{margin-bottom:0}
+.paddingTop10{padding-top:10px}
+.paddingBottom10{padding-bottom:10px}
+.paddingLeft10{padding-left:10px}
+.paddingRight10{padding-right:10px}
+.paddingTop15{padding-top:15px}
+.paddingBottom15{padding-bottom:15px}
+.paddingRight15{padding-right:15px}
+.paddingLeft15{padding-left:15px}
+.paddingTopBottom15{padding:15px 0}
+.marginTop10{margin-top:10px}
+.marginBottom10{margin-bottom:10px}
+.marginLeft10{margin-left:10px}
+.marginRight10{margin-right:10px}
+.marginTop15{margin-top:15px}
+.marginBottom15{margin-bottom:15px}
+.marginLeft15{margin-left:15px}
+.marginRight15{margin-right:15px}
+.marginTopBottom15{margin:15px 0}
+.width50{width:50%}
+ul,li{padding:0;margin:0}
+.listItems li{line-height:2}
+.copyright{font-size:small;color:#707070}
+.designedBy{text-align:right}
+nav{background:none!important;border:none}
+nav .navbar-toggle{background:#000;margin-top:3px}
+.navbar-default{background:none!important;border:none!important;border-radius:0;box-shadow:none!important;/* height:45px!important */}
+nav .navbar-nav,.navbar .navbar-inner,.navbar-default,.container-fluid,.collapse,.navbar-collapse,nav .navbar-nav li{padding:0;margin:0}
+nav .navbar-nav{background:#999;background:#DBDBDB;border:none;color:#000;width:100%;font-size:small}
+nav .navbar-nav li{background:none;color:#000;height:45px}
+nav .navbar-nav .navmenu-last{border-right:none}
+nav .navbar-nav a{text-align:center;height:45px;color:#000!important;line-height:20px;font-size:small}
+nav .navbar-nav a:hover{color:#000!important}
+.navbar-default .navbar-nav > li > .active{color:#000!important;background-color:#EFEFEF;text-shadow:none;text-outline:none}
+.navbar-default .navbar-nav > li > a:hover,.navbar-default .navbar-nav > li > a:focus{background-color:#EFEFEF;color:#FFF}
+.topContainer{color:#000;border-bottom:2px solid #eee}
+.join{height:55px}
+.current_price{background-color:#F49C14}
+.customer_care{text-align:right}
+.join{background-color:#ED1B23;padding:5px}
+.logoContainer{background:#fff;border-bottom:1px solid #eee}
+.menu1{float:right;min-height:95px}
+.menu1 li{float:left;list-style:none;margin-right:1px}
+.menu1 a{display:block;min-height:95px;padding-top:40px;padding-left:15px;padding-right:15px;text-decoration:none;color:#242424}
+.menu1 .active{border-bottom:2px solid #0AB5A2;height:75px}
+.logo img{margin-top:7px}
+.header{background:url(../images/header.jpg) center no-repeat;width:100%!important;min-height:450px}
+.member_login{width:100%;height:auto;overflow:auto;background-color:#fff;border:#FFF 2px solid;padding-bottom:20px;padding-top:10px;margin-top:5px;min-height:300px;margin-right:0!important}
+.viewmore{color:#ED1C24}
+.viewmore:hover{text-decoration:none;color:#ED1C24}
+.news{background-color:#ED1C24}
+.news_content{padding-top:15px;padding-bottom:15px}
+.collection_category{font-family:'Raleway',sans-serif;background-color:#FFF;color:#000;min-height:76px;font-size:large;border-top:#3B3B3B 10px solid;border-bottom:#3B3B3B 10px solid}
+.collection_middle{border-left:#1C1C1C 3px solid;border-right:#1C1C1C 3px solid}
+.border-left{border-left:#1C1C1C 3px solid}
+.border-right{border-right:#1C1C1C 3px solid}
+.reachus{line-height:2;text-align:left}
+.poweredby{font-size:small;color:#707070}
+.login_register{text-align:center;background-color:#FFF;color:#000;font-size:medium;font-weight:700;padding-bottom:12px;padding-top:12px}
+.login_register a{color:#000}
+.login_register a:hover{color:#ED1C24}
+.login_form{background-color:#FFF;color:#000;padding:20px;margin:20px;overflow:auto}
+.login_button{background-color:#B4071B;color:rgba(255,255,255,1.00);text-align:center}
+.login_button a{text-decoration:none;display:block;color:rgba(255,255,255,1.00);font-weight:700;padding-top:10px;padding-bottom:10px}
+.forgot_password{color:#FFF}
+.forgot_password:hover{color:#FFF}
+.footer{color:#dcdcdc}
+.footer h4{margin:0;padding:0;padding-top:10px}
+.footer hr{margin:0;padding:0;margin:15px 0}
+.navbar-header{z-index:1;position:relative;background:transparent}
+.pay-content{color:#000;margin-top:-30px}
+.modal-header{padding:1px;background-color:grey;border-top-right-radius:4px;border-top-left-radius:4px}
+.modal-footer{padding:0;margin-bottom:0;text-align:right;_background-color:#f5f5f5;border-top:1px solid #ddd;-webkit-border-radius:0 0 6px 6px;-moz-border-radius:0 0 6px 6px;border-radius:0 0 6px 6px;-webkit-box-shadow:inset 0 1px 0 #fff;-moz-box-shadow:inset 0 1px 0 #fff;box-shadow:inset 0 1px 0 #fff}
+.store-locator-btn{position:fixed;width:40px;height:150px;right:0;z-index:950;transition:all .3s;-webkit-transition:all .3s;-moz-transition:all .3s;-o-transition:all .3s;-ms-transition:all .3s;background-color:#843337;top:200px}
+.store-locator-btn-txt{position:absolute;color:#fff;font-size:12px;letter-spacing:1px;font-weight:700;left:-34px;bottom:55px;padding-left:0;width:110px;text-transform:uppercase;transform:rotate(-90deg);-webkit-transform:rotate(-90deg)}
+.nav>li>a:focus, .nav>li>a:hover{color:#fff}
+.nav-pills>li>a{color:#000}
+.profile_col{padding-left:5px;padding-right:5px;}
+#payForm .btn{margin-left: 5px;padding:10px 15px}

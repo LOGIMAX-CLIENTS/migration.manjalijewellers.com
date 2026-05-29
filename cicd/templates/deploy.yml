@@ -1,0 +1,64 @@
+# Client Workflow Template for LOGIMAX-CLIENTS repos
+# Copy this to: .github/workflows/deploy.yml in each client repo
+
+name: 🚀 Deploy
+
+on:
+  push:
+    branches: 
+      - staging
+      - production
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  # =============================================================================
+  # STAGING DEPLOYMENT (Auto)
+  # =============================================================================
+  deploy-staging:
+    if: github.ref == 'refs/heads/staging' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging')
+    uses: Logimax-Technologies/retail_v5/.github/workflows/deploy-reusable.yml@main
+    with:
+      environment: staging
+      deploy_mode: simple
+      maintenance_mode: false
+      client_name: ${{ github.event.repository.name }}
+    secrets:
+      WEBHOOK_URL: ${{ secrets.STAGING_WEBHOOK_URL }}
+      WEBHOOK_SECRET: ${{ secrets.STAGING_WEBHOOK_SECRET }}
+
+  # =============================================================================
+  # PRODUCTION DEPLOYMENT (Requires Approval)
+  # =============================================================================
+  deploy-production:
+    if: github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'production')
+    uses: Logimax-Technologies/retail_v5/.github/workflows/deploy-reusable.yml@main
+    with:
+      environment: production
+      deploy_mode: symlink
+      maintenance_mode: true
+      client_name: ${{ github.event.repository.name }}
+    secrets:
+      WEBHOOK_URL: ${{ secrets.PRODUCTION_WEBHOOK_URL }}
+      WEBHOOK_SECRET: ${{ secrets.PRODUCTION_WEBHOOK_SECRET }}
+
+  # =============================================================================
+  # SEND DEPLOYMENT REPORT (Production only)
+  # =============================================================================
+  notify:
+    needs: deploy-production
+    if: always() && needs.deploy-production.result != 'skipped'
+    uses: Logimax-Technologies/retail_v5/.github/workflows/deploy-report.yml@main
+    with:
+      status: ${{ needs.deploy-production.outputs.status }}
+      client: ${{ github.event.repository.name }}
+      environment: production
+    secrets: inherit

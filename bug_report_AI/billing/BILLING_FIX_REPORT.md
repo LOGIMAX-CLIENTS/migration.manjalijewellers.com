@@ -1,0 +1,128 @@
+---
+### Fix: BIL-INT04 — Cash Refund Returns Incorrectly Reducing Credit Due
+- **Date:** 2026-03-07
+- **Track:** B (Business)
+- **Category:** Logic
+- **Severity:** P1
+- **Files Changed:** `ret_billing_model.php`, `ret_reports_model.php`
+- **Root Cause:** Calculations for `total_returned` in both billing and reports modules were missing the `make_as_advance = 1` filter, causing cash refunds to incorrectly reduce customer credit debt.
+- **Fix Applied:** Added `AND rb.make_as_advance = 1` to all four relevant subqueries in `getBillData()`, `getCreditBillDetails()`, `get_credit_pending_details()`, and `getcreditBill_history()`.
+- **Tests:** PASS — 4 tests, 4 assertions (included cash vs advance scenarios).
+- **Pattern:** PAT-LOGIC-002 matched and updated.
+- **Rollback:** Reference to `ROLLBACK_REGISTRY.md` BIL-INT04.
+---
+---
+### Fix: BIL-CLT03 — Zero Value Loss During Fallback Checks
+- **Date:** 2026-03-10
+- **Track:** B (Business)
+- **Category:** Logic
+- **Severity:** P1
+- **Files Changed:** `ret_billing.js`, `admin_ret_billing.php`
+- **Root Cause:** Hidden input `bill_wastage_per` was not updated when wastage weight changed on the frontend. The backend `admin_ret_billing.php` passed `"0"` to the model, but the `empty()` checks inside the model discarded it, replacing the explicit zeros with schema defaults.
+- **Fix Applied:** Synced `.bill_wastage_per` to the updated wastage calculated value. Wrapped assignments in `admin_ret_billing.php` with stringent null/blank checks (`!== '' && !== null`) to ensure actual integer zeroes or `"0"` strings safely reach the database insert logic.
+- **Tests:** PASS (Manual Browser Verification of 0.00 rendering).
+- **Pattern:** NEW pattern added: PAT-LOGIC-004.
+- **Rollback:** Reference to `ROLLBACK_REGISTRY.md` BIL-CLT03.
+---
+---
+### Fix: BIL-CLT04 — Order Advance Date Showing as Delivery Date
+- **Date:** 2026-03-23
+- **Track:** B (Business)
+- **Category:** Logic
+- **Severity:** P1
+- **Files Changed:** `ret_billing_model.php` (ARC Client)
+- **Root Cause:** In the `order_adj` query, `b.bill_date` (delivery bill date) was incorrectly selected instead of `a.advance_date` (actual advance payment date).
+- **Fix Applied:** Changed SQL to select `a.advance_date` from `ret_billing_advance` instead of `b.bill_date`.
+- **Tests:** PASS — Browser verification on ARC client confirmed correct date display (21-03-2026 vs 06-03-2026).
+- **Pattern:** NEW pattern added: PAT-LOGIC-005.
+- **Rollback:** Revert file change in `arc/admin/application/models/ret_billing_model.php`.
+---
+---
+### Fix: BIL-CLT05 — Coin Quantity Mismatch & Payment Mode Missing in Final Bill
+- **Date:** 2026-03-26
+- **Track:** B (Business)
+- **Category:** Logic
+- **Severity:** P1
+- **Files Changed:** `ret_billing_model.php`, `admin_ret_billing.php`
+- **Root Cause:** Model `getEstimationDetails()` filters items by `purchase_status=0` AND `tag_status=0`. When a bill is cancelled (`bill_status=2`), these flags are not reset, making 2 of 15 estimation items invisible to re-billing. Payment mode issue was downstream — incomplete bill from retry scenario.
+- **Fix Applied:** Added `resetOrphanedEstimationItems()` method that finds items linked to cancelled bills and resets `purchase_status` to 0 and `tag_status` to 0 before the query runs. Integrated call in controller `getEstimationDetails()`.
+- **Tests:** PASS — PHP syntax check on both files. Manual browser testing pending.
+- **Pattern:** NEW pattern added: PAT-STATE-001 (Orphaned Status from Cancelled Operations).
+- **Rollback:** Remove `resetOrphanedEstimationItems()` from model and remove the controller call.
+---
+---
+### Feature: BIL-NR01 — Display Chit Gift Details in Bill Print
+- **Date:** 2026-04-07
+- **Track:** Feature Request
+- **Category:** Print / Display
+- **Severity:** N/A (Feature)
+- **Files Changed:** `ret_billing_model.php`, `bill_format_2.php`, `20260407_000001_add_show_gift_in_bill_setting.sql`
+- **Implementation:** Added `show_chit_gift_in_bill` setting gate in `getOtherEstimateItemsDetails()`. Queries `gift_issued` table via `ret_billing_chit_utilization` for active gifts (status=1, type=1). Gift rows rendered as main items with sequential S.NO and 0.00 amount in `bill_format_2.php`.
+- **Tests:** Manual browser verification pending.
+- **Pattern:** N/A (new feature, no bug pattern)
+- **Rollback:** Remove model query block (L1887-1900), remove view rows (L872-886), delete `show_chit_gift_in_bill` from `ret_settings`.
+---
+---
+### Fix: BIL-INT04 — Cash Refund Returns Incorrectly Reducing Credit Due
+- **Date:** 2026-03-07
+- **Track:** B (Business)
+- **Category:** Logic
+- **Severity:** P1
+- **Files Changed:** `ret_billing_model.php`, `ret_reports_model.php`
+- **Root Cause:** Calculations for `total_returned` in both billing and reports modules were missing the `make_as_advance = 1` filter, causing cash refunds to incorrectly reduce customer credit debt.
+- **Fix Applied:** Added `AND rb.make_as_advance = 1` to all four relevant subqueries in `getBillData()`, `getCreditBillDetails()`, `get_credit_pending_details()`, and `getcreditBill_history()`.
+- **Tests:** PASS — 4 tests, 4 assertions (included cash vs advance scenarios).
+- **Pattern:** PAT-LOGIC-002 matched and updated.
+- **Rollback:** Reference to `ROLLBACK_REGISTRY.md` BIL-INT04.
+---
+---
+### Fix: BIL-CLT03 — Zero Value Loss During Fallback Checks
+- **Date:** 2026-03-10
+- **Track:** B (Business)
+- **Category:** Logic
+- **Severity:** P1
+- **Files Changed:** `ret_billing.js`, `admin_ret_billing.php`
+- **Root Cause:** Hidden input `bill_wastage_per` was not updated when wastage weight changed on the frontend. The backend `admin_ret_billing.php` passed `"0"` to the model, but the `empty()` checks inside the model discarded it, replacing the explicit zeros with schema defaults.
+- **Fix Applied:** Synced `.bill_wastage_per` to the updated wastage calculated value. Wrapped assignments in `admin_ret_billing.php` with stringent null/blank checks (`!== '' && !== null`) to ensure actual integer zeroes or `"0"` strings safely reach the database insert logic.
+- **Tests:** PASS (Manual Browser Verification of 0.00 rendering).
+- **Pattern:** NEW pattern added: PAT-LOGIC-004.
+- **Rollback:** Reference to `ROLLBACK_REGISTRY.md` BIL-CLT03.
+---
+---
+### Fix: BIL-CLT04 — Order Advance Date Showing as Delivery Date
+- **Date:** 2026-03-23
+- **Track:** B (Business)
+- **Category:** Logic
+- **Severity:** P1
+- **Files Changed:** `ret_billing_model.php` (ARC Client)
+- **Root Cause:** In the `order_adj` query, `b.bill_date` (delivery bill date) was incorrectly selected instead of `a.advance_date` (actual advance payment date).
+- **Fix Applied:** Changed SQL to select `a.advance_date` from `ret_billing_advance` instead of `b.bill_date`.
+- **Tests:** PASS — Browser verification on ARC client confirmed correct date display (21-03-2026 vs 06-03-2026).
+- **Pattern:** NEW pattern added: PAT-LOGIC-005.
+- **Rollback:** Revert file change in `arc/admin/application/models/ret_billing_model.php`.
+---
+---
+### Fix: BIL-CLT05 — Coin Quantity Mismatch & Payment Mode Missing in Final Bill
+- **Date:** 2026-03-26
+- **Track:** B (Business)
+- **Category:** Logic
+- **Severity:** P1
+- **Files Changed:** `ret_billing_model.php`, `admin_ret_billing.php`
+- **Root Cause:** Model `getEstimationDetails()` filters items by `purchase_status=0` AND `tag_status=0`. When a bill is cancelled (`bill_status=2`), these flags are not reset, making 2 of 15 estimation items invisible to re-billing. Payment mode issue was downstream — incomplete bill from retry scenario.
+- **Fix Applied:** Added `resetOrphanedEstimationItems()` method that finds items linked to cancelled bills and resets `purchase_status` to 0 and `tag_status` to 0 before the query runs. Integrated call in controller `getEstimationDetails()`.
+- **Tests:** PASS — PHP syntax check on both files. Manual browser testing pending.
+- **Pattern:** NEW pattern added: PAT-STATE-001 (Orphaned Status from Cancelled Operations).
+- **Rollback:** Remove `resetOrphanedEstimationItems()` from model and remove the controller call.
+---
+---
+### Feature: BIL-NR01 — Display Chit Gift Details in Bill Print
+- **Date:** 2026-04-07
+- **Track:** Feature Request
+- **Category:** Print / Display
+- **Severity:** N/A (Feature)
+- **Files Changed:** `ret_billing_model.php`, `bill_format_2.php`, `20260407_000001_add_show_gift_in_bill_setting.sql`
+- **Implementation:** Added `show_chit_gift_in_bill` setting gate in `getOtherEstimateItemsDetails()`. Queries `gift_issued` table via `ret_billing_chit_utilization` for active gifts (status=1, type=1). Gift rows rendered as main items with sequential S.NO and 0.00 amount in `bill_format_2.php`.
+- **Tests:** Manual browser verification pending.
+- **Pattern:** N/A (new feature, no bug pattern)
+- **Rollback:** Remove model query block (L1887-1900), remove view rows (L872-886), delete `show_chit_gift_in_bill` from `ret_settings`.
+---

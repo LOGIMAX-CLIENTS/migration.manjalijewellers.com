@@ -1,0 +1,183 @@
+.PDF_receipt_thermal *{
+
+font-family:sans-serif;
+
+}
+
+
+
+.PDF_receipt_thermal .meta th { font-weight: 600; text-align: left !important; } 
+  
+.plugin {
+	margin-top:-45px !important;
+	margin-left: -47.5px! important;
+    height: 20mm !important;
+    position: fixed;  
+    z-index: 1;
+    border-radius: 4px;
+	font-size:2.8px;
+}
+ .meta{
+		margin-top:-2px !important;
+		width:120px !important;
+		font-size:1.5px !important;
+	} 
+	
+   .cus_name th {
+	   
+	   width:18% !important;
+	   
+	   
+   }  
+.cus_name td {
+	
+	margin-left: -8px! important;
+	font-weight: bold;
+}
+.sch_name th{
+	
+	margin-left: 1px! important;
+	font-weight: bold;
+	margin-top:-2px !important;
+}
+.sch_name td {
+	margin-left:-8px! important;
+	font-weight: bold;
+	margin-top:-2px !important;
+}
+
+.gp_code td {
+	
+	 margin-left: 4.3px! important;
+	 margin-top:-2px !important; 
+	 font-weight: bold;
+}
+
+.rec_no td {
+	
+	 margin-left: 4.3px! important;
+	 margin-top:-2px !important; 
+	 font-weight: bold;
+}
+
+.received_amt td {
+	
+	  margin-left: 4.3px! important;
+	 margin-top:-2px !important; 
+	 font-weight: bold;
+}
+.pay_date td {
+	
+	 margin-left: 4.3px! important;
+	 margin-top:-2px !important; 
+	 font-weight: bold;
+	 width:10% !important;
+}
+
+.installment td {
+	
+	 margin-left: 4.3px! important;
+	 margin-top:-2px !important; 
+	 font-weight: bold;
+}
+
+
+
+.pay_amt td {
+	
+	 margin-left: -4px! important;
+	 margin-top:-2px !important; 
+	 font-weight: bold;
+}
+
+.rep_date td {
+	
+	 margin-left: -4px! important;
+	 margin-top:-2px !important; 
+	 font-weight: bold;
+}
+
+	.copmy_name{
+		
+		margin-left:13px !important;
+		
+		
+	}
+.demo1{
+	
+	margin-left:2px !important;
+}
+.demo2{
+	
+	margin-left:2.1px !important;
+}
+.demo3{
+	
+	margin-left:2.8px !important;
+}
+.demo4{
+	
+	margin-left:1px !important;
+}
+.demo2{
+	
+	margin-left:2.1px !important;
+}
+	
+.meta1{
+	margin-top:-5px !important;
+	width:150px !important;
+	font-size:1.5px !important;
+	margin-right:-245px !important;
+	
+	} 
+	
+
+.last_payamt td {
+	
+	 margin-left: -7px !important;
+	 margin-top:1px !important; 
+	 font-weight: bold;
+}
+.last_paydate td {
+	
+	 margin-right:10px !important;
+	 margin-left:-7px !important;
+	 margin-top:-2px !important; 
+	 font-weight: bold;
+}
+
+.total_amt td{
+	
+	 margin-top:-2px !important;
+	font-weight: bold;	
+	margin-left:-7px!important;
+}
+.emp_name td{
+	
+	 margin-top:-2px !important;
+	font-weight: bold;	
+	margin-left:-7px!important;
+
+}
+	
+.demo5{
+	
+	margin-left:2px !important;
+}
+.demo6{
+	
+	margin-left:4.8px !important;
+}
+.demo7{
+	
+	margin-left:1.5px !important;
+}
+p.dotted {border-style: dotted; margin-top:1px ! important; margin-right:40px!important;}
+
+p {
+    border:0.15px solid black;
+    outline-color: red;
+	
+}
+p.dotted1 {border-style: dotted; margin-top:12px ! important;margin-right:40px!important;}

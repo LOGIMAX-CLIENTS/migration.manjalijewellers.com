@@ -1,0 +1,1253 @@
+-- ╔══════════════════════════════════════════════════════════════════════════════╗
+-- ║  ⚠️  DEPRECATED — DO NOT ADD NEW QUERIES HERE                              ║
+-- ║                                                                            ║
+-- ║  This file is kept for historical reference only.                          ║
+-- ║  Queries here may or may not have been executed on all environments.        ║
+-- ║                                                                            ║
+-- ║  NEW PROCESS (effective March 2026):                                       ║
+-- ║  Place your .sql migration files in:  database/migrations/                 ║
+-- ║  Naming format:  YYYYMMDD_HHMMSS_description.sql                          ║
+-- ║  Example:  20260318_153000_add_insurance_columns.sql                       ║
+-- ║                                                                            ║
+-- ║  Migrations are auto-executed during deploy via run-migrations.sh          ║
+-- ║  and tracked in the migration_history table (no duplicates).               ║
+-- ║  See:  database/migrations/README.md  for full instructions.               ║
+-- ╚══════════════════════════════════════════════════════════════════════════════╝
+
+ALTER TABLE payment CHANGE due_type due_type VARCHAR(5) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT 'N';
+
+-- Rahul 26/05 for privacy and policy in settings
+ALTER TABLE `general` CHANGE `type` `type` INT NULL DEFAULT NULL COMMENT '1-T&c,2-FAQ, 3- aboutus,4-privacy policy\r\n';
+
+
+-- Rahul 31/05/25 Indexing QUERIES
+
+
+ALTER TABLE company ADD INDEX (id_country);
+ALTER TABLE company ADD INDEX (id_state);
+ALTER TABLE company ADD INDEX (id_city);
+ALTER TABLE metal_rates ADD INDEX (id_metalrates);
+ALTER TABLE customer ADD INDEX (mobile);
+ALTER TABLE customer ADD INDEX (id_customer);
+ALTER TABLE wallet_account ADD INDEX (id_wallet_account);
+ALTER TABLE wallet_account ADD INDEX (id_customer);
+ALTER TABLE wallet_account ADD INDEX (id_employee);
+ALTER TABLE wallet_transaction ADD INDEX (id_wallet_account);
+ALTER TABLE weight ADD INDEX (active);
+ALTER TABLE country ADD INDEX (id_country);
+ALTER TABLE state ADD INDEX (id_country);
+ALTER TABLE state ADD INDEX (id_state);
+ALTER TABLE city ADD INDEX (id_state);
+ALTER TABLE city ADD INDEX (id_city);
+ALTER TABLE state ADD INDEX (name);
+ALTER TABLE city ADD INDEX (name);
+ALTER TABLE scheme_group ADD INDEX (id_scheme);
+ALTER TABLE scheme ADD INDEX (id_classification);
+ALTER TABLE scheme ADD INDEX (active);
+ALTER TABLE scheme ADD INDEX (visible);
+ALTER TABLE scheme ADD INDEX (id_scheme);
+ALTER TABLE scheme_account ADD INDEX (id_scheme);
+ALTER TABLE scheme_account ADD INDEX (id_scheme_account);
+ALTER TABLE scheme_account ADD INDEX (id_customer);
+ALTER TABLE scheme_account ADD INDEX (scheme_acc_number);
+ALTER TABLE payment ADD INDEX (id_scheme_account);
+ALTER TABLE payment ADD INDEX (payment_status);
+ALTER TABLE payment ADD INDEX (date_payment);
+ALTER TABLE scheme_account ADD INDEX (group_code);
+ALTER TABLE payment ADD INDEX (date_add);
+ALTER TABLE payment ADD INDEX (added_by);
+ALTER TABLE postdate_payment ADD INDEX (payee_bank);
+ALTER TABLE postdate_payment ADD INDEX (payment_status);
+ALTER TABLE postdate_payment ADD INDEX (id_scheme_account);
+ALTER TABLE postdate_payment ADD INDEX (date_payment);
+ALTER TABLE payment ADD INDEX (payment_mode);
+ALTER TABLE scheme_account ADD INDEX (is_closed);
+ALTER TABLE wallet_category_settings ADD INDEX (active);
+ALTER TABLE wallet_category_settings ADD INDEX (id_category);
+ALTER TABLE address ADD INDEX (id_customer);
+ALTER TABLE customer ADD INDEX (passwd);
+ALTER TABLE customer ADD INDEX (active);
+ALTER TABLE sms_api_settings ADD INDEX (id_sms_api);
+ALTER TABLE sms_api_settings ADD INDEX (debit_sms);
+ALTER TABLE payment ADD INDEX (id_transaction);
+ALTER TABLE new_arrivals ADD INDEX (active);
+ALTER TABLE new_arrivals ADD INDEX (new_type);
+ALTER TABLE offers ADD INDEX (type);
+ALTER TABLE offers ADD INDEX (active);
+ALTER TABLE new_arrivals ADD INDEX (id_new_arrivals);
+ALTER TABLE offers ADD INDEX (id_offer);
+ALTER TABLE sch_classify ADD INDEX (active);
+ALTER TABLE registered_devices ADD INDEX (id_customer);
+ALTER TABLE customer ADD INDEX (email);
+ALTER TABLE branch ADD INDEX (show_to_all);
+ALTER TABLE inter_wallet_account ADD INDEX (mobile);
+ALTER TABLE scheme_reg_request ADD INDEX (id_scheme);
+ALTER TABLE scheme_reg_request ADD INDEX (id_scheme_group);
+ALTER TABLE gateway ADD INDEX (id_pg);
+ALTER TABLE gateway ADD INDEX (id_branch);
+ALTER TABLE gateway ADD INDEX (is_default);
+ALTER TABLE gateway ADD INDEX (active);
+ALTER TABLE payment ADD INDEX (ref_trans_id);
+ALTER TABLE pending_payment ADD INDEX (id_transaction);
+ALTER TABLE branch ADD INDEX (id_branch);
+ALTER TABLE metal_rates ADD INDEX (id_employee);
+ALTER TABLE otp ADD INDEX (id_sch_acc);
+ALTER TABLE scheme_account ADD INDEX (closed_by);
+ALTER TABLE registration ADD INDEX (id_customer);
+ALTER TABLE registration ADD INDEX (id_scheme);
+ALTER TABLE registration ADD INDEX (is_approved);
+ALTER TABLE scheme_account ADD INDEX (closing_date);
+ALTER TABLE scheme_account ADD INDEX (id_branch);
+ALTER TABLE menu ADD INDEX (id_menu);
+ALTER TABLE access ADD INDEX (id_menu);
+ALTER TABLE access ADD INDEX (id_profile);
+ALTER TABLE menu ADD INDEX (active);
+ALTER TABLE profile ADD INDEX (id_profile);
+ALTER TABLE menu ADD INDEX (parent);
+ALTER TABLE bank ADD INDEX (id_bank);
+ALTER TABLE payment_mode ADD INDEX (id_mode);
+ALTER TABLE weight ADD INDEX (id_weight);
+ALTER TABLE sch_classify ADD INDEX (id_classification);
+ALTER TABLE department ADD INDEX (id_dept);
+ALTER TABLE services ADD INDEX (id_services);
+ALTER TABLE employee ADD INDEX (email);
+ALTER TABLE employee ADD INDEX (mobile);
+ALTER TABLE employee ADD INDEX (passwd);
+ALTER TABLE customer ADD INDEX (date_add);
+ALTER TABLE customer ADD INDEX (firstname);
+ALTER TABLE customer ADD INDEX (lastname);
+ALTER TABLE address ADD INDEX (id_country);
+ALTER TABLE address ADD INDEX (id_state);
+ALTER TABLE address ADD INDEX (id_city);
+ALTER TABLE customer ADD INDEX (username);
+ALTER TABLE customer ADD INDEX (email);
+ALTER TABLE customer ADD INDEX (added_by);
+ALTER TABLE employee ADD INDEX (username);
+ALTER TABLE employee ADD INDEX (id_profile);
+ALTER TABLE employee ADD INDEX (emp_code);
+ALTER TABLE daily_collection ADD INDEX (date);
+ALTER TABLE purchase_customer ADD INDEX (firstname);
+ALTER TABLE purchase_customer ADD INDEX (mobile);
+
+Rahul J 13/06/2025
+
+TKV queries when the GA issue happened:
+
+
+IN DB SIDE:
+
+    STEP - 1:
+        update services set serv_email = 0, serv_sms = 0, serv_whatsapp = 0;(For test purpose)
+
+    STEP - 2:
+
+        Remove the datas: 
+
+        UPDATE payment p LEFT JOIN scheme_account sa ON p.id_scheme_account = sa.id_scheme_account SET p.due_type = NULL, p.installment = NULL, p.due_date_to = NULL, p.grace_date = NULL WHERE sa.id_scheme = 1;
+
+    STEP - 3:
+
+        Update the service - https://venkateshwaraafinegold.com/test_tkverp/admin/index.php/admin_services/dayDurationSchemeService/1
+
+    STEP - 4:
+        Get the datas: 
+        SELECT p.* FROM payment p INNER JOIN scheme_account sa ON p.id_scheme_account = sa.id_scheme_account WHERE sa.id_scheme = 1 and p.payment_status = 1;
+
+    STEP - 5:
+
+        Get the same installment and the same id_scheme_account:
+
+        SELECT p.id_payment,p.id_scheme_account,p.installment, sa.* FROM payment p LEFT JOIN scheme_account sa ON (sa.id_scheme_account = p.id_scheme_account) WHERE p.payment_status = 1 AND sa.id_scheme = 1 AND (p.id_scheme_account, p.installment) IN ( SELECT p2.id_scheme_account, p2.installment FROM payment p2 LEFT JOIN scheme_account sa2 ON (sa2.id_scheme_account = p2.id_scheme_account) WHERE p2.payment_status = 1 AND sa2.id_scheme = 1 GROUP BY p2.id_scheme_account, p2.installment HAVING COUNT(*) > 1 );
+
+    STEP - 6:
+        Get that replicated datas only:
+        Using temporary table::(RankedPayments)
+
+        WITH RankedPayments AS (
+            SELECT
+                p.id_payment,
+                p.id_scheme_account,
+                p.installment,
+                p.payment_status,
+                -- Include other 'p' columns you need in the final select
+                ROW_NUMBER() OVER (
+                    PARTITION BY p.id_scheme_account, p.installment
+                    ORDER BY p.id_payment ASC -- Defines which is the "first" (lowest id_payment)
+                ) as rn
+            FROM
+                payment p
+            INNER JOIN -- Use INNER JOIN here as you're filtering by sa.id_scheme = 1
+                scheme_account sa ON p.id_scheme_account = sa.id_scheme_account
+            WHERE
+                p.payment_status = 1
+                AND sa.id_scheme = 1
+        )
+        SELECT rp.id_payment, rp.id_scheme_account, rp.installment, sa.* -- Select desired columns
+        FROM RankedPayments rp
+        LEFT JOIN scheme_account sa ON rp.id_scheme_account = sa.id_scheme_account -- Re-join to get sa.* columns
+        WHERE rp.rn > 1; -- Filter out the first occurrence (rn = 1)
+
+    STEP - 7:
+        To update payment_status = 10 for the result of above query
+
+        UPDATE payment p_target
+        INNER JOIN scheme_account sa ON p_target.id_scheme_account = sa.id_scheme_account
+        SET p_target.payment_status = 10
+        WHERE p_target.payment_status = 1
+        AND sa.id_scheme = 1
+        AND p_target.id_payment NOT IN (
+            SELECT MIN(p_inner.id_payment)
+            FROM payment p_inner
+            INNER JOIN scheme_account sa_inner ON p_inner.id_scheme_account = sa_inner.id_scheme_account
+            WHERE p_inner.payment_status = 1
+            AND sa_inner.id_scheme = 1
+            GROUP BY p_inner.id_scheme_account, p_inner.installment
+        );
+
+
+    STEP - 8:
+        Select The datas:
+        SELECT @a:=@a+1 as id_adv_payment,`id_scheme_account`, `id_employee`, `id_branch`, `id_payGateway`, `id_transaction`, `payu_id`, `date_payment`, `custom_entry_date`, `installment`, `payment_type`, `payment_mode`, `act_amount`, `payment_amount`, 'GA' as `due_type`, `metal_rate`, `metal_weight`, `cheque_date`, `cheque_no`, `bank_acc_no`, `bank_name`, `bank_branch`, `bank_IFSC`, `card_no`, `card_holder`, `cvv`, `exp_date`, `payment_ref_number`, `payment_status`, `date_upd`, `remark`,null as `receipt_no`, `date_add`, `added_by`, `ref_trans_id`, `gst`, `gst_type`, `gst_amount`, `is_print_taken`, `cgst`, `igst`, `sgst`, `is_gateway_verified`, `id_agent`, `receipt_year`, `paidBy_mobile`, `paidBy_id_customer`, `form_secret`, `pay_email`, `no_of_dues`, `discountAmt`, `add_charges`, `actual_trans_amt`, `dev_remark`
+        FROM payment 
+        join (SELECT @a:= 806) a  
+        where payment_status = 10  
+
+    STEP - 9:
+        Update the datas in genral advance:
+
+        Insert into general_advance_payment
+        SELECT @a:=@a+1 as id_adv_payment,`id_scheme_account`, `id_employee`, `id_branch`, `id_payGateway`, `id_transaction`, `payu_id`, `date_payment`, `custom_entry_date`, `installment`, `payment_type`, `payment_mode`, `act_amount`, `payment_amount`, 'GA' as `due_type`, `metal_rate`, `metal_weight`, `cheque_date`, `cheque_no`, `bank_acc_no`, `bank_name`, `bank_branch`, `bank_IFSC`, `card_no`, `card_holder`, `cvv`, `exp_date`, `payment_ref_number`, `payment_status`, `date_upd`, `remark`,null as `receipt_no`, `date_add`, `added_by`, `ref_trans_id`, `gst`, `gst_type`, `gst_amount`, `is_print_taken`, `cgst`, `igst`, `sgst`, `is_gateway_verified`, `id_agent`, `receipt_year`, `paidBy_mobile`, `paidBy_id_customer`, `form_secret`, `pay_email`, `no_of_dues`, `discountAmt`, `add_charges`, `actual_trans_amt`, `dev_remark`
+        FROM payment 
+        join (SELECT @a:= 806) a  
+        where payment_status = 10  
+
+
+Rahul J - 16/06/2025
+
+To change the payment_mode structure value:
+    ALTER TABLE `payment_mode_details` CHANGE `payment_mode` `payment_mode` VARCHAR(15) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL;
+
+To get the datas which are in payment and not in pmd
+    
+    SELECT @a:=@a+1 as id_pay_mode_details,id_payment,NULL as NB_type,date_payment as payment_date,payment_mode,payment_amount,NULL as cheque_date,NULL as net_banking_date,NULL as cheque_no,NULL as bank_acc_no,NULL as bank_name,NULL as bank_branch,NULL as bank_IFSC,NULL as card_no,NULL as card_holder,NULL as cvv,NULL as exp_date, NULL as payment_ref_number,payment_status,'By Import' as remark,NULL as created_by,NULL as updated_by,CURRENT_DATE as created_time,CURRENT_DATE as updated_time,null as card_type,NULL as id_pay_device, NULL as id_bank,'1' as is_active FROM payment join (SELECT @a:= 0) a where payment_status = 1 and id_payment NOT IN (select id_payment from payment_mode_details where payment_status = 1 and is_active = 1);
+
+To insert that datas into pmd table:
+
+    
+    INSERT INTO payment_mode_details SELECT @a:=@a+1 as id_pay_mode_details,id_payment,NULL as NB_type,date_payment as payment_date,payment_mode,payment_amount,NULL as cheque_date,NULL as net_banking_date,NULL as cheque_no,NULL as bank_acc_no,NULL as bank_name,NULL as bank_branch,NULL as bank_IFSC,NULL as card_no,NULL as card_holder,NULL as cvv,NULL as exp_date, NULL as payment_ref_number,payment_status,'By Import' as remark,NULL as created_by,NULL as updated_by,CURRENT_DATE as created_time,CURRENT_DATE as updated_time,null as card_type,NULL as id_pay_device, NULL as id_bank,'1' as is_active FROM payment join (SELECT @a:= 0) a where payment_status = 1 and id_payment NOT IN (select id_payment from payment_mode_details where payment_status = 1 and is_active = 1);
+
+
+Rahul J - 18/06/2025
+
+For that credit card payments doesnt show in source wise report issue: 
+    ALTER TABLE payment CHANGE due_type due_type VARCHAR(5) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT 'N';
+    Update payment set due_type = 'MND' WHERE due_type = 'MN';
+    Update payment_mode_details set payment_mode = 'DC' where payment_mode ='debit_card';
+     Update payment_mode_details set payment_mode = 'CC' where payment_mode ='credit_car';
+
+Abinaya M - 18/07/2025
+Digi Gold scheme queries start
+
+ALTER TABLE `scheme` ADD `key_benifits_description` TEXT NOT NULL AFTER `description`;
+ALTER TABLE `scheme` ADD `digi_target` TINYINT(1) NOT NULL DEFAULT '0' COMMENT '0 - set target disabled, 1- set target enabled' AFTER `total_days_to_pay`, ADD `digi_target_split_unit` TINYINT(1) NOT NULL DEFAULT '0' COMMENT '1- days, 2- week, 3- month' AFTER `digi_target`;
+
+
+ALTER TABLE scheme_account ADD dg_target_value_wgt DECIMAL(10,3) NOT NULL DEFAULT '0.000' AFTER total_paid_ins, ADD dg_target_wgt_achieved DECIMAL(10,3) NOT NULL DEFAULT '0.000' AFTER dg_target_value_wgt;
+
+ALTER TABLE payment ADD saved_benefits DECIMAL(10,3) NULL DEFAULT NULL COMMENT 'For digi gold(weight) ' AFTER is_gateway_verified, ADD saved_benefit_amt DECIMAL(10,2) NOT NULL DEFAULT '0.00' COMMENT 'Benefit Amount' AFTER saved_benefits, ADD benefit_value DECIMAL(10,3) NULL DEFAULT NULL COMMENT 'For digi gold' AFTER saved_benefit_amt, ADD benefit_type INT NULL DEFAULT NULL COMMENT 'For digi gold' AFTER benefit_value;
+
+ALTER TABLE `chit_settings` ADD `enable_digi_gold` TINYINT(2) NOT NULL DEFAULT '0' COMMENT 'Whether digi gold module available? 0 - No, 1 - Yes' AFTER `enable_dth`;
+
+ALTER TABLE `transaction` ADD `benefit_value` DECIMAL(10,2) NOT NULL DEFAULT '0.00' COMMENT 'Digi gold benefit percentage value', ADD `saved_benefit_amt` DECIMAL(10,2) NOT NULL DEFAULT '0.00' COMMENT 'Digi gold benefit amount' AFTER `benefit_value`, ADD `saved_benefits_wgt` DECIMAL(10,3) NOT NULL DEFAULT '0.000' COMMENT 'Digi gold benefit weight' AFTER `saved_benefit_amt`;
+
+Digi Gold scheme queries end
+
+
+22/07/2025
+
+ALTER TABLE `customerorderdetails` CHANGE `orderno` `orderno` VARCHAR(55) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL;
+
+Due to : Data too long for column 'orderno' at row 1
+
+---------------------------------------------------------------------------------------------------------------------------
+Jothiswaran. k  - 23/7/2025
+Zoho Link - https://connect.zoho.in/portal/logimax-clients/task/124744000001431282
+Git Commit Id - cc1c1a45061132ee9fa889b6f815507a77bec6df
+
+
+Task  - In the bulk tag edit form, the MC type needs to have 'MC' added to the % price type, just like in the tagging form.
+
+Root cause -  There is no option to select the Price % option in the Bulk Tag Edit form.
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+31/07/2025 - Abinaya. M
+Client - Vinsmera [Marriage Topup scheme] 
+
+ALTER TABLE `scheme` 
+    ADD `is_topup_scheme` TINYINT(1) NOT NULL DEFAULT '0' COMMENT '1 - yes , 0 - no' AFTER `display_payable`, 
+    ADD `topup_booking_type` TINYINT(1) NOT NULL DEFAULT '1' COMMENT '1 - Amount , 2 - weight' AFTER `is_topup_scheme`, 
+    ADD `topup_min_value` DECIMAL(10,3) NOT NULL DEFAULT '0.000' COMMENT 'Booking minimum value' AFTER `topup_booking_type`, 
+    ADD `topup_max_value` DECIMAL(10,3) NOT NULL DEFAULT '0.000' COMMENT 'Booking maximum value' AFTER `topup_min_value`, 
+    ADD `topup_denomination` DECIMAL(5,3) NOT NULL DEFAULT '0.000' COMMENT 'Booking denomination value' AFTER `topup_max_value`;
+
+ALTER TABLE `scheme` 
+    CHANGE `installment_cycle` `installment_cycle` INT(5) NOT NULL DEFAULT '0' COMMENT '0-monthly pay,1-daily pay,2-By days duration pay,3-one time pay, 4- custom payable cycle';    
+ALTER TABLE `scheme` 
+    CHANGE `flexible_sch_type` `flexible_sch_type` INT(1) NULL DEFAULT NULL COMMENT '1-Amount,2-Amt-Wt(amt),3-Amt-Wt(wt),4-Weight(wt),5-Weight(Amt), 9 - custom_payable_by_topup_value';
+
+ALTER TABLE `scheme_account` 
+    ADD `topup_amount` DECIMAL(10,2) NOT NULL DEFAULT '0.00' COMMENT 'Joining time booking amount' AFTER `store_closing_balance_as`, 
+    ADD `topup_weight` DECIMAL(10,3) NOT NULL DEFAULT '0.000' COMMENT 'Joining time booking weight' AFTER `topup_amount`, 
+    ADD `topup_rate` DECIMAL(10,2) NOT NULL DEFAULT '0.00' COMMENT 'Joining time booking rate' AFTER `topup_weight`;
+
+ALTER TABLE `payment` 
+    ADD `topup_slab_data` TEXT NULL DEFAULT NULL COMMENT 'topup scheme custom payable slab data' AFTER `dev_remark`;
+
+UPDATE `state` SET `state_code` = '32' WHERE (`id_state` = '19');    
+
+ALTER TABLE `scheme` 
+    ADD `topup_store_slab` TINYINT(2) NOT NULL DEFAULT '1' COMMENT '1 - store fully completed slab, 2 - store current slab ' AFTER `topup_denomination`;
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+
+Esakkiraja. N   - 31/07/2025
+Metal rate back dated edit:
+
+ALTER TABLE profile ADD metalrate_edit TINYINT(5) NOT NULL DEFAULT '0' AFTER order_delievery_otp, ADD metal_rate_datelimit INT(11) NULL DEFAULT '1' AFTER metalrate_edit;
+ALTER TABLE payment ADD metalrate_edit_date DATETIME NULL DEFAULT NULL AFTER refund_id;
+----------------------------------------------------------------------------------------------------------------------------------------------
+06/08/2025 - Abinaya. M
+Client - Customer master marital status & languages_known
+
+ALTER TABLE `customer` ADD `marital_status` INT(2) NOT NULL DEFAULT '0' COMMENT '0 - Rather not to say, 1 - single, 2 - married' AFTER `vip_up_time`, ADD `languages_known` VARCHAR(50) NULL DEFAULT NULL COMMENT 'From languages master' AFTER `marital_status`;
+----------------------------------------------------------------------------------------------------------------------------------------------
+
+Esakkiraja. N   - 06-08-2025
+
+ALTER TABLE `payment` CHANGE `is_editing_enabled` `is_editing_enabled` TINYINT(4) UNSIGNED NULL DEFAULT '0';
+
+Esakki Jothika.K - 06-08-2025
+column added on kyc
+
+ALTER TABLE kyc ADD bank_name VARCHAR(100) NULL DEFAULT NULL AFTER bank_branch;
+ALTER TABLE kyc ADD cheque_img VARCHAR(500) NULL DEFAULT NULL AFTER img_url;
+ALTER TABLE kyc ADD cheque_doc_url VARCHAR(500) NULL DEFAULT NULL AFTER document_url;
+ALTER TABLE kyc ADD proof_name INT(11) NULL DEFAULT NULL AFTER kyc_type;
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Esakkiraja. N   - 06-08-2025
+
+ALTER TABLE scheme_account ADD add_ben_type TINYINT(5) NOT NULL DEFAULT '0' COMMENT '0 -> amount, 1 -> weight' AFTER additional_benefits;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Karthikai Kumaran T - 16/08/2025
+
+ --- for Advance Adjustment 
+ALTER TABLE `payment_mode_details` ADD `adv_receipt_no` VARCHAR(45) NULL DEFAULT NULL COMMENT 'In this column we store a bill no id thats column name is id_issue_receipt in ret_issue_receipt against a payment which is done by adj adjustment' AFTER `id_bank`;
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+RAHUL - 30/08/25
+
+ALTER TABLE scheme CHANGE closing_maturity_days closing_maturity_days INT(3) NULL DEFAULT '0' COMMENT 'in days. [ benefits will be applied this field] 0 - Shall close on same day';
+ALTER TABLE scheme CHANGE maturity_days maturity_days INT(10) NULL DEFAULT '0' COMMENT 'in days. (If null no fixed maturity)';
+update scheme set closing_maturity_days = 0 where closing_maturity_days is null
+update scheme set maturity_days = 0 where maturity_days is null
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Esakki Jothika.K - 04/09/2025
+
+ ALTER TABLE `customer` ADD `allocated_on` DATETIME NULL DEFAULT NULL AFTER `id_agent`;
+ ALTER TABLE `customer` ADD `allocated_employee` int(10) NULL DEFAULT NULL AFTER `allocated_on`;
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+-- Karthikai Kumaran T - 04/09/2025
+
+-- Top Up scheme			
+			
+ALTER TABLE `scheme` CHANGE `topup_min_value` `topup_min_value` DECIMAL(8,2) NOT NULL DEFAULT '0.000' COMMENT 'Booking minimum value', CHANGE `topup_max_value` `topup_max_value` DECIMAL(8,2) NOT NULL DEFAULT '0.000' COMMENT 'Booking maximum value', CHANGE `topup_denomination` `topup_denomination` DECIMAL(8,2) NOT NULL DEFAULT '0.000' COMMENT 'Booking denomination value';		
+ALTER TABLE `log_detail` ADD `form_data` LONGTEXT NULL DEFAULT NULL AFTER `event_through`;
+ALTER TABLE `log_detail` CHANGE `form_data` `form_data` LONGTEXT CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL COMMENT 'In this we store a whole form content in json format';
+ALTER TABLE `scheme_custom_payable_settings` CHANGE `created_on` `created_on` VARCHAR(30) NULL DEFAULT NULL COMMENT 'entry created datetime', CHANGE `updated_on` `updated_on` VARCHAR(30) NULL DEFAULT NULL COMMENT 'Update entry current date time';
+
+
+RAHUL 10_09_25
+
+        update scheme set display_payable = 0 where display_payable is null
+
+        ALTER TABLE `chit_settings` ADD `show_amt_history` TINYINT(1) NOT NULL DEFAULT '0' COMMENT 'For app to show the paid amounts history' AFTER `lock_metal`;
+        ALTER TABLE `chit_settings` ADD `show_wgt_history` TINYINT(1) NOT NULL DEFAULT '0' COMMENT 'For app to show the paid weights history' AFTER `show_amt_history`;
+         ALTER TABLE `chit_settings` ADD `show_close` TINYINT(1) NOT NULL DEFAULT '0' COMMENT 'For app to show the closed acoounts or not ' AFTER `show_wgt_history`;
+
+        ALTER TABLE `customer` ADD `allocated_employee` VARCHAR(100) NULL DEFAULT NULL COMMENT 'For collection employee' AFTER `languages_known`;
+        ALTER TABLE `customer` ADD `allocated_on` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `allocated_employee`;
+
+        ALTER TABLE `company` ADD `whatsapp_no1` VARCHAR(20) NULL DEFAULT NULL COMMENT 'For alternate whatsapp number' AFTER `whatsapp_no`;
+
+RAHUL 17_09_25 (From RTM)
+
+         ALTER TABLE `chit_settings` ADD `showlanguage` TINYINT(1) NOT NULL DEFAULT '0' COMMENT 'For app to show the language option or not ' AFTER `show_close`;
+
+        ALTER TABLE `general` ADD `lang` TINYINT(1) NOT NULL DEFAULT '0' COMMENT '1 => Tamil , 2=> English' AFTER `img`;
+        
+         ALTER TABLE `chit_settings` ADD `show_social_media` TINYINT(1) NOT NULL DEFAULT '0' COMMENT 'For app to show the social media option or not ' AFTER `showlanguage`;
+
+
+----------------------------------------------------------------------------------------------------------------------
+
+
+Jothish - 30/09/2025
+
+ALTER TABLE `ret_karigar_metal_issue` ADD `fin_year_code` INT NOT NULL AFTER `met_issue_id`;
+ALTER TABLE `ret_karigar_metal_issue_details` CHANGE `calc_type` `calc_type` TINYINT(1) NULL DEFAULT NULL;
+----------------------------------------------------------------------------------------------------------------------
+
+        ALTER TABLE `payment` CHANGE `is_editing_enabled` `is_editing_enabled` TINYINT UNSIGNED NULL DEFAULT '0';
+        update payment set is_editing_enabled = 0 where is_editing_enabled is null;
+         ALTER TABLE `chit_settings` ADD `show_social_media` TINYINT(1) NOT NULL DEFAULT '0' COMMENT 'For app to show the social media option or not ' AFTER `showlanguage`;
+
+ALTER TABLE ret_billing CHANGE customer_name customer_name VARCHAR(100) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL;
+
+-------------------------------------------------------------------------------------------------------------------------
+
+-- KANAGASUNDAR 11/10/2025 Old metal process
+
+ALTER TABLE `ret_old_metal_process` CHANGE `next_process_for` `next_process_for` INT(11) NULL DEFAULT '0' COMMENT '1-> Process 2->Stock';
+
+ALTER TABLE `ret_old_metal_melting` CHANGE `rate` `rate` DECIMAL(10,2) NULL DEFAULT NULL;
+
+ALTER TABLE `ret_old_metal_melting_recd_details` CHANGE `testing_completed_wt` `testing_completed_wt` DECIMAL(10,3) NULL DEFAULT NULL;
+
+ALTER TABLE `ret_old_metal_melting_recd_details` CHANGE `tested_purity` `tested_purity` DECIMAL(10,3) NULL DEFAULT NULL;
+
+ALTER TABLE `ret_old_metal_refining` CHANGE `issue_weight` `issue_weight` DECIMAL(10,3) NULL DEFAULT NULL;
+
+ALTER TABLE `ret_old_metal_refining` CHANGE `id_melting` `id_melting` INT(11) NULL DEFAULT NULL;
+
+ALTER TABLE `ret_old_metal_refining` CHANGE `id_metal_testing` `id_metal_testing` INT(11) NULL DEFAULT NULL;
+
+------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------
+
+Esakki Jothika - 11-10-2025
+
+ALTER TABLE ret_bill_pay_device ADD COLUMN sort_order INT(11) AFTER device_name;
+
+SET @row_number = 0;
+
+UPDATE ret_bill_pay_device 
+SET sort_order = (@row_number := @row_number + 1)
+ORDER BY id_device;
+
+----------------------------------------------------------------------------------------------------------------------------
+
+-- Karthikai Kumaran - 16/10/2025  
+
+	ALTER TABLE `company`
+ADD `show_social_media` TINYINT NOT NULL DEFAULT '0' AFTER `authtoken`,
+ADD `whatsapp_url` LONGTEXT CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL AFTER `show_social_media`,
+ADD `insta_url` LONGTEXT CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL AFTER `whatsapp_url`,
+ADD `fb_url` LONGTEXT CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL AFTER `insta_url`,
+ADD `youtube_url` LONGTEXT CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL AFTER `fb_url`;
+	ALTER TABLE `company` CHANGE `show_social_media` `show_social_media` TINYINT(4) NOT NULL DEFAULT '0' COMMENT ' For app to show the social media option or not';
+	ALTER TABLE `chit_settings` DROP `show_social_media`;
+	ALTER TABLE `configuration` ADD `show_language` TINYINT NOT NULL DEFAULT '0' COMMENT 'For app to show the language option or not' AFTER `new_ios_version`, ADD `show_close` TINYINT NOT NULL DEFAULT '0' COMMENT 'For app to show the closed accounts or not' AFTER `show_language`, ADD `show_wgt_history` TINYINT NOT NULL DEFAULT '0' COMMENT 'For app to show the paid weights history' AFTER `show_close`, ADD `show_amt_history` TINYINT NOT NULL DEFAULT '0' COMMENT 'For app to show the paid amounts history' AFTER `show_wgt_history`;
+	ALTER TABLE `chit_settings`
+  DROP `show_amt_history`,
+  DROP `show_wgt_history`,
+  DROP `show_close`,
+  DROP `showlanguage`;
+  ALTER TABLE `chit_settings` CHANGE `pan_req_amt` `pan_req_amt` DECIMAL(10,2) NOT NULL DEFAULT '0.00' COMMENT 'get PAN by amount';
+ALTER TABLE `address` ADD `added_by` INT(2) NULL DEFAULT NULL COMMENT '0 - WebApp , 1 - admin, 2 - MobileApp, 3 - Collection app, 4 - Retail App, 5- Sync, 6-Import 7-Retail admin' AFTER `company_name`;
+
+-- rudra - 07-11-2025
+
+CREATE TABLE `ret_insurance` (
+  `insurance_id` int(11) NOT NULL,
+  `insurance_no` varchar(50) NOT NULL,
+  `bill_id` int(11) NOT NULL,
+  `insurance_amount` decimal(10,2) NOT NULL,
+  `policy_from` date NOT NULL,
+  `policy_to` date NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `ret_insurance`
+--
+ALTER TABLE `ret_insurance`
+  ADD PRIMARY KEY (`insurance_id`);
+
+
+-- NAMBI MUTHU RAJA - 11/11/2025  
+
+ALTER TABLE `ret_billing`
+ADD `irn_date` DATE DEFAULT NULL;
+  
+-- RAHUL 11_10_25 Benefit wgt in 4 digits
+  ALTER TABLE payment CHANGE saved_benefits saved_benefits DECIMAL(10,4) NULL DEFAULT NULL COMMENT 'For digi gold(weight) ';
+
+-- ABINAYA 11_11_2025 changed closing_interest_val datatype from varchar to decimal
+	ALTER TABLE `scheme_account` CHANGE `closing_interest_val` `closing_interest_val` DECIMAL(10,3) NULL DEFAULT NULL;
+
+-- Karthikai kumaran 18/11/2025 (Added a missing column in metal rates)
+
+ALTER TABLE metal_rates ADD goldrate_14ct DECIMAL(10,2) NOT NULL DEFAULT '0.00' AFTER coin_silver_1g;
+
+-- RAHUL 19_11_2025
+     ALTER TABLE chit_settings ADD enable_old_sch_acc_no TINYINT(1) NOT NULL DEFAULT '0' COMMENT 'For admin to show the old sch acc no or not' AFTER lock_metal;
+     ALTER TABLE kyc
+
+    DROP INDEX id_customer;
+
+    ALTER TABLE kyc
+    ADD verified_key VARCHAR(100)
+        GENERATED ALWAYS AS (
+            CASE 
+                WHEN status = 2 THEN CONCAT(id_customer, '-', kyc_type, '-', type)
+                ELSE NULL
+            END
+        ) VIRTUAL;
+
+    ALTER TABLE kyc
+    ADD UNIQUE (verified_key);
+
+-- RAHUL 25_11_25
+       ALTER TABLE `scheme` ADD `preclose_type` TINYINT(1) NOT NULL DEFAULT '1' COMMENT '0 -> Days , 1-> Installments' AFTER `allow_preclose`;
+
+-- rudra (19-11-2025)
+
+update ret_bill_delivery del LEFT JOIN address addr ON addr.id_customer = del.id_customer LEFT JOIN state st ON addr.id_state = st.id_state LEFT JOIN city ct ON ct.id_city = addr.id_city LEFT JOIN country cty ON cty.id_country = addr.id_country LEFT JOIN ret_billing b ON b.bill_id = del.bill_id set del.id_state = st.id_state, del.id_country = addr.id_country, del.id_city = addr.id_city WHERE del.id_state IS NULL;
+
+-- Jothika 25-11-2025
+    ALTER TABLE `scheme_account` ADD `old_scheme_acc_number` INT(50) NULL DEFAULT NULL;
+
+
+-- NAMBI MUTHU RAJA - 28/11/2025  
+    UPDATE `ret_settings` SET `description` = '0-No,1-Yes' WHERE `ret_settings`.`id_ret_settings` = 94;
+
+-- Esakkiraja_12-12-2025 (Silver benefit)
+ALTER TABLE `scheme_benefit_deduct_settings` ADD `commodity` INT NULL DEFAULT NULL AFTER `installment_no`;
+ALTER TABLE `payment` ADD `dg_other_benefit_wgt` DECIMAL(10,3) NULL DEFAULT NULL AFTER `benefit_type`;
+ALTER TABLE `payment` ADD `dg_other_benefit_amt` DECIMAL(10,2) NULL DEFAULT NULL AFTER `dg_other_benefit_wgt`;
+ALTER TABLE `scheme_account` ADD `dg_other_benefit_wgt` DECIMAL(10,3) NULL DEFAULT NULL AFTER `dg_target_wgt_achieved`, ADD `dg_other_benefit_amt` DECIMAL(10,2) NULL DEFAULT NULL AFTER `dg_other_benefit_wgt`;
+
+-- NAMBI MUTHU RAJA - 19/12/2025
+ALTER TABLE branch ADD id_village INT(11) NULL DEFAULT NULL AFTER pincode;
+
+-- RUDRA - 22/12/2025
+ALTER TABLE `ret_crdr_note` ADD `id_supplier_rate_cut` INT NOT NULL AFTER `po_id`;
+ALTER TABLE ret_crdr_note ADD `po_id` INT NOT NULL AFTER `supid`;
+ALTER TABLE ret_crdr_note ADD `weight` DOUBLE(12, 3) NOT NULL AFTER `transamount`;
+
+CREATE TABLE `ret_po_bill_payment_details` (
+  `pay_bill_id` int(11) NOT NULL,
+  `pay_id` int(11) NOT NULL,
+  `po_id` int(11) NOT NULL,
+  `opening_id` int(11) NOT NULL,
+  `id_supplier_rate_cut` int(11) NOT NULL,
+  `bill_amount` double(15,2) NOT NULL,
+  `total_amount` double(15,2) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- Rahul 24/12/25
+
+ALTER TABLE `agent` CHANGE `id_branch` `id_branch` VARCHAR(45) NULL DEFAULT NULL COMMENT 'cus register branch';
+
+-- Augustine 13/13/25
+
+ALTER TABLE  ret_grn_entry
+ADD COLUMN purchase_type INT(11) NULL COMMENT '1-stock, 2-walkin, 3-expo'; 
+
+-- RUDRA 30/12/25 for po due date entry field
+
+ALTER TABLE `ret_purchase_order` ADD `po_delivery_date` DATE NOT NULL AFTER `po_date`;
+
+-- RUDRA 30/12/25 for po due date entry field
+
+ALTER TABLE `ret_purchase_order` ADD `po_delivery_date` DATE NOT NULL AFTER `po_date`;
+
+
+-- RUDRA 30/12/2025 supplier approval ledger view query cr/dr adjustment affect in weight also
+
+select `pr`.`product_name` AS `category`,`pr`.`product_name` AS `product`,`po`.`po_date` AS `trans_date`,`po`.`po_ref_no` AS `referenceno`,'/purchase/job_receipt/' AS `link`,`po`.`po_id` AS `print_id`,1 AS `trans_type`,`pitm`.`po_order_no` AS `trans_id`,`pitm`.`gross_wt` AS `gross_wt`,`pitm`.`net_wt` AS `net_wt`,`pitm`.`no_of_pcs` AS `no_of_pcs`,`pitm`.`purchase_touch` AS `purchase_touch`,`pitm`.`item_pure_wt` AS `purewt`,`po`.`po_karigar_id` AS `customer_id`,1 AS `trans_rec_type`,sum(`pitm`.`item_cost`) AS `trans_amount`,`pitm`.`po_item_cat_id` AS `catid`,`pitm`.`po_item_pro_id` AS `proid`,1 AS `trans_screen_id`,`met`.`id_metal` AS `id_metal`,`met`.`metal` AS `metal`,concat(`pitm`.`fix_rate_per_grm`,if(`pitm`.`is_rate_fixed` = 1,'','(Un Fixed)')) AS `rate`,ifnull(`pitm`.`remark`,'') AS `narration`,unix_timestamp(`po`.`po_date`) AS `unixtransdate` from ((((((`srj`.`ret_purchase_order_items` `pitm` left join `srj`.`ret_purchase_order` `po` on(`po`.`po_id` = `pitm`.`po_item_po_id`)) left join `srj`.`ret_grn_entry` `grn` on(`grn`.`grn_id` = `po`.`po_grn_id`)) left join `srj`.`ret_karigar` `kr` on(`kr`.`id_karigar` = `po`.`po_karigar_id`)) left join `srj`.`ret_category` `cat` on(`cat`.`id_ret_category` = `pitm`.`po_item_cat_id`)) left join `srj`.`metal` `met` on(`met`.`id_metal` = `cat`.`id_metal`)) left join `srj`.`ret_product_master` `pr` on(`pr`.`pro_id` = `pitm`.`po_item_pro_id`)) where `grn`.`grn_type` = 2 and `po`.`is_approved` = 1 and `po`.`bill_status` = 1 and `po`.`is_suspense_stock` = 1 group by `pitm`.`po_item_id` union all select 'PAYMENT' AS `category`,'' AS `product`,`rf`.`date_add` AS `trans_date`,`rf`.`id_supplier_rate_cut` AS `referenceno`,'/supplier_rate_cut/job_receipt/' AS `link`,`rf`.`id_supplier_rate_cut` AS `print_id`,2 AS `trans_type`,`rf`.`id_supplier_rate_cut` AS `trans_id`,`rf`.`weight` AS `gross_wt`,`rf`.`weight` AS `net_wt`,'' AS `no_of_pcs`,'' AS `purchase_touch`,`rf`.`weight` AS `purewt`,`rf`.`id_karigar` AS `customer_id`,2 AS `trans_rec_type`,`rf`.`amount` AS `trans_amount`,'' AS `catid`,'' AS `proid`,7 AS `trans_screen_id`,'' AS `id_metal`,`rf`.`id_metal` AS `metal`,`rf`.`rate_per_gram` AS `rate`,ifnull(`rf`.`narration`,'') AS `narration`,unix_timestamp(`rf`.`date_add`) AS `unixtransdate` from `srj`.`ret_supplier_rate_cut` `rf` where `rf`.`rate_cut_type` = 1 and `rf`.`status` = 1 group by `rf`.`id_supplier_rate_cut` union all select if(`rf`.`weight` = 0,'Bill Conv(Amount)','Bill Conv(A to P)') AS `category`,'' AS `product`,`rf`.`date_add` AS `trans_date`,`rf`.`id_supplier_rate_cut` AS `referenceno`,'/supplier_rate_cut/job_receipt/' AS `link`,`rf`.`id_supplier_rate_cut` AS `print_id`,2 AS `trans_type`,`rf`.`id_supplier_rate_cut` AS `trans_id`,`rf`.`weight` AS `gross_wt`,`rf`.`weight` AS `net_wt`,'' AS `no_of_pcs`,if(`rf`.`weight` = 0,'','100') AS `purchase_touch`,`rf`.`weight` AS `purewt`,`rf`.`id_karigar` AS `customer_id`,1 AS `trans_rec_type`,if(`rf`.`charges_amount` > 0,`rf`.`charges_amount`,'') AS `trans_amount`,'' AS `catid`,'' AS `proid`,1 AS `trans_screen_id`,`rf`.`id_metal` AS `id_metal`,`rf`.`id_metal` AS `metal`,`rf`.`rate_per_gram` AS `rate`,ifnull(`rf`.`narration`,'') AS `narration`,unix_timestamp(`rf`.`date_add`) AS `unixtransdate` from `srj`.`ret_supplier_rate_cut` `rf` where `rf`.`rate_cut_type` = 2 and `rf`.`status` = 1 group by `rf`.`id_supplier_rate_cut` union all select `pr`.`product_name` AS `category`,`pr`.`product_name` AS `product`,`ret`.`bill_date` AS `trans_date`,`ret`.`pur_ret_ref_no` AS `referenceno`,'/return_receipt_acknowladgement/' AS `link`,`ret`.`pur_return_id` AS `print_id`,2 AS `trans_type`,`ret`.`pur_return_id` AS `trans_id`,sum(`pret`.`pur_ret_gwt`) AS `gross_wt`,sum(`pret`.`pur_ret_nwt`) AS `net_wt`,sum(`pret`.`pur_ret_pcs`) AS `no_of_pcs`,`pret`.`pur_ret_purchase_touch` AS `purchase_touch`,`pret`.`pur_ret_pur_wt` AS `purewt`,`ret`.`pur_ret_supplier_id` AS `customer_id`,1 AS `trans_rec_type`,sum(ifnull(`pret`.`pur_ret_debit_note_amt`,0)) AS `trans_amount`,`cat`.`id_ret_category` AS `catid`,`pret`.`id_product` AS `proid`,5 AS `trans_screen_id`,`met`.`id_metal` AS `id_metal`,`met`.`metal` AS `metal`,`pret`.`pur_ret_rate` AS `rate`,ifnull(`ret`.`pur_ret_remark`,'') AS `narration`,unix_timestamp(`ret`.`bill_date`) AS `unixtransdate` from ((((((((`srj`.`ret_purchase_return_items` `pret` left join `srj`.`ret_purchase_return` `ret` on(`ret`.`pur_return_id` = `pret`.`pur_ret_id`)) left join `srj`.`ret_purchase_order_items` `pitm` on(`pitm`.`po_item_id` = `pret`.`pur_ret_po_item_id`)) left join `srj`.`ret_purchase_order` `po` on(`po`.`po_id` = `pitm`.`po_item_po_id`)) left join `srj`.`ret_grn_entry` `grn` on(`grn`.`grn_id` = `po`.`po_grn_id`)) left join `srj`.`ret_karigar` `kr` on(`kr`.`id_karigar` = `ret`.`pur_ret_supplier_id`)) left join `srj`.`ret_product_master` `pr` on(`pr`.`pro_id` = `pret`.`id_product`)) left join `srj`.`ret_category` `cat` on(`cat`.`id_ret_category` = `pr`.`cat_id`)) left join `srj`.`metal` `met` on(`met`.`id_metal` = `cat`.`id_metal`)) where `ret`.`pur_ret_convert_to` = 3 and `ret`.`purchase_type` = 0 and `ret`.`bill_status` = 1 group by `pret`.`pur_ret_itm_id` union all select `pr`.`product_name` AS `category`,`pr`.`product_name` AS `product`,`ret`.`bill_date` AS `trans_date`,`ret`.`pur_ret_ref_no` AS `referenceno`,'/return_receipt_acknowladgement/' AS `link`,`ret`.`pur_return_id` AS `print_id`,2 AS `trans_type`,`ret`.`pur_return_id` AS `trans_id`,sum(`pret`.`pur_ret_gwt`) AS `gross_wt`,sum(`pret`.`pur_ret_nwt`) AS `net_wt`,sum(`pret`.`pur_ret_pcs`) AS `no_of_pcs`,`pret`.`pur_ret_purchase_touch` AS `purchase_touch`,`pret`.`pur_ret_pur_wt` AS `purewt`,`ret`.`pur_ret_supplier_id` AS `customer_id`,1 AS `trans_rec_type`,sum(ifnull(`pret`.`pur_ret_debit_note_amt`,0)) AS `trans_amount`,`cat`.`id_ret_category` AS `catid`,`pret`.`id_product` AS `proid`,5 AS `trans_screen_id`,`met`.`id_metal` AS `id_metal`,`met`.`metal` AS `metal`,`pret`.`pur_ret_rate` AS `rate`,ifnull(`ret`.`pur_ret_remark`,'') AS `narration`,unix_timestamp(`ret`.`bill_date`) AS `unixtransdate` from ((((((((`srj`.`ret_purchase_return_items` `pret` left join `srj`.`ret_purchase_return` `ret` on(`ret`.`pur_return_id` = `pret`.`pur_ret_id`)) left join `srj`.`ret_purchase_order_items` `pitm` on(`pitm`.`po_item_id` = `pret`.`pur_ret_po_item_id`)) left join `srj`.`ret_purchase_order` `po` on(`po`.`po_id` = `pitm`.`po_item_po_id`)) left join `srj`.`ret_grn_entry` `grn` on(`grn`.`grn_id` = `po`.`po_grn_id`)) left join `srj`.`ret_karigar` `kr` on(`kr`.`id_karigar` = `ret`.`pur_ret_supplier_id`)) left join `srj`.`ret_product_master` `pr` on(`pr`.`pro_id` = `pret`.`id_product`)) left join `srj`.`ret_category` `cat` on(`cat`.`id_ret_category` = `pr`.`cat_id`)) left join `srj`.`metal` `met` on(`met`.`id_metal` = `cat`.`id_metal`)) where `ret`.`pur_ret_convert_to` = 3 and `ret`.`purchase_type` = 1 and `ret`.`bill_status` = 1 group by `pret`.`pur_ret_itm_id` union all select `pr`.`product_name` AS `category`,`pr`.`product_name` AS `product`,`iss`.`met_issue_date` AS `trans_date`,`iss`.`met_issue_ref_id` AS `referenceno`,'/karigarmetalissue_acknowladgement/' AS `link`,`iitm`.`issue_met_parent_id` AS `print_id`,2 AS `trans_type`,`iitm`.`issue_met_parent_id` AS `trans_id`,if(`cat`.`cat_type` = 2,0,if(ifnull(`uom`.`divided_by_value`,0) = 0,`iitm`.`issue_metal_wt`,round(`iitm`.`issue_metal_wt` / `uom`.`divided_by_value`,3))) AS `gross_wt`,if(`cat`.`cat_type` = 2,0,if(ifnull(`uom`.`divided_by_value`,0) = 0,`iitm`.`issue_metal_wt`,round(`iitm`.`issue_metal_wt` / `uom`.`divided_by_value`,3))) AS `net_wt`,ifnull(`iitm`.`issue_pcs`,1) AS `no_of_pcs`,'100' AS `purchase_touch`,if(`pr`.`stone_type` = 0,`iitm`.`issue_metal_pur_wt`,if(ifnull(`uom`.`divided_by_value`,0) = 0,`iitm`.`issue_metal_wt`,round(`iitm`.`issue_metal_wt` / `uom`.`divided_by_value`,3))) AS `purewt`,`iss`.`met_issue_karid` AS `customer_id`,1 AS `trans_rec_type`,0 AS `trans_amount`,`iitm`.`issue_cat_id` AS `catid`,`iitm`.`issu_met_pro_id` AS `proid`,2 AS `trans_screen_id`,`met`.`id_metal` AS `id_metal`,`met`.`metal` AS `metal`,'' AS `rate`,ifnull(`iss`.`remark`,'') AS `narration`,unix_timestamp(`iss`.`met_issue_date`) AS `unixtransdate` from ((((((`srj`.`ret_karigar_metal_issue_details` `iitm` left join `srj`.`ret_karigar_metal_issue` `iss` on(`iss`.`met_issue_id` = `iitm`.`issue_met_parent_id`)) left join `srj`.`ret_karigar` `kr` on(`kr`.`id_karigar` = `iss`.`met_issue_karid`)) left join `srj`.`ret_category` `cat` on(`cat`.`id_ret_category` = `iitm`.`issue_cat_id`)) left join `srj`.`metal` `met` on(`met`.`id_metal` = `cat`.`id_metal`)) left join `srj`.`ret_product_master` `pr` on(`pr`.`pro_id` = `iitm`.`issu_met_pro_id`)) left join `srj`.`ret_uom` `uom` on(`uom`.`uom_id` = `iitm`.`issue_uom_id`)) where `iss`.`metalissue_type` = 2 and `iss`.`bill_status` = 1 group by `iitm`.`issue_met_id`,`iitm`.`issue_cat_id`,`iitm`.`issu_met_pro_id`,`iitm`.`issue_met_parent_id` union all select 'OPENING' AS `category`,'' AS `product`,`pay`.`createdon` AS `trans_date`,`pay`.`id_smith_company_op_balance` AS `referenceno`,'' AS `link`,'' AS `print_id`,`pay`.`amount_type` AS `trans_type`,`pay`.`id_smith_company_op_balance` AS `trans_id`,0 AS `gross_wt`,0 AS `net_wt`,0 AS `no_of_pcs`,'' AS `purchase_touch`,0 AS `purewt`,`pay`.`id_karigar` AS `customer_id`,1 AS `trans_rec_type`,sum(`pay`.`amount`) AS `trans_amount`,'' AS `catid`,'' AS `proid`,3 AS `trans_screen_id`,'' AS `id_metal`,'' AS `metal`,'' AS `rate`,ifnull(`pay`.`remarks`,'') AS `narration`,unix_timestamp(`pay`.`createdon`) AS `unixtransdate` from `srj`.`smith_company_op_balance` `pay` where `pay`.`smith_type` = 3 and `pay`.`stock_type` = 2 and `pay`.`amount` > 0 group by `pay`.`id_smith_company_op_balance` union all select 'OPENING' AS `category`,'' AS `product`,`pay`.`createdon` AS `trans_date`,`pay`.`id_smith_company_op_balance` AS `referenceno`,'' AS `link`,'' AS `print_id`,`pay`.`weight_type` AS `trans_type`,`pay`.`id_smith_company_op_balance` AS `trans_id`,ifnull(`pay`.`weight`,0) AS `gross_wt`,ifnull(`pay`.`weight`,0) AS `net_wt`,0 AS `no_of_pcs`,'' AS `purchase_touch`,ifnull(`pay`.`weight`,0) AS `purewt`,`pay`.`id_karigar` AS `customer_id`,1 AS `trans_rec_type`,0 AS `trans_amount`,'' AS `catid`,'' AS `proid`,3 AS `trans_screen_id`,`pay`.`id_metal` AS `id_metal`,'' AS `metal`,'' AS `rate`,ifnull(`pay`.`remarks`,'') AS `narration`,unix_timestamp(`pay`.`createdon`) AS `unixtransdate` from `srj`.`smith_company_op_balance` `pay` where `pay`.`smith_type` = 3 and `pay`.`stock_type` = 2 and `pay`.`weight` > 0 group by `pay`.`id_smith_company_op_balance` union all select if(`pay`.`transtype` = 1,'Credit Note','Debit Note') AS `category`,'' AS `product`,`pay`.`transdate` AS `trans_date`,`pay`.`transbillno` AS `referenceno`,'/credit_debit_acknolodgement/' AS `link`,`pay`.`crdrid` AS `print_id`,`pay`.`transtype` AS `trans_type`,`pay`.`transbillno` AS `trans_id`,0 AS `gross_wt`,0 AS `net_wt`,0 AS `no_of_pcs`,'' AS `purchase_touch`,0 AS `purewt`,`pay`.`supid` AS `customer_id`,1 AS `trans_rec_type`,sum(`pay`.`transamount`) AS `trans_amount`,'' AS `catid`,'' AS `proid`,1 AS `trans_screen_id`,'' AS `id_metal`,'' AS `metal`,'' AS `rate`,ifnull(`pay`.`naration`,'') AS `narration`,unix_timestamp(`pay`.`transdate`) AS `unixtransdate` from `srj`.`ret_crdr_note` `pay` where `pay`.`accountto` = 1 and `pay`.`crdr_status` = 1 and `pay`.`weight` > 0 group by `pay`.`crdrid` order by `unixtransdate`
+
+
+-- RUDRA 30/12/2025 supplier approval ledger view query (cr/dr adjustment weight now shown using below query)
+
+DROP VIEW IF EXISTS
+    ret_view_supplier_approval_ledger;
+CREATE VIEW ret_view_supplier_approval_ledger AS SELECT
+    `pr`.`product_name` AS `category`,
+    `pr`.`product_name` AS `product`,
+    `po`.`po_date` AS `trans_date`,
+    `po`.`po_ref_no` AS `referenceno`,
+    '/purchase/job_receipt/' AS `link`,
+    `po`.`po_id` AS `print_id`,
+    1 AS `trans_type`,
+    `pitm`.`po_order_no` AS `trans_id`,
+    `pitm`.`gross_wt` AS `gross_wt`,
+    `pitm`.`net_wt` AS `net_wt`,
+    `pitm`.`no_of_pcs` AS `no_of_pcs`,
+    `pitm`.`purchase_touch` AS `purchase_touch`,
+    `pitm`.`item_pure_wt` AS `purewt`,
+    `po`.`po_karigar_id` AS `customer_id`,
+    1 AS `trans_rec_type`,
+    SUM(`pitm`.`item_cost`) AS `trans_amount`,
+    `pitm`.`po_item_cat_id` AS `catid`,
+    `pitm`.`po_item_pro_id` AS `proid`,
+    1 AS `trans_screen_id`,
+    `met`.`id_metal` AS `id_metal`,
+    `met`.`metal` AS `metal`,
+    CONCAT(
+        `pitm`.`fix_rate_per_grm`,
+        IF(
+            `pitm`.`is_rate_fixed` = 1,
+            '',
+            '(Un Fixed)'
+        )
+    ) AS `rate`,
+    IFNULL(`pitm`.`remark`, '') AS `narration`,
+    UNIX_TIMESTAMP(`po`.`po_date`) AS `unixtransdate`
+FROM
+    (
+        (
+            (
+                (
+                    (
+                        (
+                            `srj`.`ret_purchase_order_items` `pitm`
+                        LEFT JOIN `srj`.`ret_purchase_order` `po`
+                        ON
+                            (`po`.`po_id` = `pitm`.`po_item_po_id`)
+                        )
+                    LEFT JOIN `srj`.`ret_grn_entry` `grn`
+                    ON
+                        (`grn`.`grn_id` = `po`.`po_grn_id`)
+                    )
+                LEFT JOIN `srj`.`ret_karigar` `kr`
+                ON
+                    (
+                        `kr`.`id_karigar` = `po`.`po_karigar_id`
+                    )
+                )
+            LEFT JOIN `srj`.`ret_category` `cat`
+            ON
+                (
+                    `cat`.`id_ret_category` = `pitm`.`po_item_cat_id`
+                )
+            )
+        LEFT JOIN `srj`.`metal` `met`
+        ON
+            (`met`.`id_metal` = `cat`.`id_metal`)
+        )
+    LEFT JOIN `srj`.`ret_product_master` `pr`
+    ON
+        (
+            `pr`.`pro_id` = `pitm`.`po_item_pro_id`
+        )
+    )
+WHERE
+    `grn`.`grn_type` = 2 AND `po`.`is_approved` = 1 AND `po`.`bill_status` = 1 AND `po`.`is_suspense_stock` = 1
+GROUP BY
+    `pitm`.`po_item_id`
+UNION ALL
+SELECT
+    'PAYMENT' AS `category`,
+    '' AS `product`,
+    `rf`.`date_add` AS `trans_date`,
+    `rf`.`id_supplier_rate_cut` AS `referenceno`,
+    '/supplier_rate_cut/job_receipt/' AS `link`,
+    `rf`.`id_supplier_rate_cut` AS `print_id`,
+    2 AS `trans_type`,
+    `rf`.`id_supplier_rate_cut` AS `trans_id`,
+    `rf`.`weight` AS `gross_wt`,
+    `rf`.`weight` AS `net_wt`,
+    '' AS `no_of_pcs`,
+    '' AS `purchase_touch`,
+    `rf`.`weight` AS `purewt`,
+    `rf`.`id_karigar` AS `customer_id`,
+    2 AS `trans_rec_type`,
+    `rf`.`amount` AS `trans_amount`,
+    '' AS `catid`,
+    '' AS `proid`,
+    7 AS `trans_screen_id`,
+    '' AS `id_metal`,
+    `rf`.`id_metal` AS `metal`,
+    `rf`.`rate_per_gram` AS `rate`,
+    IFNULL(`rf`.`narration`, '') AS `narration`,
+    UNIX_TIMESTAMP(`rf`.`date_add`) AS `unixtransdate`
+FROM
+    `srj`.`ret_supplier_rate_cut` `rf`
+WHERE
+    `rf`.`rate_cut_type` = 1 AND `rf`.`status` = 1
+GROUP BY
+    `rf`.`id_supplier_rate_cut`
+UNION ALL
+SELECT
+    IF(
+        `rf`.`weight` = 0,
+        'Bill Conv(Amount)',
+        'Bill Conv(A to P)'
+    ) AS `category`,
+    '' AS `product`,
+    `rf`.`date_add` AS `trans_date`,
+    `rf`.`id_supplier_rate_cut` AS `referenceno`,
+    '/supplier_rate_cut/job_receipt/' AS `link`,
+    `rf`.`id_supplier_rate_cut` AS `print_id`,
+    2 AS `trans_type`,
+    `rf`.`id_supplier_rate_cut` AS `trans_id`,
+    `rf`.`weight` AS `gross_wt`,
+    `rf`.`weight` AS `net_wt`,
+    '' AS `no_of_pcs`,
+    IF(`rf`.`weight` = 0, '', '100') AS `purchase_touch`,
+    `rf`.`weight` AS `purewt`,
+    `rf`.`id_karigar` AS `customer_id`,
+    1 AS `trans_rec_type`,
+    IF(
+        `rf`.`charges_amount` > 0,
+        `rf`.`charges_amount`,
+        ''
+    ) AS `trans_amount`,
+    '' AS `catid`,
+    '' AS `proid`,
+    1 AS `trans_screen_id`,
+    `rf`.`id_metal` AS `id_metal`,
+    `rf`.`id_metal` AS `metal`,
+    `rf`.`rate_per_gram` AS `rate`,
+    IFNULL(`rf`.`narration`, '') AS `narration`,
+    UNIX_TIMESTAMP(`rf`.`date_add`) AS `unixtransdate`
+FROM
+    `srj`.`ret_supplier_rate_cut` `rf`
+WHERE
+    `rf`.`rate_cut_type` = 2 AND `rf`.`status` = 1
+GROUP BY
+    `rf`.`id_supplier_rate_cut`
+UNION ALL
+SELECT
+    `pr`.`product_name` AS `category`,
+    `pr`.`product_name` AS `product`,
+    `ret`.`bill_date` AS `trans_date`,
+    `ret`.`pur_ret_ref_no` AS `referenceno`,
+    '/return_receipt_acknowladgement/' AS `link`,
+    `ret`.`pur_return_id` AS `print_id`,
+    2 AS `trans_type`,
+    `ret`.`pur_return_id` AS `trans_id`,
+    SUM(`pret`.`pur_ret_gwt`) AS `gross_wt`,
+    SUM(`pret`.`pur_ret_nwt`) AS `net_wt`,
+    SUM(`pret`.`pur_ret_pcs`) AS `no_of_pcs`,
+    `pret`.`pur_ret_purchase_touch` AS `purchase_touch`,
+    `pret`.`pur_ret_pur_wt` AS `purewt`,
+    `ret`.`pur_ret_supplier_id` AS `customer_id`,
+    1 AS `trans_rec_type`,
+    SUM(
+        IFNULL(`pret`.`pur_ret_debit_note_amt`, 0)
+    ) AS `trans_amount`,
+    `cat`.`id_ret_category` AS `catid`,
+    `pret`.`id_product` AS `proid`,
+    5 AS `trans_screen_id`,
+    `met`.`id_metal` AS `id_metal`,
+    `met`.`metal` AS `metal`,
+    `pret`.`pur_ret_rate` AS `rate`,
+    IFNULL(`ret`.`pur_ret_remark`, '') AS `narration`,
+    UNIX_TIMESTAMP(`ret`.`bill_date`) AS `unixtransdate`
+FROM
+    (
+        (
+            (
+                (
+                    (
+                        (
+                            (
+                                (
+                                    `srj`.`ret_purchase_return_items` `pret`
+                                LEFT JOIN `srj`.`ret_purchase_return` `ret`
+                                ON
+                                    (
+                                        `ret`.`pur_return_id` = `pret`.`pur_ret_id`
+                                    )
+                                )
+                            LEFT JOIN `srj`.`ret_purchase_order_items` `pitm`
+                            ON
+                                (
+                                    `pitm`.`po_item_id` = `pret`.`pur_ret_po_item_id`
+                                )
+                            )
+                        LEFT JOIN `srj`.`ret_purchase_order` `po`
+                        ON
+                            (`po`.`po_id` = `pitm`.`po_item_po_id`)
+                        )
+                    LEFT JOIN `srj`.`ret_grn_entry` `grn`
+                    ON
+                        (`grn`.`grn_id` = `po`.`po_grn_id`)
+                    )
+                LEFT JOIN `srj`.`ret_karigar` `kr`
+                ON
+                    (
+                        `kr`.`id_karigar` = `ret`.`pur_ret_supplier_id`
+                    )
+                )
+            LEFT JOIN `srj`.`ret_product_master` `pr`
+            ON
+                (`pr`.`pro_id` = `pret`.`id_product`)
+            )
+        LEFT JOIN `srj`.`ret_category` `cat`
+        ON
+            (
+                `cat`.`id_ret_category` = `pr`.`cat_id`
+            )
+        )
+    LEFT JOIN `srj`.`metal` `met`
+    ON
+        (`met`.`id_metal` = `cat`.`id_metal`)
+    )
+WHERE
+    `ret`.`pur_ret_convert_to` = 3 AND `ret`.`purchase_type` = 0 AND `ret`.`bill_status` = 1
+GROUP BY
+    `pret`.`pur_ret_itm_id`
+UNION ALL
+SELECT
+    `pr`.`product_name` AS `category`,
+    `pr`.`product_name` AS `product`,
+    `ret`.`bill_date` AS `trans_date`,
+    `ret`.`pur_ret_ref_no` AS `referenceno`,
+    '/return_receipt_acknowladgement/' AS `link`,
+    `ret`.`pur_return_id` AS `print_id`,
+    2 AS `trans_type`,
+    `ret`.`pur_return_id` AS `trans_id`,
+    SUM(`pret`.`pur_ret_gwt`) AS `gross_wt`,
+    SUM(`pret`.`pur_ret_nwt`) AS `net_wt`,
+    SUM(`pret`.`pur_ret_pcs`) AS `no_of_pcs`,
+    `pret`.`pur_ret_purchase_touch` AS `purchase_touch`,
+    `pret`.`pur_ret_pur_wt` AS `purewt`,
+    `ret`.`pur_ret_supplier_id` AS `customer_id`,
+    1 AS `trans_rec_type`,
+    SUM(
+        IFNULL(`pret`.`pur_ret_debit_note_amt`, 0)
+    ) AS `trans_amount`,
+    `cat`.`id_ret_category` AS `catid`,
+    `pret`.`id_product` AS `proid`,
+    5 AS `trans_screen_id`,
+    `met`.`id_metal` AS `id_metal`,
+    `met`.`metal` AS `metal`,
+    `pret`.`pur_ret_rate` AS `rate`,
+    IFNULL(`ret`.`pur_ret_remark`, '') AS `narration`,
+    UNIX_TIMESTAMP(`ret`.`bill_date`) AS `unixtransdate`
+FROM
+    (
+        (
+            (
+                (
+                    (
+                        (
+                            (
+                                (
+                                    `srj`.`ret_purchase_return_items` `pret`
+                                LEFT JOIN `srj`.`ret_purchase_return` `ret`
+                                ON
+                                    (
+                                        `ret`.`pur_return_id` = `pret`.`pur_ret_id`
+                                    )
+                                )
+                            LEFT JOIN `srj`.`ret_purchase_order_items` `pitm`
+                            ON
+                                (
+                                    `pitm`.`po_item_id` = `pret`.`pur_ret_po_item_id`
+                                )
+                            )
+                        LEFT JOIN `srj`.`ret_purchase_order` `po`
+                        ON
+                            (`po`.`po_id` = `pitm`.`po_item_po_id`)
+                        )
+                    LEFT JOIN `srj`.`ret_grn_entry` `grn`
+                    ON
+                        (`grn`.`grn_id` = `po`.`po_grn_id`)
+                    )
+                LEFT JOIN `srj`.`ret_karigar` `kr`
+                ON
+                    (
+                        `kr`.`id_karigar` = `ret`.`pur_ret_supplier_id`
+                    )
+                )
+            LEFT JOIN `srj`.`ret_product_master` `pr`
+            ON
+                (`pr`.`pro_id` = `pret`.`id_product`)
+            )
+        LEFT JOIN `srj`.`ret_category` `cat`
+        ON
+            (
+                `cat`.`id_ret_category` = `pr`.`cat_id`
+            )
+        )
+    LEFT JOIN `srj`.`metal` `met`
+    ON
+        (`met`.`id_metal` = `cat`.`id_metal`)
+    )
+WHERE
+    `ret`.`pur_ret_convert_to` = 3 AND `ret`.`purchase_type` = 1 AND `ret`.`bill_status` = 1
+GROUP BY
+    `pret`.`pur_ret_itm_id`
+UNION ALL
+SELECT
+    `pr`.`product_name` AS `category`,
+    `pr`.`product_name` AS `product`,
+    `iss`.`met_issue_date` AS `trans_date`,
+    `iss`.`met_issue_ref_id` AS `referenceno`,
+    '/karigarmetalissue_acknowladgement/' AS `link`,
+    `iitm`.`issue_met_parent_id` AS `print_id`,
+    2 AS `trans_type`,
+    `iitm`.`issue_met_parent_id` AS `trans_id`,
+    IF(
+        `cat`.`cat_type` = 2,
+        0,
+        IF(
+            IFNULL(`uom`.`divided_by_value`, 0) = 0,
+            `iitm`.`issue_metal_wt`,
+            ROUND(
+                `iitm`.`issue_metal_wt` / `uom`.`divided_by_value`,
+                3
+            )
+        )
+    ) AS `gross_wt`,
+    IF(
+        `cat`.`cat_type` = 2,
+        0,
+        IF(
+            IFNULL(`uom`.`divided_by_value`, 0) = 0,
+            `iitm`.`issue_metal_wt`,
+            ROUND(
+                `iitm`.`issue_metal_wt` / `uom`.`divided_by_value`,
+                3
+            )
+        )
+    ) AS `net_wt`,
+    IFNULL(`iitm`.`issue_pcs`, 1) AS `no_of_pcs`,
+    '100' AS `purchase_touch`,
+    IF(
+        `pr`.`stone_type` = 0,
+        `iitm`.`issue_metal_pur_wt`,
+        IF(
+            IFNULL(`uom`.`divided_by_value`, 0) = 0,
+            `iitm`.`issue_metal_wt`,
+            ROUND(
+                `iitm`.`issue_metal_wt` / `uom`.`divided_by_value`,
+                3
+            )
+        )
+    ) AS `purewt`,
+    `iss`.`met_issue_karid` AS `customer_id`,
+    1 AS `trans_rec_type`,
+    0 AS `trans_amount`,
+    `iitm`.`issue_cat_id` AS `catid`,
+    `iitm`.`issu_met_pro_id` AS `proid`,
+    2 AS `trans_screen_id`,
+    `met`.`id_metal` AS `id_metal`,
+    `met`.`metal` AS `metal`,
+    '' AS `rate`,
+    IFNULL(`iss`.`remark`, '') AS `narration`,
+    UNIX_TIMESTAMP(`iss`.`met_issue_date`) AS `unixtransdate`
+FROM
+    (
+        (
+            (
+                (
+                    (
+                        (
+                            `srj`.`ret_karigar_metal_issue_details` `iitm`
+                        LEFT JOIN `srj`.`ret_karigar_metal_issue` `iss`
+                        ON
+                            (
+                                `iss`.`met_issue_id` = `iitm`.`issue_met_parent_id`
+                            )
+                        )
+                    LEFT JOIN `srj`.`ret_karigar` `kr`
+                    ON
+                        (
+                            `kr`.`id_karigar` = `iss`.`met_issue_karid`
+                        )
+                    )
+                LEFT JOIN `srj`.`ret_category` `cat`
+                ON
+                    (
+                        `cat`.`id_ret_category` = `iitm`.`issue_cat_id`
+                    )
+                )
+            LEFT JOIN `srj`.`metal` `met`
+            ON
+                (`met`.`id_metal` = `cat`.`id_metal`)
+            )
+        LEFT JOIN `srj`.`ret_product_master` `pr`
+        ON
+            (
+                `pr`.`pro_id` = `iitm`.`issu_met_pro_id`
+            )
+        )
+    LEFT JOIN `srj`.`ret_uom` `uom`
+    ON
+        (`uom`.`uom_id` = `iitm`.`issue_uom_id`)
+    )
+WHERE
+    `iss`.`metalissue_type` = 2 AND `iss`.`bill_status` = 1
+GROUP BY
+    `iitm`.`issue_met_id`,
+    `iitm`.`issue_cat_id`,
+    `iitm`.`issu_met_pro_id`,
+    `iitm`.`issue_met_parent_id`
+UNION ALL
+SELECT
+    'OPENING' AS `category`,
+    '' AS `product`,
+    `pay`.`createdon` AS `trans_date`,
+    `pay`.`id_smith_company_op_balance` AS `referenceno`,
+    '' AS `link`,
+    '' AS `print_id`,
+    `pay`.`amount_type` AS `trans_type`,
+    `pay`.`id_smith_company_op_balance` AS `trans_id`,
+    0 AS `gross_wt`,
+    0 AS `net_wt`,
+    0 AS `no_of_pcs`,
+    '' AS `purchase_touch`,
+    0 AS `purewt`,
+    `pay`.`id_karigar` AS `customer_id`,
+    1 AS `trans_rec_type`,
+    SUM(`pay`.`amount`) AS `trans_amount`,
+    '' AS `catid`,
+    '' AS `proid`,
+    3 AS `trans_screen_id`,
+    '' AS `id_metal`,
+    '' AS `metal`,
+    '' AS `rate`,
+    IFNULL(`pay`.`remarks`, '') AS `narration`,
+    UNIX_TIMESTAMP(`pay`.`createdon`) AS `unixtransdate`
+FROM
+    `srj`.`smith_company_op_balance` `pay`
+WHERE
+    `pay`.`smith_type` = 3 AND `pay`.`stock_type` = 2 AND `pay`.`amount` > 0
+GROUP BY
+    `pay`.`id_smith_company_op_balance`
+UNION ALL
+SELECT
+    'OPENING' AS `category`,
+    '' AS `product`,
+    `pay`.`createdon` AS `trans_date`,
+    `pay`.`id_smith_company_op_balance` AS `referenceno`,
+    '' AS `link`,
+    '' AS `print_id`,
+    `pay`.`weight_type` AS `trans_type`,
+    `pay`.`id_smith_company_op_balance` AS `trans_id`,
+    IFNULL(`pay`.`weight`, 0) AS `gross_wt`,
+    IFNULL(`pay`.`weight`, 0) AS `net_wt`,
+    0 AS `no_of_pcs`,
+    '' AS `purchase_touch`,
+    IFNULL(`pay`.`weight`, 0) AS `purewt`,
+    `pay`.`id_karigar` AS `customer_id`,
+    1 AS `trans_rec_type`,
+    0 AS `trans_amount`,
+    '' AS `catid`,
+    '' AS `proid`,
+    3 AS `trans_screen_id`,
+    `pay`.`id_metal` AS `id_metal`,
+    '' AS `metal`,
+    '' AS `rate`,
+    IFNULL(`pay`.`remarks`, '') AS `narration`,
+    UNIX_TIMESTAMP(`pay`.`createdon`) AS `unixtransdate`
+FROM
+    `srj`.`smith_company_op_balance` `pay`
+WHERE
+    `pay`.`smith_type` = 3 AND `pay`.`stock_type` = 2 AND `pay`.`weight` > 0
+GROUP BY
+    `pay`.`id_smith_company_op_balance`
+UNION ALL
+SELECT
+    IF(
+        `pay`.`transtype` = 1,
+        'Credit Note',
+        'Debit Note'
+    ) AS `category`,
+    '' AS `product`,
+    `pay`.`transdate` AS `trans_date`,
+    `pay`.`transbillno` AS `referenceno`,
+    '/credit_debit_acknolodgement/' AS `link`,
+    `pay`.`crdrid` AS `print_id`,
+    `pay`.`transtype` AS `trans_type`,
+    `pay`.`transbillno` AS `trans_id`,
+    `pay`.`weight` AS `gross_wt`,
+    `pay`.`weight` AS `net_wt`,
+    `pay`.`weight` AS `no_of_pcs`,
+    '' AS `purchase_touch`,
+    `pay`.`weight` AS `purewt`,
+    `pay`.`supid` AS `customer_id`,
+    1 AS `trans_rec_type`,
+    SUM(`pay`.`transamount`) AS `trans_amount`,
+    '' AS `catid`,
+    '' AS `proid`,
+    1 AS `trans_screen_id`,
+    '' AS `id_metal`,
+    '' AS `metal`,
+    '' AS `rate`,
+    IFNULL(`pay`.`naration`, '') AS `narration`,
+    UNIX_TIMESTAMP(`pay`.`transdate`) AS `unixtransdate`
+FROM
+    `srj`.`ret_crdr_note` `pay`
+WHERE
+    `pay`.`accountto` = 3 AND `pay`.`crdr_status` = 1 AND `pay`.`weight` > 0
+GROUP BY
+    `pay`.`crdrid`
+ORDER BY
+    `unixtransdate`
+
+-- Nambi Muthu Raja 27-01-2026 
+
+ALTER TABLE `metal_rates` ADD `goldrate_14ct` DECIMAL(10,2) NULL DEFAULT NULL AFTER `platinum_1g`;
+
+ALTER TABLE `ret_billing` ADD `goldrate_14ct` DECIMAL(10,2) NULL DEFAULT NULL AFTER `silverrate_1gm`;
+
+ALTER TABLE `ret_estimation` ADD `goldrate_14ct` DECIMAL(10,2) NULL DEFAULT NULL AFTER `silverrate_1gm`;
+
+-- Gokul 29-01-2026
+
+ALTER TABLE `metal_rates` ADD `goldrate_9ct` DECIMAL(10,2) NULL DEFAULT NULL AFTER `platinum_1g`;
+
+ALTER TABLE `ret_billing` ADD `goldrate_9ct` DECIMAL(10,2) NULL DEFAULT NULL AFTER `silverrate_1gm`;
+
+ALTER TABLE `ret_estimation` ADD `goldrate_9ct` DECIMAL(10,2) NULL DEFAULT NULL AFTER `silverrate_1gm`;
+
+
+-- Nambi Muthu Raja 02-02-2026 
+
+ALTER TABLE ret_insurance CHANGE insurance_id insurance_id INT(11) NOT NULL AUTO_INCREMENT;
+
+
+
+Karthikai Kumaran 20/03/2026
+
+CREATE TABLE `kyc_master` (
+  `id_mas_kyc` int(11) NOT NULL,
+  `name` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Document Name',
+  `short_code` varchar(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `doc_type` tinyint(1) DEFAULT NULL COMMENT '1- Identity Proof, 2 - Address Proof, 3 - ID,Address proof, 4-> Transaction Proof',
+  `is_attachment_req` tinyint(1) DEFAULT 0,
+  `is_mandatory` int(2) NOT NULL DEFAULT 0 COMMENT '0-> No, 1->Yes',
+  `created_by` int(11) DEFAULT NULL,
+  `created_on` datetime DEFAULT NULL,
+  `updated_by` int(11) DEFAULT NULL,
+  `updated_on` datetime DEFAULT NULL,
+  `status` tinyint(4) NOT NULL DEFAULT 1 COMMENT '1-Active,0-Inactive',
+  `sort` int(5) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE `kyc_master`
+  ADD PRIMARY KEY (`id_mas_kyc`);
+ALTER TABLE `kyc_master`
+  MODIFY `id_mas_kyc` int(11) NOT NULL AUTO_INCREMENT;
+
+INSERT INTO `kyc_master` (`id_mas_kyc`, `name`, `short_code`, `doc_type`, `is_attachment_req`, `is_mandatory`, `created_by`, `created_on`, `updated_by`, `updated_on`, `status`, `sort`) VALUES
+(1, 'PAN', 'PAN', 4, 0, 0, 1, '2023-02-13 13:38:56', NULL, NULL, 1, 4),
+(2, 'AADHAR', 'ADR_ID', 2, 0, 0, 1, '2023-02-13 13:38:56', NULL, NULL, 1, 1),
+(3, 'DRIVING LICENCE', 'DL', 2, 0, 0, 1, '2023-02-13 13:38:56', NULL, NULL, 1, 2),
+(4, 'VOTER ID', 'V_ID', 2, 0, 0, 1, '2023-02-13 13:38:56', NULL, NULL, 1, 3);
+
+
+CREATE TABLE `kyc_attribute` (
+  `id_kyc_attribute` int(10) NOT NULL,
+  `id_mas_kyc` int(11) NOT NULL,
+  `attribute` varchar(250) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `attr_label` varchar(250) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `attr_input` varchar(45) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `attr_length` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `is_mandatory` tinyint(1) NOT NULL DEFAULT 0 COMMENT '1-Mandatory,0-Non Mandatory',
+  `reg_expression` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `position` int(10) DEFAULT NULL,
+  `status` tinyint(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Donot change attribute ';
+
+ALTER TABLE `kyc_attribute`
+  ADD PRIMARY KEY (`id_kyc_attribute`),
+  ADD UNIQUE KEY `id_mas_kyc_2` (`id_mas_kyc`,`position`),
+  ADD KEY `id_mas_kyc` (`id_mas_kyc`);
+ALTER TABLE `kyc_attribute`
+  MODIFY `id_kyc_attribute` int(10) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `kyc_attribute`
+  ADD CONSTRAINT `fk_id_mas_kyc` FOREIGN KEY (`id_mas_kyc`) REFERENCES `kyc_master` (`id_mas_kyc`) ON DELETE CASCADE;
+
+INSERT INTO `kyc_attribute` (`id_kyc_attribute`, `id_mas_kyc`, `attribute`, `attr_label`, `attr_input`, `attr_length`, `is_mandatory`, `reg_expression`, `position`, `status`) VALUES
+(1, 1, 'pan_no', 'PAN NO', 'varchar', '10', 1, '^[a-zA-Z]{5}\\d{4}[a-zA-Z]{1}$', 1, 1),
+(2, 1, 'pan_front_img', 'PAN FRONT IMAGE', 'image', NULL, 1, NULL, 2, 1),
+(3, 1, 'pan_back_img', 'PAN BACK IMAGE', 'image', NULL, 0, NULL, 3, 1),
+(4, 2, 'aadhar_no', 'AADHAR NO.', 'varchar', '12', 1, '^\\d{4}\\s\\d{4}\\s\\d{4}$', 1, 1),
+(5, 2, 'aadhar_front_img', 'AADHAR FRONT IMAGE', 'image', NULL, 1, NULL, 2, 1),
+(6, 2, 'aadhar_back_img', 'AADHAR BACK IMAGE', 'image', NULL, 1, NULL, 3, 1),
+(7, 3, 'dl_no', 'DRIVING LICENCE NO.', 'varchar', '16', 1, '^(([A-Z]{2}[0-9]{2})( )|([A-Z]{2}-[0-9]{2}))((19|20)[0-9][0-9])[0-9]{7}$', 1, 1),
+(8, 3, 'dl_front_img', 'DL FRONT IMAGE', 'image', NULL, 1, NULL, 2, 1),
+(9, 3, 'dl_back_img', 'DL BACK IMAGE', 'image', NULL, 1, NULL, 3, 1),
+(10, 4, 'vi_no', 'VOTER ID NO.', 'varchar', '10', 1, '^[A-Z]{3}[0-9]{7}$', 1, 1),
+(11, 4, 'vi_front_img', 'VOTERID FRONT IMAGE', 'image', NULL, 1, NULL, 2, 1),
+(12, 4, 'vi_back_img', 'VOTERID BACK IMAGE', 'image', NULL, 1, NULL, 3, 1);
+
+
+CREATE TABLE `kyc_settings` (
+  `id_kyc_settings` int(11) NOT NULL,
+  `kyc_required` tinyint(4) NOT NULL DEFAULT 0 COMMENT '0= not required 1= required',
+  `kyc_mode` tinyint(4) NOT NULL DEFAULT 0 COMMENT '0 = scheme_wise 1 =customer_wise',
+  `kyc_verification_type` tinyint(4) NOT NULL DEFAULT 0 COMMENT '0= manual 1= auto',
+  `kyc_allow_type` tinyint(4) NOT NULL DEFAULT 0 COMMENT '0 = allow to pay 1 = block_payment'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+ALTER TABLE `kyc_settings`
+  ADD PRIMARY KEY (`id_kyc_settings`);
+
+ALTER TABLE `kyc_settings`
+  MODIFY `id_kyc_settings` int(11) NOT NULL AUTO_INCREMENT;
+
+INSERT INTO `kyc_settings` (`id_kyc_settings`, `kyc_required`, `kyc_mode`, `kyc_verification_type`, `kyc_allow_type`) VALUES
+(1, 1, 0, 0, 0);
+
+
+CREATE TABLE `kyc_rules` (
+  `id_kyc_rules` int(11) NOT NULL,
+  `id_scheme` varchar(50) DEFAULT NULL,
+  `id_mas_kyc` int(11) DEFAULT NULL COMMENT 'it will from kyc_master',
+  `rules` tinyint(4) DEFAULT NULL COMMENT 'if(kyc_settings.kyc_mode == 0 ){ 	0= on joining 	1 = on payment 	2 = on closing }else{  1 measn = custoemr wise  	then 0 = customer creation 	1 = on overall amount }',
+  `type` tinyint(4) DEFAULT NULL COMMENT 'it is only for schemewise if on payemnt means the 0 = amount 1 = installment',
+  `amount` int(11) DEFAULT NULL COMMENT 'if(scheme_wise){ particular scheme amount }else {overall amount}',
+  `status` tinyint(4) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `created_by` smallint(6) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+ALTER TABLE `kyc_rules`
+  ADD PRIMARY KEY (`id_kyc_rules`);
+
+ALTER TABLE `kyc_rules`
+  MODIFY `id_kyc_rules` int(11) NOT NULL AUTO_INCREMENT;
+
+
+
+-- RAHUL 
+
+ALTER TABLE kyc_settings ADD COLUMN kyc_integration_type TINYINT(1) DEFAULT 0 AFTER kyc_mode;
+
+ALTER TABLE kyc_settings ADD COLUMN kyc_scheme_rule_logic TINYINT(1) NOT NULL DEFAULT 0;
+ALTER TABLE kyc_settings ADD COLUMN kyc_customer_rule_logic TINYINT(1) NOT NULL DEFAULT 0;
+
+
+
+ALTER TABLE `kyc_rules` ADD `logic` TINYINT(1) NOT NULL DEFAULT '0' COMMENT '0: All Required, 1: At Least One' AFTER `amount`;
+
+-- [2026-05-05] Fix KYC image URLs: Windows path separators leaked into stored URLs
+-- The bug was in kyc_model.php _process_save_kyc() where FCPATH (backslashes on Windows)
+-- was compared with DOCUMENT_ROOT (forward slashes), causing str_replace to fail.
+-- Run these on any environment where KYC images were uploaded from Windows:
+UPDATE kyc SET img_url = CONCAT('http://localhost/etail_development_src/admin/', SUBSTRING(img_url, LOCATE('assets/kyc/', img_url))) WHERE img_url IS NOT NULL AND LOCATE('assets/kyc/', img_url) > 0 AND LOCATE('D:', img_url) > 0;
+UPDATE kyc SET back_img_url = CONCAT('http://localhost/etail_development_src/admin/', SUBSTRING(back_img_url, LOCATE('assets/kyc/', back_img_url))) WHERE back_img_url IS NOT NULL AND LOCATE('assets/kyc/', back_img_url) > 0 AND LOCATE('D:', back_img_url) > 0;
+UPDATE kyc SET document_url = CONCAT('http://localhost/etail_development_src/admin/', SUBSTRING(document_url, LOCATE('assets/kyc/', document_url))) WHERE document_url IS NOT NULL AND LOCATE('assets/kyc/', document_url) > 0 AND LOCATE('D:', document_url) > 0;
+-- NOTE: Replace 'http://localhost/etail_development_src/admin/' with the correct base URL for production.

@@ -1,0 +1,115 @@
+{
+    "entity": "payment",
+    "validation": {
+        "required_file_name_pattern": "payment*.ods",
+        "required_sheet_name": "port_payment"
+    },
+    "file_path": "uploads/vinsmera/payment_adv.ods",
+    "migrations": [{
+        "destination_table": "payment",
+        "primary_key": "id_payment",
+        "mappings": {
+            "id_scheme_account": {
+                "lookup": {
+                    "table": "scheme_account",
+                    "source_column": "client_id",
+                    "match_column": "ref_no",
+                    "return_column": "id_scheme_account",
+                    "create_if_missing": false
+                },
+                "validations": { "type": "numeric", "length": 10, "required": true }
+            },
+            "id_branch": {
+                "source_column": "id_branch",
+                "validations": { "type": "numeric", "length": 10, "required": true }
+            },
+            "date_payment": {
+                "source_column": "date_payment",
+                "validations": { "type": "date", "format": "YYYY-MM-DD", "required": false }
+            },
+            "payment_amount": {
+                "source_column": "payment_amount",
+                "validations": { "type": "numeric", "length": 100, "required": true }
+            },
+            "metal_weight": {
+                "source_column": "metal_weight",
+                "validations": { "type": "numeric", "length": 100, "required": true }
+            },
+            "metal_rate": {
+                "source_column": "metal_rate",
+                "validations": { "type": "numeric", "length": 100, "required": true }
+            },
+            "payment_mode": {
+                "source_column": "payment_mode",
+                "validations": { "type": "string", "max_length": 100, "required": true }
+            },
+            "receipt_no": {
+                "source_column": "receipt_no",
+                "validations": { "type": "numeric", "length": 100, "required": true }
+            },
+
+            "added_by": {
+                "source_column": "added_by",
+                "validations": { "type": "numeric", "length": 10, "required": true }
+            },
+            "receipt_year": {
+                "source_column": "receipt_year",
+                "validations": { "type": "numeric", "length": 10, "required": true }
+            },
+            "payment_status": {
+                "source_column": "payment_status",
+                "validations": { "type": "numeric", "length": 10, "required": true }
+            },
+            "payment_type": {
+                "source_column": "payment_type",
+                "validations": { "type": "string", "max_length": 100, "required": true }
+            },
+            "id_scheme": {
+                "lookup": {
+                    "table": "scheme",
+                    "source_column": "sync_scheme_code",
+                    "match_column": "sync_scheme_code",
+                    "return_column": "id_scheme",
+                    "create_if_missing": false
+                },
+                "validations": { "type": "numeric", "length": 10, "required": true }
+            },
+            "id_employee": {
+                "lookup": {
+                    "table": "employee",
+                    "source_column": "referal_code",
+                    "match_column": "emp_code",
+                    "return_column": "id_employee",
+                    "create_if_missing": false
+                },
+                "validations": { "type": "string", "length": 100, "required": false }
+            }
+        },
+        "children": [{
+            "destination_table": "payment_mode_details",
+            "foreign_key": "id_payment",
+            "mappings": {
+                "payment_date": {
+                    "source_column": "date_payment",
+                    "validations": { "type": "date", "format": "YYYY-MM-DD", "required": false }
+                },
+                "payment_mode": {
+                    "source_column": "payment_mode",
+                    "validations": { "type": "string", "max_length": 255, "required": false }
+                },
+                "payment_amount": {
+                    "source_column": "payment_amount",
+                    "validations": { "type": "numeric", "length": 100, "required": true }
+                },
+                "payment_status": {
+                    "source_column": "payment_status",
+                    "validations": { "type": "numeric", "length": 10, "required": true }
+                },
+                "is_active": {
+                    "source_column": "is_active",
+                    "validations": { "type": "numeric", "length": 10, "required": true }
+                }
+            }
+        }]
+    }]
+}

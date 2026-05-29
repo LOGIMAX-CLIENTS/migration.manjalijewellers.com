@@ -1,0 +1,46 @@
+# File Mapping: Retail Purchase
+
+## Controllers
+-   `admin/application/controllers/admin_ret_supp_catalog.php`: Manages the "Supplier Catalog" (Purchase Item Masters).
+-   `admin/application/controllers/admin_ret_purchase.php`: Handles Purchase Orders, Customer Indents, and Inwarding.
+-   `admin/application/controllers/admin_ret_purchase_approval.php`: (Planned) Purchase Approvals.
+-   `admin/application/controllers/admin_ret_stock_issue.php`: (Planned) Stock Issues.
+
+## Models
+-   `admin/application/models/ret_supp_catalog_model.php`: Data access for Supplier Catalog.
+-   `admin/application/models/ret_purchase_order_model.php`: Core logic for POs, Indents, and GRN. Uses `ret_karigar` as vendor source.
+-   `admin/application/models/ret_stock_issue_model.php`: (Assumed/To be confirmed)
+
+## Views
+### Supplier Catalog (`admin_ret_supp_catalog`)
+-   `admin/application/views/order/supplier_catalog/list.php`: List of catalog items.
+-   `admin/application/views/order/supplier_catalog/form.php`: Add/Edit form for catalog items.
+
+### Purchase Entry (`admin_ret_purchase`)
+-   `admin/application/views/ret_purchase/purchase_entry_list.php`: List of Purchase Orders.
+-   `admin/application/views/ret_purchase/order_form.php`: Form for **Customer Order** (Indent).
+-   `admin/application/views/ret_purchase/pur_entry_form.php`: Form for **Purchase Entry/Inward**.
+### Purchase Approval & Status (`admin_ret_purchase_approval`)
+-   `admin/application/views/ret_purchase/order_status.php`: Order Status tracking.
+-   `admin/application/views/ret_purchase/qc_status.php`: QC Status.
+-   `admin/application/views/ret_purchase/order_delivery.php`: Order Delivery.
+-   `admin/application/views/ret_purchase/purchase_entry_list.php`: Shared view for Approval Purchase list.
+
+### Stock Issue (`admin_ret_stock_issue`)
+-   `admin/application/views/ret_stock_issue/list.php`: List of stock issues.
+-   `admin/application/views/ret_stock_issue/form.php`: Stock Issue Entry Form.
+
+## Phase 3: Reports
+### Controllers
+-   `admin/application/controllers/admin_ret_reports.php`: Central controller for retail reports.
+
+### Models
+-   `admin/application/models/ret_reports_model.php`: Core reporting logic and complex queries.
+
+### Views (`admin/application/views/ret_reports/`)
+-   **Financial**: `cash_abstract.php`, `day_closing_report.php`.
+-   **Stock**: `stock_age_analysis.php`, `stock_report.php`, `lot_wise.php`.
+-   **Purchase**: `purchasebills_report.php`, `old_metal_purchase.php`.
+-   **Transactions**: `branch_transfer.php`, `stock_issue_report.php`.
+
+

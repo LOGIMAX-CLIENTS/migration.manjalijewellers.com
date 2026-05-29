@@ -1,0 +1,39 @@
+================================================================================
+RETAIL RELEASE NOTES — v0.0.1
+================================================================================
+
+--------------------------------------------------------------------------------
+[2026-04-18] EST-RATE01 — Tag Loaded Rate Not Populating (Issue #2106)
+--------------------------------------------------------------------------------
+Developer   : Antigravity (Rudra)
+Module      : Estimation (Tag Load)
+Severity    : P1 — Major
+Pattern     : PAT-JS-DOM-001
+Recipe      : recipe_tag_rate_field_null_dom_lookup.md
+
+Files Changed:
+  - admin/assets/js/ret_estimation.js
+    * append_tag_details() — line ~28408
+    * calculatetag_SaleValue() — line ~11667
+
+Problem:
+  When loading a tag in Add Estimation, the Rate field showed 0.00 even
+  though Product/Design/Sub Design/Purity were correctly configured.
+  Home Bill section populated the rate correctly for the same item.
+
+Root Cause:
+  rate_field from SQL LEFT JOIN on ret_metal_purity_rate returned NULL.
+  In JavaScript, null != '' evaluates to true, causing the code to attempt
+  $('.' + null).html() which returns undefined, resulting in rate = 0.
+  No fallback mechanism existed (unlike Home Bill which uses purity_rate array).
+
+Fix Applied:
+  1. Added null/empty guard: rate_field != null && rate_field != '' && rate_field != 'null'
+  2. Changed raw html() fallback to proper isNaN() check
+  3. Added purity_rate array fallback (mirrors Home Bill behavior)
+  4. Applied same null guard in calculatetag_SaleValue() for board_rate
+
+Unit Test  : retail_release_notes/unit_test/EST-RATE01_tag_rate_field_null_dom_lookup.md
+Status     : VERIFIED & CLOSED
+--------------------------------------------------------------------------------
+

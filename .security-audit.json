@@ -1,0 +1,20 @@
+{
+    "name": "eTail v3 Security Audit Config",
+    "description": "Configuration for npm audit and composer audit",
+    "npm": {
+        "severity": "high",
+        "production": true
+    },
+    "composer": {
+        "advisories": true
+    },
+    "ignore": {
+        "npm": [],
+        "composer": []
+    },
+    "notes": [
+        "Run: npm audit --production (in admin/tests)",
+        "Run: composer audit (in admin/tests)",
+        "Run: run_security.bat for full check"
+    ]
+}

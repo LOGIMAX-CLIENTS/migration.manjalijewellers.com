@@ -1,0 +1,921 @@
+# ============================================================
+# Validation & Transformation Rules for Migration Tool
+# ============================================================
+# Notes:
+# - transform:
+#     upper       → convert to UPPERCASE
+#     lower       → convert to lowercase
+#     title_case  → Convert To Title Case
+# - cast:
+#     int, float, str → force type conversion
+# - mode:
+#     lenient → allow UPSERT (ON DUPLICATE KEY UPDATE)
+#     strict  → insert only, reject duplicates
+# ============================================================
+
+# ============================================================
+# Migration Rules with Lookups, Validations & Defaults
+# ============================================================
+
+category:
+  target_table: ret_category
+  primary_key: id_ret_category
+  mode: strict
+  reload: false
+  mapping:
+    id_ret_category: id_ret_category
+    category_name: name
+    hsn_code: hsn_code
+    short_code: cat_code
+    category_type: cat_type
+    description: description
+  lookups:
+    id_metal:
+      source: metal_id
+      ref_table: metal
+      ref_key: id_metal
+      ref_value: id_metal
+      fallback:
+        source: metal_name
+        ref_table: metal
+        ref_key: metal
+        ref_value: id_metal
+    tgrp_id:
+      source: tax_group_id
+      ref_table: ret_taxgroupmaster
+      ref_key: tgrp_id
+      ref_value: tgrp_id
+      fallback:
+        source: tax_group
+        ref_table: ret_taxgroupmaster
+        ref_key: tgrp_name
+        ref_value: tgrp_id
+  defaults:
+    status: 1
+    is_multimetal: 0
+    is_multi_metal_cateory: 0
+    tally_qty_type: 0
+    scheme_closure_benefit: 1
+    is_916: 1
+    created_on: now
+    created_by: 1
+  validation:
+    category_name:
+      required: true
+      unique: true
+    hsn_code:
+      validate:
+        regex: "^[0-9]{4,8}$"
+  transformation:
+    category_name:
+      transform: upper
+      cast: str
+    hsn_code:
+      cast: str
+
+product:
+  target_table: ret_product_master
+  primary_key: pro_id
+  mode: strict
+  reload: false
+  depends_on: [category]
+  mapping:
+    product_id: pro_id
+    product_name: product_name
+    short_code: product_short_code
+    hsn_code: hsn_code
+    description: description
+    status: product_status
+    
+  lookups:
+    cat_id:
+      source: category_id
+      ref_table: ret_category
+      ref_key: id_ret_category
+      ref_value: id_ret_category
+      fallback:
+        source: category_name
+        ref_table: ret_category
+        ref_key: name
+        ref_value: id_ret_category
+    metal_type:
+      source: metal_id
+      ref_table: metal
+      ref_key: id_metal
+      ref_value: id_metal
+      fallback:
+        source: metal_name
+        ref_table: metal
+        ref_key: metal
+        ref_value: id_metal
+    tgrp_id:
+      source: tax_group_id
+      ref_table: ret_taxgroupmaster
+      ref_key: tgrp_id
+      ref_value: tgrp_id
+      fallback:
+        source: tax_group
+        ref_table: ret_taxgroupmaster
+        ref_key: tgrp_name
+        ref_value: tgrp_id
+  defaults:
+    product_status: 1
+    image: null
+    created_on: now
+    created_by: 1
+    stock_type: 1
+    stone_type: 0
+    sales_mode: 2
+    purchase_mode: 2
+    disc_type: 1
+    wastage_type: 2
+    calculation_based_on: 1
+    tax_group_id: 1
+    tax_type: 2
+    reorder_based_on: 1
+    purchase_tax_type: 2
+    gift_applicable: 0
+    display_purity: 1
+  validation:
+    product_name:
+      required: true
+      unique: true
+    product_status:
+      validate:
+        in: [0, 1]
+  transformation:
+    product_name:
+      transform: upper
+    product_status:
+      default: 1
+      cast: int
+
+design_master:
+  target_table: ret_design_master
+  primary_key: design_no
+  mode: strict
+  reload: false
+  mapping:
+    design_id: design_no
+    design_name: design_name
+    short_code: design_code
+  defaults:
+    design_status: 1
+    created_on: now
+    created_by: 1
+    mc_cal_type: 1
+    mc_cal_value: 0.00
+    wastage_type: 1
+    wastag_value: 0.00
+  validation:
+    design_name:
+      required: true
+      unique: true
+  transformation:
+    design_name:
+      transform: upper
+
+sub_design_master:
+  target_table: ret_sub_design_master
+  primary_key: id_sub_design
+  mode: strict
+  reload: false
+  mapping:
+    sub_design_id: id_sub_design
+    sub_design_name: sub_design_name
+    short_code: sub_design_code
+  defaults:
+    status: 1
+    created_on: now
+    created_by: 1
+  validation:
+    sub_design_name:
+      required: true
+      unique: true
+    status:
+      validate:
+        in: [0, 1]
+  transformation:
+    sub_design_name:
+      transform: upper
+    status:
+      default: 1
+      cast: int
+
+product_mapping:
+  target_table: ret_product_mapping
+  mode: strict
+  reload: false
+  depends_on: [product, design_master]
+  mapping: {}   # no direct mapping, only lookups used
+  lookups:
+    pro_id:
+      source: product_id
+      ref_table: ret_product_master
+      ref_key: pro_id
+      ref_value: pro_id
+      fallback:
+        source: product_name
+        ref_table: ret_product_master
+        ref_key: product_name
+        ref_value: pro_id
+    id_design:
+      source: design_id
+      ref_table: ret_design_master
+      ref_key: design_no
+      ref_value: design_no
+      fallback:
+        source: design_name
+        ref_table: ret_design_master
+        ref_key: design_name
+        ref_value: design_no
+  defaults: {}
+  validation:
+    product_id:
+      required: false
+    product_name:
+      required: true
+    design_id:
+      required: false
+    design_name:
+      required: true
+
+
+sub_design_mapping:
+  target_table: ret_sub_design_mapping
+  mode: strict
+  reload: false
+  depends_on: [product, design_master, sub_design_master]
+  mapping: {}
+  lookups:
+    id_product:
+      source: product_id
+      ref_table: ret_product_master
+      ref_key: pro_id
+      ref_value: pro_id
+      fallback:
+        source: product_name
+        ref_table: ret_product_master
+        ref_key: product_name
+        ref_value: pro_id
+    id_design:
+      source: design_id
+      ref_table: ret_design_master
+      ref_key: design_no
+      ref_value: design_no
+      fallback:
+        source: design_name
+        ref_table: ret_design_master
+        ref_key: design_name
+        ref_value: design_no
+    id_sub_design:
+      source: sub_design_id
+      ref_table: ret_sub_design_master
+      ref_key: id_sub_design
+      ref_value: id_sub_design
+      fallback:
+        source: sub_design_name
+        ref_table: ret_sub_design_master
+        ref_key: sub_design_name
+        ref_value: id_sub_design
+  defaults:
+    mc_cal_type: 2
+    mc_cal_value: 0.0
+    wastage_type: 1
+    wastag_value: 0.0
+  validation:
+    product_id:
+      required: false
+    product_name:
+      required: true
+    design_id:
+      required: false
+    design_name:
+      required: true
+    sub_design_id:
+      required: false
+    sub_design_name:
+      required: true
+    mc_cal_type:
+      validate:
+        in: [1, 2]
+
+
+section:
+  target_table: ret_section
+  primary_key: id_section
+  mode: strict
+  reload: false
+  mapping:
+    id_section: id_section
+    section_name: section_name
+    short_code: section_short_code
+    is_home_bill_counter: is_home_bill_counter
+  defaults:
+    status: 1
+    created_by: 1
+    date_add: now
+  validation:
+    section_name:
+      required: true
+    section_short_code:
+      required: false
+    status:
+      validate:
+        in: [0, 1]
+  transformation:
+    section_name:
+      transform: upper
+    section_short_code:
+      transform: upper
+    status:
+      transform: map
+      mapping:
+        'YES': 1
+        'NO': 0
+      default: 1
+      cast: int
+    is_home_bill_counter:
+      transform: map
+      mapping:
+        'YES': 1
+        'NO': 0
+      default: 0
+      cast: int
+
+product_section:
+  target_table: ret_product_section
+  mode: strict
+  reload: false
+  depends_on: [product, section]
+  mapping: {}
+  lookups:
+    pro_id:
+      source: product_id
+      ref_table: ret_product_master
+      ref_key: pro_id
+      ref_value: pro_id
+      fallback:
+        source: product_name
+        ref_table: ret_product_master
+        ref_key: product_name
+        ref_value: pro_id
+    id_section:
+      source: section_id
+      ref_table: ret_section
+      ref_key: id_section
+      ref_value: id_section
+      fallback:
+        source: section_name
+        ref_table: ret_section
+        ref_key: section_name
+        ref_value: id_section
+  defaults: {}
+  validation:
+    product_id:
+      required: false
+    product_name:
+      required: true
+    section_id:
+      required: false
+    section_name:
+      required: true
+
+
+# ============================================================
+# NEW MASTER CONFIGURATIONS FOR TAG IMPORT TEMPLATE
+# ============================================================
+
+karigar:
+  target_table: ret_karigar
+  primary_key: id_karigar
+  mode: strict
+  reload: false
+  mapping:
+    id_karigar: id_karigar
+    karigar_type: karigar_type
+    first_name: firstname
+    last_name: lastname
+    company_name: company
+    short_code: code_karigar
+    mobile: contactno1
+    address1: address1
+    address2: address2
+    address3: address3
+    country_id: id_country
+    state_id: id_state
+    city_id: id_city
+    is_tcs: is_tcs
+    is_tds: is_tds
+    fin_year_code: fin_year_code
+    opening_amount: opening_balance_amount
+  lookups:
+    id_country:
+      source: id_country
+      ref_table: country
+      ref_key: id_country
+      ref_value: id_country
+      fallback:
+        source: country_name
+        ref_table: country
+        ref_key: name
+        ref_value: id_country
+    id_state:
+      source: id_state
+      ref_table: state
+      ref_key: id_state
+      ref_value: id_state
+      fallback:
+        source: state_name
+        ref_table: state
+        ref_key: name
+        ref_value: id_state
+    id_city:
+      source: id_city
+      ref_table: city
+      ref_key: id_city
+      ref_value: id_city
+      fallback:
+        source: city_name
+        ref_table: city
+        ref_key: name
+        ref_value: id_city
+  defaults:
+    status_karigar: 1
+    createdon: now
+    createdby: 1
+    id_country: 101
+    id_state: 35
+    id_city: 3659
+    karigar_for: 1
+    is_tcs: 0
+    tcs_tax: 0.000
+    is_tds: 1
+    tds_tax: 0.100
+    owner_account: 0
+  validation:
+    first_name:
+      required: true
+    mobile:
+      required: false
+      validate:
+        regex: "^[0-9]{10}$"
+    gst_number:
+      required: false
+      validate:
+        regex: "^[0-9A-Z]{15}$"
+  transformation:
+    first_name:
+      transform: upper
+    last_name:
+      transform: upper
+    company_name:
+      transform: upper
+    karigar_type:
+      cast: int
+    is_tcs:
+      transform: map
+      mapping:
+        'YES': 1
+        'NO': 0
+      default: 0
+      cast: int
+    is_tds:
+      transform: map
+      mapping:
+        'YES': 1
+        'NO': 0
+      default: 1
+      cast: int
+
+# purity:
+#   target_table: ret_purity
+#   primary_key: purity_id
+#   mode: strict
+#   reload: false
+#   mapping:
+#     purity_id: purity_id
+#     purity_name: purity_name
+#     description: description
+#   defaults:
+#     status: 1
+#     created_on: now
+#     created_by: 1
+#   validation:
+#     purity_name:
+#       required: true
+#       unique: true
+#   transformation:
+#     purity_name:
+#       transform: upper
+#       cast: str
+
+# purity_map:
+#   target_table: ret_category_purity_mapping
+#   mode: strict
+#   reload: false
+#   depends_on: [category, purity]
+#   mapping:
+#     category_id: cat_id
+#     category_name: category_name
+#     purity_id: purity_id
+#     purity_name: purity_name
+#   lookups:
+#     cat_id:
+#       source: category_id
+#       ref_table: ret_category
+#       ref_key: id_ret_category
+#       ref_value: id_ret_category
+#       fallback:
+#         source: category_name
+#         ref_table: ret_category
+#         ref_key: name
+#         ref_value: id_ret_category
+#     purity_id:
+#       source: purity_id
+#       ref_table: ret_purity
+#       ref_key: purity_id
+#       ref_value: purity_id
+#       fallback:
+#         source: purity_name
+#         ref_table: ret_purity
+#         ref_key: purity_name
+#         ref_value: purity_id
+#   defaults: {}
+#   validation:
+#     category_name:
+#       required: true
+#     purity_name:
+#       required: true
+
+size:
+  target_table: ret_size
+  mode: strict
+  reload: false
+  depends_on: [product]
+  mapping:
+    product_id: id_product
+    size_uom: name
+    size_value: value
+    status: active
+  lookups:
+    id_product:
+      source: id_product
+      ref_table: ret_product_master
+      ref_key: pro_id
+      ref_value: pro_id
+      fallback:
+        source: product_name
+        ref_table: ret_product_master
+        ref_key: product_name
+        ref_value: pro_id
+  defaults:
+    status: 1
+    created_on: now
+    created_by: 1
+  validation:
+    product_name:
+      required: true
+    size_value:
+      required: true
+    size_uom:
+      required: true
+  transformation:
+    status:
+      transform: map
+      mapping:
+        'Active': 1
+        'Inactive': 0
+        'YES': 1
+        'NO': 0
+      default: 1
+      cast: int
+
+stone_details:
+  target_table: ret_stone_master
+  primary_key: id_stone
+  mode: strict
+  reload: false
+  mapping:
+    id_stone: id_stone
+    stone_name: stone_name
+    short_code: short_code
+    stone_type: stone_type
+    stone_type_id: stone_type_id
+    uom: uom
+    uom_id: uom_id
+    certificate_req: certificate_req
+    four_c_req: 4c_req
+  defaults:
+    status: 1
+    created_on: now
+    created_by: 1
+  validation:
+    stone_name:
+      required: true
+      unique: true
+  transformation:
+    stone_name:
+      transform: upper
+    short_code:
+      transform: upper
+    certificate_req:
+      transform: map
+      mapping:
+        'YES': 1
+        'NO': 0
+      default: 0
+      cast: int
+    four_c_req:
+      transform: map
+      mapping:
+        'YES': 1
+        'NO': 0
+      default: 0
+      cast: int
+
+charges:
+  target_table: ret_charges_master
+  primary_key: id_charges
+  mode: strict
+  reload: false
+  mapping:
+    id_charges: id_charges
+    charges_name: charges_name
+    short_code: short_code
+    amount: amount
+    charge_tax_percent: charge_tax_percent
+    tag_display: tag_display
+  defaults:
+    status: 1
+    created_on: now
+    created_by: 1
+  validation:
+    charges_name:
+      required: true
+      unique: true
+  transformation:
+    charges_name:
+      transform: upper
+    short_code:
+      transform: upper
+    amount:
+      cast: float
+    charge_tax_percent:
+      cast: float
+    tag_display:
+      transform: map
+      mapping:
+        'YES': 1
+        'NO': 0
+      default: 1
+      cast: int
+
+tag_details:
+  target_table: ret_tag_master
+  mode: strict
+  reload: false
+  depends_on: [category, product, design_master, sub_design_master, section, karigar]
+  mapping:
+    metal_id: metal_id
+    metal_name: metal_name
+    category_id: cat_id
+    category_name: category_name
+    product_id: pro_id
+    product_name: product_name
+    design_id: design_id
+    design_name: design_name
+    sub_design_id: sub_design_id
+    sub_design_name: sub_design_name
+    section_id: section_id
+    section_name: section_name
+    pieces: pieces
+    gross_wt: gross_wt
+    less_wt: less_wt
+    net_wt: net_wt
+    wastage_percent: wastage_percent
+    mc_type: mc_type
+    mc_value: mc_value
+    huid1: huid1
+    huid2: huid2
+    karigar_id: karigar_id
+    karigar_name: karigar_name
+  lookups:
+    metal_id:
+      source: metal_id
+      ref_table: metal
+      ref_key: id_metal
+      ref_value: id_metal
+      fallback:
+        source: metal_name
+        ref_table: metal
+        ref_key: metal
+        ref_value: id_metal
+    cat_id:
+      source: category_id
+      ref_table: ret_category
+      ref_key: id_ret_category
+      ref_value: id_ret_category
+      fallback:
+        source: category_name
+        ref_table: ret_category
+        ref_key: name
+        ref_value: id_ret_category
+    pro_id:
+      source: product_id
+      ref_table: ret_product_master
+      ref_key: pro_id
+      ref_value: pro_id
+      fallback:
+        source: product_name
+        ref_table: ret_product_master
+        ref_key: product_name
+        ref_value: pro_id
+    design_id:
+      source: design_id
+      ref_table: ret_design_master
+      ref_key: design_no
+      ref_value: design_no
+      fallback:
+        source: design_name
+        ref_table: ret_design_master
+        ref_key: design_name
+        ref_value: design_no
+    sub_design_id:
+      source: sub_design_id
+      ref_table: ret_sub_design_master
+      ref_key: id_sub_design
+      ref_value: id_sub_design
+      fallback:
+        source: sub_design_name
+        ref_table: ret_sub_design_master
+        ref_key: sub_design_name
+        ref_value: id_sub_design
+    section_id:
+      source: section_id
+      ref_table: ret_section
+      ref_key: id_section
+      ref_value: id_section
+      fallback:
+        source: section_name
+        ref_table: ret_section
+        ref_key: section_name
+        ref_value: id_section
+    karigar_id:
+      source: karigar_id
+      ref_table: ret_karigar
+      ref_key: id_karigar
+      ref_value: id_karigar
+      fallback:
+        source: karigar_name
+        ref_table: ret_karigar
+        ref_key: firstname
+        ref_value: id_karigar
+  defaults:
+    status: 1
+    created_on: now
+    created_by: 1
+    mc_type: 1
+    wastage_percent: 0.0
+  validation:
+    category_name:
+      required: true
+    product_name:
+      required: true
+    pieces:
+      required: true
+    gross_wt:
+      required: true
+  transformation:
+    pieces:
+      cast: int
+    gross_wt:
+      cast: float
+    less_wt:
+      cast: float
+    net_wt:
+      cast: float
+    wastage_percent:
+      cast: float
+    mc_type:
+      cast: int
+    mc_value:
+      cast: float
+
+tag_stone_details:
+  target_table: ret_tag_stone_details
+  mode: strict
+  reload: false
+  depends_on: [tag_details, stone_details]
+  mapping:
+    tag_number: tag_number
+    is_less_wt: is_less_wt
+    stone_name: stone_name
+    stone_id: stone_id
+    short_code: short_code
+    uom: uom
+    uom_id: uom_id
+    pieces: pieces
+    weight: weight
+    rate_per_gram: rate_per_gram
+    amount: amount
+    stone_calc_type: stone_calc_type
+    quality_code: quality_code
+    quality_code_id: quality_code_id
+    certification_cost: certification_cost
+    purchase_rate: purchase_rate
+    purchase_cost: purchase_cost
+  lookups:
+    tag_number:
+      source: tag_number
+      ref_table: ret_tag_master
+      ref_key: tag_number
+      ref_value: tag_number
+    stone_id:
+      source: stone_id
+      ref_table: ret_stone_master
+      ref_key: id_stone
+      ref_value: id_stone
+      fallback:
+        source: stone_name
+        ref_table: ret_stone_master
+        ref_key: stone_name
+        ref_value: id_stone
+  defaults:
+    status: 1
+    created_on: now
+    created_by: 1
+    is_less_wt: 0
+    stone_calc_type: 1
+  validation:
+    tag_number:
+      required: true
+    stone_name:
+      required: true
+    pieces:
+      required: true
+  transformation:
+    is_less_wt:
+      transform: map
+      mapping:
+        'YES': 1
+        'NO': 0
+      default: 0
+      cast: int
+    pieces:
+      cast: int
+    weight:
+      cast: float
+    rate_per_gram:
+      cast: float
+    amount:
+      cast: float
+    stone_calc_type:
+      cast: int
+    certification_cost:
+      cast: float
+    purchase_rate:
+      cast: float
+    purchase_cost:
+      cast: float
+
+tag_charges:
+  target_table: ret_tag_charges
+  mode: strict
+  reload: false
+  depends_on: [tag_details, charges]
+  mapping:
+    tag_number: tag_number
+    charges_name: charges_name
+    charges_id: charges_id
+    amount: amount
+  lookups:
+    tag_number:
+      source: tag_number
+      ref_table: ret_tag_master
+      ref_key: tag_number
+      ref_value: tag_number
+    charges_id:
+      source: charges_id
+      ref_table: ret_charges_master
+      ref_key: id_charges
+      ref_value: id_charges
+      fallback:
+        source: charges_name
+        ref_table: ret_charges_master
+        ref_key: charges_name
+        ref_value: id_charges
+  defaults:
+    status: 1
+    created_on: now
+    created_by: 1
+  validation:
+    tag_number:
+      required: true
+    charges_name:
+      required: true
+    amount:
+      required: true
+  transformation:
+    amount:
+      cast: float

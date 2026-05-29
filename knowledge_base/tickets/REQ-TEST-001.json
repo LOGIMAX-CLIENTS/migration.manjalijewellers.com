@@ -1,0 +1,11 @@
+{
+    "id": "REQ-TEST-001",
+    "title": "Fix Platinum Rate Tolerance",
+    "type": "bug",
+    "target": "ret_estimation.js",
+    "description": "When entering a platinum rate, the validation logic incorrectly resets it to 0. We need to check the calculateTag_SaleValue function.",
+    "status": "PLAN_READY",
+    "created_at": "2026-01-28 08:30:00",
+    "ai_plan": "# \ud83e\udde0 AI Implementation Plan\n\n**Ticket:** Fix Platinum Rate Tolerance\n**Target:** ret_estimation.js\n\n## 1. Impact Analysis\nBased on the description, the following functions may be involved:\n- `get_search_tag_metal_rates`\n- `old_metalrate`\n- `get_all_old_metal_rates`\n- `get_search_catalog_metal_rates`\n- `get_search_custom_metal_rates`\n- `get_purity_rate`\n- `get_metal_rates_by_branch`\n- `get_old_metal_rate`\n- `check_rate_is_valid`\n- `getLooseStoneProductRateSettings`\n- `check_min_max_rate`\n- `getStoneRateSettings`\n- `check_min_max_stone_rate`\n- `check_disc_min_max_stone_rate`\n- `validateRateTolerance`\n- `check_is_weight_scheme`\n- `calculatetag_SaleValue`\n\n## 2. Proposed Strategy (Isolation)\nTo avoid regressions, we will apply the **Strangler Fig Pattern**:\n\n1.  **Extract:** Create a new module in `assets\/js\/modules\/` for this logic.\n2.  **Route:** Update `ret_estimation.js` to delegate calls to the new module.\n3.  **Verify:** Add unit tests for the new module.\n\n## 3. Verification Plan\n- [ ] Check browser console for errors.\n- [ ] Run `npm test` on new module.\n",
+    "analyzed_at": "2026-01-28 02:45:21"
+}

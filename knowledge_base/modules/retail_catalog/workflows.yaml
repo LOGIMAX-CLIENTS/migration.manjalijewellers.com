@@ -1,0 +1,33 @@
+# Retail Catalog Workflows
+
+## Master Data Management
+### Purity Management
+-   **Actors**: Admin
+-   **Actions**: Add, Edit, Update, Delete, List, Chang Status.
+-   **Flow**:
+    1.  Admin views list of Purities.
+    2.  Selects "Add" or "Edit".
+    3.  Inputs Name and Description.
+    4.  System validates constraints (e.g., duplicates).
+    5.  Values saved to `ret_purity`.
+
+### Color/Cut/Clarity/Stone Management
+-   **Actors**: Admin
+-   **Actions**: Standard CRUD.
+-   **Flow**: Similar to Purity Management.
+
+## Product Management
+### Product Definition
+-   **Actors**: Admin
+-   **Actions**: Create Product, Define Attributes (Weight, Size), Map Sub-Products.
+-   **Flow**:
+    1.  Select Category -> SubCategory.
+    2.  Define Base Product Details (Metal, Code, Name).
+    3.  Configure Ranking/Ordering (`allowed_order_qty`).
+    4.  Upload Images.
+
+## Store Layout Management
+### Floor & Counter Setup
+-   **Actors**: Admin
+-   **Actions**: Create Floor, Create Counter, Map Counter to Floor.
+-   **Context**: Essential for inventory placement.

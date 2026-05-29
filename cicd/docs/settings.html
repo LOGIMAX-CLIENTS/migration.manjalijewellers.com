@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Logimax CI/CD</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="js/auth-check.js" data-require-role="admin"></script>
+    <script src="js/toast.js"></script>
+    <link rel="stylesheet" href="css/dashboard-extra.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #f5f5f5;
+            --bg-card: rgba(255, 255, 255, 0.85);
+            --bg-card-hover: rgba(255, 255, 255, 0.95);
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --text-muted: #999999;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --accent: #1a1a1a;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+            --radius-sm: 12px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+        }
+
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; overflow-x: hidden; }
+        body::before { content: ''; position: fixed; top: -50%; right: -30%; width: 80%; height: 150%; background: linear-gradient(135deg, #e8e8e8 0%, #d4d4d4 50%, #e0e0e0 100%); border-radius: 50%; z-index: -1; opacity: 0.6; }
+
+        .app-container { display: flex; min-height: 100vh; }
+
+        .sidebar { width: 220px; padding: 24px 16px; display: flex; flex-direction: column; background: transparent; }
+        .logo { display: flex; align-items: center; gap: 10px; padding: 0 12px; margin-bottom: 32px; }
+        .logo-icon { width: 32px; height: 32px; }
+        .logo-text { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+        .nav-section { margin-bottom: 24px; }
+        .nav-section-title { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; padding: 0 12px; margin-bottom: 8px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease; color: var(--text-secondary); font-size: 14px; font-weight: 500; text-decoration: none; }
+        .nav-item:hover { background: var(--bg-card); }
+        .nav-item.active { background: var(--accent); color: white; }
+        .nav-item svg { width: 20px; height: 20px; flex-shrink: 0; }
+        .sidebar-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border-color); }
+
+        .main-content { flex: 1; padding: 24px 32px; overflow-y: auto; max-width: 900px; }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .greeting { font-size: 28px; font-weight: 700; color: var(--text-primary); }
+        .greeting-sub { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+
+        .card { background: var(--bg-card); border-radius: var(--radius-lg); padding: 24px; backdrop-filter: blur(20px); border: 1px solid var(--border-color); transition: all 0.3s ease; margin-bottom: 24px; }
+        .card:hover { box-shadow: var(--shadow-md); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .card-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border: none; border-radius: 50px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; width: auto; }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+        .btn-secondary { background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background: var(--bg-card-hover); }
+        .btn-danger { background: var(--error); color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-sm { padding: 6px 14px; font-size: 13px; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { padding: 12px 16px; text-align: left; font-size: 11px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; background: rgba(0, 0, 0, 0.02); border-bottom: 1px solid var(--border-color); }
+        td { padding: 14px 16px; border-bottom: 1px solid var(--border-color); font-size: 14px; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(0, 0, 0, 0.02); }
+
+        .badge { display: inline-flex; padding: 4px 12px; border-radius: 50px; font-size: 12px; font-weight: 500; }
+        .badge-admin { background: rgba(26,26,26,0.1); color: var(--text-primary); }
+        .badge-support { background: rgba(6,182,212,0.1); color: #06b6d4; }
+        .badge-viewer { background: rgba(156,163,175,0.1); color: var(--text-muted); }
+        .badge-active { background: rgba(34,197,94,0.1); color: var(--success); }
+        .badge-inactive { background: rgba(239,68,68,0.1); color: var(--error); }
+
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 12px; margin-bottom: 6px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 14px; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent); }
+        .form-row { display: flex; gap: 16px; }
+        .form-row .form-group { flex: 1; }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 200; }
+        .modal-overlay.show { display: flex; }
+        .modal { background: white; border-radius: var(--radius-lg); width: 500px; max-width: 95vw; box-shadow: var(--shadow-lg); }
+        .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h2 { font-size: 16px; font-weight: 600; }
+        .modal-close { background: none; border: none; font-size: 24px; color: var(--text-muted); cursor: pointer; }
+        .modal-body { padding: 24px; }
+        .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border-color); display: flex; gap: 12px; justify-content: flex-end; }
+
+        .data-actions { display: flex; gap: 16px; flex-wrap: wrap; }
+        .data-action { flex: 1; min-width: 200px; padding: 20px; background: rgba(0, 0, 0, 0.02); border-radius: var(--radius-md); border: 1px solid var(--border-color); }
+        .data-action h4 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+        .data-action p { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+        .data-action.danger { border-color: var(--error); background: rgba(239,68,68,0.05); }
+
+        .toast { position: fixed; top: 24px; right: 24px; padding: 14px 20px; background: white; border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); display: none; align-items: center; gap: 12px; z-index: 300; }
+        .toast.show { display: flex; }
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.error { border-left: 4px solid var(--error); }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <svg class="logo-icon" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#1a1a1a"/><path d="M8 16L14 22L24 10" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span class="logo-text">Logimax</span>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Menu</div>
+                <a href="index.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Dashboard</a>
+                <a href="admin-dashboard.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Sync Manager</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Settings</div>
+                <a href="settings.html" class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+            </div>
+            <div class="sidebar-footer">
+                <a href="#" class="nav-item" id="logout-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <div>
+                    <h1 class="greeting">Settings</h1>
+                    <p class="greeting-sub">Manage users, permissions, and data</p>
+                </div>
+            </header>
+
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Users</h2>
+                    <button class="btn btn-primary btn-sm" onclick="showAddUserModal()">+ Add User</button>
+                </div>
+                <table>
+                    <thead><tr><th>Username</th><th>Display Name</th><th>Role</th><th>Status</th><th>Last Login</th><th></th></tr></thead>
+                    <tbody id="users-tbody"><tr><td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted);">Loading users...</td></tr></tbody>
+                </table>
+            </section>
+
+            <section class="card">
+                <div class="card-header"><h2 class="card-title">Role Permissions</h2></div>
+                <table>
+                    <thead><tr><th>Feature</th><th style="text-align: center;">Admin</th><th style="text-align: center;">Support</th><th style="text-align: center;">Viewer</th></tr></thead>
+                    <tbody>
+                        <tr><td>Admin Dashboard</td><td style="text-align: center;">✓</td><td style="text-align: center;">–</td><td style="text-align: center;">–</td></tr>
+                        <tr><td>Support Dashboard</td><td style="text-align: center;">✓</td><td style="text-align: center;">✓</td><td style="text-align: center;">✓</td></tr>
+                        <tr><td>Sync Manager (Full)</td><td style="text-align: center;">✓</td><td style="text-align: center;">–</td><td style="text-align: center;">–</td></tr>
+                        <tr><td>Sync Manager (Limited)</td><td style="text-align: center;">✓</td><td style="text-align: center;">✓</td><td style="text-align: center;">–</td></tr>
+                        <tr><td>Settings</td><td style="text-align: center;">✓</td><td style="text-align: center;">–</td><td style="text-align: center;">–</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="card">
+                <div class="card-header"><h2 class="card-title">Data Management</h2></div>
+                <div class="data-actions">
+                    <div class="data-action">
+                        <h4>Clear Old History</h4>
+                        <p>Remove deployment history older than specified days</p>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="number" id="clear-days" value="30" min="7" max="365" style="width: 80px; padding: 8px; border: 1px solid var(--border-color); border-radius: 8px;">
+                            <span style="font-size: 13px; color: var(--text-muted);">days</span>
+                            <button class="btn btn-secondary btn-sm" onclick="clearHistory()">Clear</button>
+                        </div>
+                    </div>
+                    <div class="data-action danger">
+                        <h4>Reset All Data</h4>
+                        <p>Truncate all deployment tables. This cannot be undone!</p>
+                        <button class="btn btn-danger btn-sm" onclick="confirmResetAll()">Reset All</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="add-user-modal">
+        <div class="modal">
+            <div class="modal-header"><h2>Add New User</h2><button class="modal-close" onclick="closeModal('add-user-modal')">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-row"><div class="form-group"><label>Username</label><input type="text" id="new-username"></div><div class="form-group"><label>Password</label><input type="password" id="new-password"></div></div>
+                <div class="form-row"><div class="form-group"><label>Display Name</label><input type="text" id="new-display-name"></div><div class="form-group"><label>Role</label><select id="new-role"><option value="viewer">Viewer</option><option value="support">Support</option><option value="admin">Admin</option></select></div></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('add-user-modal')">Cancel</button><button class="btn btn-primary" onclick="addUser()">Add User</button></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="edit-user-modal">
+        <div class="modal">
+            <div class="modal-header"><h2>Edit User</h2><button class="modal-close" onclick="closeModal('edit-user-modal')">&times;</button></div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-user-id">
+                <div class="form-row"><div class="form-group"><label>Display Name</label><input type="text" id="edit-display-name"></div><div class="form-group"><label>Role</label><select id="edit-role"><option value="viewer">Viewer</option><option value="support">Support</option><option value="admin">Admin</option></select></div></div>
+                <div class="form-row"><div class="form-group"><label>Status</label><select id="edit-status"><option value="1">Active</option><option value="0">Inactive</option></select></div><div class="form-group"><label>New Password (optional)</label><input type="password" id="edit-password"></div></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('edit-user-modal')">Cancel</button><button class="btn btn-primary" onclick="updateUser()">Save</button></div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"><span id="toast-message"></span></div>
+
+    <script>
+        const API_BASE = 'api';
+        document.addEventListener('DOMContentLoaded', loadUsers);
+
+        async function loadUsers() {
+            try {
+                const response = await fetch(`${API_BASE}/settings.php?action=users`);
+                const data = await response.json();
+                if (data.success) renderUsers(data.users);
+                else if (data.error === 'Unauthorized') { showToast('Admin access required', 'error'); setTimeout(() => window.location.href = 'index.html', 2000); }
+            } catch (e) { showToast('Failed to load users', 'error'); }
+        }
+
+        function renderUsers(users) {
+            const tbody = document.getElementById('users-tbody');
+            if (!users || users.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted);">No users found</td></tr>'; return; }
+            tbody.innerHTML = users.map(user => {
+                const roleClass = user.role === 'admin' ? 'badge-admin' : user.role === 'support' ? 'badge-support' : 'badge-viewer';
+                const statusClass = user.is_active == 1 ? 'badge-active' : 'badge-inactive';
+                const lastLogin = user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never';
+                return `<tr><td><strong>${user.username}</strong></td><td>${user.display_name || '-'}</td><td><span class="badge ${roleClass}">${user.role}</span></td><td><span class="badge ${statusClass}">${user.is_active == 1 ? 'Active' : 'Inactive'}</span></td><td>${lastLogin}</td><td><button class="btn btn-secondary btn-sm" onclick='showEditUserModal(${JSON.stringify(user)})'>Edit</button></td></tr>`;
+            }).join('');
+        }
+
+        function showAddUserModal() { document.getElementById('new-username').value = ''; document.getElementById('new-password').value = ''; document.getElementById('new-display-name').value = ''; document.getElementById('new-role').value = 'viewer'; document.getElementById('add-user-modal').classList.add('show'); }
+        function showEditUserModal(user) { document.getElementById('edit-user-id').value = user.username; document.getElementById('edit-display-name').value = user.display_name || ''; document.getElementById('edit-role').value = user.role; document.getElementById('edit-status').value = user.is_active; document.getElementById('edit-password').value = ''; document.getElementById('edit-user-modal').classList.add('show'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+        async function addUser() {
+            const username = document.getElementById('new-username').value.trim();
+            const password = document.getElementById('new-password').value;
+            if (!username || !password) { showToast('Username and password required', 'error'); return; }
+            try {
+                const response = await fetch(`${API_BASE}/settings.php?action=user_add`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password, display_name: document.getElementById('new-display-name').value.trim(), role: document.getElementById('new-role').value }) });
+                const data = await response.json();
+                if (data.success) { showToast('User created', 'success'); closeModal('add-user-modal'); loadUsers(); }
+                else showToast(data.error || 'Failed', 'error');
+            } catch (e) { showToast('Connection error', 'error'); }
+        }
+
+        async function updateUser() {
+            const username = document.getElementById('edit-user-id').value;
+            const payload = { username: username, display_name: document.getElementById('edit-display-name').value.trim(), role: document.getElementById('edit-role').value, is_active: document.getElementById('edit-status').value === '1' };
+            const password = document.getElementById('edit-password').value;
+            if (password) payload.password = password;
+            try {
+                const response = await fetch(`${API_BASE}/settings.php?action=user_update`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const data = await response.json();
+                if (data.success) { showToast('User updated', 'success'); closeModal('edit-user-modal'); loadUsers(); }
+                else showToast(data.error || 'Failed', 'error');
+            } catch (e) { showToast('Connection error', 'error'); }
+        }
+
+        async function clearHistory() {
+            const days = parseInt(document.getElementById('clear-days').value) || 30;
+            if (!confirm(`Clear deployment history older than ${days} days?`)) return;
+            try {
+                const response = await fetch(`${API_BASE}/settings.php?action=clear_history`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ days }) });
+                const data = await response.json();
+                if (data.success) showToast(`Cleared ${(data.deleted?.deployment_history || 0) + (data.deleted?.deployments || 0)} records`, 'success');
+                else showToast(data.error || 'Failed', 'error');
+            } catch (e) { showToast('Connection error', 'error'); }
+        }
+
+        async function confirmResetAll() {
+            if (!confirm('⚠️ This will delete ALL deployment data. Are you sure?')) return;
+            if (prompt('Type RESET_ALL_DATA to confirm:') !== 'RESET_ALL_DATA') { showToast('Reset cancelled', 'error'); return; }
+            try {
+                const response = await fetch(`${API_BASE}/settings.php?action=reset_all`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ confirm: 'RESET_ALL_DATA' }) });
+                const data = await response.json();
+                if (data.success) showToast('All data reset', 'success');
+                else showToast(data.error || 'Failed', 'error');
+            } catch (e) { showToast('Connection error', 'error'); }
+        }
+
+        // showToast is now provided by js/toast.js
+        document.getElementById('logout-btn')?.addEventListener('click', (e) => { e.preventDefault(); if (confirm('Logout?')) window.cicdAuth.logout(); });
+    </script>
+</body>
+</html>

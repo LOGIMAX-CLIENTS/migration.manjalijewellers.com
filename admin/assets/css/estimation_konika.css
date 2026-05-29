@@ -1,0 +1,224 @@
+body, html {
+	margin:0 !important;
+	margin-left: -5px !important;
+}
+
+.PDFReceipt {
+
+	font-family:sans-serif;
+
+	padding: 15px;
+
+	font-size: 12px;
+
+}
+
+.header {
+
+	text-transform: uppercase;
+
+	font-size: 16px;
+
+	text-align: center;
+
+}
+
+.cus_name {
+	font-weight: bold;
+}
+
+.metal_rate {
+
+	width: 100%;
+	
+	font-size:11px !important;	
+	
+	text-transform: uppercase;
+
+}
+
+.metal_rate th {
+
+	text-align: left;
+
+}
+
+.metal_rate td {
+
+	width: 50%;
+
+}
+
+.dashed {
+
+	border-top:1px dashed black;
+
+	border-bottom:0px;
+}
+
+.tot_dashed {
+
+	border-top:1px dashed black;
+
+	border-bottom:0px;
+}
+
+.item_dashed {
+
+	border-top:1px dashed black;
+
+	border-bottom:0px;
+
+}
+
+.estimation {
+
+	font-size:11px !important;
+
+}
+
+.estimation td {
+
+	padding-top:0px !important;
+
+}
+
+.breif_copy {
+
+	font-size:15px !important;
+
+	text-align: center;
+
+}
+
+._dashed {
+
+	border-top:1px dashed black;
+
+	margin-top: 0px;
+
+	margin-bottom: 0px;
+
+	padding-top: 0px;
+
+	padding-bottom: 0px;
+
+	width: 100%;
+
+}
+
+.item_name {
+
+	font-weight: bold;
+
+}
+
+.alignLeft {
+	text-align: left;
+}
+
+.alignRight {
+	text-align: right;
+}
+
+.alignCenter {
+	text-align: center;
+}
+
+.fontBold {
+	font-weight: bold;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+th, td {
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+
+.finalTotal {
+	font-size: 22px !important;
+}
+
+table thead {
+	text-transform: uppercase;
+}
+
+.top_head {
+	margin-bottom: 0;
+}
+
+.top_info {
+
+	width: 100%;
+
+	margin-top: 20px;
+
+	font-size: 0; /* set the font-size to 0 */
+
+}
+
+.top_info .rows {
+
+	margin-bottom: 3px;
+
+	font-size: 12px; /* set the font-size to the desired value */
+
+}
+
+.top_info .rates {
+
+	width: 60%;
+
+	display: inline-block;
+}
+
+.top_info .estimation_datetime {
+
+	width: 40%;
+
+	display: inline-block;
+
+}
+
+.top_info .rates,
+.top_info .estimation_datetime {
+
+	width: 50%;
+
+	display: inline-block;
+
+	vertical-align: top;
+
+}
+
+.top_info .left_col,
+.top_info .right_col {
+
+	display: inline-block;
+
+	font-size: 12px; /* set the font-size to the desired value */
+}
+
+.old_estimate {
+	text-align: center;
+	font-size: 14px;
+	font-weight: bold;
+	margin-top: 10px;
+	margin-bottom: 10px;
+}
+
+.rowClass {
+	font-weight: bold;
+}
+
+.emp_details {
+	margin-top: 10px;
+}
+
+.heading {
+	font-family: 'Trajan pro';
+	font-weight: 900;
+}

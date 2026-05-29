@@ -1,0 +1,1 @@
+update `company` set smtp_user = 'mruthramoorthi66@gmail.com', smtp_pass='qaetnavelvnfuhzy'

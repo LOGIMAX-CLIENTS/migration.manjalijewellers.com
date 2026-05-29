@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<!--
+    PHP_CodeSniffer ruleset for eTail v3
+    Uses PSR-12 as base with some customizations for CodeIgniter
+-->
+<ruleset name="eTail_v3">
+    <description>eTail v3 PHP Coding Standards</description>
+
+    <!-- Base standard -->
+    <rule ref="PSR12">
+        <!-- Exclude some rules that conflict with CodeIgniter -->
+        <exclude name="PSR1.Classes.ClassDeclaration.MissingNamespace"/>
+        <exclude name="PSR1.Files.SideEffects.FoundWithSymbols"/>
+    </rule>
+
+    <!-- Allow some CI-specific patterns -->
+    <rule ref="PSR1.Methods.CamelCapsMethodName">
+        <exclude-pattern>*/controllers/*</exclude-pattern>
+        <exclude-pattern>*/models/*</exclude-pattern>
+    </rule>
+
+    <!-- Line length (allow longer for SQL queries) -->
+    <rule ref="Generic.Files.LineLength">
+        <properties>
+            <property name="lineLimit" value="150"/>
+            <property name="absoluteLineLimit" value="200"/>
+        </properties>
+    </rule>
+
+    <!-- Paths to check -->
+    <file>../application/controllers</file>
+    <file>../application/models</file>
+    <file>../application/libraries</file>
+
+    <!-- Paths to ignore -->
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+    <exclude-pattern>*/views/*</exclude-pattern>
+    <exclude-pattern>*/config/*</exclude-pattern>
+    <exclude-pattern>*/third_party/*</exclude-pattern>
+    <exclude-pattern>*/cache/*</exclude-pattern>
+    <exclude-pattern>*/logs/*</exclude-pattern>
+
+    <!-- Additional rules for common issues -->
+    
+    <!-- Prevent direct usage of superglobals (use input class) -->
+    <rule ref="Generic.PHP.ForbiddenFunctions">
+        <properties>
+            <property name="forbiddenFunctions" type="array">
+                <element key="die" value="exit"/>
+                <element key="sizeof" value="count"/>
+                <element key="delete" value="unset"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!-- Ensure proper array syntax -->
+    <rule ref="Generic.Arrays.DisallowLongArraySyntax"/>
+
+    <!-- Prevent TODO/FIXME from being forgotten -->
+    <rule ref="Generic.Commenting.Fixme"/>
+    <rule ref="Generic.Commenting.Todo"/>
+
+    <!-- Security: No eval -->
+    <rule ref="Squiz.PHP.Eval"/>
+
+    <!-- Clean up whitespace -->
+    <rule ref="Squiz.WhiteSpace.SuperfluousWhitespace"/>
+
+</ruleset>

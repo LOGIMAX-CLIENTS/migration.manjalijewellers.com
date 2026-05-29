@@ -1,0 +1,43 @@
+{
+    "entity": "charges",
+    "ai": {
+        "enabled": true,
+        "max_rows": 20
+    },
+    "validation": {
+        "required_file_name_pattern": "charges*.xlsx",
+        "required_sheet_name": "port_charges_master"
+    },
+    "file_path": "uploads/charges_master.xlsx",
+    "migrations": [{
+        "destination_table": "ret_charges",
+        "primary_key": "id_charge",
+        "mappings": {
+            "old_id": {
+                "source_column": "old_id",
+                "validations": { "type": "numeric", "min": 1, "required": false }
+            },
+            "name_charge": {
+                "source_column": "charges_name",
+                "validations": { "type": "string", "max_length": 45, "required": true },
+                "check_if_exists": true
+            },
+            "code_charge": {
+                "source_column": "short_code",
+                "validations": { "type": "string", "max_length": 8, "required": false }
+            },
+            "value_charge": {
+                "source_column": "amount",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "charge_tax": {
+                "source_column": "charge_tax_percent",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            },
+            "tag_display": {
+                "source_column": "tag_display",
+                "validations": { "type": "numeric", "min": 0, "required": false }
+            }
+        }
+    }]
+}

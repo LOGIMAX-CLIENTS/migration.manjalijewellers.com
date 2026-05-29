@@ -1,0 +1,54 @@
+# Global Database Schema Map
+
+Analysis source: [admin/sql/etail_v3_sample.sql](file:///c:/xampp/htdocs/etail_v3/admin/sql/etail_v3_sample.sql) (Nov 2025 Dump)
+
+## Module: Retail Catalog & Inventory (`ret_*`)
+**Core Master Data**
+- `ret_product_master`: Main product definition.
+- `ret_sub_product_master`: Variants.
+- `ret_purity`: Metal purity grades.
+- [ret_stone](file:///c:/xampp/htdocs/etail_v3/admin/application/controllers/admin_ret_catalog.php#21801-22121): Stone master.
+- `ret_uom`: Units of measure.
+- [ret_settings](file:///c:/xampp/htdocs/etail_v3/admin/application/models/ret_catalog_model.php#7718-7727): Global configuration.
+
+**Inventory & Stock**
+- `ret_stock_balance`: Current stock levels.
+- `ret_taging`: Individual item tags (inventory instances).
+- `ret_taging_stone`: Stones attached to tags.
+- `ret_tag_scan`, `ret_tag_scanned`: RFID/Barcode scanning logs.
+- `ret_purchase_order`: POs.
+- `ret_purchase_return`: Returns to suppliers.
+
+**Store Layout**
+- `ret_branch_floor`, `ret_branch_floor_counter`: Physical location mapping.
+
+## Module: Schemes (`scheme_*`, `sch_*`)
+- `scheme`: Scheme definitions.
+- `scheme_account`: Customer accounts in schemes.
+- `scheme_reg_request`: Registration requests.
+- `sch_enquiry`: Leads/Enquiries.
+- `scheme_agent_benefit`: Agent commission logic.
+
+## Module: Sales & Transactions
+- [transaction](file:///c:/xampp/htdocs/etail_v3/admin/application/models/ret_catalog_model.php#4218-4255): Central transaction ledger (Likely).
+- `ret_sale_delivery`: Delivery tracking.
+- `settlement`, `settlement_detail`: Payment settlements.
+
+## Module: Wallet & Loyalty (`wallet_*`)
+- `wallet_account`: Customer wallets.
+- `wallet_transaction`: Ledger for wallets.
+- `ret_wallet`: Retail specific wallet extensions.
+
+## Module: Service & Repairs (`service_*`, `ret_service_*`)
+- `ret_service_bill`: Repair billing.
+- `ret_repair_master`: Repair types.
+
+## Module: Users & Access
+- `access`: Role-based access control (RBAC).
+- [profile](file:///c:/xampp/htdocs/etail_v3/admin/application/models/ret_catalog_model.php#199-208): User profiles (Employees/Admins).
+- `access_log`: Audit trails.
+
+## Observations
+- **Prefix Consistency**: High usage of [ret_](file:///c:/xampp/htdocs/etail_v3/admin/application/controllers/admin_ret_catalog.php#11008-11250) for retail-specific tables.
+- **Legacy/Dual Tables**: [product](file:///c:/xampp/htdocs/etail_v3/admin/application/controllers/admin_ret_catalog.php#253-279) table referenced in PHP code but not found in this SQL dump. Code likely relies on `ret_product_master` or requires [product](file:///c:/xampp/htdocs/etail_v3/admin/application/controllers/admin_ret_catalog.php#253-279) to exist in a legacy DB.
+- **Scale**: Over 200 tables indicating a mature ERP system.

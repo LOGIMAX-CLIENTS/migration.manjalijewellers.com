@@ -1,0 +1,191 @@
+@charset "utf-8";
+body{background:#f8f8f8!important;-webkit-background-size:cover;-moz-background-size:cover;-o-background-size:cover;background-size:cover;margin:0;padding:0;border:#000 0 solid}
+.margin-b-10{margin-bottom:10%!important}
+.margin-b-5{margin-bottom:5%!important}
+.p-2{padding:2%!important}
+.vs_form{border:1px solid #eee;background:#fff}
+.no-padding{padding:0!important}
+.note{color:#959191!important}
+.txt-11{font-size:11.5px}
+.time-btn{margin:5px 0;padding:5%;border:1px solid #ddd}
+.time-btn:hover{background:#4EC375!important;color:#fff!important;cursor:pointer}
+.date-bx{border:1px solid #ddd;border-radius:4px;margin:0 5px;padding:.5%}
+.date-bx:hover{background:#4EC375!important;color:#fff!important;cursor:pointer}
+@media (max-width: 767px) {
+#contact .pull_feedback{display:none}
+.store-locator-btn{display:none}
+.head{font-size:13px;line-height:18px;margin:5%}
+}
+.vsRegForm .box{height:auto;overflow:hidden;border:#cccdcd 1px solid;border-top:3px solid #841002;padding-bottom:10px;padding-top:10px;min-height:175px;color:#000!important;margin:30px 10px 63px}
+.vsForm .box{height:auto;overflow:hidden;border:#cccdcd 1px solid;border-top:3px solid #841002;padding-bottom:10px;padding-top:10px;min-height:300px;color:#000!important;margin:30px 10px 63px}
+.vsForm .cus_form,.vsRegForm .cus_form{color:#000;margin-left:20px;margin-right:20px;overflow:auto}
+.vsForm .cus_form input,.vsRegForm .cus_form input{font-family:sans-serif;font-size:13px!important}
+.cus_form .form-group{margin-bottom:15px}
+.cus_form .login_button{background-color:#841002;border:none;color:#fff;padding:0;text-align:center;text-decoration:none;display:inline-block;font-size:16px;_margin:4px 2px;cursor:pointer;width:100%}
+.account-container{width:380px;display:block;margin:60px auto 0;background:#f9f9f9;border:1px solid #d5d5d5;-webkit-border-radius:5px;-moz-border-radius:5px;border-radius:5px;box-shadow:0 0 2px #dadada,inset 0 -3px 0 #e6e6e6}
+.content{padding:16px 28px 23px}
+.login-fields .field{margin-bottom:1.25em}
+.login-fields label{display:none}
+.username-field{background:url(../../img/signin/user.png) no-repeat}
+.password-field{background:url(../../img/signin/password.png) no-repeat}
+.mobile-field{background:url(../../img/signin/mobile.png) no-repeat}
+.email-field{background:url(../../img/signin/email.png) no-repeat}
+.login-actions{float:left;width:100%;margin-bottom:1.25em}
+.login-social{float:left;padding:10px 0 15px;border:1px dotted #CCC;border-right:none;border-left:none}
+span.login-checkbox{float:left;margin-top:31px}
+span.login-checkbox > input[type='checkbox']{opacity:0;float:left;width:15px}
+span.login-checkbox > input[type='checkbox'] + label{clear:none;height:15px;display:block;padding:0 0 0 22px;margin:0;font-size:12px;line-height:1.2em;background:url(../../img/signin/check.png) no-repeat 0 0;cursor:pointer}
+span.login-checkbox > input[type='checkbox']:checked + label{background-position:0 -15px}
+.login-extra{display:block;width:300px;margin:1.5em auto;text-align:left;height:30px;line-height:19px;text-shadow:1px 1px 0 #fff}
+.account-container h1{margin-bottom:.4em;color:#525252}
+.twitter,.fb{position:relative;height:32px;width:157px;display:block;background:url(../../img/signin/twitter_btn.png) no-repeat}
+.fb{width:162px;background:url(../../img/signin/fb_btn.png) no-repeat}
+.twitter:active,.fb:active{top:1px}
+.twitter:hover,.fb:hover{background-position:0 -32px}
+.twitter a,.fb a{padding:5px 0 0 35px;text-shadow:-1px -1px 0 rgba(0,0,0,.3);color:#fff;font-weight:700;font-size:11px;height:32px;display:block}
+.fb a{padding:5px 0 0 31px}
+.twitter,.fb{display:inline-block}
+.twitter a:hover,.fb a:hover{color:#FFF;text-decoration:none}
+.button{-webkit-border-radius:3px;-moz-border-radius:3px;border-radius:3px;display:inline-block;float:right;margin-top:18px}
+.register .login-social{margin-bottom:1em}
+.register .login-actions{margin-bottom:0}
+.register .login-fields input{width:299px;padding-left:6px}
+.register h1{color:#444}
+.register span.login-checkbox{position:relative;top:-6px;width:200px}
+.register span.login-checkbox > input[type="checkbox"] + label{position:relative;line-height:1.3em}
+.vsForm{_padding-left:inherit}
+.vsForm .account-container{width:375px;display:block;margin:60px auto 0;background:#f9f9f9;border:1px solid #d5d5d5;-webkit-border-radius:5px;-moz-border-radius:5px;border-radius:5px;box-shadow:0 0 2px #dadada,inset 0 -3px 0 #e6e6e6}
+.vsForm .login-forget{display:block;margin:1.5em auto;text-align:left;line-height:19px;text-shadow:1px 1px 0 #fff}
+.vsForm .login-extra{display:block;width:500px;margin:1.5em auto;text-align:left;line-height:19px;text-shadow:1px 1px 0 #fff}
+#OTPloader{display:none}
+#resendOTP{display:none;cursor:pointer}
+#terms .account-container,#privacy .account-container{width:60%;margin-left:auto;margin-right:auto}
+#terms .heading,#privacy .heading{text-align:center;height:40px}
+#terms table tr th{text-align:center}
+#terms table tr td{text-align:center}
+#terms .subHeading,#privacy .subHeading{font-weight:700;color:#000}
+#cust_enquiry #chit_acc_number{width:280px;display:inline-block}
+#cust_enquiry #question{display:inline-block}
+#cust_enquiry .login-fields label{display:block}
+#cust_enquiry .account-container{width:425px;display:block;margin:60px auto 0;background:#f9f9f9;border:1px solid #d5d5d5;-webkit-border-radius:5px;-moz-border-radius:5px;border-radius:5px;box-shadow:0 0 2px #dadada,inset 0 -3px 0 #e6e6e6}
+#cust_enquiry .groupCode{float:left;width:30%}
+#cust_enquiry .groupCode select{width:85px;height:41px;margin-bottom:0!important}
+#cust_enquiry .schemeNum{float:left;width:70%}
+#cust_enquiry .container-accNum input{width:10px;display:inline-block;text-align:center;font-size:16px}
+@media (max-width: 1020px) {
+.vsForm #imgLogin,.vsForm #logoLogin{display:none}
+.vsForm .account-container,.vsForm .login-extra{width:415px}
+#terms .account-container,#privacy .account-container{width:80%;margin-bottom:25px}
+}
+@media (max-width: 480px) {
+.vsForm .account-container{width:280px;margin-top:35px;margin-bottom:25px}
+.account-container{width:280px;margin-top:35px}
+.login-fields input{width:160px}
+.login-social{width:100%}
+.twitter{display:block;margin-bottom:1em}
+.register .login-fields input{width:204px;padding-left:6px}
+#cust_enquiry #chit_acc_number{width:204px}
+.vsForm .account-container,.vsForm .login-extra{width:300px}
+#terms .account-container,#privacy .account-container{width:100%}
+}
+@media only screen and (max-width :1150px) {
+.menu{font-size:10px}
+.log_link p{font-size:12px}
+.logo1 img{width:100%;margin-left:-5%}
+.menu1{font-size:10px;margin-left:-2%}
+}
+@media only screen and (max-width : 979px) {
+.menu{float:left}
+.menu li{float:left}
+.collection_middle{border-left:none;border-right:none}
+.copyright,.poweredby{text-align:center}
+.current_price{padding:15px}
+.customer_care{padding:12px}
+.jointmobile{text-align:center}
+}
+@media only screen and (max-width : 850px) {
+.information{margin-left:2%}
+.scheme{margin-left:2%}
+.footer_contact h4{margin-left:2%}
+.footer_contact p{margin-left:2%}
+.viswa_copyright{text-align:center}
+.log_link{text-align:center}
+.footer_aboutus h4{text-align:left}
+.footer_aboutus p{margin-right:3%}
+.menu .active{height:75px}
+.menu{float:right;margin-right:-8%;font-size:8px;margin-top:10px}
+.logo img{width:40%;margin-left:-5%}
+.logo1 img{width:23%;margin-left:-5%}
+.menu1{font-size:9px;margin-top:-11%;margin-left:18%}
+.logo{width:81%;margin-left:8%;margin-top:0}
+.metalrate{letter-spacing:0}
+}
+@media only screen and (max-width :800px) {
+.logo{width:81%;margin-left:8%}
+.metalrate{letter-spacing:0;font-size:11px}
+}
+@media only screen and (max-width : 767px) {
+.viswa_copyright{font-size:10px}
+.logo{width:35%;margin-left:6%;margin-top:0}
+.reg_formrate{font-size:18px}
+}
+@media only screen and (max-width :740px) {
+.logo_responsive{width:35%;margin-left:6%;margin-top:0}
+nav .navbar-toggle{margin-top:-50px}
+.header_responstive{border-bottom:2px solid #841002;border-top:2px solid #841002}
+}
+@media only screen and (max-width :700px) {
+.logo_responsive{width:35%;margin-left:6%}
+nav .navbar-toggle{margin-top:-50px}
+.header_responstive{border-bottom:2px solid #841002;border-top:2px solid #841002}
+.topContainer{margin-top:9%}
+#contact form{border:none!important}
+}
+@media only screen and (max-width :670px) {
+.logo_responsive{width:42%;margin-left:6%}
+nav .navbar-toggle{margin-top:-50px}
+#contact form{border:none!important}
+.vsForm .cus_form,.vsRegForm .cus_form{font-weight:700}
+}
+@media only screen and (max-width :640px) {
+.logo_responsive{width:35%;margin-left:6%}
+nav .navbar-toggle{margin-top:-60px}
+.reg_formrate{font-size:18px}
+}
+@media only screen and (max-width :600px) {
+.logo_responsive{width:60%;margin-left:6%}
+nav .navbar-toggle{margin-top:-50px}
+}
+@media only screen and (max-width :570px) {
+.logo_responsive{width:42%;margin-left:6%}
+nav .navbar-toggle{margin-top:-50px}
+}
+@media only screen and (max-width : 480px) {
+.viswa_copyright{font-size:11px}
+.logo_responsive{width:60%;margin-left:6%}
+nav .navbar-toggle{margin-top:-50px}
+}
+@media only screen and (max-width :430px) {
+.logo_responsive{width:60%;margin-left:6%}
+nav .navbar-toggle{margin-top:-50px}
+}
+@media only screen and (max-width : 400px) {
+.viswa_copyright{font-size:10px}
+.logo img{width:100%;margin-left:0}
+.logo1 img{width:71%;margin-left:7px}
+.logo_responsive{width:60%;margin-left:6%}
+nav .navbar-toggle{margin-top:-50px}
+}
+@media only screen and (max-width :380px) {
+.logo_responsive{width:60%;margin-left:6%}
+nav .navbar-toggle{margin-top:-50px}
+}
+@media only screen and (max-width :360px) {
+.logo_responsive{width:60%;margin-left:6%}
+nav .navbar-toggle{margin-top:-50px}
+}
+@media only screen and (max-width : 320px) {
+.logo_responsive{width:60%;margin-left:6%}
+nav .navbar-toggle{margin-top:-45px}
+.head{font-size:12px}
+}

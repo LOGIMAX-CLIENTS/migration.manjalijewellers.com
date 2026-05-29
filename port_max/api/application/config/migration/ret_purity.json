@@ -1,0 +1,31 @@
+{
+    "entity": "purity",
+    "ai": {
+        "enabled": true,
+        "max_rows": 20
+    },
+    "validation": {
+        "required_file_name_pattern": "purity*.xlsx",
+        "required_sheet_name": "port_purity"
+    },
+    "file_path": "uploads/purity.xlsx",
+    "migrations": [{
+        "destination_table": "ret_purity",
+        "primary_key": "id_purity",
+        "mappings": {
+            "old_id": {
+                "source_column": "old_id",
+                "validations": { "type": "numeric", "min": 1, "required": false }
+            },
+            "purity": {
+                "source_column": "purity_name",
+                "validations": { "type": "string", "max_length": 50, "required": true },
+                "check_if_exists": true
+            },
+            "description": {
+                "source_column": "description",
+                "validations": { "type": "string", "max_length": 255, "required": false }
+            }
+        }
+    }]
+}

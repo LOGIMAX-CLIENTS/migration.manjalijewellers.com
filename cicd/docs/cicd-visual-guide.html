@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CI/CD Pipeline - Visual Guide</title>
+    <style>
+        :root {
+            --primary: #0366d6;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --dark: #1a1a2e;
+            --light: #f8f9fa;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 40px 20px;
+        }
+        
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #e94560, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 40px;
+        }
+        
+        .section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .section h2 {
+            color: #e94560;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        
+        /* Flow Diagram */
+        .flow {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .flow-item {
+            background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+            border: 2px solid #0366d6;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            min-width: 150px;
+            position: relative;
+        }
+        
+        .flow-item.staging { border-color: #28a745; }
+        .flow-item.production { border-color: #e94560; }
+        .flow-item.action { border-color: #ffc107; }
+        
+        .flow-item .icon { font-size: 2rem; margin-bottom: 10px; }
+        .flow-item .label { font-weight: bold; }
+        .flow-item .desc { font-size: 0.8rem; color: #888; margin-top: 5px; }
+        
+        .arrow {
+            font-size: 2rem;
+            color: #0366d6;
+        }
+        
+        /* Comparison Table */
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .compare-table th, .compare-table td {
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .compare-table th {
+            background: rgba(0,0,0,0.3);
+            color: #e94560;
+        }
+        
+        .compare-table tr:nth-child(even) {
+            background: rgba(255,255,255,0.03);
+        }
+        
+        .check { color: #28a745; font-size: 1.5rem; }
+        .cross { color: #dc3545; font-size: 1.5rem; }
+        
+        /* Directory Structure */
+        .directory {
+            background: #0d1117;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+        
+        .directory .folder { color: #58a6ff; }
+        .directory .file { color: #8b949e; }
+        .directory .link { color: #e94560; }
+        .directory .config { color: #ffc107; }
+        
+        /* Rollback Section */
+        .rollback-box {
+            background: linear-gradient(135deg, #28a745 0%, #20803d 100%);
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+        
+        .rollback-box h3 { margin-bottom: 15px; }
+        
+        .command {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+        
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 30px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(to bottom, #28a745, #ffc107, #e94560);
+        }
+        
+        .timeline-item {
+            position: relative;
+            padding-left: 70px;
+            margin-bottom: 30px;
+        }
+        
+        .timeline-item::before {
+            content: attr(data-step);
+            position: absolute;
+            left: 15px;
+            width: 30px;
+            height: 30px;
+            background: #0366d6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .timeline-item h4 { color: #e94560; margin-bottom: 5px; }
+        .timeline-item p { color: #888; font-size: 0.9rem; }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-size: 0.85rem;
+        }
+        
+        @media (max-width: 768px) {
+            .flow { flex-direction: column; }
+            .arrow { transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 CI/CD Pipeline</h1>
+        <p class="subtitle">Multi-Client Deployment System for 80+ Jewellery ERP Clients</p>
+        
+        <!-- Overview -->
+        <div class="section">
+            <h2>📊 Overview</h2>
+            <div class="flow">
+                <div class="flow-item">
+                    <div class="icon">👨‍💻</div>
+                    <div class="label">Developer</div>
+                    <div class="desc">Push code</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="flow-item">
+                    <div class="icon">🐙</div>
+                    <div class="label">GitHub</div>
+                    <div class="desc">Trigger workflow</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="flow-item action">
+                    <div class="icon">⚡</div>
+                    <div class="label">GitHub Actions</div>
+                    <div class="desc">Send webhook</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="flow-item staging">
+                    <div class="icon">🖥️</div>
+                    <div class="label">Server</div>
+                    <div class="desc">Deploy code</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Comparison -->
+        <div class="section">
+            <h2>⚖️ Staging vs Production</h2>
+            <table class="compare-table">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>🟢 Staging</th>
+                        <th>🔴 Production</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Deployment Mode</td>
+                        <td>Simple (git pull)</td>
+                        <td>Symlink (zero-downtime)</td>
+                    </tr>
+                    <tr>
+                        <td>Auto Deploy</td>
+                        <td><span class="check">✓</span></td>
+                        <td><span class="cross">✗</span> Requires Approval</td>
+                    </tr>
+                    <tr>
+                        <td>Maintenance Mode</td>
+                        <td><span class="cross">✗</span></td>
+                        <td><span class="check">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td>Email Report</td>
+                        <td><span class="cross">✗</span></td>
+                        <td><span class="check">✓</span> Jenkins-style</td>
+                    </tr>
+                    <tr>
+                        <td>Instant Rollback</td>
+                        <td><span class="cross">✗</span></td>
+                        <td><span class="check">✓</span> &lt; 1 second</td>
+                    </tr>
+                    <tr>
+                        <td>Keep Releases</td>
+                        <td>N/A</td>
+                        <td>Last 5</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Staging Flow -->
+        <div class="section">
+            <h2>🟢 Staging Deployment</h2>
+            <div class="timeline">
+                <div class="timeline-item" data-step="1">
+                    <h4>📥 Fetch All</h4>
+                    <p>git fetch --all</p>
+                </div>
+                <div class="timeline-item" data-step="2">
+                    <h4>📍 Checkout Branch</h4>
+                    <p>git checkout staging</p>
+                </div>
+                <div class="timeline-item" data-step="3">
+                    <h4>💾 Stash Changes</h4>
+                    <p>git stash --include-untracked (if local changes exist)</p>
+                </div>
+                <div class="timeline-item" data-step="4">
+                    <h4>🔄 Reset & Pull</h4>
+                    <p>git reset --hard origin/staging && git pull --no-rebase</p>
+                </div>
+                <div class="timeline-item" data-step="5">
+                    <h4>🔙 Restore Stash</h4>
+                    <p>git stash pop (if stashed)</p>
+                </div>
+                <div class="timeline-item" data-step="6">
+                    <h4>🧹 Clear Cache</h4>
+                    <p>Optional: Remove cache directories</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Production Flow -->
+        <div class="section">
+            <h2>🔴 Production Deployment (Symlink)</h2>
+            <div class="timeline">
+                <div class="timeline-item" data-step="1">
+                    <h4>✅ Approval</h4>
+                    <p>GitHub Environment protection requires reviewer approval</p>
+                </div>
+                <div class="timeline-item" data-step="2">
+                    <h4>🔧 Maintenance ON</h4>
+                    <p>touch .maintenance (users see downtime page)</p>
+                </div>
+                <div class="timeline-item" data-step="3">
+                    <h4>📁 Create Release</h4>
+                    <p>/releases/20260108_192500/</p>
+                </div>
+                <div class="timeline-item" data-step="4">
+                    <h4>📥 Clone Fresh</h4>
+                    <p>git clone --depth 1 --single-branch</p>
+                </div>
+                <div class="timeline-item" data-step="5">
+                    <h4>🔗 Link Shared</h4>
+                    <p>Symlink uploads, logs, config files</p>
+                </div>
+                <div class="timeline-item" data-step="6">
+                    <h4>⚡ Atomic Swap</h4>
+                    <p>ln -sfn release new && mv -Tf new current</p>
+                </div>
+                <div class="timeline-item" data-step="7">
+                    <h4>🔧 Maintenance OFF</h4>
+                    <p>rm .maintenance</p>
+                </div>
+                <div class="timeline-item" data-step="8">
+                    <h4>📧 Send Report</h4>
+                    <p>Jenkins-style HTML email to team</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Directory Structure -->
+        <div class="section">
+            <h2>📁 Production Directory Structure</h2>
+            <div class="directory">
+<pre>
+<span class="folder">/var/www/</span> (or /home/user/)
+├── <span class="link">current</span> → releases/20260108_192500/  <span style="color:#888"># Symlink (web root)</span>
+│
+├── <span class="folder">releases/</span>
+│   ├── <span class="folder">20260108_180000/</span>  <span style="color:#888"># Previous (for rollback)</span>
+│   ├── <span class="folder">20260108_190000/</span>  <span style="color:#888"># Previous</span>
+│   └── <span class="folder">20260108_192500/</span>  <span style="color:#888"># Current ← active</span>
+│
+├── <span class="folder">shared/</span>
+│   ├── <span class="folder">logs/</span>            <span style="color:#888"># Persistent logs</span>
+│   ├── <span class="folder">uploads/</span>         <span style="color:#888"># User uploads</span>
+│   ├── <span class="folder">img/</span>             <span style="color:#888"># Product images</span>
+│   ├── <span class="config">database.php</span>     <span style="color:#888"># DB config (copied)</span>
+│   └── <span class="config">global_configs.php</span>
+│
+└── <span class="file">.last_release</span>        <span style="color:#888"># For rollback tracking</span>
+</pre>
+            </div>
+        </div>
+        
+        <!-- Rollback -->
+        <div class="section">
+            <h2>🔄 Instant Rollback</h2>
+            <div class="rollback-box">
+                <h3>⚡ Rollback in under 1 second!</h3>
+                <p>Just swap the symlink - no file copying needed.</p>
+                
+                <div class="command">
+                    # List available releases<br>
+                    <strong>./rollback.sh list</strong>
+                </div>
+                
+                <div class="command">
+                    # Rollback to previous release<br>
+                    <strong>./rollback.sh previous</strong>
+                </div>
+                
+                <div class="command">
+                    # Rollback to specific release<br>
+                    <strong>./rollback.sh 20260108_180000</strong>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Files -->
+        <div class="section">
+            <h2>📄 Key Files</h2>
+            <table class="compare-table">
+                <thead>
+                    <tr>
+                        <th>File</th>
+                        <th>Location</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>deploy-reusable.yml</td>
+                        <td>.github/workflows/</td>
+                        <td>Reusable workflow (source repo)</td>
+                    </tr>
+                    <tr>
+                        <td>deploy.yml</td>
+                        <td>Client .github/workflows/</td>
+                        <td>Client workflow (calls reusable)</td>
+                    </tr>
+                    <tr>
+                        <td>unified-deploy.sh</td>
+                        <td>scripts/</td>
+                        <td>Main deployment script</td>
+                    </tr>
+                    <tr>
+                        <td>rollback.sh</td>
+                        <td>scripts/</td>
+                        <td>Instant rollback</td>
+                    </tr>
+                    <tr>
+                        <td>webhook-handler.php</td>
+                        <td>scripts/</td>
+                        <td>Receives GitHub webhooks</td>
+                    </tr>
+                    <tr>
+                        <td>maintenance.html</td>
+                        <td>Project root</td>
+                        <td>Downtime page</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="footer">
+            <p>Logimax CI/CD Pipeline for Jewellery ERP | Generated: January 2026</p>
+        </div>
+    </div>
+</body>
+</html>

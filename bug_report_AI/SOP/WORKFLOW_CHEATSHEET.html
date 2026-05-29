@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflow Cheatsheet — Bug Remediation System</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        :root {
+            --primary: #1a1a2e;
+            --accent: #e94560;
+            --accent-light: #ff6b81;
+            --bg: #ffffff;
+            --surface: #f8f9fa;
+            --border: #e2e8f0;
+            --text: #1a202c;
+            --text-muted: #64748b;
+            --green: #10b981;
+            --red: #ef4444;
+            --blue: #3b82f6;
+            --orange: #f59e0b;
+            --purple: #8b5cf6;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 11px;
+            line-height: 1.5;
+            color: var(--text);
+            background: var(--bg);
+            padding: 0;
+        }
+
+        @media print {
+            body { padding: 0; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none; }
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, #16213e 50%, #0f3460 100%);
+            color: white;
+            padding: 28px 32px;
+            margin-bottom: 0;
+        }
+        .header h1 {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+        }
+        .header .subtitle {
+            font-size: 11px;
+            color: rgba(255,255,255,0.7);
+            font-weight: 400;
+        }
+        .header .badge {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 600;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        /* Content wrapper */
+        .content { padding: 20px 32px; }
+
+        /* Section */
+        .section {
+            margin-bottom: 20px;
+        }
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .section-title .icon {
+            font-size: 16px;
+        }
+
+        /* Flow diagram */
+        .flow {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--primary);
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+        .flow span {
+            color: var(--accent);
+            font-weight: 800;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+            font-size: 10.5px;
+        }
+        th {
+            background: var(--primary);
+            color: white;
+            padding: 7px 10px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 9.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        th:first-child { border-radius: 6px 0 0 0; }
+        th:last-child { border-radius: 0 6px 0 0; }
+        td {
+            padding: 6px 10px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+        tr:nth-child(even) td { background: var(--surface); }
+        tr:hover td { background: #eef2ff; }
+
+        .cmd { 
+            font-family: 'Consolas', 'Monaco', monospace;
+            background: #1a1a2e;
+            color: #e94560;
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .file {
+            font-family: 'Consolas', 'Monaco', monospace;
+            background: #f1f5f9;
+            color: #475569;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 9.5px;
+        }
+
+        /* DO / DONT columns */
+        .rules-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .rules-box {
+            border-radius: 8px;
+            padding: 14px 16px;
+            font-size: 10.5px;
+        }
+        .rules-box.do {
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+        }
+        .rules-box.dont {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+        }
+        .rules-box h3 {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .rules-box.do h3 { color: #059669; }
+        .rules-box.dont h3 { color: #dc2626; }
+
+        .rules-box ol {
+            padding-left: 18px;
+            margin: 0;
+        }
+        .rules-box li {
+            margin-bottom: 3px;
+            line-height: 1.45;
+        }
+
+        /* Template cards */
+        .template-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .template-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 14px;
+            border-top: 3px solid var(--accent);
+        }
+        .template-card h4 {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 4px;
+            font-family: 'Consolas', monospace;
+        }
+        .template-card p {
+            font-size: 9.5px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+        .template-card .used-by {
+            font-size: 8.5px;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* Classification grid */
+        .class-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        /* Severity badges */
+        .sev { 
+            display: inline-block;
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: 700;
+            color: white;
+        }
+        .sev-p0 { background: #dc2626; }
+        .sev-p1 { background: #f59e0b; color: #1a1a1a; }
+        .sev-p2 { background: #3b82f6; }
+        .sev-p3 { background: #9ca3af; }
+
+        .track {
+            display: inline-block;
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: 700;
+        }
+        .track-a { background: #dbeafe; color: #1e40af; }
+        .track-b { background: #fce7f3; color: #9d174d; }
+
+        /* Phase badges */
+        .phase {
+            display: inline-block;
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-size: 8px;
+            font-weight: 700;
+            color: white;
+            min-width: 50px;
+            text-align: center;
+        }
+        .phase-setup { background: #6366f1; }
+        .phase-build { background: #8b5cf6; }
+        .phase-find { background: #ec4899; }
+        .phase-classify { background: #f59e0b; color: #1a1a1a; }
+        .phase-fix { background: #ef4444; }
+        .phase-verify { background: #10b981; }
+        .phase-close { background: #06b6d4; }
+        .phase-report { background: #64748b; }
+        .phase-maintain { background: #78716c; }
+
+        /* Checkpoint highlights */
+        .checkpoint {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 8px;
+            padding: 12px 16px;
+        }
+
+        /* Key files */
+        .files-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            background: var(--surface);
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+        .file-item .name {
+            font-family: 'Consolas', monospace;
+            font-size: 9px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        .file-item .desc {
+            font-size: 9px;
+            color: var(--text-muted);
+        }
+
+        /* Category tags */
+        .categories {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        .cat-tag {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 20px;
+            padding: 12px 32px;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            font-size: 9px;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        /* Print button */
+        .print-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(233,69,96,0.4);
+            z-index: 999;
+        }
+        .print-btn:hover { background: var(--accent-light); }
+    </style>
+</head>
+<body>
+
+    <button class="print-btn no-print" onclick="window.print()">📄 Save as PDF</button>
+
+    <!-- HEADER -->
+    <div class="header">
+        <h1>⚡ Workflow Cheatsheet <span class="badge">v1.4</span></h1>
+        <div class="subtitle">Bug Remediation System — Quick Reference &nbsp;|&nbsp; Full details: WORKFLOW_WALKTHROUGH_ESTIMATION.md</div>
+    </div>
+
+    <div class="content">
+
+        <!-- WORKFLOW SEQUENCE -->
+        <div class="section">
+            <div class="section-title"><span class="icon">🔄</span> Workflow Sequence</div>
+            <div class="flow">
+                Setup <span>→</span> Brain (100%) <span>→</span> Audit <span>→</span> Triage <span>→</span> Fix <span>→</span> Test <span>→</span> Learn <span>→</span> Report
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:70px">Phase</th>
+                        <th style="width:180px">Command</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="phase phase-setup">Setup</span></td>
+                        <td><span class="cmd">/setup-new-client</span></td>
+                        <td>New project — creates dirs, config, GitHub labels</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td><span class="cmd">/setup-existing-client</span></td>
+                        <td>Existing client — copies brain, diffs for divergence</td>
+                    </tr>
+                    <tr>
+                        <td><span class="phase phase-build">Build</span></td>
+                        <td><span class="cmd">/build-module-brain</span></td>
+                        <td><strong>Run until COVERAGE_TRACKER = 100%.</strong> Reads all code → 8–9 brain docs</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td><span class="cmd">/manage-bug-patterns</span></td>
+                        <td>Init / scan / add pattern entries</td>
+                    </tr>
+                    <tr>
+                        <td><span class="phase phase-find">Find</span></td>
+                        <td><span class="cmd">/module-bug-audit</span></td>
+                        <td>6 rounds: Controller → Schema → Model → JS → Calcs → AJAX</td>
+                    </tr>
+                    <tr>
+                        <td><span class="phase phase-classify">Classify</span></td>
+                        <td><span class="cmd">/bug-intake-triage</span></td>
+                        <td>Severity + Track + Category + Sprint + GitHub Issue created</td>
+                    </tr>
+                    <tr>
+                        <td><span class="phase phase-fix">Fix</span></td>
+                        <td><span class="cmd">/fix-single-bug</span></td>
+                        <td><strong>Entry point for ALL fixes.</strong> Routes based on track/complexity</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td><span class="cmd">/fix-architecture-bug</span></td>
+                        <td>Track A (system) — Antigravity leads, human approves diff</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td><span class="cmd">/fix-business-bug</span></td>
+                        <td>Track B (business) — human validates rule before code changes</td>
+                    </tr>
+                    <tr>
+                        <td><span class="phase phase-verify">Verify</span></td>
+                        <td><span class="cmd">/test-and-verify</span></td>
+                        <td>Syntax → category tests → smoke test (auto-called by fix workflows)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="phase phase-close">Close</span></td>
+                        <td><span class="cmd">/learn-and-improve</span></td>
+                        <td>Updates brain + patterns + GitHub + ACTIVE_BUGS + velocity</td>
+                    </tr>
+                    <tr>
+                        <td><span class="phase phase-report">Report</span></td>
+                        <td><span class="cmd">/sprint-status</span></td>
+                        <td>Sprint progress from GitHub + ACTIVE_BUGS</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td><span class="cmd">/system-health</span></td>
+                        <td>Cross-module risk heatmap 🔴/🟡/🟢</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td><span class="cmd">/overall-bug-dashboard</span></td>
+                        <td>Full report + developer attribution + velocity trends</td>
+                    </tr>
+                    <tr>
+                        <td><span class="phase phase-maintain">Maintain</span></td>
+                        <td><span class="cmd">/validate-workflows</span></td>
+                        <td>Checks files exist, cross-refs valid, no hardcoded paths</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- DOs and DON'Ts -->
+        <div class="section">
+            <div class="rules-grid">
+                <div class="rules-box do">
+                    <h3>✅ DOs</h3>
+                    <ol>
+                        <li><strong>Brain before audit</strong> — no brain = missed bugs</li>
+                        <li><strong>Triage before fix</strong> — every bug needs severity, track, sprint, GitHub issue</li>
+                        <li><strong>Always enter via <code>/fix-single-bug</code></strong> — it has guards, routing, and tracking</li>
+                        <li><strong>Trace full data flow</strong> for money bugs: Form → JS → AJAX → PHP → DB</li>
+                        <li><strong>Check Module Brain first</strong> before reading source files</li>
+                        <li><strong>Run <code>/learn-and-improve</code> after every fix</strong> — not optional</li>
+                        <li><strong>Document rollback BEFORE applying fix</strong> → ROLLBACK_REGISTRY.md</li>
+                        <li><strong>Check for duplicates</strong> before creating bug entries</li>
+                        <li><strong>Syntax check after every PHP change</strong></li>
+                        <li><strong>Keep ACTIVE_BUGS.md ↔ GitHub in sync</strong></li>
+                        <li><strong>Run brain building until COVERAGE_TRACKER = 100%</strong></li>
+                    </ol>
+                </div>
+                <div class="rules-box dont">
+                    <h3>❌ DON'Ts</h3>
+                    <ol>
+                        <li><strong>Don't audit without brain</strong> — you'll miss context-dependent bugs</li>
+                        <li><strong>Don't skip triage</strong> — no tracking = chaos</li>
+                        <li><strong>Don't fix without root cause</strong> — symptom patches create new bugs</li>
+                        <li><strong>Don't call fix sub-workflows directly</strong> — go through <code>/fix-single-bug</code></li>
+                        <li><strong>Don't apply fixes without human approval</strong> on Track A/B</li>
+                        <li><strong>Don't skip <code>/learn-and-improve</code></strong> — it's how the system learns</li>
+                        <li><strong>Don't duplicate functions</strong> — extend existing ones</li>
+                        <li><strong>Don't run destructive SQL</strong> without approval</li>
+                        <li><strong>Don't hardcode paths</strong> — use config variables</li>
+                        <li><strong>Don't fix one layer only</strong> — if JS is wrong, check PHP too</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- TEMPLATES -->
+        <div class="section">
+            <div class="section-title"><span class="icon">📐</span> Templates <span style="font-size:9px;font-weight:400;color:var(--text-muted);margin-left:8px">Located in knowledge_brain/_TEMPLATE/</span></div>
+            <div class="template-grid">
+                <div class="template-card">
+                    <h4>COVERAGE_TRACKER.md</h4>
+                    <p>Brain completeness per metric — <strong>must reach 100%</strong> before audit</p>
+                    <div class="used-by">Used by: /build-module-brain</div>
+                </div>
+                <div class="template-card">
+                    <h4>FORENSIC_TEMPLATE.md</h4>
+                    <p>6-layer investigation: Symptom → Reproduce → JS → PHP → DB → Root Cause</p>
+                    <div class="used-by">Used by: /fix-architecture-bug, /fix-business-bug</div>
+                </div>
+                <div class="template-card">
+                    <h4>INVARIANT_MATRIX.md</h4>
+                    <p>Variant × behavior grids (e.g., Scheme Type × GST Type)</p>
+                    <div class="used-by">Used by: /build-module-brain, /fix-business-bug</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CLASSIFICATION -->
+        <div class="section">
+            <div class="section-title"><span class="icon">🏷️</span> Bug Classification</div>
+            <div class="class-grid">
+                <div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Severity</th>
+                                <th>Criteria</th>
+                                <th>Sprint</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="sev sev-p0">P0</span></td>
+                                <td>Money wrong, data lost, security hole</td>
+                                <td>Sprint 1</td>
+                            </tr>
+                            <tr>
+                                <td><span class="sev sev-p1">P1</span></td>
+                                <td>Shows wrong info, blocks workflow</td>
+                                <td>Sprint 2</td>
+                            </tr>
+                            <tr>
+                                <td><span class="sev sev-p2">P2</span></td>
+                                <td>Works but wrong behavior</td>
+                                <td>Sprint 3</td>
+                            </tr>
+                            <tr>
+                                <td><span class="sev sev-p3">P3</span></td>
+                                <td>Cosmetic, edge case</td>
+                                <td>Sprint 4</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Track</th>
+                                <th>Meaning</th>
+                                <th>Who Leads</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="track track-a">Track A</span></td>
+                                <td>System — code defect, runs wrong</td>
+                                <td>Antigravity leads</td>
+                            </tr>
+                            <tr>
+                                <td><span class="track track-b">Track B</span></td>
+                                <td>Business — wrong business result</td>
+                                <td>Human validates rule</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="categories">
+                        <span class="cat-tag">Logic</span>
+                        <span class="cat-tag">Data Validation</span>
+                        <span class="cat-tag">Database</span>
+                        <span class="cat-tag">Exception Handling</span>
+                        <span class="cat-tag">Security</span>
+                        <span class="cat-tag">Performance</span>
+                        <span class="cat-tag">Integration</span>
+                        <span class="cat-tag">Concurrency</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HUMAN CHECKPOINTS -->
+        <div class="section">
+            <div class="section-title"><span class="icon">⏱️</span> Human Checkpoints</div>
+            <div class="checkpoint">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Workflow</th>
+                            <th>Step</th>
+                            <th>What You Do</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="cmd">/fix-architecture-bug</span></td>
+                            <td>Step 5</td>
+                            <td>Approve proposed fix approach</td>
+                        </tr>
+                        <tr>
+                            <td><span class="cmd">/fix-architecture-bug</span></td>
+                            <td>Step 10</td>
+                            <td>Review final diff</td>
+                        </tr>
+                        <tr>
+                            <td><span class="cmd">/fix-business-bug</span></td>
+                            <td>Step 5</td>
+                            <td>Confirm the correct business rule</td>
+                        </tr>
+                        <tr>
+                            <td><span class="cmd">/fix-business-bug</span></td>
+                            <td>Step 10</td>
+                            <td>Smoke test with real data</td>
+                        </tr>
+                        <tr>
+                            <td><span class="cmd">/fix-single-bug</span></td>
+                            <td>Step 7</td>
+                            <td>Approve diff + test results</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- KEY FILES -->
+        <div class="section">
+            <div class="section-title"><span class="icon">🗂️</span> Key Files</div>
+            <div class="files-grid">
+                <div class="file-item">
+                    <span class="name">.agent/config.md</span>
+                    <span class="desc">— Central config (all workflows)</span>
+                </div>
+                <div class="file-item">
+                    <span class="name">.agent/GEMINI.md</span>
+                    <span class="desc">— Project rules</span>
+                </div>
+                <div class="file-item">
+                    <span class="name">ACTIVE_BUGS.md</span>
+                    <span class="desc">— Live bug tracker</span>
+                </div>
+                <div class="file-item">
+                    <span class="name">ROLLBACK_REGISTRY.md</span>
+                    <span class="desc">— Emergency rollback index</span>
+                </div>
+                <div class="file-item">
+                    <span class="name">COMMON_BUG_PATTERNS.md</span>
+                    <span class="desc">— Pattern library + detection</span>
+                </div>
+                <div class="file-item">
+                    <span class="name">MODULE_BRAIN.md</span>
+                    <span class="desc">— Module architecture + risks</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="footer">
+        Bug Remediation System v1.4 &nbsp;|&nbsp; Logimax Technologies &nbsp;|&nbsp; Generated: <script>document.write(new Date().toLocaleDateString('en-IN'))</script>
+        &nbsp;|&nbsp; Templates: <code>knowledge_brain/_TEMPLATE/</code> &nbsp;|&nbsp; Full walkthrough: <code>WORKFLOW_WALKTHROUGH_ESTIMATION.md</code>
+    </div>
+
+</body>
+</html>

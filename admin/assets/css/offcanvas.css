@@ -1,0 +1,270 @@
+/* Bootstrap 5 offcanvas CSS variables (needed for BS5 JS) */
+:root,[data-bs-theme=light]{--bs-offcanvas-zindex:1045;--bs-offcanvas-width:400px;--bs-offcanvas-height:30vh;--bs-offcanvas-padding-x:1rem;--bs-offcanvas-padding-y:1rem;--bs-offcanvas-color:inherit;--bs-offcanvas-bg:#fff;--bs-offcanvas-border-width:1px;--bs-offcanvas-border-color:rgba(0,0,0,0.175);--bs-offcanvas-box-shadow:0 0.125rem 0.25rem rgba(0,0,0,0.075);--bs-offcanvas-transition:transform 0.3s ease-in-out;--bs-offcanvas-title-line-height:1.5;--bs-border-color:#dee2e6;--bs-border-color-translucent:rgba(0,0,0,0.175)}
+*,::after,::before{box-sizing:border-box}
+
+/* ============================================================
+   LAYOUT TOKENS
+   ============================================================ */
+:root {
+    --sl-header-h:  50px;   /* AdminLTE .main-header */
+    --sl-footer-h:  52px;   /* AdminLTE .main-footer */
+    --sl-width:     420px;
+    --sl-accent:    #c0392b;
+    --sl-hdr-bg:    linear-gradient(135deg, #c0392b 0%, #7b241c 100%);
+}
+
+/* ============================================================
+   OFFCANVAS PANEL
+   top + bottom (not height) defines the panel size so it sits
+   cleanly between the fixed header and the footer.
+   z-index 1020 keeps it BELOW .main-header (z-index 1030).
+   ============================================================ */
+.offcanvas {
+    position: fixed !important;
+    top:    var(--sl-header-h, 50px)  !important;
+    bottom: var(--sl-footer-h, 52px) !important;
+    /* z-index MUST be above Bootstrap 5 backdrop (which JS sets to 1040) */
+    z-index: 1046 !important;
+    display: flex;
+    flex-direction: column;
+    width:  var(--sl-width, 420px);
+    max-width: 100%;
+    visibility: hidden;
+    background: #fff;
+    background-clip: padding-box;
+    outline: 0;
+    transition: transform 0.3s ease-in-out;
+    /* NO explicit height — top+bottom handles it */
+}
+@media (prefers-reduced-motion: reduce) {
+    .offcanvas { transition: none; }
+}
+
+.offcanvas.offcanvas-start {
+    right: 0;
+    left:  auto;
+    border-left: 2px solid #e0e4ea;
+    transform: translateX(100%);
+    box-shadow: -4px 0 18px rgba(0,0,0,0.15);
+}
+.offcanvas.offcanvas-end {
+    right: 0;
+    border-left: 2px solid #e0e4ea;
+    transform: translateX(100%);
+    box-shadow: -4px 0 18px rgba(0,0,0,0.15);
+}
+.offcanvas.show:not(.hiding), .offcanvas.showing { transform: none; }
+.offcanvas.hiding, .offcanvas.show, .offcanvas.showing { visibility: visible; }
+
+/* Backdrop only over the content area.
+   pointer-events:none ensures clicks ALWAYS reach the slider
+   even if browser z-index stacking is overridden by BS5 JS. */
+.offcanvas-backdrop {
+    position: fixed;
+    top:    var(--sl-header-h, 50px);
+    bottom: var(--sl-footer-h, 52px);
+    left: 0; right: 0;
+    z-index: 1040;
+    background: rgba(0,0,0,0.38);
+    pointer-events: none;
+}
+.offcanvas-backdrop.fade { opacity: 0; }
+.offcanvas-backdrop.show { opacity: 1; }
+
+
+/* ============================================================
+   HEADER — branded, never scrolls
+   ============================================================ */
+.offcanvas-header {
+    flex: 0 0 auto;              /* fixed height, never squishes */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--sl-hdr-bg);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.22);
+}
+.offcanvas-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+    line-height: 1.4;
+}
+.header-buttons         { display: flex; gap: 6px; align-items: center; }
+.header-buttons .btn    { padding: 4px 13px; font-size: 12px; font-weight: 600; border-radius: 4px; border: none; cursor: pointer; transition: opacity 0.15s; }
+.header-buttons .btn:hover { opacity: 0.85; }
+.header-buttons .btn-success { background: #27ae60; color: #fff; }
+.header-buttons .btn-warning {
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.5) !important;
+}
+
+/* ============================================================
+   BODY — THE SCROLL FIX
+   flex:1 + min-height:0 + overflow-y:auto on the body itself.
+   No nested flex. No overflow:hidden. Dead simple.
+   ============================================================ */
+.offcanvas-body {
+    flex: 1 1 0;             /* grow from 0 base — constrains to available height */
+    min-height: 0;           /* critical: allows flex child to scroll */
+    overflow-y: scroll;      /* 'scroll' always shows bar, 'auto' may not */
+    overflow-x: hidden;
+    background: #f5f6f8;
+    padding: 0;
+    /* Explicit height fallback in case flex doesn't constrain */
+    max-height: calc(100vh - var(--sl-header-h, 50px) - var(--sl-footer-h, 52px) - 44px);
+}
+/* Thin scrollbar — 6px for easy grabbing */
+.offcanvas-body::-webkit-scrollbar       { width: 6px; }
+.offcanvas-body::-webkit-scrollbar-track { background: #e5e7eb; }
+.offcanvas-body::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 4px; }
+.offcanvas-body::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+/* ============================================================
+   TAB BAR — stays at top inside scrollable body
+   ============================================================ */
+.offcanvas-body .nav.nav-tabs {
+    background: #fff;
+    border-bottom: 2px solid #e5e7eb;
+    padding: 0 12px;
+    margin: 0;
+    list-style: none;
+    display: flex;
+    /* NO position:sticky — sticky inside overflow:scroll blocks scrolling */
+}
+.offcanvas-body .nav-tabs > li > a {
+    display: block;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    text-decoration: none;
+    transition: color 0.15s, border-color 0.15s;
+}
+.offcanvas-body .nav-tabs > li.active > a,
+.offcanvas-body .nav-tabs > li > a:hover {
+    color: var(--sl-accent, #c0392b);
+    border-bottom-color: var(--sl-accent, #c0392b);
+    background: none;
+}
+
+/* ============================================================
+   TAB CONTENT — pads the scrollable area
+   ============================================================ */
+.offcanvas-body .tab-content {
+    padding: 12px 14px 24px;
+}
+
+/* ============================================================
+   FORM — visual tweaks ONLY, no layout changes
+   Bootstrap 3's float grid is left completely alone.
+   ============================================================ */
+.offcanvas-body .row         { margin-bottom: 8px; }
+.offcanvas-body .form-group  { margin-bottom: 4px; }
+
+.offcanvas-body label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 3px;
+}
+.offcanvas-body label .error { color: #c0392b; }
+
+.offcanvas-body .form-control {
+    height: 30px;
+    padding: 4px 8px;
+    font-size: 12.5px;
+    color: #1f2937;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    box-shadow: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.offcanvas-body .form-control:focus {
+    border-color: var(--sl-accent, #c0392b);
+    box-shadow: 0 0 0 2px rgba(192,57,43,0.12);
+    outline: none;
+    background: #fff;
+}
+.offcanvas-body select.form-control { height: 30px; padding: 3px 8px; appearance: auto; }
+
+.offcanvas-body input[type="radio"],
+.offcanvas-body input[type="checkbox"] {
+    accent-color: var(--sl-accent, #c0392b);
+    vertical-align: middle;
+    cursor: pointer;
+}
+
+/* Input group (title prefix + name field) */
+.offcanvas-body .input-group-addon {
+    padding: 0 6px;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-right: none;
+    border-radius: 4px 0 0 4px;
+    vertical-align: middle;
+    line-height: 28px;
+}
+.offcanvas-body .input-group-addon select {
+    border: none;
+    background: transparent;
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    padding: 0;
+    height: 28px;
+    line-height: 28px;
+}
+.offcanvas-body .input-group .form-control {
+    border-radius: 0 4px 4px 0;
+}
+
+/* Village (+) add button */
+.offcanvas-body .input-group-btn .btn,
+.offcanvas-body .input-group-btn > .btn {
+    height: 30px;
+    padding: 3px 10px;
+    font-size: 13px;
+    line-height: 1.4;
+    background: var(--sl-accent, #c0392b);
+    color: #fff;
+    border: 1px solid #922b21;
+    border-radius: 0 4px 4px 0;
+}
+
+/* Customer image preview */
+#cus_img_preview {
+    width: 90px !important;
+    height: auto;
+    border-radius: 6px;
+    border: 2px solid #e5e7eb;
+    margin-top: 6px;
+    display: block;
+}
+
+/* ============================================================
+   BOOTSTRAP-SELECT (inside slider only)
+   ============================================================ */
+.offcanvas-body .bootstrap-select                      { width: 100% !important; }
+.offcanvas-body .bootstrap-select .dropdown-toggle     { height: 30px; padding: 4px 8px; font-size: 12.5px; background: #fff !important; border: 1px solid #d1d5db !important; border-radius: 4px !important; box-shadow: none !important; }
+.offcanvas-body .bootstrap-select .dropdown-menu       { max-width: 100%; overflow-x: hidden !important; }
+.offcanvas-body .bootstrap-select .dropdown-item.active { background: var(--sl-accent,#c0392b) !important; }
+.offcanvas-body .bootstrap-select .dropdown-item       { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+.offcanvas-body .bootstrap-select .dropdown-menu .inner { scrollbar-width: none !important; }
+.offcanvas-body .bootstrap-select .dropdown-menu .inner::-webkit-scrollbar { display: none !important; }
+
+/* ============================================================
+   MODAL (Add Village) inside the panel
+   ============================================================ */
+.modal        { opacity: 1; }
+.modal-dialog { width: 480px; margin: 80px auto; }

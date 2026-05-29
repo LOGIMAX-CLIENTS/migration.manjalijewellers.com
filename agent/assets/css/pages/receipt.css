@@ -1,0 +1,88 @@
+.PDFReceipt *{
+font-family:sans-serif;
+font-size: 12px;
+}
+
+article,.PDFReceipt.meta table, .PDFReceipt .inventory table { margin: 0 0 3em; }
+article:after { clear: both; content: ""; display: table; }
+
+.PDFReceipt .meta:after, .PDFReceipt .balance:after { clear: both; content: ""; display: table; }
+
+/* table meta */
+
+.PDFReceipt .meta th { width: 20%; }
+.PDFReceipt .meta td { width: 30%; }
+
+/* table items */
+
+.PDFReceipt .inventory { clear: both; width: 100%; }
+.PDFReceipt .inventory th { font-weight: bold; text-align: center; }
+
+.PDFReceipt .inventory td:nth-child(1) { width: 26%; }
+.PDFReceipt .inventory td:nth-child(2) { width: 38%; }
+.PDFReceipt .inventory td:nth-child(3) { text-align: right; width: 12%; }
+.PDFReceipt .inventory td:nth-child(4) { text-align: right; width: 12%; }
+.PDFReceipt .inventory td:nth-child(5) { text-align: right; width: 12%; }
+
+/* table balance */
+
+.PDFReceipt .balance th{ width: 40%;}
+ .PDFReceipt .balance td { width: 36%; }
+.PDFReceipt .balance td { text-align: right; }
+
+
+
+.PDFReceipt table tr td{
+  height:1px;
+  font-size: 11px !important;
+}
+
+.receiptDts div{
+	height:30px;
+	text-align:center;
+	border-left:none
+}
+.PDFReceipt .address{
+	vertical-align:top;
+	font-size: 12px;
+	padding-top: 8px;
+	border-top: 1px solid #939393;
+}
+
+.PDFReceipt .heading {
+	 font: bold 80% sans-serif;
+	  letter-spacing: 0.5em;
+	  text-transform: uppercase;
+	background: #393939; border-radius: 0.25em; color: #FFF; margin: 0 0 1em; padding: 0.5em 0;
+	height: 20px;text-align: center;
+}
+.PDFReceipt .values {
+background-color:#fff;
+color:#676767;
+}
+.PDFReceipt .txtAckowlege{
+	height:40px ;
+	text-align:left;
+	padding-top: 15px;
+	border-top: 1px solid #939393;
+	font:bold 80% sans-serif ;
+}
+.PDFReceipt p{
+	height:4px;
+}
+
+.PDFReceipt .alignText{
+	float:right;
+	}
+.PDFReceipt .useraddr {
+	margin-bottom:80px;
+	font-size:15px !important;
+	font-weight:bold ;
+	}
+	
+.PDFReceipt table { font-size: 50%; table-layout: fixed; width: 100%; }
+.PDFReceipt table { border-collapse: separate; border-spacing: 2px; }
+.PDFReceipt th, td { border-width: 1px; padding: 0.5em; position: relative; text-align: left; }
+.PDFReceipt th, td { border-radius: 0.25em; border-style: solid; }
+.PDFReceipt th { background: #EEE; border-color: #BBB; }
+.PDFReceipt td { border-color: #DDD; }	

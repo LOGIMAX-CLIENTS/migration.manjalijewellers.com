@@ -1,0 +1,31 @@
+{
+    "entity": "sub_design_master",
+    "ai": {
+        "enabled": true,
+        "max_rows": 20
+    },
+    "validation": {
+        "required_file_name_pattern": "sub_design*.xlsx",
+        "required_sheet_name": "port_sub_design_master"
+    },
+    "file_path": "uploads/sub_design_master.xlsx",
+    "migrations": [{
+        "destination_table": "ret_sub_design_master",
+        "primary_key": "id_sub_design",
+        "mappings": {
+            "old_id": {
+                "source_column": "old_id",
+                "validations": { "type": "numeric", "min": 1, "required": false }
+            },
+            "sub_design_name": {
+                "source_column": "sub_design_name",
+                "validations": { "type": "string", "max_length": 100, "required": true },
+                "check_if_exists": true
+            },
+            "sub_design_code": {
+                "source_column": "short_code",
+                "validations": { "type": "string", "max_length": 50, "required": false }
+            }
+        }
+    }]
+}

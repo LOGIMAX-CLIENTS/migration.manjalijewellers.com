@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Toaster Test</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="file:///c:/xampp/htdocs/etail_v3/admin/assets/plugins/toaster/jquery.toaster.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css"
+    />
+  </head>
+  <body>
+    <h1>Toaster Test</h1>
+    <button id="btn-duplicate">Show Duplicate</button>
+    <button id="btn-different">Show Different</button>
+    <button id="btn-allow-duplicates">Show Duplicate (Allowed)</button>
+    <button id="btn-html-duplicate">Show HTML Duplicate</button>
+
+    <script>
+      $("#btn-duplicate").click(function () {
+        $.toaster({
+          priority: "danger",
+          title: "Warning!",
+          message: "Test Message",
+        });
+        $.toaster({
+          priority: "danger",
+          title: "Warning!",
+          message: "Test Message",
+        });
+      });
+
+      $("#btn-different").click(function () {
+        $.toaster({
+          priority: "danger",
+          title: "Warning!",
+          message: "Different Message",
+        });
+      });
+
+      $("#btn-allow-duplicates").click(function () {
+        $.toaster({
+          priority: "danger",
+          title: "Warning!",
+          message: "Duplicate Allowed",
+          settings: { toast: { allowDuplicates: true } },
+        });
+        $.toaster({
+          priority: "danger",
+          title: "Warning!",
+          message: "Duplicate Allowed",
+          settings: { toast: { allowDuplicates: true } },
+        });
+      });
+
+        $('#btn-html-duplicate').click(function() {
+            $.toaster({ priority: 'info', title: 'HTML', message: '<br>Line 1<br>Line 2' });
+            $.toaster({ priority: 'info', title: 'HTML', message: '<br>Line 1<br>Line 2' });
+        });
+    </script>
+  </body>
+</html>

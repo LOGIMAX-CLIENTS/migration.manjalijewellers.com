@@ -1,0 +1,87 @@
+.remove-btn {
+
+  margin-top: -168px;
+
+  margin-left: -38px;
+
+  background-color: #e51712 !important;
+
+  border: none;
+
+  color: white !important;
+
+}
+
+
+
+.sm {
+
+  font-weight: normal;
+
+}
+
+/* From Uiverse.io by andrew-demchenk0 */
+.switch {
+  --input-focus: #2d8cf0;
+  --bg-color: #fff;
+  --bg-color-alt: #666;
+  --main-color: #323232;
+  --input-out-of-focus: #ccc;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+  width: 50px;
+  height: 25px;
+  transform: translateX(calc(50% - 10px));
+}
+
+.toggle {
+  opacity: 0;
+}
+
+.slider {
+  box-sizing: border-box;
+  border-radius: 100px;
+  border: 2px solid var(--main-color);
+  /* box-shadow: 4px 4px var(--main-color); */
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--input-out-of-focus);
+  transition: 0.3s;
+}
+
+.slider:before {
+  content: "";
+  box-sizing: border-box;
+  height: 20px;
+  width: 20px;
+  position: absolute;
+  left: 2px;
+  bottom: 1px;
+  border: 2px solid var(--main-color);
+  border-radius: 100px;
+  background-color: var(--bg-color);
+  color: var(--main-color);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 15px;
+  transition: 0.3s;
+}
+
+.toggle:checked+.slider {
+  background-color: #605ca8;
+  transform: translateX(0px);
+}
+
+.toggle:checked+.slider:before {
+  content: "";
+  transform: translateX(25px);
+}

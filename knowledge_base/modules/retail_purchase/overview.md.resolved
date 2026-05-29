@@ -1,0 +1,34 @@
+# Retail Purchase & Stock Module Overview
+
+## Scope
+
+This module handles the procurement lifecycle for the retail division, from defining purchasable items (Supplier Catalog) to raising Purchase Orders (POs) and managing Stock Inwarding.
+
+**Included:**
+
+- **Supplier Catalog (`admin_ret_supp_catalog`)**: Definition of purchasable items with specific attributes like Wastage (VA) and Making Charges (MC).
+- **Purchase Order Entry (`admin_ret_purchase`)**:
+  - Creation of Purchase Orders (POs) sent to Suppliers.
+  - Management of "Customer Indents" (orders from customers that trigger purchase/manufacturing).
+  - Inwarding of goods via GRN (Goods Receipt Note).
+- **Stock Issues (`admin_ret_stock_issue`)**: Managing internal stock transfers or issues.
+- **Approvals (`admin_ret_purchase_approval`)**: Workflow for specific purchase authorizations.
+
+**Excluded:**
+
+- **Financial Ledgers**: While Purchase affects specific supplier ledgers (`ret_supplier_ledger_log`), the core accounting/ledger management is likely part of the **Accounts** module.
+- **Sales**: Retail Sales are handled in a separate module.
+
+## Key Observations
+
+- **"Karigar" as Universal Vendor**: The system uses the [ret_karigar](file:///c:/xampp/htdocs/etail_v3/admin/application/controllers/admin_ret_catalog.php#15512-15578) table as a unified master for **Workers** (Goldsmiths), **Suppliers**, and **Service Providers**. The `karigar_for` field distinguishes between 'Jewel Manufacturer', 'Jewel Supplier', etc.
+- **Dual-Purpose Purchase Controller**: [admin_ret_purchase.php](file:///c:/xampp/htdocs/etail_v3/admin/application/controllers/admin_ret_purchase.php) handles both:
+  1.  **Customer Orders/Indents** ([customerorder](file:///c:/xampp/htdocs/etail_v3/admin/application/controllers/admin_ret_reports.php#3934-3942) table): Requests from customers for specific items.
+  2.  **Supplier Purchase Orders** (`ret_purchase_order` table): Orders placed with suppliers/karigars to fulfill stock or indents.
+
+### Phase 3: Reports
+-   **Stock Analysis**: Aging, Lot-wise tracking, and Vault status.
+-   **Financials**: Cash Abstract, Day Closing, and Old Metal Purchase reports.
+-   **Transactions**: Branch transfers, Stock Issues, and Purchase Registers.
+
+- **Granular Costing**: The module focuses heavily on the intricacies of gold/silver costing, tracking `mc_value`, `mc_type`, [wastage](file:///c:/xampp/htdocs/etail_v3/admin/application/models/ret_catalog_model.php#8632-8648), and [purity](file:///c:/xampp/htdocs/etail_v3/admin/application/controllers/admin_ret_catalog.php#282-495) down to the specific catalog item.

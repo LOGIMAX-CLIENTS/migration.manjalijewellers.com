@@ -1,0 +1,32 @@
+<?php $comp_details=$this->login_model->company_details(); ?>
+    <link href="<?php echo base_url() ?>assets/css/pages/signin.css" rel="stylesheet" type="text/css">
+    <div class="main-container">
+		<div class="banner">
+		   <img src="<?php echo $this->config->item('base_url'); ?>assets/img/terms.jpg" style="width: 100%;height: auto;">
+		</div>
+			 
+	<div class="container-fluid">
+		<div class="aboutus">
+			<div class="container" >
+				<div >
+					<div class="row">
+						<div class="col-md-12">							
+<div align="center"><legend class="head" >Terms and Conditions</legend></div>
+						   <h4 style="line-height: 2;    color: #4B5E71; font-weight: 600;">Welcome to <?php echo $comp_details['company_name']; ?> Saving Scheme</h4>
+						   <p align="justify" class="conditions">&nbsp;Please read these terms of use carefully before using this website. If you do not agree to this Terms of Use you may not use this Website. By using this Website, you signify your explicit assent to this Terms of Use as well as the Website's Privacy Policy (which is hereby incorporated by reference herein). These Terms of Use sets out the legally binding terms of services available on the Website as well as at the terms of use of this Website. These Terms of Use along with the Privacy Policy extends to both users, who visit the Website but do not transact business on the Website ("Users / Guests") as well as users who are registered with by the Website to transact business on the Website ("Members"). The Company reserves the right to modify or terminate any portion of the Website or the Services offered by the Company for any reason, without notice and without liability to you or any third party. You are responsible for regularly reviewing these Terms of Use so that you will be apprised of changes, if any. Nothing in these Terms of Use should be construed to confer any rights to third party beneficiarie.</p>
+						   <p align="justify" class="conditions">&nbsp; This Website provides access to trading, pricing, news and other information services related to <?php echo $comp_details['company_name']; ?> . Certain Services available on this Website are for the use of Members only. Please note that some of the terms under these Terms of Use, differ for purchases for personal consumption and for investment purposes.
+ This Website offers services for Members who wish to purchase <?php echo $comp_details['company_name']; ?> for personal consumption, inclusive of, customized and readymade Jewellery. Some items may appear slightly larger or smaller than actual size due to screen defaults and photography techniques. Sometimes the items may be represented larger than the actual size in order to clearly show details or smaller than the actual size in order to show the entire item. The Company shall not be liable for any legal action on this account.</p>
+						   <p align="justify" class="conditions">&nbsp;n the event of a User wishing to make a purchase, the User may be required to register on the website after adding the item(s) to the shopping cart. The Members shall also provide any other mandatory information required under law like Personal Account Number (PAN) at the time of purchase if required.
+ Orders, are normally considered complete only after the payment has been received by <?php echo $comp_details['website']; ?>.
+To confirm the orders, <?php echo $comp_details['website']; ?> may at random, call up the Members who have placed orders through the Website. We will confirm the order only after the verification.
+ In the event the bank rejects to honour any payment transaction made by a Member towards an order, <?php echo $comp_details['website']; ?> shall have the right to refuse to ship the order to the Member without any liability whatsoever.</p>
+						   <p align="justify" class="conditions">&nbsp; <?php echo $comp_details['website']; ?> makes all reasonable efforts to display the products listed for sale on its website(s) as accurately as possible. However, <?php echo $comp_details['website']; ?> cannot guarantee that your monitor's display of any product colour, texture or detail will be accurate. <?php echo $comp_details['website']; ?> does not warrant that product descriptions or other content are accurate, complete, reliable current or error free. While <?php echo $comp_details['website']; ?> makes every effort to ensure that the products are described and priced accurately, in the event that an item is deemed to be priced incorrectly, <?php echo $comp_details['website']; ?> reserves the right to refuse the sale of that item.</p>
+						   <p align="justify" class="conditions">&nbsp; You expressly understand that under no circumstances, including, but not limited to, negligence, shall the company be liable to you or any other person or entity for any direct, indirect, incidental, special, or consequential damages, including, but not limited to damages for loss of profits, goodwill, use, data or other intangible losses, resulting from circumstances, including but not limited to: (i) the use or the inability to use the website and / or services; or (ii) the cost of procurement of substitute goods and services resulting from any goods, data, information or services purchased or obtained or messages received or transactions entered into through or from the website and / or services or (iii) unauthorized access to or alteration of your transmissions or data; (iv) statements or conduct of any third party on the website and / or services; or (v) any other matter relating to the website and / or services.</p>
+						   <p align="justify" class="conditions">&nbsp;n the event of breach of the terms and conditions of this terms of use by the user, the user shall be promptly liable to indemnify <?php echo $comp_details['website']; ?> for all the costs, losses and damages caused to <?php echo $comp_details['website']; ?> as a result of such a breach. Further in the event of your breach of this terms of use, you agree that <?php echo $comp_details['website']; ?> will be irreparably harmed and will not have an adequate remedy in money or damages. <?php echo $comp_details['website']; ?> therefore, shall be entitled in such event to obtain an injunction against such a breach from any court of competent jurisdiction immediately upon request. <?php echo $comp_details['website']; ?>'s right to obtain such relief shall not limit its right to obtain other remedies.</p>
+						   
+					    </div>
+					</div>
+				</div>
+			</div>
+		</div>
+    </div>

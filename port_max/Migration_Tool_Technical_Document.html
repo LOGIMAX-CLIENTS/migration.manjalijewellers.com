@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PortMax — Technical Design Document (HLD & LLD)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #fff;
+    color: #1e293b;
+    line-height: 1.7;
+    font-size: 13px;
+    padding: 40px 50px;
+  }
+
+  @media print {
+    body { padding: 20px 30px; font-size: 11px; }
+    .page-break { page-break-before: always; }
+    h2 { page-break-before: always; }
+    h2:first-of-type { page-break-before: avoid; }
+    table { page-break-inside: avoid; }
+    pre { page-break-inside: avoid; }
+    .no-print { display: none; }
+  }
+
+  .cover {
+    text-align: center;
+    padding: 80px 0 50px;
+    border-bottom: 3px solid #2563eb;
+    margin-bottom: 40px;
+  }
+  .cover h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.5px;
+  }
+  .cover .subtitle {
+    font-size: 18px;
+    color: #64748b;
+    margin-top: 8px;
+    font-weight: 400;
+  }
+  .cover .meta {
+    margin-top: 20px;
+    color: #94a3b8;
+    font-size: 13px;
+  }
+  .cover .meta span {
+    margin: 0 12px;
+  }
+
+  h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-top: 40px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e2e8f0;
+  }
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e40af;
+    margin-top: 24px;
+    margin-bottom: 10px;
+  }
+  h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+    margin-top: 16px;
+    margin-bottom: 6px;
+  }
+
+  p { margin-bottom: 10px; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 12px;
+  }
+  th {
+    background: #1e40af;
+    color: #fff;
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  td {
+    padding: 7px 12px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #f8fafc; }
+  tr:hover td { background: #eff6ff; }
+
+  pre {
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 16px 20px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 12px 0 20px;
+    white-space: pre;
+  }
+
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    background: #f1f5f9;
+    padding: 2px 5px;
+    border-radius: 4px;
+    color: #dc2626;
+  }
+
+  .toc {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 20px 28px;
+    margin: 20px 0 30px;
+  }
+  .toc h3 { color: #0f172a; margin-top: 0; }
+  .toc ol { padding-left: 24px; }
+  .toc li { margin: 6px 0; }
+  .toc a { color: #2563eb; text-decoration: none; font-weight: 500; }
+  .toc a:hover { text-decoration: underline; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .badge-post { background: #dbeafe; color: #1e40af; }
+  .badge-get { background: #dcfce7; color: #166534; }
+  
+  .note {
+    background: #fffbeb;
+    border-left: 4px solid #f59e0b;
+    padding: 10px 16px;
+    margin: 12px 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 12px;
+  }
+
+  .print-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+    box-shadow: 0 4px 12px rgba(37,99,235,.3);
+    z-index: 100;
+  }
+  .print-btn:hover { background: #1d4ed8; }
+</style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">🖨️ Save as PDF</button>
+
+<!-- COVER -->
+<div class="cover">
+  <h1>PortMax</h1>
+  <div class="subtitle">Technical Design Document — HLD & LLD</div>
+  <div class="meta">
+    <span><b>Version:</b> 2.1</span>
+    <span><b>Date:</b> 16 April 2026</span>
+    <span><b>Author:</b> Logimax Development Team</span>
+  </div>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+  <h3>Table of Contents</h3>
+  <ol>
+    <li><a href="#s1">Project Overview</a></li>
+    <li><a href="#s2">High-Level Design (HLD)</a></li>
+    <li><a href="#s3">Low-Level Design (LLD)</a></li>
+    <li><a href="#s4">Entity Configuration Schema</a></li>
+    <li><a href="#s5">API Reference</a></li>
+    <li><a href="#s6">Frontend Components</a></li>
+    <li><a href="#s7">Database & Storage Design</a></li>
+    <li><a href="#s8">Security</a></li>
+    <li><a href="#s9">Deployment</a></li>
+  </ol>
+</div>
+
+<!-- 1. PROJECT OVERVIEW -->
+<h2 id="s1">1. Project Overview</h2>
+
+<h3>1.1 Purpose</h3>
+<p>The <b>PortMax</b> is a web-based data migration platform that enables importing bulk data from Excel/ODS files into a MySQL database. It supports configurable entity mapping, field validation, lookup resolution, parent-child table relationships, and comprehensive reporting.</p>
+
+<h3>1.2 Key Features</h3>
+<table>
+  <tr><th>Feature</th><th>Description</th></tr>
+  <tr><td>Multi-entity support</td><td>Customer, Employee, Account, Payment via JSON configs</td></tr>
+  <tr><td>Excel validation</td><td>Type checking, length validation, required fields, lookup resolution</td></tr>
+  <tr><td>Background processing</td><td>Async validation & import with real-time progress polling</td></tr>
+  <tr><td>Dual auto backup (Excel + SQL)</td><td>Excel (.xlsx per-table sheets) + SQL backup before import; SQL backup after import on report page</td></tr>
+  <tr><td>Duplicate detection</td><td>Check-if-exists on configurable columns</td></tr>
+  <tr><td>AI-assisted mapping</td><td>Optional AI column matching (configurable per entity)</td></tr>
+  <tr><td>Styled XLSX reports</td><td>Post-import reports with formatting, commas, alignment</td></tr>
+  <tr><td>Combined data export</td><td>LEFT JOIN export of main + child tables with column selection</td></tr>
+  <tr><td>Skipped/error rows download</td><td>Download skipped/error rows Excel from report page with common download button</td></tr>
+  <tr><td>Skip errors & import</td><td>When errors exist with valid rows, user can skip errors and import valid rows only, or fix errors first</td></tr>
+  <tr><td>Error column prefixes</td><td>Downloaded Excel Error column uses <code>Skipped:</code>, <code>Error:</code>, <code>Child Error:</code> prefixes for clarity</td></tr>
+  <tr><td>Upload success feedback</td><td>Green success message after file upload confirmation</td></tr>
+  <tr><td>User manual</td><td>In-app user manual accessible via header button (opens in new tab)</td></tr>
+  <tr><td>Disclaimer banner</td><td>Amber warning on Data Migration page: config check + contact developer notice</td></tr>
+  <tr><td>Entity-named reports</td><td>Report Excel filename includes entity name (e.g., Customer_report_date.xlsx)</td></tr>
+  <tr><td>Activity logging</td><td>Day-wise import activity log</td></tr>
+  <tr><td>Searchable entity selector</td><td>Custom dropdown with real-time search, keyboard navigation, click-outside close</td></tr>
+  <tr><td>Download template</td><td>Auto-generated Excel template with headers + validation rules row per entity config</td></tr>
+  <tr><td>Auto file upload</td><td>Files auto-upload on selection (no separate upload button)</td></tr>
+  <tr><td>Destination DB badge</td><td>UI displays the connected database name as "Destination DB"</td></tr>
+  <tr><td>Backup download buttons</td><td>Post-validation backup card shows "📥 Excel Backup" and "🗃️ SQL Backup" download links</td></tr>
+  <tr><td>Import confirmation modal</td><td>Premium Svelte modal with entity name, row count, and warning before inserting into production DB</td></tr>
+  <tr><td>DB error reporting</td><td>Database errors (duplicate key, constraint violation) are surfaced to the user via the import progress UI instead of failing silently</td></tr>
+  <tr><td>Full-width import button</td><td>Prominent orange-red gradient button showing row count: "⚡ Import N Row(s) Now" with hover glow effect</td></tr>
+  <tr><td>Lazy import progress card</td><td>Import card with progress bar only appears after import starts, not during validation/ready state</td></tr>
+</table>
+
+<h3>1.3 Technology Stack</h3>
+<table>
+  <tr><th>Layer</th><th>Technology</th></tr>
+  <tr><td>Frontend</td><td>SvelteKit (Svelte 4) + Vite</td></tr>
+  <tr><td>Backend</td><td>PHP 7.1 (CodeIgniter 3)</td></tr>
+  <tr><td>Database</td><td>MySQL (mysqli driver)</td></tr>
+  <tr><td>Web Server</td><td>Apache (XAMPP)</td></tr>
+  <tr><td>Excel Read</td><td>PhpOffice/PhpSpreadsheet</td></tr>
+  <tr><td>Excel Write</td><td>Box\Spout</td></tr>
+</table>
+
+<!-- 2. HIGH-LEVEL DESIGN -->
+<h2 id="s2">2. High-Level Design (HLD)</h2>
+
+<h3>2.1 System Architecture</h3>
+<pre>
+┌──────────────────────────────────────────────────────────────────┐
+│                       BROWSER  (SvelteKit)                       │
+│                                                                  │
+│  ┌───────────┐  ┌──────────┐  ┌──────────────┐  ┌────────────┐  │
+│  │ AuthPage  │→ │  Data    │→ │   Import     │→ │ (optional) │  │
+│  │ (Login)   │  │Migration │  │   Report     │  │ ConnectDB  │  │
+│  └───────────┘  └──────────┘  └──────────────┘  └────────────┘  │
+└───────────────────────┬──────────────────────────────────────────┘
+                        │  REST API (JSON over HTTP)
+                        ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                    APACHE / PHP  (CodeIgniter 3)                  │
+│                                                                  │
+│   ┌───────────────┐        ┌──────────────────────┐              │
+│   │AuthController │        │  ImportController     │              │
+│   │ • connDB      │        │  • uploadFile         │              │
+│   │ • login       │        │  • readExcel (async)  │              │
+│   │ • logout      │        │  • insertAllRows      │              │
+│   └───────────────┘        │  • generateReport     │              │
+│                            │  • backupEntityTables │              │
+│                            │  • downloadCombined   │              │
+│                            │  • getEntityTables    │              │
+│                            └──────────────────────┘              │
+│                                                                  │
+│   ┌──────────────────────────────────────────────┐               │
+│   │  Entity Configs:  customer.json  employee.json│               │
+│   │   account.json  payment.json  allfieldcustomer│               │
+│   └──────────────────────────────────────────────┘               │
+└───────────────────────┬──────────────────────────────────────────┘
+                        │  mysqli
+                        ▼
+               ┌─────────────────┐
+               │   MySQL Server  │
+               │   (Client DB)   │
+               └─────────────────┘
+</pre>
+
+<h3>2.2 Application Flow</h3>
+<pre>
+Login → Select Config → Upload Excel → Validate → Backup → Import → Report
+  │          │              │             │          │        │         │
+  ▼          ▼              ▼             ▼          ▼        ▼         ▼
+login()  listConfigs()  uploadFile()  readExcel()  backup  insert   generate
+                                      (async)     Tables  AllRows   Report
+                                         │                   │
+                                         ▼                   ▼
+                                     poll status         poll status
+                                     (validated)         (completed)
+</pre>
+
+<h3>2.3 State Machine (DataMigration Component)</h3>
+<pre>
+   ┌──────┐   upload   ┌──────────┐  validate  ┌────────────┐
+   │ idle │───────────→│ uploaded  │───────────→│ validating │
+   └──────┘            └──────────┘            └──────┬─────┘
+                                                      │
+                                            ┌─────────┼─────────────┐
+                                     (all errors)     │      (has errors
+                                            │         │      + valid rows)
+                                            ▼         │         ▼
+                                      ┌───────────┐   │  ┌────────────┐
+                                      │ validated  │   │  │ has_errors │
+                                      │(show errs) │   │  │(skip/fix?) │
+                                      └───────────┘   │  └──────┬─────┘
+                                                      │    skip │  fix
+                                                      │    ─────┤──→ validated
+                                             (no errors)       │
+                                                      ▼        ▼
+                                                ┌────────────┐
+                                                │ backing_up │
+                                                └──────┬─────┘
+                                                       │
+                                                ┌──────────┐  import  ┌───────────┐
+                                                │  ready   │─────────→│ importing │
+                                                └──────────┘         └─────┬─────┘
+                                                                           │
+                                                  ┌───────┐         ┌─────┴────┐
+                                                  │ error │         │   done   │
+                                                  └───────┘         └──────────┘
+</pre>
+
+<!-- 3. LOW-LEVEL DESIGN -->
+<h2 id="s3">3. Low-Level Design (LLD)</h2>
+
+<h3>3.1 Directory Structure</h3>
+<pre>
+migrationtool/
+├── global_configs.php                 # Global constants (DB defaults, timezone)
+│
+├── api/                               # Backend (CodeIgniter 3)
+│   ├── application/
+│   │   ├── controllers/
+│   │   │   ├── AuthController.php         # DB connect, login, logout
+│   │   │   └── ImportController.php       # Core import engine (~2400 lines)
+│   │   ├── config/
+│   │   │   └── migration/                 # Entity config JSONs
+│   │   │       ├── customer.json
+│   │   │       ├── employee.json
+│   │   │       ├── account.json
+│   │   │       ├── payment.json
+│   │   │       └── allfieldcustomer.json
+│   │   ├── core/
+│   │   │   └── MY_Controller.php          # Base controller (session DB restore)
+│   │   └── helpers/
+│   │       ├── ai_helper.php              # AI column matching
+│   │       └── log_helper.php             # Activity logging
+│   ├── uploads/                            # Runtime file storage
+│
+├── Developer_Configuration_Manual.html    # Developer setup & config guide
+├── Migration_Tool_Technical_Document.html # This document
+│   └── vendor/                            # Composer packages
+│
+├── migration/                         # Frontend (SvelteKit)
+│   ├── src/
+│   │   ├── routes/
+│   │   │   └── +page.svelte               # Root page (step router)
+│   │   └── lib/
+│   │       ├── config.js                  # API_URL constant
+│   │       ├── ConnectDBPage.svelte       # DB connection form
+│   │       ├── AuthPage.svelte            # Login form
+│   │       ├── DataMigration.svelte       # Upload/validate/import (~1450 lines)
+│   │       └── ImportReport.svelte        # Report & export (~790 lines)
+│   ├── static/
+│   │   └── user_manual.html              # In-app user manual (opens in new tab)
+│   └── package.json
+</pre>
+
+<h3>3.2 Backend Class Design</h3>
+
+<h4>MY_Controller (Base)</h4>
+<pre>
+MY_Controller extends CI_Controller
+├── __construct()         # Load session, restore DB config from session
+└── loadClientDB()        # Reconnect to client DB from session credentials
+</pre>
+
+<h4>AuthController</h4>
+<pre>
+AuthController extends MY_Controller
+├── connDB()              # POST: Test DB connection, save config in session
+├── login()               # POST: Authenticate against employee table
+└── logout()              # POST: Destroy session, close DB connection
+</pre>
+
+<h4>ImportController — Complete Method Map</h4>
+<pre>
+ImportController extends MY_Controller
+│
+├── UPLOAD & CONFIG
+│   ├── uploadFile()                # Upload Excel to uploads/migration/{client}/
+│   └── listConfigs()               # List available entity JSON configs
+│
+├── VALIDATION (Async)
+│   ├── readExcel()                 # Start async validation, return taskId
+│   ├── validateProcess()           # Core validation engine (background)
+│   │   ├── validateField()         #   Field-level type/length/format check
+│   │   ├── lookupValue()           #   Resolve FK in reference tables
+│   │   ├── checkDataExists()       #   Duplicate detection
+│   │   └── createifmissing()       #   Auto-create lookup if configured
+│   └── import_status()             # Poll validation/import progress
+│
+├── IMPORT (Async)
+│   ├── insertAllRows()             # Start async import, return taskId
+│   └── insertProcess()             # Core insert engine (batch transactions)
+│
+├── REPORTING
+│   ├── generateReport()            # Build migration summary from config rules
+│   ├── downloadReportExcel()       # Export styled XLSX report
+│   └── getReportData()             # Execute aggregation queries
+│
+├── DATA EXPORT
+│   ├── getEntityTables()           # Return tables + columns + joinConfig
+│   ├── downloadTableData()         # Export single table (all/selected columns)
+│   └── downloadCombinedData()      # LEFT JOIN main + child tables export
+│
+├── BACKUP & DOWNLOAD
+│   ├── backupEntityTables()        # Generate .xlsx + .sql backup before import
+│   ├── downloadBackup()            # Serve backup file (GET ?file=...)
+│   └── downloadTemplate()          # Generate Excel template with headers + validation rules
+│
+└── FILE & CLEANUP
+    ├── download()                  # File download handler (fallback: imported/ folder)
+    └── cleanupResources()          # Archive/delete files after import
+</pre>
+
+<h3>3.3 Validation Engine (Detail)</h3>
+<pre>
+validateProcess($data)
+│
+├── Load entity config JSON
+├── Map Excel header row → config column mappings
+│
+├── FOR EACH ROW:
+│   ├── FOR EACH COLUMN in config.mappings:
+│   │   │
+│   │   ├── Direct Column?
+│   │   │   └── validateField(value, rules)
+│   │   │       ├── type: string  → max_length check
+│   │   │       ├── type: numeric → is_numeric, min, length
+│   │   │       ├── type: date    → format parse (Y-m-d)
+│   │   │       └── required      → empty check
+│   │   │
+│   │   ├── Lookup Column?
+│   │   │   └── lookupValue(table, matchCol, value, returnCol, createIfMissing)
+│   │   │       ├── Check bulkCache[] first (O(1))
+│   │   │       ├── Cache miss → DB query
+│   │   │       ├── Not found + createIfMissing → INSERT + return new ID
+│   │   │       └── Store result in bulkCache[]
+│   │   │
+│   │   └── check_if_exists?
+│   │       └── checkDataExists(table, col, value) → duplicate detection
+│   │
+│   ├── Validate CHILDREN (same logic, nested mappings)
+│   │
+│   ├── Has errors?    → add to ErrorRows[]
+│   ├── Is duplicate?  → add to SkipedRows[]
+│   └── Valid?         → add to allrows[]
+│
+├── Write progress to status JSON file (for polling)
+└── Return: { ErrorRows, SkipedRows, message (valid rows) }
+</pre>
+
+<h3>3.4 Import Engine (Detail)</h3>
+<pre>
+insertProcess($input, $taskId)
+│
+├── Start DB Transaction
+│
+├── FOR EACH ROW in allrows:
+│   ├── INSERT into destination_table → get insert_id (primary key)
+│   ├── FOR EACH CHILD:
+│   │   ├── Set foreign_key = parent insert_id
+│   │   └── INSERT into child destination_table
+│   │
+│   ├── Update status file progress (every N rows)
+│   └── On error → rollback + mark failed
+│
+├── Commit transaction
+├── Generate post-import report data
+└── Write final status: completed / failed
+</pre>
+
+<h3>3.5 Backup Engine (Detail)</h3>
+<pre>
+backupEntityTables($client, $entity)
+│
+├── Read config JSON → collect all table + destination_table names 
+│   (main + children, deduplicated)
+│
+├── 1. EXCEL BACKUP (.xlsx)
+│   ├── Create WriterEntityFactory::createXLSXWriter()
+│   └── FOR EACH TABLE:
+│       ├── Create sheet (name = table, max 31 chars)
+│       ├── Write blue bold header row
+│       └── Write all data rows
+│
+├── 2. SQL BACKUP (.sql)
+│   ├── Header comments (entity, client, date, tables)
+│   ├── SET FOREIGN_KEY_CHECKS=0
+│   └── FOR EACH TABLE:
+│       ├── SHOW CREATE TABLE → get DDL
+│       ├── SELECT * FROM table → get all data rows
+│       │   └── Generate batch INSERT statements (500 rows per INSERT)
+│       └── Track: table name + row count
+│
+├── Save Excel to: tmp/backups/{entity}_backup_{timestamp}.xlsx
+├── Save SQL to:   tmp/backups/{entity}_backup_{timestamp}.sql
+└── Return: { excelFile, sqlFile, downloadUrl, sqlDownloadUrl, tables[] }
+</pre>
+
+<h3>3.6 Report Engine</h3>
+<pre>
+generateReport($client, $configFile)
+│
+├── Read config.report[] array (list of report queries)
+│
+├── FOR EACH report entry:
+│   ├── Build SELECT from config.select
+│   ├── FROM destination_table
+│   ├── LEFT JOIN (if config.left_join defined)
+│   ├── WHERE conditions:
+│   │   ├── Fixed filters (e.g., added_by = 6)
+│   │   └── current_import filter (id > lastImportId)
+│   ├── GROUP BY config.group_by
+│   └── Execute query → collect result rows + totals
+│
+└── Return: { tables: [{ title, columns, rows, summary }] }
+</pre>
+
+<!-- 4. ENTITY CONFIG -->
+<h2 id="s4">4. Entity Configuration Schema</h2>
+
+<h3>JSON Structure</h3>
+<pre>
+{
+  "entity": "customer",
+  "ai": { "enabled": true, "max_rows": 20 },
+  "validation": {
+    "required_file_name_pattern": "customer*.xlsx",
+    "required_sheet_name": "port_customer"
+  },
+  "migrations": [{
+    "destination_table": "customer",
+    "primary_key": "id_customer",
+    "mappings": {
+      "db_column": {
+        "source_column": "excel_column_name",
+        "validations": { 
+          "type": "string|numeric|date",
+          "max_length": 50,
+          "required": true 
+        },
+        "check_if_exists": true,
+        "lookup": {
+          "table": "reference_table",
+          "source_column": "excel_col",
+          "match_column": "db_col",
+          "return_column": "id_col",
+          "create_if_missing": true
+        }
+      }
+    },
+    "children": [{
+      "destination_table": "address",
+      "foreign_key": "id_customer",
+      "mappings": { ... }
+    }]
+  }],
+  "report": [{
+    "aggregation": "count",
+    "field": "mobile",
+    "select": "SQL SELECT clause",
+    "group_by": ["column"],
+    "left_join": { "table": "branch", "on": "..." },
+    "where": { "current_import": { "added_by": 6 } }
+  }]
+}
+</pre>
+
+<h3>Available Entity Configs</h3>
+<table>
+  <tr><th>Config File</th><th>Entity</th><th>Main Table</th><th>Children</th><th>Approx Columns</th></tr>
+  <tr><td>customer.json</td><td>Customer</td><td>customer</td><td>address</td><td>7 + 8</td></tr>
+  <tr><td>employee.json</td><td>Employee</td><td>employee</td><td>—</td><td>~15</td></tr>
+  <tr><td>account.json</td><td>Account</td><td>account</td><td>—</td><td>~12</td></tr>
+  <tr><td>payment.json</td><td>Payment</td><td>payment</td><td>—</td><td>~10</td></tr>
+  <tr><td>allfieldcustomer.json</td><td>Customer (Full)</td><td>customer</td><td>address</td><td>~20 + 15</td></tr>
+</table>
+
+<!-- 5. API REFERENCE -->
+<h2 id="s5">5. API Reference</h2>
+
+<h3>5.1 Authentication</h3>
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>Request Body</th><th>Response</th></tr>
+  <tr><td><span class="badge badge-post">POST</span></td><td><code>AuthController/connDB</code></td><td><code>{ host, database, username, password }</code></td><td><code>{ success, client, message }</code></td></tr>
+  <tr><td><span class="badge badge-post">POST</span></td><td><code>AuthController/login</code></td><td><code>{ username, password }</code></td><td><code>{ success, client, id, message }</code></td></tr>
+  <tr><td><span class="badge badge-post">POST</span></td><td><code>AuthController/logout</code></td><td>—</td><td><code>{ success, message }</code></td></tr>
+</table>
+
+<h3>5.2 File Management</h3>
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>Request</th><th>Response</th></tr>
+  <tr><td><span class="badge badge-post">POST</span></td><td><code>ImportController/uploadFile</code></td><td>FormData: <code>file</code>, <code>client</code></td><td><code>{ success, fileId, filename }</code></td></tr>
+  <tr><td><span class="badge badge-post">POST</span></td><td><code>ImportController/listConfigs</code></td><td>—</td><td><code>{ success, configs[] }</code></td></tr>
+  <tr><td><span class="badge badge-get">GET</span></td><td><code>ImportController/download</code></td><td><code>?file=&amp;client=&amp;type=</code></td><td>Binary file download</td></tr>
+</table>
+
+<h3>5.3 Validation & Import (Async)</h3>
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>Request Body</th><th>Response</th></tr>
+  <tr><td><span class="badge badge-post">POST</span></td><td><code>ImportController/readExcel</code></td><td><code>{ configFile, excelFile, client, fileId }</code></td><td><code>{ status: "processing", taskId }</code></td></tr>
+  <tr><td><span class="badge badge-get">GET</span></td><td><code>ImportController/import_status</code></td><td><code>?taskId=</code></td><td><code>{ status, progress, data, allrows }</code></td></tr>
+  <tr><td><span class="badge badge-post">POST</span></td><td><code>ImportController/insertAllRows</code></td><td><code>{ configFile, allrows, fileId, client }</code></td><td><code>{ status: "processing", taskId }</code></td></tr>
+  <tr><td><span class="badge badge-post">POST</span></td><td><code>ImportController/cleanupResources</code></td><td><code>{ taskId, client, file, action }</code></td><td><code>{ success }</code></td></tr>
+</table>
+
+<h3>5.4 Reporting</h3>
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>Request Body</th><th>Response</th></tr>
+  <tr><td><span class="badge badge-post">POST</span></td><td><code>ImportController/generateReport</code></td><td><code>{ client, configFile, fileId }</code></td><td><code>{ success, tables[], entity }</code></td></tr>
+  <tr><td><span class="badge badge-post">POST</span></td><td><code>ImportController/downloadReportExcel</code></td><td><code>{ client, configFile }</code></td><td><code>{ success, file, client }</code></td></tr>
+</table>
+
+<h3>5.5 Data Export</h3>
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>Request Body</th><th>Response</th></tr>
+  <tr><td><span class="badge badge-post">POST</span></td><td><code>ImportController/getEntityTables</code></td><td><code>{ client, entity }</code></td><td><code>{ success, tables[], columns{}, joinConfig }</code></td></tr>
+  <tr><td><span class="badge badge-post">POST</span></td><td><code>ImportController/downloadTableData</code></td><td><code>{ client, table, columns? }</code></td><td><code>{ success, file, client }</code></td></tr>
+  <tr><td><span class="badge badge-post">POST</span></td><td><code>ImportController/downloadCombinedData</code></td><td><code>{ client, entity, columns{} }</code></td><td><code>{ success, file, client }</code></td></tr>
+</table>
+
+<h3>5.6 Backup & Template</h3>
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>Request</th><th>Response</th></tr>
+  <tr><td><span class="badge badge-post">POST</span></td><td><code>ImportController/backupEntityTables</code></td><td><code>{ client, entity }</code></td><td><code>{ success, excelFile, sqlFile, downloadUrl, sqlDownloadUrl, tables[] }</code></td></tr>
+  <tr><td><span class="badge badge-get">GET</span></td><td><code>ImportController/downloadBackup</code></td><td><code>?file=filename</code></td><td>Binary file download (Excel or SQL)</td></tr>
+  <tr><td><span class="badge badge-get">GET</span></td><td><code>ImportController/downloadTemplate</code></td><td><code>?config=entity.json</code></td><td>Binary Excel download (headers + validation rules)</td></tr>
+</table>
+
+<!-- 6. FRONTEND COMPONENTS -->
+<h2 id="s6">6. Frontend Components</h2>
+
+<h3>6.1 Component Hierarchy</h3>
+<pre>
++page.svelte  (Router: step = login → migrate → report)
+├── AuthPage.svelte          (step = "login")
+├── DataMigration.svelte     (step = "migrate")
+└── ImportReport.svelte      (step = "report")
+</pre>
+
+<div class="note">
+  <b>Note:</b> <code>ConnectDBPage.svelte</code> exists but is currently bypassed — the app starts at the login step with a pre-configured DB connection.
+</div>
+
+<h3>6.2 DataMigration.svelte States</h3>
+<table>
+  <tr><th>State</th><th>UI</th><th>Description</th></tr>
+  <tr><td><code>idle</code></td><td>Disclaimer banner + Drop zone + config selector</td><td>Initial state, disclaimer always visible</td></tr>
+  <tr><td><code>uploaded</code></td><td>✅ Success message + Validate button enabled</td><td>File uploaded successfully, green confirmation shown</td></tr>
+  <tr><td><code>validating</code></td><td>Progress bar (real-time %)</td><td>Async validation in progress</td></tr>
+  <tr><td><code>validated</code></td><td>Error table + download button</td><td>All rows have errors — import blocked</td></tr>
+  <tr><td><code>has_errors</code></td><td>Error summary + Skip/Fix buttons</td><td>Errors found but valid rows exist — user chooses to skip or fix</td></tr>
+  <tr><td><code>backing_up</code></td><td>Backup spinner</td><td>Auto .sql backup of DB tables</td></tr>
+  <tr><td><code>ready</code></td><td>Backup result + Import button</td><td>No errors (or skipped), backup done</td></tr>
+  <tr><td><code>importing</code></td><td>Import progress bar</td><td>Async import in progress</td></tr>
+  <tr><td><code>done</code></td><td>Results + View Report button</td><td>Import completed</td></tr>
+  <tr><td><code>error</code></td><td>Error message</td><td>General error state</td></tr>
+</table>
+
+<h3>6.3 ImportReport.svelte Features</h3>
+<table>
+  <tr><th>Feature</th><th>Description</th></tr>
+  <tr><td>Summary cards</td><td>Total Rows (Excel), Imported, Skipped, Errors (with distinct accent colors)</td></tr>
+  <tr><td>Error/Skipped download</td><td>Common "📥 Download Error / Skipped Rows Report" button when errors or skipped > 0</td></tr>
+  <tr><td>Auto post-import backup</td><td>Automatically backs up entity tables on report page load (.sql format)</td></tr>
+  <tr><td>Summary tables</td><td>Config-driven aggregation with group-by, totals, comma formatting</td></tr>
+  <tr><td>Export Report XLSX</td><td>Styled Excel: <code>{Entity}_report_{date}.xlsx</code>, title includes entity name + client</td></tr>
+  <tr><td>Export Raw Table</td><td>Dropdown to select table → export all columns as XLSX</td></tr>
+  <tr><td>Export Combined</td><td>Grouped checkboxes per table → LEFT JOIN export of selected columns</td></tr>
+  <tr><td>New Migration</td><td>Button to return to DataMigration step</td></tr>
+</table>
+
+<div class="note">
+  <b>Note:</b> The Errors card is now always visible on the report page (showing 0 when no errors). When errors exist (e.g., user chose "Skip Errors & Import"), the error count and download button are available for review.
+</div>
+
+<!-- 7. DATABASE & STORAGE -->
+<h2 id="s7">7. Database & Storage Design</h2>
+
+<h3>7.1 Session Management</h3>
+<p>PHP sessions store <code>db_config</code> (host, user, password, database). <code>MY_Controller::loadClientDB()</code> restores the DB connection on each request. Login state is tracked via <code>logged_in</code> and <code>username</code> session keys.</p>
+
+<h3>7.2 File Storage Layout</h3>
+<pre>
+uploads/
+├── {ClientName}/
+│   ├── uploaded_file.xlsx              # Original upload
+│   ├── uploaded_file_processed.xlsx    # With error column added
+│   ├── import_log_{fileId}.json        # Import activity log
+│   │
+│   ├── imported/
+│   │   ├── uploaded_file.xlsx          # Archived after import
+│   │   └── 2026-04-04.txt             # Activity log
+│   │
+│   └── summary/
+│       ├── {Entity}_report_*.xlsx      # Summary reports
+│       └── customer_data_*.xlsx        # Exported table data
+
+tmp/
+├── backups/
+│   ├── customer_backup_20260404_184628.xlsx   # Excel backup (per-table sheets)
+│   └── customer_backup_20260404_184628.sql    # SQL backup (CREATE + INSERT)
+└── status_{taskId}.json                      # Async progress tracking
+</pre>
+
+<h3>7.3 Async Status File Format</h3>
+<pre>
+{
+  "status": "processing | validated | has_errors | completed | failed",
+  "progress": 0-100,
+  "validRowCount": 10,           // (has_errors only) count of valid rows
+  "errorRowCount": 5,            // (has_errors only) count of error rows
+  "data": {
+    "ErrorRows":   [{ row#, errors[] }],
+    "SkipedRows":  [{ row#, reason }],
+    "message":     [{ valid row data }],
+    "ErrorSummary": "optional summary text"
+  },
+  "allrows": [/* all valid rows for import */],
+  "message": "error description if failed"
+}
+</pre>
+
+<h3>7.4 Backup SQL File Format</h3>
+<pre>
+-- PortMax Backup
+-- Entity: customer
+-- Client: LOGIMAX
+-- Date: 2026-04-04 18:46:28
+-- Tables: customer, address
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- Table: customer
+DROP TABLE IF EXISTS `customer`;
+CREATE TABLE `customer` ( ... );
+
+INSERT INTO `customer` (...) VALUES
+(1, ...),  (2, ...),  ...,  (500, ...);
+
+INSERT INTO `customer` (...) VALUES
+(501, ...),  ...;
+
+-- Table: address
+DROP TABLE IF EXISTS `address`;
+CREATE TABLE `address` ( ... );
+
+INSERT INTO `address` (...) VALUES ...;
+
+SET FOREIGN_KEY_CHECKS=1;
+</pre>
+
+<!-- 8. SECURITY -->
+<h2 id="s8">8. Security</h2>
+<table>
+  <tr><th>Area</th><th>Implementation</th></tr>
+  <tr><td>Authentication</td><td>Employee table login; password stored as base64 encoded</td></tr>
+  <tr><td>Session</td><td>PHP session with DB config + login state; file-based storage</td></tr>
+  <tr><td>SQL Injection Prevention</td><td><code>preg_match('/^[a-zA-Z0-9_]+$/')</code> for dynamic table/column names</td></tr>
+  <tr><td>CORS</td><td>Cookie-based credentials; <code>credentials: "include"</code> on fetch</td></tr>
+  <tr><td>File Upload</td><td>Extension whitelist: <code>.xlsx, .xls, .ods, .csv</code></td></tr>
+  <tr><td>Backup Data</td><td><code>addslashes()</code> for SQL string values</td></tr>
+  <tr><td>Direct Script Access</td><td><code>defined('BASEPATH') OR exit()</code> on all controllers</td></tr>
+</table>
+
+<!-- 9. DEPLOYMENT -->
+<h2 id="s9">9. Deployment</h2>
+
+<h3>9.1 Environment Configuration</h3>
+<p>Set the API URL in <code>migration/src/lib/config.js</code>:</p>
+<pre>
+// Local development
+export const API_URL = "http://localhost/migrationtool/api/index.php/";
+
+// Production deployments
+export const API_URL = "https://domain.com/port_max/api/index.php/";
+</pre>
+
+<h3>9.2 Server Requirements</h3>
+<table>
+  <tr><th>Requirement</th><th>Minimum Version</th></tr>
+  <tr><td>PHP</td><td>7.1+</td></tr>
+  <tr><td>MySQL</td><td>5.7+</td></tr>
+  <tr><td>Apache</td><td>2.4+ (mod_rewrite enabled)</td></tr>
+  <tr><td>Node.js</td><td>16+ (for SvelteKit build)</td></tr>
+  <tr><td>Composer</td><td>2.x (PHP dependencies)</td></tr>
+</table>
+
+<h3>9.3 Installation Steps</h3>
+<pre>
+# 1. Clone repository
+git clone {repo} migrationtool/
+
+# 2. Install PHP dependencies
+cd api/ && composer install
+
+# 3. Install frontend dependencies
+cd ../migration/ && npm install
+
+# 4. Build frontend for production
+npm run build
+
+# 5. Configure API URL in migration/src/lib/config.js
+# 6. Set up Apache virtual host
+# 7. Ensure uploads/ directory is writable
+</pre>
+
+<h3>9.4 Active Deployments</h3>
+<table>
+  <tr><th>Client</th><th>URL</th></tr>
+  <tr><td>ANB Gold & Diamonds</td><td><code>anbgoldanddiamonds.com/port_max/</code></td></tr>
+  <tr><td>Test Server</td><td><code>post.nammauzhavan.com/port_max/</code></td></tr>
+  <tr><td>SSR Jewellers</td><td><code>srisithivinayagarjewellers.com/port_max/</code></td></tr>
+</table>
+
+<br><br>
+<hr>
+<p style="text-align:center; color:#94a3b8; font-size:12px; margin-top:20px;">
+  <b>PortMax v2.1</b> — Technical Design Document — Logimax Development Team — April 2026
+</p>
+
+</body>
+</html>

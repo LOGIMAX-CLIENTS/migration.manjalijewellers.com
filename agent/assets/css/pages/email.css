@@ -1,0 +1,53 @@
+#emailPay{
+width:100%;
+padding:10px;
+font-family:Calibri;
+font-size:16px;
+color:#000000;
+background:#fafafa;
+}
+#emailPay logo{
+vertical-align:middle;
+}
+#emailPay .emailInner{
+	margin:10px 0 10px 10px;
+}
+#emailPay .heading{
+	height:40px;
+	background:#00BA8B;
+	color:#FFFFFF;
+	font-size:18px;
+	font-weight:bold;
+}
+#emailPay .name{
+	height:25px;
+	font-size:22px;
+	line-height:25px;
+}
+#emailPay .desc{
+	height:30px;
+	line-height:30px;
+	margin:10px;
+	padding-left:20px;
+}
+#emailPay .mailFooter{
+	height:50px;
+	vertical-align:middle;
+    display: table-cell;
+}
+#emailPay .details div{
+margin:10px;
+padding-left:20px;
+height:20px;
+}
+#emailPay .details label{
+	display:inline-block;
+	height:40px;
+}
+#emailPay .details .detailHead{
+	font-weight:bold;
+	width:13%;
+}
+#emailPay .details .detailValue{
+	width:50%;
+}

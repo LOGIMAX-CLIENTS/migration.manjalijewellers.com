@@ -1,0 +1,2040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CI/CD Dashboard - Logimax</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="js/auth-check.js" data-require-role="viewer"></script>
+    <style>
+        :root {
+            --bg-body: #f5f5f7;
+            --bg-card: #ffffff;
+            --bg-sidebar: #1a1a2e;
+            --sidebar-hover: #252542;
+            --sidebar-active: #7c3aed;
+            --accent: #7c3aed;
+            --accent-light: #a78bfa;
+            --accent-gradient: linear-gradient(180deg, #a78bfa 0%, #7c3aed 100%);
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --text-muted: #9ca3af;
+            --text-sidebar: #9ca3af;
+            --border: #e5e7eb;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08);
+            --shadow-lg: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-body);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* Dark Sidebar */
+        .sidebar {
+            width: 72px;
+            background: var(--bg-sidebar);
+            height: 100vh;
+            position: fixed;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            z-index: 100;
+        }
+        .logo {
+            width: 40px;
+            height: 40px;
+            background: var(--accent);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 40px;
+            font-size: 1.2rem;
+            color: #fff;
+        }
+        .nav-icons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+        }
+        .nav-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-sidebar);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.2rem;
+            text-decoration: none;
+        }
+        .nav-icon:hover {
+            background: var(--sidebar-hover);
+            color: #fff;
+        }
+        .nav-icon.active {
+            background: var(--sidebar-active);
+            color: #fff;
+        }
+        .nav-bottom {
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        /* Main Layout */
+        .main {
+            margin-left: 72px;
+            flex: 1;
+            display: flex;
+            min-height: 100vh;
+        }
+        .content-area {
+            flex: 1;
+            padding: 24px 28px;
+            max-width: calc(100% - 340px);
+        }
+        .right-sidebar {
+            width: 340px;
+            background: var(--bg-card);
+            border-left: 1px solid var(--border);
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        /* Topbar */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 28px;
+        }
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 20px;
+            width: 320px;
+            box-shadow: var(--shadow);
+        }
+        .search-box input {
+            border: none;
+            background: none;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            width: 100%;
+            outline: none;
+        }
+        .search-box input::placeholder { color: var(--text-muted); }
+        .search-icon { color: var(--text-muted); font-size: 1rem; }
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .icon-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            transition: all 0.2s;
+        }
+        .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .user-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Stat Cards Row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+        }
+        .stat-card:hover {
+            box-shadow: var(--shadow-lg);
+            border-color: var(--accent);
+        }
+        .stat-card.featured {
+            background: var(--bg-card);
+            border: 2px solid var(--accent);
+        }
+        .stat-content { flex: 1; }
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.1;
+        }
+        .stat-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.8rem;
+            margin-top: 8px;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+        .stat-change.up { background: rgba(34,197,94,0.1); color: var(--success); }
+        .stat-change.down { background: rgba(239,68,68,0.1); color: var(--danger); }
+        .stat-sparkline {
+            width: 100px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Chart Section */
+        .chart-section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 28px;
+        }
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .chart-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .dropdown {
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg-card);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn {
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+        .btn:hover { background: var(--bg-body); }
+        .btn-dark {
+            background: var(--bg-sidebar);
+            color: #fff;
+            border-color: var(--bg-sidebar);
+        }
+        .btn-dark:hover { background: #252542; }
+        .chart-container {
+            height: 260px;
+            position: relative;
+        }
+
+        /* Top Sessions Cards */
+        .bottom-section {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+        }
+        .sessions-info {
+            flex-shrink: 0;
+        }
+        .sessions-info h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .sessions-info p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .sessions-info strong { color: var(--text-primary); }
+        .top-cards {
+            display: flex;
+            gap: 16px;
+            flex: 1;
+        }
+        .top-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            flex: 1;
+            text-align: center;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+        .top-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+        .top-card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: var(--bg-body);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            font-size: 1.4rem;
+        }
+        .top-card-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .top-card-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+        .top-card-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .top-card-value span {
+            font-size: 0.85rem;
+            font-weight: 400;
+            color: var(--text-muted);
+        }
+
+        /* Right Sidebar */
+        .sidebar-section {
+            margin-bottom: 32px;
+        }
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .sidebar-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .more-btn {
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        .radar-container {
+            height: 200px;
+            position: relative;
+        }
+
+        /* Statistics Items */
+        .stat-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .stat-item:last-child { border-bottom: none; }
+        .stat-item-info h4 {
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .stat-item-info p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .stat-item-info .change {
+            font-size: 0.75rem;
+            color: var(--success);
+        }
+        .stat-item-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .mini-chart {
+            width: 60px;
+            height: 30px;
+        }
+        .stat-item-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Circular Progress */
+        .circular-progress {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .circular-progress svg {
+            transform: rotate(-90deg);
+            width: 44px;
+            height: 44px;
+        }
+        .circular-progress circle {
+            fill: none;
+            stroke-width: 4;
+        }
+        .circular-progress .bg { stroke: var(--border); }
+        .circular-progress .progress { stroke: var(--accent); stroke-linecap: round; }
+        .circular-progress .value {
+            position: absolute;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        /* Loading */
+        .loading-spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 40px auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: var(--bg-card);
+            border-radius: 16px;
+            width: 500px;
+            max-width: 95vw;
+            box-shadow: var(--shadow-lg);
+        }
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 { font-size: 1.1rem; font-weight: 600; }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+        .modal-body { padding: 24px; }
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            padding: 14px 20px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            display: none;
+            align-items: center;
+            gap: 12px;
+            z-index: 300;
+        }
+        .toast.show { display: flex; }
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.error { border-left: 4px solid var(--danger); }
+
+        /* Table */
+        .table-section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-top: 28px;
+        }
+        .table-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .table-header h3 { font-size: 1rem; font-weight: 600; }
+        .filter-pills { display: flex; gap: 6px; }
+        .pill {
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--bg-body);
+            color: var(--text-secondary);
+        }
+        .pill:hover { color: var(--text-primary); }
+        .pill.active { background: var(--accent); color: #fff; }
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            padding: 12px 20px;
+            text-align: left;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-body);
+        }
+        td {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(124,58,237,0.02); }
+        .client-info { display: flex; align-items: center; gap: 12px; }
+        .client-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .client-name { font-weight: 500; }
+        .client-domain { font-size: 0.75rem; color: var(--text-muted); }
+        .badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        .badge-pending { background: rgba(156,163,175,0.15); color: var(--text-muted); }
+        .badge-progress { background: rgba(245,158,11,0.15); color: var(--warning); }
+        .badge-done { background: rgba(34,197,94,0.15); color: var(--success); }
+        .badge-failed { background: rgba(239,68,68,0.15); color: var(--danger); }
+        .steps-mini { display: flex; gap: 4px; }
+        .step-dot {
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            font-weight: 600;
+            background: var(--bg-body);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .step-dot:hover { transform: scale(1.1); }
+        .step-dot.done { background: var(--success); color: #fff; }
+        .actions { display: flex; gap: 6px; }
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+        }
+        .action-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .checkbox { accent-color: var(--accent); }
+
+        /* Skeleton Loaders */
+        .skeleton {
+            background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+            background-size: 200% 100%;
+            animation: skeleton-pulse 1.5s infinite;
+            border-radius: 4px;
+        }
+        @keyframes skeleton-pulse {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .skeleton-text { height: 14px; width: 80%; margin: 4px 0; }
+        .skeleton-circle { width: 36px; height: 36px; border-radius: 50%; }
+        .skeleton-box { height: 80px; width: 100%; }
+        
+        /* Deployment History Section */
+        .history-filters {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .filter-select {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        .history-row {
+            display: flex;
+            align-items: center;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            gap: 16px;
+        }
+        .history-row:hover {
+            background: rgba(124,58,237,0.02);
+        }
+        .history-row:last-child { border-bottom: none; }
+        .history-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .history-status.success { background: var(--success); }
+        .history-status.failed { background: var(--danger); }
+        .history-status.pending { background: var(--warning); }
+        .history-info { flex: 1; min-width: 0; }
+        .history-client { font-weight: 500; font-size: 0.9rem; }
+        .history-meta { font-size: 0.75rem; color: var(--text-muted); display: flex; gap: 12px; }
+        .history-env {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        .history-env.develop { background: rgba(124,58,237,0.1); color: var(--accent); }
+        .history-env.qa { background: rgba(245,158,11,0.1); color: var(--warning); }
+        .history-env.support { background: rgba(34,197,94,0.1); color: #22c55e; }
+        .history-env.staging { background: rgba(6,182,212,0.1); color: #06b6d4; }
+        .history-env.production { background: rgba(239,68,68,0.1); color: var(--danger); }
+        .history-actions { display: flex; gap: 8px; }
+        .btn-rollback {
+            padding: 6px 12px;
+            background: transparent;
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-rollback:hover {
+            background: var(--danger);
+            color: #fff;
+        }
+        
+        /* Environment Promotion */
+        .promote-flow {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 16px 20px;
+            background: var(--bg-body);
+            border-radius: 10px;
+            margin-bottom: 16px;
+        }
+        .promote-env {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+        }
+        .promote-arrow {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+        }
+        .btn-promote {
+            padding: 8px 16px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: auto;
+        }
+        .btn-promote:hover {
+            background: var(--accent-hover);
+        }
+        .btn-promote:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .right-sidebar { width: 300px; }
+            .content-area { max-width: calc(100% - 300px); }
+        }
+        @media (max-width: 1200px) {
+            .right-sidebar { display: none; }
+            .content-area { max-width: 100%; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .sidebar { width: 0; display: none; }
+            .main { margin-left: 0; }
+            .stats-row { grid-template-columns: 1fr; }
+            .top-cards { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Dark Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">🚀</div>
+        <nav class="nav-icons">
+            <a href="#" class="nav-icon active" id="nav-dashboard" data-tooltip="Dashboard" data-section="stats-row" data-require-role="admin">📊</a>
+            <a href="#" class="nav-icon" id="nav-deployments" data-tooltip="Deployments" data-section="history-section">📤</a>
+            <a href="#" class="nav-icon" id="nav-clients" data-tooltip="Clients" data-section="clients-section" data-require-role="admin">👥</a>
+            <a href="support-deploy.html" class="nav-icon" id="nav-support" data-tooltip="Support Portal">📈</a>
+        </nav>
+        <div class="nav-bottom">
+            <a href="#" class="nav-icon" id="nav-settings" data-tooltip="Settings" data-require-role="admin">⚙️</a>
+            <a href="#" class="nav-icon" id="nav-help" data-tooltip="Help">❓</a>
+            <a href="#" class="nav-icon" id="nav-logout" data-tooltip="Logout">🚪</a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="content-area">
+            <!-- Topbar -->
+            <div class="topbar">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="search" placeholder="Search ...">
+                </div>
+                <div class="topbar-right">
+                    <div class="icon-btn">💬</div>
+                    <div class="icon-btn">🔔</div>
+                    <div class="user-avatar">LM</div>
+                </div>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="stats-row">
+                <div class="stat-card featured">
+                    <div class="stat-content">
+                        <div class="stat-label">Total Deployments</div>
+                        <div class="stat-value" id="stat-deployments">2.4k+</div>
+                        <div class="stat-change up">↑ 17%</div>
+                    </div>
+                    <div class="stat-sparkline">
+                        <canvas id="spark1"></canvas>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-label">Success Rate</div>
+                        <div class="stat-value" id="stat-success">94.2%</div>
+                        <div class="stat-change down">↓ 2%</div>
+                    </div>
+                    <div class="stat-sparkline">
+                        <canvas id="spark2"></canvas>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-label">Avg Deploy Time</div>
+                        <div class="stat-value" id="stat-time">45s</div>
+                        <div class="stat-change up">↑ 8%</div>
+                    </div>
+                    <div class="stat-sparkline">
+                        <canvas id="spark3"></canvas>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-label">Active Clients</div>
+                        <div class="stat-value" id="stat-clients">82</div>
+                        <div class="stat-change up">↑ 5</div>
+                    </div>
+                    <div class="stat-sparkline">
+                        <canvas id="spark4"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deployments Chart -->
+            <div class="chart-section" id="chart-section">
+                <div class="chart-header">
+                    <h2 class="chart-title">Deployments Overview</h2>
+                    <div class="chart-actions">
+                        <select class="filter-select" id="chart-range-filter" style="min-width:140px;">
+                            <option value="7">Last 7 days</option>
+                            <option value="14" selected>Last 14 days</option>
+                            <option value="30">Last 30 days</option>
+                        </select>
+                        <button class="btn btn-dark" onclick="exportCSV()">
+                            ⬇ Download CSV
+                        </button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="mainChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Bottom Section -->
+            <div class="bottom-section">
+                <div class="sessions-info">
+                    <h3>Top Clients</h3>
+                    <p>Deployment statistics for<br><strong>last 7 days</strong></p>
+                </div>
+                <div class="top-cards">
+                    <div class="top-card">
+                        <div class="top-card-icon">🏢</div>
+                        <div class="top-card-title" id="top1-name">Loading...</div>
+                        <div class="top-card-subtitle">Most Deploys</div>
+                        <div class="top-card-value"><span id="top1-value">--</span> <span>/ deploys</span></div>
+                    </div>
+                    <div class="top-card">
+                        <div class="top-card-icon">⚡</div>
+                        <div class="top-card-title" id="top2-name">Loading...</div>
+                        <div class="top-card-subtitle">Fastest Avg</div>
+                        <div class="top-card-value"><span id="top2-value">--</span> <span>/ seconds</span></div>
+                    </div>
+                    <div class="top-card">
+                        <div class="top-card-icon">✅</div>
+                        <div class="top-card-title" id="top3-name">Loading...</div>
+                        <div class="top-card-subtitle">Best Success</div>
+                        <div class="top-card-value"><span id="top3-value">--</span> <span>/ rate</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clients Table -->
+            <div class="table-section" id="clients-section">
+                <div class="table-header">
+                    <h3>👥 Client Repositories</h3>
+                    <div class="filter-pills">
+                        <span class="pill active" data-filter="all">All</span>
+                        <span class="pill" data-filter="pending">Pending</span>
+                        <span class="pill" data-filter="in-progress">In Progress</span>
+                        <span class="pill" data-filter="completed">Completed</span>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:40px"><input type="checkbox" class="checkbox" id="select-all"></th>
+                            <th>Client</th>
+                            <th>Status</th>
+                            <th>Progress</th>
+                            <th>Updated</th>
+                            <th style="width:100px">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clients-table">
+                        <tr><td colspan="6"><div class="loading-spinner"></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Deployment History Section -->
+            <div class="table-section" id="history-section" style="margin-top: 28px;">
+                <div class="table-header">
+                    <h3>📜 Deployment History</h3>
+                    <div class="history-filters">
+                        <select class="filter-select" id="history-env-filter">
+                            <option value="all">All Environments</option>
+                            <option value="develop">Develop (Source)</option>
+                            <option value="qa">QA (Source)</option>
+                            <option value="support">Support (Source)</option>
+                            <option value="staging">Staging (Clients)</option>
+                            <option value="production">Production</option>
+                        </select>
+                        <select class="filter-select" id="history-status-filter">
+                            <option value="all">All Status</option>
+                            <option value="success">Success</option>
+                            <option value="failed">Failed</option>
+                        </select>
+                        <select class="filter-select" id="history-range-filter">
+                            <option value="7">Last 7 days</option>
+                            <option value="14" selected>Last 14 days</option>
+                            <option value="30">Last 30 days</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Environment Flow Info -->
+                <div class="promote-flow">
+                    <div style="display:flex;flex-direction:column;gap:8px;flex:1">
+                        <div style="font-size:0.75rem;color:var(--text-muted)">
+                            <strong>Source:</strong> develop → qa → support → production
+                        </div>
+                        <div style="font-size:0.75rem;color:var(--text-muted)">
+                            <strong>Clients:</strong> staging → production
+                        </div>
+                    </div>
+                    <button class="btn-promote" onclick="openDeployBranchModal()">🔀 Deploy Branch</button>
+                </div>
+                
+                <div id="history-list">
+                    <div class="history-row">
+                        <div class="skeleton skeleton-circle"></div>
+                        <div class="history-info">
+                            <div class="skeleton skeleton-text" style="width:150px"></div>
+                            <div class="skeleton skeleton-text" style="width:200px"></div>
+                        </div>
+                    </div>
+                    <div class="history-row">
+                        <div class="skeleton skeleton-circle"></div>
+                        <div class="history-info">
+                            <div class="skeleton skeleton-text" style="width:120px"></div>
+                            <div class="skeleton skeleton-text" style="width:180px"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <aside class="right-sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-header">
+                    <h3 class="sidebar-title">Deployments by Environment</h3>
+                    <span class="more-btn">•••</span>
+                </div>
+                <div class="radar-container">
+                    <canvas id="radarChart"></canvas>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-header">
+                    <h3 class="sidebar-title">Statistics</h3>
+                    <span class="more-btn">•••</span>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-item-info">
+                        <h4>Staging Deploys</h4>
+                        <p>Max 878</p>
+                        <span class="change">30%</span>
+                    </div>
+                    <div class="stat-item-right">
+                        <div class="circular-progress">
+                            <svg><circle class="bg" cx="22" cy="22" r="18"/><circle class="progress" cx="22" cy="22" r="18" stroke-dasharray="113" stroke-dashoffset="79"/></svg>
+                            <span class="value">30%</span>
+                        </div>
+                        <span class="stat-item-value">320</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-item-info">
+                        <h4>Production Deploys</h4>
+                        <p>Max 878</p>
+                        <span class="change">87%</span>
+                    </div>
+                    <div class="stat-item-right">
+                        <div class="circular-progress" style="--accent: #22c55e;">
+                            <svg><circle class="bg" cx="22" cy="22" r="18"/><circle class="progress" cx="22" cy="22" r="18" stroke-dasharray="113" stroke-dashoffset="15" style="stroke:#22c55e"/></svg>
+                            <span class="value" style="color:#22c55e">87%</span>
+                        </div>
+                        <span class="stat-item-value">765</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-item-info">
+                        <h4>Avg Build Time</h4>
+                        <p class="change">+21%</p>
+                    </div>
+                    <div class="stat-item-right">
+                        <canvas id="miniChart" class="mini-chart"></canvas>
+                        <span class="stat-item-value">3.1k+</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modal-title">Modal</h2>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body" id="modal-body"></div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <span id="toast-icon"></span>
+        <span id="toast-msg"></span>
+    </div>
+
+<script>
+// ============================================================================
+// STATE
+// ============================================================================
+let clients = [], clientStatus = {};
+const STORAGE_KEY = 'cicd_client_status';
+const STEPS = [
+    {id:'secrets',label:'S',title:'Secrets'},
+    {id:'workflow',label:'W',title:'Workflow'},
+    {id:'files',label:'F',title:'Files'},
+    {id:'env',label:'E',title:'Env'},
+    {id:'test',label:'T',title:'Test'}
+];
+const API_BASE = 'api/';
+
+// ============================================================================
+// INIT
+// ============================================================================
+async function init() {
+    clientStatus = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    await loadClients();
+    initCharts();
+    loadStats();
+    setupEventListeners();
+}
+
+async function loadClients() {
+    const cached = localStorage.getItem('cicd_clients_cache');
+    if (cached) clients = JSON.parse(cached);
+    
+    try {
+        const res = await fetch(API_BASE + 'github-repos.php?org=LOGIMAX-CLIENTS');
+        if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.repos) {
+                clients = data.repos.map(r => ({
+                    id: r.name.replace(/\./g, '_'),
+                    name: r.name,
+                    repo: r.name,
+                    url: r.html_url
+                }));
+                localStorage.setItem('cicd_clients_cache', JSON.stringify(clients));
+            }
+        }
+    } catch(e) {}
+    
+    if (!clients.length) {
+        try {
+            const res = await fetch('../../clients/registry.json');
+            if (res.ok) {
+                const data = await res.json();
+                clients = data.clients || [];
+            }
+        } catch(e) {}
+    }
+    
+    renderClients();
+    updateTopCards();
+}
+
+async function loadStats() {
+    try {
+        const res = await fetch(API_BASE + 'stats.php?action=overview');
+        const data = await res.json();
+        if (data.success && data.stats) {
+            const s = data.stats;
+            document.getElementById('stat-deployments').textContent = s.total_deployments.value;
+            document.getElementById('stat-success').textContent = s.success_rate.value;
+            document.getElementById('stat-time').textContent = s.avg_time.value;
+            document.getElementById('stat-clients').textContent = s.active_clients.value;
+        }
+    } catch(e) {}
+}
+
+function initCharts() {
+    const purple = '#7c3aed';
+    const purpleLight = '#a78bfa';
+    const green = '#22c55e';
+    
+    // Sparklines
+    const sparkConfig = (color) => ({
+        type: 'line',
+        data: {
+            labels: ['','','','','','',''],
+            datasets: [{
+                data: [30,45,35,50,40,60,45],
+                borderColor: color,
+                borderWidth: 2,
+                fill: false,
+                pointRadius: 0,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { display: false }, y: { display: false } }
+        }
+    });
+    
+    new Chart(document.getElementById('spark1'), sparkConfig(purple));
+    new Chart(document.getElementById('spark2'), sparkConfig('#ef4444'));
+    new Chart(document.getElementById('spark3'), sparkConfig(green));
+    new Chart(document.getElementById('spark4'), sparkConfig(purple));
+    
+    // Main Area Chart
+    const mainCtx = document.getElementById('mainChart').getContext('2d');
+    const gradient = mainCtx.createLinearGradient(0, 0, 0, 260);
+    gradient.addColorStop(0, 'rgba(124,58,237,0.3)');
+    gradient.addColorStop(1, 'rgba(124,58,237,0.02)');
+    
+    mainChartInstance = new Chart(mainCtx, {
+        type: 'line',
+        data: {
+            labels: ['Loading...'],
+            datasets: [{
+                label: 'Develop',
+                data: [0],
+                borderColor: purple,
+                backgroundColor: gradient,
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 0,
+                pointHoverRadius: 6
+            },{
+                label: 'Production',
+                data: [0],
+                borderColor: purpleLight,
+                borderWidth: 2,
+                fill: false,
+                tension: 0.4,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { intersect: false, mode: 'index' },
+            plugins: {
+                legend: { display: true, position: 'top', align: 'end' },
+                tooltip: {
+                    backgroundColor: '#1a1a2e',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    padding: 12,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    callbacks: {
+                        label: (ctx) => `${ctx.dataset.label}: ${ctx.raw} deploys`
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                    ticks: { color: '#9ca3af' }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#9ca3af' }
+                }
+            }
+        }
+    });
+    
+    // Load initial chart data
+    loadChartData(14);
+    
+    // Radar Chart (Environment Distribution)
+    new Chart(document.getElementById('radarChart'), {
+        type: 'polarArea',
+        data: {
+            labels: ['Staging', 'Production', 'QA', 'Support'],
+            datasets: [{
+                data: [45, 35, 15, 5],
+                backgroundColor: [
+                    'rgba(124,58,237,0.7)',
+                    'rgba(167,139,250,0.7)',
+                    'rgba(196,181,253,0.5)',
+                    'rgba(221,214,254,0.4)'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right', labels: { boxWidth: 12, padding: 16, color: '#6b7280' } }
+            },
+            scales: {
+                r: { display: false }
+            }
+        }
+    });
+    
+    // Mini sparkline in statistics
+    new Chart(document.getElementById('miniChart'), {
+        type: 'line',
+        data: {
+            labels: ['','','','','',''],
+            datasets: [{
+                data: [20,35,25,40,30,45],
+                borderColor: green,
+                borderWidth: 2,
+                fill: false,
+                pointRadius: 0,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { display: false }, y: { display: false } }
+        }
+    });
+}
+
+// ============================================================================
+// RENDER
+// ============================================================================
+function renderClients() {
+    const filter = document.querySelector('.filter-pills .pill.active')?.dataset.filter || 'all';
+    const search = document.getElementById('search').value.toLowerCase();
+    
+    const filtered = clients.filter(c => {
+        const s = getStatus(c.repo);
+        return (filter === 'all' || s === filter) && c.repo.toLowerCase().includes(search);
+    });
+    
+    document.getElementById('clients-table').innerHTML = filtered.length ? filtered.map(c => {
+        const s = getStatus(c.repo);
+        const st = clientStatus[c.repo]?.steps || {};
+        return `<tr>
+            <td><input type="checkbox" class="checkbox" value="${c.repo}"></td>
+            <td>
+                <div class="client-info">
+                    <div class="client-avatar">${c.repo.charAt(0).toUpperCase()}</div>
+                    <div>
+                        <div class="client-name">${c.repo}</div>
+                        <div class="client-domain">${c.name||''}</div>
+                    </div>
+                </div>
+            </td>
+            <td><span class="badge badge-${s==='in-progress'?'progress':s==='completed'?'done':s}">${s}</span></td>
+            <td>
+                <div class="steps-mini">
+                    ${STEPS.map(step => `<div class="step-dot ${st[step.id]||''}" data-tooltip="${step.title}" onclick="toggleStep('${c.repo}','${step.id}')">${step.label}</div>`).join('')}
+                </div>
+            </td>
+            <td style="color:var(--text-muted);font-size:0.8rem">${clientStatus[c.repo]?.lastUpdated||'-'}</td>
+            <td>
+                <div class="actions">
+                    <button class="action-btn" data-tooltip="Setup" onclick="setupClient('${c.repo}')">⚡</button>
+                    <button class="action-btn" data-tooltip="Notes" onclick="openNotes('${c.repo}')">📝</button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('') : '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted)">No clients match filter</td></tr>';
+}
+
+function getStatus(r) {
+    const s = clientStatus[r];
+    if (!s) return 'pending';
+    const done = Object.values(s.steps||{}).filter(x=>x==='done').length;
+    return done === STEPS.length ? 'completed' : done > 0 ? 'in-progress' : 'pending';
+}
+
+async function updateTopCards() {
+    try {
+        const res = await fetch(API_BASE + 'stats.php?action=top_clients');
+        const data = await res.json();
+        
+        if (data.success && data.top_clients) {
+            const tc = data.top_clients;
+            if (tc.most_deploys) {
+                document.getElementById('top1-name').textContent = tc.most_deploys.name || 'N/A';
+                document.getElementById('top1-value').textContent = tc.most_deploys.count || '0';
+            }
+            if (tc.fastest_avg) {
+                document.getElementById('top2-name').textContent = tc.fastest_avg.name || 'N/A';
+                document.getElementById('top2-value').textContent = tc.fastest_avg.avg_time || '0';
+            }
+            if (tc.best_success) {
+                document.getElementById('top3-name').textContent = tc.best_success.name || 'N/A';
+                document.getElementById('top3-value').textContent = tc.best_success.success_rate || '0%';
+            }
+        } else {
+            // Fallback to showing client count
+            document.getElementById('top1-name').textContent = clients.length > 0 ? clients[0]?.name || 'First Client' : 'No clients';
+            document.getElementById('top1-value').textContent = clients.length;
+            document.getElementById('top2-name').textContent = 'Avg Deploy';
+            document.getElementById('top2-value').textContent = '--';
+            document.getElementById('top3-name').textContent = 'Success Rate';
+            document.getElementById('top3-value').textContent = '--';
+        }
+    } catch(e) {
+        console.error('Failed to load top clients:', e);
+    }
+}
+
+// ============================================================================
+// ACTIONS
+// ============================================================================
+function toggleStep(r, id) {
+    if (!clientStatus[r]) clientStatus[r] = {steps:{}};
+    clientStatus[r].steps[id] = clientStatus[r].steps[id]==='done'?'':'done';
+    clientStatus[r].lastUpdated = new Date().toLocaleDateString();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(clientStatus));
+    renderClients();
+}
+
+function setupClient(r) {
+    const params = new URLSearchParams({ repo: r });
+    window.location.href = `client-setup-wizard.html?${params.toString()}`;
+}
+
+function openNotes(r) {
+    document.getElementById('modal-title').textContent = `Notes: ${r}`;
+    const d = clientStatus[r] || {};
+    document.getElementById('modal-body').innerHTML = `
+        <div style="margin-bottom:15px">
+            <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:6px">Notes</label>
+            <textarea id="n-notes" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;min-height:100px;font-family:inherit">${d.notes||''}</textarea>
+        </div>
+        <button class="btn" style="background:var(--accent);color:#fff;border-color:var(--accent)" onclick="saveNotes('${r}')">Save</button>
+    `;
+    document.getElementById('modal').classList.add('show');
+}
+
+function saveNotes(r) {
+    if (!clientStatus[r]) clientStatus[r] = {steps:{}};
+    clientStatus[r].notes = document.getElementById('n-notes').value;
+    clientStatus[r].lastUpdated = new Date().toLocaleDateString();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(clientStatus));
+    closeModal();
+    toast('success', 'Notes saved!');
+}
+
+function closeModal() {
+    document.getElementById('modal').classList.remove('show');
+}
+
+function toast(type, msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toast-icon').textContent = type === 'success' ? '✓' : '✗';
+    document.getElementById('toast-msg').textContent = msg;
+    t.className = 'toast show ' + type;
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function exportCSV() {
+    let csv = 'Client,Status,Updated\n';
+    clients.forEach(c => {
+        csv += `"${c.repo}","${getStatus(c.repo)}","${clientStatus[c.repo]?.lastUpdated||''}"\n`;
+    });
+    const blob = new Blob([csv], {type:'text/csv'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `cicd-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    toast('success', 'CSV downloaded!');
+}
+
+// ============================================================================
+// EVENTS
+// ============================================================================
+function setupEventListeners() {
+    document.getElementById('search').addEventListener('input', renderClients);
+    
+    document.querySelectorAll('.filter-pills .pill').forEach(p => {
+        p.addEventListener('click', () => {
+            document.querySelectorAll('.filter-pills .pill').forEach(x => x.classList.remove('active'));
+            p.classList.add('active');
+            renderClients();
+        });
+    });
+    
+    document.getElementById('select-all').addEventListener('change', e => {
+        document.querySelectorAll('tbody .checkbox').forEach(c => c.checked = e.target.checked);
+    });
+    
+    document.getElementById('modal').addEventListener('click', e => {
+        if (e.target.id === 'modal') closeModal();
+    });
+    
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeModal();
+        if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+            e.preventDefault();
+            document.getElementById('search').focus();
+        }
+    });
+    
+    // ========================================================================
+    // SIDEBAR NAVIGATION
+    // ========================================================================
+    document.querySelectorAll('.nav-icons .nav-icon[data-section]').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const sectionId = link.dataset.section;
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Update active state
+                document.querySelectorAll('.nav-icons .nav-icon').forEach(n => n.classList.remove('active'));
+                link.classList.add('active');
+            }
+        });
+    });
+    
+    // Logout handler
+    document.getElementById('nav-logout')?.addEventListener('click', async (e) => {
+        e.preventDefault();
+        if (!confirm('Are you sure you want to logout?')) return;
+        window.cicdAuth.logout();
+    });
+    
+    // Settings handler
+    document.getElementById('nav-settings')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        openSettingsModal();
+    });
+    
+    // Help handler
+    document.getElementById('nav-help')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        openHelpModal();
+    });
+    
+    // ========================================================================
+    // CHART DATE RANGE FILTER
+    // ========================================================================
+    document.getElementById('chart-range-filter')?.addEventListener('change', async (e) => {
+        const range = e.target.value;
+        await loadChartData(range);
+    });
+}
+
+// ============================================================================
+// SETTINGS & HELP MODALS
+// ============================================================================
+function openSettingsModal() {
+    document.getElementById('modal-title').textContent = '⚙️ Settings';
+    document.getElementById('modal-body').innerHTML = `
+        <div style="margin-bottom:20px">
+            <label style="display:block;font-size:0.85rem;font-weight:500;margin-bottom:8px">Theme</label>
+            <select id="setting-theme" class="filter-select" style="width:100%">
+                <option value="light" selected>Light Mode</option>
+                <option value="dark">Dark Mode</option>
+            </select>
+        </div>
+        <div style="margin-bottom:20px">
+            <label style="display:block;font-size:0.85rem;font-weight:500;margin-bottom:8px">Auto-refresh interval</label>
+            <select id="setting-refresh" class="filter-select" style="width:100%">
+                <option value="0">Disabled</option>
+                <option value="30">30 seconds</option>
+                <option value="60" selected>1 minute</option>
+                <option value="300">5 minutes</option>
+            </select>
+        </div>
+        <div style="margin-bottom:20px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="checkbox" id="setting-notifications" checked style="accent-color:var(--accent)">
+                <span style="font-size:0.9rem">Enable browser notifications</span>
+            </label>
+        </div>
+        <button class="btn" style="background:var(--accent);color:#fff;border-color:var(--accent);width:100%" onclick="saveSettings()">Save Settings</button>
+    `;
+    document.getElementById('modal').classList.add('show');
+}
+
+function saveSettings() {
+    const settings = {
+        theme: document.getElementById('setting-theme')?.value || 'light',
+        refreshInterval: document.getElementById('setting-refresh')?.value || '60',
+        notifications: document.getElementById('setting-notifications')?.checked || false
+    };
+    localStorage.setItem('cicd_settings', JSON.stringify(settings));
+    closeModal();
+    toast('success', 'Settings saved!');
+}
+
+function openHelpModal() {
+    document.getElementById('modal-title').textContent = '❓ Help & Documentation';
+    document.getElementById('modal-body').innerHTML = `
+        <div style="margin-bottom:16px">
+            <h4 style="font-size:0.95rem;font-weight:600;margin-bottom:8px">🚀 Quick Start</h4>
+            <p style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5">
+                Use the sidebar to navigate between Dashboard, Deployments, and Clients sections.
+            </p>
+        </div>
+        <div style="margin-bottom:16px">
+            <h4 style="font-size:0.95rem;font-weight:600;margin-bottom:8px">⌨️ Keyboard Shortcuts</h4>
+            <ul style="font-size:0.85rem;color:var(--text-secondary);line-height:1.8;padding-left:20px">
+                <li><kbd style="background:var(--bg-body);padding:2px 6px;border-radius:4px;font-family:monospace">/</kbd> - Focus search</li>
+                <li><kbd style="background:var(--bg-body);padding:2px 6px;border-radius:4px;font-family:monospace">Esc</kbd> - Close modals</li>
+            </ul>
+        </div>
+        <div style="margin-bottom:16px">
+            <h4 style="font-size:0.95rem;font-weight:600;margin-bottom:8px">📖 Documentation</h4>
+            <p style="font-size:0.85rem;color:var(--text-secondary)">
+                <a href="cicd-visual-guide.html" style="color:var(--accent)">Visual Guide</a> • 
+                <a href="cicd-1-flow.html" style="color:var(--accent)">CI/CD Flow</a>
+            </p>
+        </div>
+        <div style="background:var(--bg-body);padding:12px;border-radius:8px;font-size:0.8rem;color:var(--text-muted)">
+            Version 2.0.0 • Logimax Technologies
+        </div>
+    `;
+    document.getElementById('modal').classList.add('show');
+}
+
+// ============================================================================
+// DYNAMIC CHART DATA
+// ============================================================================
+let mainChartInstance = null;
+
+async function loadChartData(range = 14) {
+    try {
+        const res = await fetch(`${API_BASE}deployment-history.php?action=chart&range=${range}`);
+        const data = await res.json();
+        
+        if (data.success && data.labels) {
+            updateMainChart(data.labels, data.datasets);
+        }
+    } catch(e) {
+        console.error('Failed to load chart data:', e);
+    }
+}
+
+function updateMainChart(labels, datasets) {
+    if (!mainChartInstance) return;
+    
+    mainChartInstance.data.labels = labels;
+    
+    if (datasets && datasets.length > 0) {
+        // Update datasets but preserve styling
+        datasets.forEach((ds, i) => {
+            if (mainChartInstance.data.datasets[i]) {
+                mainChartInstance.data.datasets[i].data = ds.data;
+                mainChartInstance.data.datasets[i].label = ds.label;
+            }
+        });
+    }
+    
+    mainChartInstance.update();
+}
+
+// ============================================================================
+// DEPLOYMENT HISTORY
+// ============================================================================
+async function loadDeploymentHistory() {
+    const env = document.getElementById('history-env-filter')?.value || 'all';
+    const status = document.getElementById('history-status-filter')?.value || 'all';
+    const range = document.getElementById('history-range-filter')?.value || 14;
+    
+    try {
+        let url = `${API_BASE}deployment-history.php?action=recent&limit=20&range=${range}`;
+        if (env !== 'all') url += `&environment=${env}`;
+        if (status !== 'all') url += `&status=${status}`;
+        
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        if (data.success && data.deployments) {
+            renderHistory(data.deployments);
+        } else {
+            document.getElementById('history-list').innerHTML = 
+                '<div style="text-align:center;padding:40px;color:var(--text-muted)">No deployments found</div>';
+        }
+    } catch(e) {
+        document.getElementById('history-list').innerHTML = 
+            '<div style="text-align:center;padding:40px;color:var(--text-muted)">Failed to load history</div>';
+    }
+}
+
+function renderHistory(deployments) {
+    const list = document.getElementById('history-list');
+    if (!list) return;
+    
+    if (!deployments.length) {
+        list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)">No deployments found</div>';
+        return;
+    }
+    
+    list.innerHTML = deployments.map(d => `
+        <div class="history-row">
+            <div class="history-status ${d.status}"></div>
+            <div class="history-info">
+                <div class="history-client">${d.client_name || d.client_id || 'Source'}</div>
+                <div class="history-meta">
+                    <span>${relativeTime(d.started_at)}</span>
+                    <span>${d.commit_sha ? d.commit_sha.substring(0,7) : ''}</span>
+                    <span>${d.triggered_by || ''}</span>
+                </div>
+            </div>
+            <span class="history-env ${d.environment}">${d.environment}</span>
+            <span style="width:60px;text-align:right;color:var(--text-muted);font-size:0.8rem">
+                ${d.duration_seconds ? d.duration_seconds + 's' : '-'}
+            </span>
+            <div class="history-actions">
+                ${d.status === 'success' && d.environment !== 'production' ? 
+                    `<button class="btn-rollback" onclick="rollback('${d.id}', '${d.client_id}', '${d.commit_sha}')">⏪ Rollback</button>` 
+                    : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+function relativeTime(datetime) {
+    if (!datetime) return '-';
+    const diff = Date.now() - new Date(datetime).getTime();
+    if (diff < 60000) return 'Just now';
+    if (diff < 3600000) return Math.floor(diff/60000) + ' min ago';
+    if (diff < 86400000) return Math.floor(diff/3600000) + ' hours ago';
+    if (diff < 604800000) return Math.floor(diff/86400000) + ' days ago';
+    return new Date(datetime).toLocaleDateString();
+}
+
+async function rollback(deploymentId, clientId, commitSha) {
+    if (!confirm(`Are you sure you want to rollback to commit ${commitSha?.substring(0,7)}?`)) return;
+    
+    try {
+        const res = await fetch(`${API_BASE}deployment-history.php`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                action: 'rollback',
+                deployment_id: deploymentId,
+                client_id: clientId,
+                commit_sha: commitSha
+            })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            toast('success', 'Rollback initiated!');
+            loadDeploymentHistory();
+        } else {
+            toast('error', data.error || 'Rollback failed');
+        }
+    } catch(e) {
+        toast('error', 'Rollback failed: ' + e.message);
+    }
+}
+
+// ============================================================================
+// DEPLOY BRANCH WIZARD - 3 Step Modal
+// ============================================================================
+
+// Environment order enforcement
+const SOURCE_ENV_ORDER = ['develop', 'qa', 'support', 'production'];
+const CLIENT_ENV_ORDER = ['staging', 'production'];
+
+// Wizard state
+let deployWizard = {
+    step: 1,
+    repoType: 'source', // 'source' or 'client'
+    clientId: null,
+    clientName: null,
+    branch: null,
+    mergedEnvs: []
+};
+
+function openDeployBranchModal() {
+    deployWizard = { step: 1, repoType: 'source', clientId: null, clientName: null, branch: null, mergedEnvs: [] };
+    document.getElementById('modal-title').textContent = '🔀 Deploy Branch';
+    renderDeployWizardStep1();
+    document.getElementById('modal').classList.add('show');
+}
+
+function renderDeployWizardStep1() {
+    deployWizard.step = 1;
+    document.getElementById('modal-title').textContent = '🔀 Deploy Branch - Step 1/3';
+    
+    // Build client options from loaded clients
+    let clientOptions = clients.map(c => 
+        `<option value="${c.id}" data-name="${c.name}">${c.name}</option>`
+    ).join('');
+    
+    document.getElementById('modal-body').innerHTML = `
+        <div style="margin-bottom:20px">
+            <label style="display:block;margin-bottom:8px;font-weight:500">Select Repository</label>
+            <div style="display:flex;flex-direction:column;gap:10px">
+                <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.2s" class="repo-option selected" onclick="selectRepoType('source')">
+                    <input type="radio" name="repo-type" value="source" checked style="accent-color:var(--accent)">
+                    <div>
+                        <div style="font-weight:500">📦 Source Repository</div>
+                        <div style="font-size:0.8rem;color:var(--text-muted)">etail_development_src (develop → qa → support → production)</div>
+                    </div>
+                </label>
+                <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.2s" class="repo-option" onclick="selectRepoType('client')">
+                    <input type="radio" name="repo-type" value="client" style="accent-color:var(--accent)">
+                    <div style="flex:1">
+                        <div style="font-weight:500">🏢 Client Repository</div>
+                        <div style="font-size:0.8rem;color:var(--text-muted)">staging → production</div>
+                    </div>
+                </label>
+            </div>
+        </div>
+        <div id="client-selector" style="margin-bottom:20px;display:none">
+            <label style="display:block;margin-bottom:8px;font-weight:500">Select Client</label>
+            <select id="deploy-client" class="filter-select" style="width:100%">
+                <option value="">-- Choose a client --</option>
+                ${clientOptions}
+            </select>
+        </div>
+        <button class="btn" style="background:var(--accent);color:#fff;border-color:var(--accent);width:100%" onclick="goToStep2()">
+            Continue →
+        </button>
+    `;
+}
+
+function selectRepoType(type) {
+    deployWizard.repoType = type;
+    document.querySelectorAll('.repo-option').forEach(el => el.classList.remove('selected'));
+    document.querySelector(`input[value="${type}"]`).closest('.repo-option').classList.add('selected');
+    document.querySelector(`input[value="${type}"]`).checked = true;
+    
+    // Show/hide client selector
+    document.getElementById('client-selector').style.display = type === 'client' ? 'block' : 'none';
+}
+
+async function goToStep2() {
+    if (deployWizard.repoType === 'client') {
+        const clientSelect = document.getElementById('deploy-client');
+        if (!clientSelect.value) {
+            toast('error', 'Please select a client');
+            return;
+        }
+        deployWizard.clientId = clientSelect.value;
+        deployWizard.clientName = clientSelect.options[clientSelect.selectedIndex].dataset.name;
+    } else {
+        deployWizard.clientId = 'source';
+        deployWizard.clientName = 'Source Repository';
+    }
+    
+    renderDeployWizardStep2();
+}
+
+async function renderDeployWizardStep2() {
+    deployWizard.step = 2;
+    document.getElementById('modal-title').textContent = '🔀 Deploy Branch - Step 2/3';
+    
+    document.getElementById('modal-body').innerHTML = `
+        <div style="margin-bottom:16px;padding:12px;background:var(--bg-body);border-radius:8px">
+            <div style="font-size:0.8rem;color:var(--text-muted)">Deploying to:</div>
+            <div style="font-weight:600">${deployWizard.clientName}</div>
+        </div>
+        <div style="margin-bottom:20px">
+            <label style="display:block;margin-bottom:8px;font-weight:500">Select Feature Branch</label>
+            <div id="branch-loading" style="padding:20px;text-align:center;color:var(--text-muted)">
+                <div class="loading-spinner" style="margin:0 auto 10px"></div>
+                Loading branches...
+            </div>
+            <select id="deploy-branch" class="filter-select" style="width:100%;display:none">
+                <option value="">-- Choose a branch --</option>
+            </select>
+        </div>
+        <div style="display:flex;gap:10px">
+            <button class="btn" style="flex:1" onclick="renderDeployWizardStep1()">← Back</button>
+            <button class="btn" style="background:var(--accent);color:#fff;border-color:var(--accent);flex:1" onclick="goToStep3()">
+                Continue →
+            </button>
+        </div>
+    `;
+    
+    // Load branches
+    await loadBranchesForDeploy();
+}
+
+async function loadBranchesForDeploy() {
+    try {
+        const repoName = deployWizard.repoType === 'source' ? 'etail_development_src' : deployWizard.clientId;
+        const org = deployWizard.repoType === 'source' ? 'Logimax-Technologies' : 'LOGIMAX-CLIENTS';
+        
+        const res = await fetch(`${API_BASE}github-repos.php?action=branches&org=${org}&repo=${repoName}`);
+        const data = await res.json();
+        
+        const branchSelect = document.getElementById('deploy-branch');
+        const loading = document.getElementById('branch-loading');
+        
+        if (data.success && data.branches) {
+            // Filter to show feature branches (exclude environment branches)
+            const envBranches = ['develop', 'qa', 'support', 'production', 'staging', 'main', 'master'];
+            const featureBranches = data.branches.filter(b => !envBranches.includes(b.name.toLowerCase()));
+            
+            if (featureBranches.length === 0) {
+                branchSelect.innerHTML = '<option value="">No feature branches found</option>';
+            } else {
+                branchSelect.innerHTML = '<option value="">-- Choose a branch --</option>' + 
+                    featureBranches.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
+            }
+        } else {
+            branchSelect.innerHTML = '<option value="">Failed to load branches</option>';
+        }
+        
+        loading.style.display = 'none';
+        branchSelect.style.display = 'block';
+    } catch(e) {
+        console.error('Failed to load branches:', e);
+        document.getElementById('branch-loading').innerHTML = 'Failed to load branches';
+    }
+}
+
+async function goToStep3() {
+    const branchSelect = document.getElementById('deploy-branch');
+    if (!branchSelect.value) {
+        toast('error', 'Please select a branch');
+        return;
+    }
+    deployWizard.branch = branchSelect.value;
+    
+    await renderDeployWizardStep3();
+}
+
+async function renderDeployWizardStep3() {
+    deployWizard.step = 3;
+    document.getElementById('modal-title').textContent = '🔀 Deploy Branch - Step 3/3';
+    
+    // Get which environments this branch has already been merged to
+    deployWizard.mergedEnvs = await getBranchMergedEnvs(deployWizard.clientId, deployWizard.branch);
+    
+    const envOrder = deployWizard.repoType === 'source' ? SOURCE_ENV_ORDER : CLIENT_ENV_ORDER;
+    const envEmojis = { develop: '🔵', qa: '🟡', support: '🟢', staging: '🟡', production: '🔴' };
+    
+    // Determine next available environment
+    let nextEnv = null;
+    for (const env of envOrder) {
+        if (!deployWizard.mergedEnvs.includes(env)) {
+            nextEnv = env;
+            break;
+        }
+    }
+    
+    // Build environment options
+    let envOptionsHtml = '';
+    for (let i = 0; i < envOrder.length; i++) {
+        const env = envOrder[i];
+        const isMerged = deployWizard.mergedEnvs.includes(env);
+        const isNext = env === nextEnv;
+        const isLocked = !isMerged && !isNext;
+        
+        let statusIcon = '';
+        let statusClass = '';
+        let disabled = '';
+        
+        if (isMerged) {
+            statusIcon = '✅';
+            statusClass = 'color:var(--success)';
+        } else if (isNext) {
+            statusIcon = '○';
+            statusClass = 'color:var(--accent);font-weight:600';
+        } else {
+            statusIcon = '🔒';
+            statusClass = 'color:var(--text-muted);opacity:0.6';
+            disabled = 'disabled';
+        }
+        
+        envOptionsHtml += `
+            <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--border);border-radius:8px;cursor:${isLocked ? 'not-allowed' : 'pointer'};${statusClass}">
+                <input type="radio" name="deploy-env" value="${env}" ${disabled} ${isNext ? 'checked' : ''} style="accent-color:var(--accent)">
+                <span>${statusIcon} ${envEmojis[env]} ${env.charAt(0).toUpperCase() + env.slice(1)}</span>
+                ${isMerged ? '<span style="margin-left:auto;font-size:0.75rem">(merged)</span>' : ''}
+                ${isLocked ? '<span style="margin-left:auto;font-size:0.75rem">(merge to ${envOrder[i-1]} first)</span>' : ''}
+            </label>
+        `;
+    }
+    
+    document.getElementById('modal-body').innerHTML = `
+        <div style="margin-bottom:16px;padding:12px;background:var(--bg-body);border-radius:8px">
+            <div style="display:flex;gap:20px">
+                <div><span style="color:var(--text-muted);font-size:0.8rem">Repository:</span><br><strong>${deployWizard.clientName}</strong></div>
+                <div><span style="color:var(--text-muted);font-size:0.8rem">Branch:</span><br><strong>${deployWizard.branch}</strong></div>
+            </div>
+        </div>
+        <div style="margin-bottom:20px">
+            <label style="display:block;margin-bottom:8px;font-weight:500">Select Target Environment</label>
+            <div style="display:flex;flex-direction:column;gap:8px">
+                ${envOptionsHtml}
+            </div>
+        </div>
+        ${nextEnv === 'production' ? `
+            <div style="background:rgba(245,158,11,0.1);border:1px solid var(--warning);color:var(--warning);padding:12px;border-radius:8px;font-size:0.85rem;margin-bottom:16px">
+                ⚠️ Production deployment - please verify all tests pass
+            </div>
+        ` : ''}
+        <div style="display:flex;gap:10px">
+            <button class="btn" style="flex:1" onclick="renderDeployWizardStep2()">← Back</button>
+            <button class="btn" style="background:var(--accent);color:#fff;border-color:var(--accent);flex:1" onclick="executeBranchDeploy()" ${!nextEnv ? 'disabled' : ''}>
+                🚀 Deploy
+            </button>
+        </div>
+    `;
+}
+
+async function getBranchMergedEnvs(clientId, branch) {
+    try {
+        const res = await fetch(`${API_BASE}deployment-history.php?action=branch_status&client_id=${clientId}&branch=${encodeURIComponent(branch)}`);
+        const data = await res.json();
+        return data.success ? (data.merged_environments || []) : [];
+    } catch(e) {
+        return [];
+    }
+}
+
+async function executeBranchDeploy() {
+    const envRadio = document.querySelector('input[name="deploy-env"]:checked');
+    if (!envRadio) {
+        toast('error', 'Please select an environment');
+        return;
+    }
+    
+    const targetEnv = envRadio.value;
+    
+    try {
+        await fetch(API_BASE + 'deployment-history.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                action: 'record',
+                client_id: deployWizard.clientId,
+                client_name: deployWizard.clientName,
+                environment: targetEnv,
+                status: 'pending',
+                branch: deployWizard.branch,
+                commit_message: `Branch merge: ${deployWizard.branch} → ${targetEnv}`,
+                triggered_by: 'dashboard',
+                trigger_type: 'branch_deploy'
+            })
+        });
+        
+        closeModal();
+        toast('success', `Deploying ${deployWizard.branch} to ${targetEnv}. Check GitHub Actions for status.`);
+        loadDeploymentHistory();
+    } catch(e) {
+        toast('error', 'Failed to initiate deployment: ' + e.message);
+    }
+}
+
+// Keep old function for backwards compatibility
+function openPromoteModal() {
+    openDeployBranchModal();
+}
+
+// Start
+init();
+
+// Load history on page load and set up filter listeners
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(loadDeploymentHistory, 500);
+    
+    ['history-env-filter', 'history-status-filter', 'history-range-filter'].forEach(id => {
+        document.getElementById(id)?.addEventListener('change', loadDeploymentHistory);
+    });
+});
+</script>
+</body>
+</html>
