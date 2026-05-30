@@ -1,0 +1,623 @@
+# =============================================================================
+# SYNC SOURCE CODE TO CLIENT REPOSITORIES
+# Pushes latest source code to selected client repos
+# Creates PR if conflicts exist, auto-merges if clean
+# 
+# ACCESS CONTROL:
+# - Requires 'client-sync' environment approval
+# - Client list from: clients/registry.json
+# - All syncs are logged to dashboard
+# =============================================================================
+
+name: 🔄 Sync to Client
+
+on:
+  workflow_dispatch:
+    inputs:
+      client_repo:
+        description: 'Select client repository'
+        required: true
+        type: choice
+        options:
+          - adamsjewellers.com
+          - aiswaryamthangamaligai.com
+          - anbgoldanddiamonds.com
+          - anigalifestyle.com-
+          - bjsjewellery.com
+          - chiraakjewelleryhouse.in
+          - cpljewellers.com
+          - dineshjewellery.in
+          - djmjewels.in
+          - edja.in
+          - erp.aumvallivilasjewellers.com
+          - erp.harijewellery.in
+          - erp.konikajewellery.com
+          - erp.kvtjewellers.com
+          - erp.lakshmanaacharison.in
+          - erp.manepally.com
+          - erp.rhrjewellers.com
+          - erp.shridhisilver.com
+          - erp.silvergallerie.com
+          - erp.sparqlediamonds.com
+          - erp.sriammanjewellers.in
+          - erp.sriganeshjewels.com
+          - erp.srjewellery.in
+          - erp.srivenkateswari.com
+          - gokulamjewels.com
+          - grsamichettyjewellers.com
+          - gulabparadise.com
+          - harrisnadarjewellery.com
+          - jaimahaveerjewellery.com
+          - jeweloneretail.in
+          - kamadhenujewelstvm.com
+          - karpagamjewels.com
+          - khazanchijewels.com
+          - khimjidhanlaxmi.com
+          - kovainprjewellery.com
+          - lezilver.balajijewellery.co.in
+          - logimaxindia.com
+          - lskjewellers.com
+          - ltmjewellers.com
+          - manjalijewellers.in
+          - migration.coimbatorejewellers.in
+          - migration.gulabparadise.com
+          - migration.sreekumaranjewellers.com
+          - mydeengovindarajanjewellers.com
+          - nacquickplan.com
+          - namasrinivasajewellers.com
+          - navratnajewellery
+          - newkarpagamjewellery.com
+          - nprthangamaligai.in
+          - nskjewels.com
+          - php8.logimaxindia.com
+          - plans.sriaumjewellery.com
+          - pondythangamaaligai.com
+          - prashwajewels.com
+          - radhajewellers.com
+          - radhajewellers.com-migration
+          - ragavendrajewellers.in
+          - retail.coimbatorejewellers.in
+          - retail.ssmjewellery.in
+          - retail.sumangalijewellery.com
+          - rkjeweller.com
+          - sarangapani
+          - sarangapanijewels.com
+          - saravanaonline.com
+          - savingscheme.logimaxindia.com
+          - sayarjewellers.com
+          - schemes.theamethyststore.com
+          - shop.ariajewellers.in
+          - shop.gupthagem.com
+          - silver.chiraakjewelleryhouse.in
+          - silvers.ovcjewellers.com
+          - skjewels.in
+          - sktmonline.com
+          - sreemangallakshmijewells.com
+          - srijewels
+          - srisithivinayagarjewellers.com
+          - venkateshwaraafinegold.com
+          - vrsjewellery.com
+          - www.anbjewellers.in
+          - www.balajijewellery.co.in
+          - www.chinnannanjewellery.com
+          - www.dcnmjewels.com
+          - www.ovcjewellers.com
+          - www.rangasjewellery.com
+          - www.shriparvathamjewellery.com
+          - www.sktmjewellery.in
+          - www.thangalakshmijewellery.com
+      client_org:
+        description: 'Client organization'
+        required: true
+        default: 'LOGIMAX-CLIENTS'
+        type: choice
+        options:
+          - LOGIMAX-CLIENTS
+          - Logimax-Technologies
+      source_branch:
+        description: 'Source branch to sync from'
+        required: true
+        default: 'Production'
+        type: choice
+        options:
+          - Production
+          - Retail_1.1.1.0001
+          - support
+          - QA
+      target_branch:
+        description: 'Target branch in client repo'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+          - main
+      exclude_paths:
+        description: 'Paths to exclude (comma-separated)'
+        required: false
+        default: 'admin/application/config/database.php,admin/application/config/config.php,.env,config/clients,clients/*/views,clients/*/controllers,clients/*/models,clients/*/helpers,clients/*/assets,features'
+      auto_merge:
+        description: 'Auto-merge if no conflicts'
+        required: true
+        default: true
+        type: boolean
+      sync_notes:
+        required: false
+        type: string
+
+env:
+  DASHBOARD_API: ${{ secrets.DASHBOARD_API_URL || 'https://retail.logimaxindia.com/dev/cicd/docs/api' }}
+
+# =============================================================================
+# ACCESS CONTROL
+# - GitHub Environment 'client-sync' requires approval
+# - Client must exist in clients/registry.json
+# - Optional: CLIENT_ACCESS_MAP variable for user-level restrictions
+# =============================================================================
+
+jobs:
+  # =========================================================================
+  # JOB 1: Validate Client & Access
+  # =========================================================================
+  validate:
+    runs-on: ubuntu-latest
+    # REQUIRES APPROVAL from 'client-sync' environment reviewers
+    environment: client-sync
+    outputs:
+      client_repo: ${{ steps.validate_client.outputs.client_repo }}
+      client_name: ${{ steps.validate_client.outputs.client_name }}
+      is_authorized: ${{ steps.auth.outputs.is_authorized }}
+    
+    steps:
+      - name: 📥 Checkout Source Repo
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            clients/registry.json
+          sparse-checkout-cone-mode: false
+      
+      - name: 📋 Validate Client in Registry
+        id: validate_client
+        run: |
+          CLIENT_INPUT="${{ inputs.client_repo }}"
+          USER="${{ github.actor }}"
+          
+          echo "📋 Validating client: $CLIENT_INPUT"
+          
+          # Check if registry.json exists
+          if [ ! -f "clients/registry.json" ]; then
+            echo "❌ clients/registry.json not found"
+            exit 1
+          fi
+          
+          # Search for client in registry
+          CLIENT_DATA=$(jq -r --arg repo "$CLIENT_INPUT" '
+            .clients[] | select(.repo == $repo)
+          ' clients/registry.json)
+          
+          if [ -z "$CLIENT_DATA" ]; then
+            echo "❌ Client '$CLIENT_INPUT' not found in registry.json"
+            echo ""
+            echo "📋 Available clients:"
+            jq -r '.clients[].repo' clients/registry.json | head -20
+            echo "... and $(jq '.clients | length' clients/registry.json) total clients"
+            exit 1
+          fi
+          
+          # Extract client info
+          CLIENT_NAME=$(echo "$CLIENT_DATA" | jq -r '.name')
+          CLIENT_ID=$(echo "$CLIENT_DATA" | jq -r '.id')
+          CONFIGURED_BY=$(echo "$CLIENT_DATA" | jq -r '.configured_by // "Unknown"')
+          
+          echo "✅ Client found in registry:"
+          echo "   Name: $CLIENT_NAME"
+          echo "   Repo: $CLIENT_INPUT"
+          echo "   Configured by: $CONFIGURED_BY"
+          
+          echo "client_repo=$CLIENT_INPUT" >> $GITHUB_OUTPUT
+          echo "client_name=$CLIENT_NAME" >> $GITHUB_OUTPUT
+          echo "client_id=$CLIENT_ID" >> $GITHUB_OUTPUT
+      
+      - name: 🔐 Check User Authorization
+        id: auth
+        run: |
+          CLIENT="${{ steps.validate_client.outputs.client_repo }}"
+          USER="${{ github.actor }}"
+          
+          echo "📋 Checking authorization for $USER to sync to $CLIENT"
+          
+          # Get access map from repository variable (if exists)
+          ACCESS_MAP='${{ vars.CLIENT_ACCESS_MAP }}'
+          
+          if [ -z "$ACCESS_MAP" ]; then
+            echo "✅ No CLIENT_ACCESS_MAP defined - authorization via environment approval"
+            echo "is_authorized=true" >> $GITHUB_OUTPUT
+          else
+            # Parse JSON and check if user is authorized for this client
+            AUTHORIZED=$(echo "$ACCESS_MAP" | jq -r --arg client "$CLIENT" --arg user "$USER" '
+              if .[$client] then
+                if (.[$client] | length) == 0 then "admin_only"
+                elif (.[$client] | index($user)) then "true"
+                else "false"
+                end
+              else "not_in_map"
+              end
+            ')
+            
+            case $AUTHORIZED in
+              "true")
+                echo "✅ $USER is explicitly authorized for $CLIENT"
+                echo "is_authorized=true" >> $GITHUB_OUTPUT
+                ;;
+              "admin_only")
+                echo "✅ $CLIENT requires admin - approved via environment"
+                echo "is_authorized=true" >> $GITHUB_OUTPUT
+                ;;
+              "not_in_map")
+                echo "✅ $CLIENT not in access map - using environment approval"
+                echo "is_authorized=true" >> $GITHUB_OUTPUT
+                ;;
+              *)
+                echo "❌ $USER is NOT authorized to sync to $CLIENT"
+                echo "is_authorized=false" >> $GITHUB_OUTPUT
+                exit 1
+                ;;
+            esac
+          fi
+      
+      - name: 📝 Log Access Attempt
+        if: always()
+        run: |
+          echo "## 🔐 Sync Authorization" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **User** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Client Repo** | ${{ inputs.client_repo }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Client Name** | ${{ steps.validate_client.outputs.client_name || 'Not Found' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Authorized** | ${{ steps.auth.outputs.is_authorized || 'No' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Source** | ${{ inputs.source_branch }} → ${{ inputs.target_branch }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Notes** | ${{ inputs.sync_notes || 'None' }} |" >> $GITHUB_STEP_SUMMARY
+
+  # =========================================================================
+  # JOB 2: Perform Sync (only if authorized)
+  # =========================================================================
+  sync:
+    needs: validate
+    if: needs.validate.outputs.is_authorized == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: 🎯 Validate Inputs
+        run: |
+          CLIENT="${{ needs.validate.outputs.client_repo }}"
+          echo "📦 Syncing to: ${{ inputs.client_org }}/$CLIENT"
+          echo "📥 Source branch: ${{ inputs.source_branch }}"
+          echo "📤 Target branch: ${{ inputs.target_branch }}"
+          echo "🚫 Excluding: ${{ inputs.exclude_paths }}"
+          echo "🔀 Auto-merge: ${{ inputs.auto_merge }}"
+      
+      - name: 📥 Checkout Source Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_branch }}
+          fetch-depth: 0
+          path: source
+      
+      - name: 📥 Checkout Client Repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.client_org }}/${{ inputs.client_repo }}
+          ref: ${{ inputs.target_branch }}
+          token: ${{ secrets.CLIENT_REPO_TOKEN }}
+          fetch-depth: 0
+          path: client
+      
+      - name: 🔧 Configure Git
+        run: |
+          cd client
+          git config user.name "Logimax Sync Bot"
+          git config user.email "sync-bot@logimaxindia.com"
+      
+      - name: 📦 Get Source Version Info
+        id: source_info
+        run: |
+          cd source
+          COMMIT_SHA=$(git rev-parse --short HEAD)
+          COMMIT_MSG=$(git log -1 --pretty=%B | head -n1)
+          COMMIT_DATE=$(git log -1 --pretty=%ci)
+          echo "sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
+          echo "message=$COMMIT_MSG" >> $GITHUB_OUTPUT
+          echo "date=$COMMIT_DATE" >> $GITHUB_OUTPUT
+          echo "📌 Source: $COMMIT_SHA - $COMMIT_MSG"
+      
+      - name: 🔄 Create Sync Branch
+        id: sync_branch
+        run: |
+          cd client
+          SYNC_BRANCH="sync/source-${{ steps.source_info.outputs.sha }}-$(date +%Y%m%d%H%M%S)"
+          echo "branch=$SYNC_BRANCH" >> $GITHUB_OUTPUT
+          git checkout -b "$SYNC_BRANCH"
+          echo "📌 Created branch: $SYNC_BRANCH"
+      
+      - name: 📋 Prepare Exclude List
+        id: excludes
+        run: |
+          # Convert comma-separated to rsync exclude format
+          EXCLUDES=""
+          IFS=',' read -ra PATHS <<< "${{ inputs.exclude_paths }}"
+          for path in "${PATHS[@]}"; do
+            EXCLUDES="$EXCLUDES --exclude='$path'"
+          done
+          # Always exclude these
+          EXCLUDES="$EXCLUDES --exclude='.git' --exclude='.github/workflows/deploy.yml' --exclude='*.log'"
+          echo "flags=$EXCLUDES" >> $GITHUB_OUTPUT
+      
+      - name: 🔄 Sync Files
+        id: sync_files
+        run: |
+          cd client
+          
+          # Use rsync to copy files while respecting excludes
+          eval rsync -av --delete \
+            ${{ steps.excludes.outputs.flags }} \
+            ../source/ ./ \
+            2>&1 | tee /tmp/rsync.log
+          
+          # Check if there are changes
+          git add -A
+          if git diff --cached --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "✅ No changes to sync"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            CHANGED_FILES=$(git diff --cached --name-only | wc -l)
+            echo "changed_count=$CHANGED_FILES" >> $GITHUB_OUTPUT
+            echo "📝 Changed files: $CHANGED_FILES"
+          fi
+      
+      - name: 💾 Commit Changes
+        if: steps.sync_files.outputs.has_changes == 'true'
+        run: |
+          cd client
+          git commit -m "🔄 Sync from source (${{ steps.source_info.outputs.sha }})
+          
+          Source: ${{ github.repository }}@${{ inputs.source_branch }}
+          Commit: ${{ steps.source_info.outputs.sha }}
+          Message: ${{ steps.source_info.outputs.message }}
+          Date: ${{ steps.source_info.outputs.date }}
+          
+          Changed files: ${{ steps.sync_files.outputs.changed_count }}
+          Synced by: ${{ github.actor }}"
+      
+      - name: 🔍 Check for Conflicts
+        if: steps.sync_files.outputs.has_changes == 'true'
+        id: conflict_check
+        run: |
+          cd client
+          
+          # Try to merge sync branch into target to detect conflicts
+          git checkout ${{ inputs.target_branch }}
+          
+          if git merge --no-commit --no-ff ${{ steps.sync_branch.outputs.branch }} 2>&1 | tee /tmp/merge.log; then
+            echo "has_conflicts=false" >> $GITHUB_OUTPUT
+            echo "✅ No conflicts detected"
+            git merge --abort 2>/dev/null || true
+          else
+            echo "has_conflicts=true" >> $GITHUB_OUTPUT
+            # Get conflicting files
+            CONFLICTS=$(git diff --name-only --diff-filter=U | tr '\n' ',' | sed 's/,$//')
+            echo "conflict_files=$CONFLICTS" >> $GITHUB_OUTPUT
+            echo "⚠️ Conflicts in: $CONFLICTS"
+            git merge --abort 2>/dev/null || true
+          fi
+          
+          # Return to sync branch
+          git checkout ${{ steps.sync_branch.outputs.branch }}
+      
+      - name: 📤 Push Sync Branch
+        if: steps.sync_files.outputs.has_changes == 'true'
+        run: |
+          cd client
+          git push origin ${{ steps.sync_branch.outputs.branch }}
+      
+      - name: 🔀 Create Pull Request
+        if: steps.sync_files.outputs.has_changes == 'true'
+        id: create_pr
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.CLIENT_REPO_TOKEN }}
+          script: |
+            const hasConflicts = '${{ steps.conflict_check.outputs.has_conflicts }}' === 'true';
+            const conflictFiles = '${{ steps.conflict_check.outputs.conflict_files }}';
+            const autoMerge = '${{ inputs.auto_merge }}' === 'true';
+            
+            const labels = ['sync', 'automated'];
+            if (hasConflicts) {
+              labels.push('conflicts', 'needs-review');
+            } else {
+              labels.push('auto-mergeable');
+            }
+            
+            let body = `## 🔄 Source Code Sync
+            
+            **Source:** \`${{ github.repository }}@${{ inputs.source_branch }}\`
+            **Commit:** \`${{ steps.source_info.outputs.sha }}\`
+            **Message:** ${{ steps.source_info.outputs.message }}
+            **Changed Files:** ${{ steps.sync_files.outputs.changed_count }}
+            
+            ---
+            `;
+            
+            if (hasConflicts) {
+              body += `
+            ⚠️ **Conflicts Detected**
+            
+            The following files have conflicts that need manual resolution:
+            \`\`\`
+            ${conflictFiles.split(',').join('\n')}
+            \`\`\`
+            
+            Please review and resolve conflicts before merging.
+            `;
+            } else {
+              body += `
+            ✅ **No Conflicts**
+            
+            This sync can be safely merged.
+            ${autoMerge ? '🤖 Auto-merge is enabled.' : 'Please review and merge manually.'}
+            `;
+            }
+            
+            body += `
+            ---
+            *Synced by: @${{ github.actor }}*
+            `;
+            
+            const pr = await github.rest.pulls.create({
+              owner: '${{ inputs.client_org }}',
+              repo: '${{ inputs.client_repo }}',
+              title: `🔄 Sync: ${{ steps.source_info.outputs.message }} (${{ steps.source_info.outputs.sha }})`,
+              head: '${{ steps.sync_branch.outputs.branch }}',
+              base: '${{ inputs.target_branch }}',
+              body: body
+            });
+            
+            // Add labels
+            await github.rest.issues.addLabels({
+              owner: '${{ inputs.client_org }}',
+              repo: '${{ inputs.client_repo }}',
+              issue_number: pr.data.number,
+              labels: labels
+            });
+            
+            core.setOutput('pr_number', pr.data.number);
+            core.setOutput('pr_url', pr.data.html_url);
+            
+            console.log(`✅ Created PR #${pr.data.number}: ${pr.data.html_url}`);
+      
+      - name: 🔀 Auto-Merge PR (if enabled and no conflicts)
+        if: |
+          steps.sync_files.outputs.has_changes == 'true' && 
+          steps.conflict_check.outputs.has_conflicts == 'false' && 
+          inputs.auto_merge == true
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.CLIENT_REPO_TOKEN }}
+          script: |
+            const prNumber = ${{ steps.create_pr.outputs.pr_number }};
+            
+            // Enable auto-merge
+            await github.rest.pulls.merge({
+              owner: '${{ inputs.client_org }}',
+              repo: '${{ inputs.client_repo }}',
+              pull_number: prNumber,
+              merge_method: 'squash',
+              commit_title: '🔄 Sync from source (${{ steps.source_info.outputs.sha }})'
+            });
+            
+            console.log(`✅ Auto-merged PR #${prNumber}`);
+      
+      - name: 📧 Send Conflict Notification
+        if: steps.conflict_check.outputs.has_conflicts == 'true'
+        run: |
+          echo "⚠️ Conflicts detected - notification would be sent"
+          
+          # Trigger notification workflow via repository dispatch
+          curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/dispatches" \
+            -d '{
+              "event_type": "sync-conflict",
+              "client_payload": {
+                "client_repo": "${{ inputs.client_org }}/${{ inputs.client_repo }}",
+                "source_commit": "${{ steps.source_info.outputs.sha }}",
+                "conflict_files": "${{ steps.conflict_check.outputs.conflict_files }}",
+                "pr_url": "${{ steps.create_pr.outputs.pr_url }}",
+                "triggered_by": "${{ github.actor }}"
+              }
+            }'
+      
+      - name: 📊 Log to Sync History
+        if: always() && steps.sync_files.outputs.has_changes == 'true'
+        continue-on-error: true
+        run: |
+          STATUS="success"
+          ERROR_MSG=""
+          if [ "${{ steps.conflict_check.outputs.has_conflicts }}" == "true" ]; then
+            STATUS="conflict"
+            ERROR_MSG="Conflicts in: ${{ steps.conflict_check.outputs.conflict_files }}"
+          fi
+          if [ "${{ job.status }}" == "failure" ]; then
+            STATUS="failed"
+            ERROR_MSG="Sync job failed"
+          fi
+          
+          curl -s -X POST "${{ env.DASHBOARD_API }}/sync-history.php?action=create" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"client_id\": \"${{ inputs.client_repo }}\",
+              \"client_name\": \"${{ needs.validate.outputs.client_name }}\",
+              \"source_branch\": \"${{ inputs.source_branch }}\",
+              \"target_branch\": \"${{ inputs.target_branch }}\",
+              \"commit_sha\": \"${{ steps.source_info.outputs.sha }}\",
+              \"triggered_by\": \"${{ github.actor }}\"
+            }" || echo "Sync history create failed (non-critical)"
+          
+          # Update status
+          curl -s -X POST "${{ env.DASHBOARD_API }}/sync-history.php?action=update" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"client_id\": \"${{ inputs.client_repo }}\",
+              \"status\": \"$STATUS\",
+              \"pr_number\": ${{ steps.create_pr.outputs.pr_number || 0 }},
+              \"pr_url\": \"${{ steps.create_pr.outputs.pr_url || '' }}\",
+              \"error_message\": \"$ERROR_MSG\"
+            }" || echo "Sync history update failed (non-critical)"
+
+      - name: 📊 Log to Dashboard
+        if: always() && steps.sync_files.outputs.has_changes == 'true'
+        continue-on-error: true
+        run: |
+          STATUS="success"
+          if [ "${{ steps.conflict_check.outputs.has_conflicts }}" == "true" ]; then
+            STATUS="conflicts"
+          fi
+          if [ "${{ job.status }}" == "failure" ]; then
+            STATUS="failed"
+          fi
+          
+          curl -s -X POST "${{ env.DASHBOARD_API }}/deployment-history.php" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"action\": \"record\",
+              \"client_id\": \"${{ inputs.client_repo }}\",
+              \"client_name\": \"${{ inputs.client_org }}/${{ inputs.client_repo }}\",
+              \"environment\": \"sync\",
+              \"status\": \"$STATUS\",
+              \"branch\": \"${{ inputs.source_branch }}\",
+              \"commit_sha\": \"${{ steps.source_info.outputs.sha }}\",
+              \"commit_message\": \"Sync: ${{ steps.source_info.outputs.message }}\",
+              \"triggered_by\": \"${{ github.actor }}\",
+              \"trigger_type\": \"sync\"
+            }" || echo "Dashboard logging failed (non-critical)"
+      
+      - name: 📋 Summary
+        if: always()
+        run: |
+          echo "## 🔄 Sync Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Client** | ${{ inputs.client_org }}/${{ inputs.client_repo }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Source Branch** | ${{ inputs.source_branch }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Target Branch** | ${{ inputs.target_branch }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Source Commit** | \`${{ steps.source_info.outputs.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Changes** | ${{ steps.sync_files.outputs.has_changes == 'true' && steps.sync_files.outputs.changed_count || 'None' }} files |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Conflicts** | ${{ steps.conflict_check.outputs.has_conflicts == 'true' && '⚠️ Yes' || '✅ No' }} |" >> $GITHUB_STEP_SUMMARY
+          if [ -n "${{ steps.create_pr.outputs.pr_url }}" ]; then
+            echo "| **PR** | ${{ steps.create_pr.outputs.pr_url }} |" >> $GITHUB_STEP_SUMMARY
+          fi

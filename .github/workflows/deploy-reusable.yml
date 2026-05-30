@@ -1,0 +1,140 @@
+name: 🚀 Reusable Deploy Workflow
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Deployment environment (staging/production)'
+        required: true
+        type: string
+      deploy_mode:
+        description: 'Deploy mode (simple/symlink)'
+        required: true
+        type: string
+        default: 'simple'
+      maintenance_mode:
+        description: 'Enable maintenance mode during deploy'
+        required: false
+        type: boolean
+        default: false
+      client_name:
+        description: 'Client display name for notifications'
+        required: true
+        type: string
+    secrets:
+      WEBHOOK_URL:
+        required: true
+      WEBHOOK_SECRET:
+        required: true
+    outputs:
+      status:
+        description: 'Deployment status'
+        value: ${{ jobs.deploy.outputs.status }}
+      duration:
+        description: 'Deployment duration'
+        value: ${{ jobs.deploy.outputs.duration }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: ${{ inputs.environment }}
+    
+    outputs:
+      status: ${{ steps.deploy.outputs.status }}
+      duration: ${{ steps.deploy.outputs.duration }}
+    
+    steps:
+      - name: 📋 Prepare Deployment
+        id: prepare
+        run: |
+          echo "🚀 Starting deployment for ${{ inputs.client_name }}"
+          echo "Environment: ${{ inputs.environment }}"
+          echo "Deploy Mode: ${{ inputs.deploy_mode }}"
+          echo "Maintenance: ${{ inputs.maintenance_mode }}"
+          echo "start_time=$(date +%s)" >> $GITHUB_OUTPUT
+
+      - name: 🔐 Generate Webhook Signature
+        id: signature
+        run: |
+          # Build deployment payload
+          PAYLOAD=$(cat <<EOF
+          {
+            "ref": "refs/heads/${{ github.ref_name }}",
+            "environment": "${{ inputs.environment }}",
+            "deploy_mode": "${{ inputs.deploy_mode }}",
+            "maintenance_mode": ${{ inputs.maintenance_mode }},
+            "head_commit": {
+              "id": "${{ github.sha }}",
+              "message": "${{ github.event.head_commit.message || 'Manual trigger' }}",
+              "author": "${{ github.actor }}"
+            },
+            "repository": {
+              "full_name": "${{ github.repository }}"
+            },
+            "client_name": "${{ inputs.client_name }}",
+            "triggered_by": "${{ github.actor }}",
+            "run_id": "${{ github.run_id }}"
+          }
+          EOF
+          )
+          
+          # Clean payload (remove newlines for signature)
+          CLEAN_PAYLOAD=$(echo "$PAYLOAD" | tr -d '\n' | tr -s ' ')
+          
+          # Generate HMAC-SHA256 signature
+          SIGNATURE=$(echo -n "$CLEAN_PAYLOAD" | openssl dgst -sha256 -hmac "${{ secrets.WEBHOOK_SECRET }}" | awk '{print "sha256="$2}')
+          
+          echo "payload=$CLEAN_PAYLOAD" >> $GITHUB_OUTPUT
+          echo "signature=$SIGNATURE" >> $GITHUB_OUTPUT
+
+      - name: 🚀 Trigger Deployment
+        id: deploy
+        run: |
+          START_TIME=${{ steps.prepare.outputs.start_time }}
+          
+          # Send webhook request
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${{ secrets.WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -H "X-Hub-Signature-256: ${{ steps.signature.outputs.signature }}" \
+            -H "X-GitHub-Event: push" \
+            -H "X-GitHub-Delivery: ${{ github.run_id }}" \
+            -H "X-Deploy-Environment: ${{ inputs.environment }}" \
+            -H "User-Agent: GitHub-Actions/${{ github.repository }}" \
+            -d '${{ steps.signature.outputs.payload }}' \
+            --max-time 120)
+          
+          # Parse response
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          
+          echo "duration=${DURATION}s" >> $GITHUB_OUTPUT
+          
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            echo "✅ Deployment triggered successfully"
+            echo "Response: $BODY"
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Deployment failed with HTTP $HTTP_CODE"
+            echo "Response: $BODY"
+            echo "status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: 📊 Deployment Summary
+        if: always()
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Client | ${{ inputs.client_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | ${{ inputs.environment }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deploy Mode | ${{ inputs.deploy_mode }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ steps.deploy.outputs.status }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Duration | ${{ steps.deploy.outputs.duration }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered By | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY

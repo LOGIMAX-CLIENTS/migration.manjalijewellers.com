@@ -1,0 +1,300 @@
+name: 📧 Deployment Notification
+# Notification for non-production deployments (dev, qa, staging)
+# Also handles deployment-pending approval notifications
+
+on:
+  repository_dispatch:
+    types: [staging-deployed, deployment-pending]
+  workflow_dispatch:
+
+jobs:
+  # =========================================================================
+  # JOB 1: Approval Pending Notification (amber theme)
+  # =========================================================================
+  notify-pending:
+    if: github.event.action == 'deployment-pending'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: 📬 Send Pending Approval Notification
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER || 'smtp.gmail.com' }}
+          server_port: ${{ secrets.SMTP_PORT || '587' }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          from: "🚀 Deploy Bot <${{ secrets.SMTP_USERNAME }}>"
+          to: ${{ secrets.MAIL_TO }}
+          subject: "⏳ ${{ github.event.client_payload.server }} - Deployment Awaiting Approval (${{ github.event.client_payload.environment }})"
+          content_type: text/html
+          html_body: |
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #0d1117; color: #c9d1d9;">
+              <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+
+                <!-- Header — amber/orange for pending approval -->
+                <div style="background: linear-gradient(135deg, #b08800 0%, #d29922 100%); border-radius: 12px 12px 0 0; padding: 30px; text-align: center;">
+                  <div style="font-size: 48px; margin-bottom: 10px;">⏳</div>
+                  <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">Awaiting Approval</h1>
+                  <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.85); font-size: 14px;">A deployment is pending your approval in the DevOps Tool</p>
+                </div>
+
+                <!-- Main Content -->
+                <div style="background-color: #161b22; border: 1px solid #30363d; border-top: none; border-radius: 0 0 12px 12px; padding: 24px;">
+
+                  <!-- Environment Badge -->
+                  <div style="text-align: center; margin-bottom: 24px;">
+                    <span style="display: inline-block; background: linear-gradient(135deg, #b08800 0%, #d29922 100%); color: #ffffff; padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: 600;">
+                      🌍 ${{ github.event.client_payload.server }} — ${{ github.event.client_payload.environment }}
+                    </span>
+                  </div>
+
+                  <!-- Details Grid -->
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                      <td style="padding: 12px 0; border-bottom: 1px solid #30363d;">
+                        <span style="color: #8b949e; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Branch</span><br>
+                        <span style="color: #c9d1d9; font-size: 16px; font-weight: 500;">🔀 ${{ github.event.client_payload.branch }}</span>
+                      </td>
+                      <td style="padding: 12px 0; border-bottom: 1px solid #30363d; text-align: right;">
+                        <span style="color: #8b949e; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Status</span><br>
+                        <span style="color: #d29922; font-size: 16px; font-weight: 600;">● Pending Approval</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colspan="2" style="padding: 12px 0; border-bottom: 1px solid #30363d;">
+                        <span style="color: #8b949e; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Commit</span><br>
+                        <code style="background: #0d1117; color: #58a6ff; padding: 4px 8px; border-radius: 4px; font-size: 14px; font-family: 'SFMono-Regular', Consolas, monospace;">${{ github.event.client_payload.commit }}</code>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 12px 0; border-bottom: 1px solid #30363d;">
+                        <span style="color: #8b949e; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Triggered By</span><br>
+                        <span style="color: #c9d1d9; font-size: 16px;">👤 ${{ github.event.client_payload.deployer }}</span>
+                      </td>
+                      <td style="padding: 12px 0; border-bottom: 1px solid #30363d; text-align: right;">
+                        <span style="color: #8b949e; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Time</span><br>
+                        <span style="color: #c9d1d9; font-size: 14px;">🕐 ${{ github.event.client_payload.timestamp }}</span>
+                      </td>
+                    </tr>
+                  </table>
+
+                  <!-- Commit Message -->
+                  <div style="margin-top: 20px; background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 16px;">
+                    <span style="color: #8b949e; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">💬 Commit Message</span>
+                    <p style="margin: 8px 0 0 0; color: #c9d1d9; font-size: 14px; line-height: 1.5;">${{ github.event.client_payload.message }}</p>
+                  </div>
+
+                  <!-- Action Required Box -->
+                  <div style="margin-top: 20px; background: #1c1e24; border: 2px solid #d29922; border-radius: 8px; padding: 16px; text-align: center;">
+                    <p style="margin: 0; color: #d29922; font-size: 16px; font-weight: 600;">⚡ Action Required</p>
+                    <p style="margin: 8px 0 0 0; color: #c9d1d9; font-size: 14px;">Open the DevOps Tool to approve or reject this deployment.</p>
+                  </div>
+
+                </div>
+
+                <!-- Footer -->
+                <div style="text-align: center; padding: 20px; color: #8b949e; font-size: 12px;">
+                  <p style="margin: 0;">Powered by <strong style="color: #c9d1d9;">Logimax CI/CD</strong></p>
+                  <p style="margin: 8px 0 0 0; color: #6e7681;">Automated deployment notification • Do not reply</p>
+                </div>
+
+              </div>
+            </body>
+            </html>
+
+      - name: 📋 Log Summary
+        run: |
+          echo "## ⏳ Deployment Pending Approval" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Server** | ${{ github.event.client_payload.server }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | ${{ github.event.client_payload.environment }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch** | ${{ github.event.client_payload.branch }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.event.client_payload.commit }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Triggered By** | ${{ github.event.client_payload.deployer }} |" >> $GITHUB_STEP_SUMMARY
+
+  # =========================================================================
+  # JOB 2: Deploy Result Notification (success/failed — original behavior)
+  # =========================================================================
+  notify:
+    if: github.event.action == 'staging-deployed' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    
+    steps:
+      - name: 📬 Send Notification
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER || 'smtp.gmail.com' }}
+          server_port: ${{ secrets.SMTP_PORT || '587' }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          from: "🚀 Deploy Bot <${{ secrets.SMTP_USERNAME }}>"
+          to: ${{ secrets.MAIL_TO }}
+          subject: "${{ github.event.client_payload.status == 'FAILED' && '❌' || '✅' }} ${{ github.event.client_payload.server }} - Deployment ${{ github.event.client_payload.status == 'FAILED' && 'FAILED' || 'Successful' }}"
+          content_type: text/html
+          html_body: |
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #0d1117; color: #c9d1d9;">
+              <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                
+                <!-- Header — green for success, red for failure -->
+                <div style="background: linear-gradient(135deg, ${{ github.event.client_payload.status == 'FAILED' && '#da3633 0%, #f85149 100%' || '#238636 0%, #2ea043 100%' }}); border-radius: 12px 12px 0 0; padding: 30px; text-align: center;">
+                  <div style="font-size: 48px; margin-bottom: 10px;">${{ github.event.client_payload.status == 'FAILED' && '❌' || '✅' }}</div>
+                  <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">Deployment ${{ github.event.client_payload.status == 'FAILED' && 'Failed' || 'Successful' }}</h1>
+                  <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.85); font-size: 14px;">${{ github.event.client_payload.status == 'FAILED' && '⚠️ Action required — check server logs' || 'Your code is now live!' }}</p>
+                </div>
+                
+                <!-- Main Content -->
+                <div style="background-color: #161b22; border: 1px solid #30363d; border-top: none; border-radius: 0 0 12px 12px; padding: 24px;">
+                  
+                  <!-- Environment Badge -->
+                  <div style="text-align: center; margin-bottom: 24px;">
+                    <span style="display: inline-block; background: linear-gradient(135deg, #1f6feb 0%, #388bfd 100%); color: #ffffff; padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: 600;">
+                      🌍 ${{ github.event.client_payload.server }}
+                    </span>
+                  </div>
+                  
+                  <!-- Details Grid -->
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                      <td style="padding: 12px 0; border-bottom: 1px solid #30363d;">
+                        <span style="color: #8b949e; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Branch</span><br>
+                        <span style="color: #c9d1d9; font-size: 16px; font-weight: 500;">🔀 ${{ github.event.client_payload.branch }}</span>
+                      </td>
+                      <td style="padding: 12px 0; border-bottom: 1px solid #30363d; text-align: right;">
+                        <span style="color: #8b949e; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Status</span><br>
+                        <span style="color: ${{ github.event.client_payload.status == 'FAILED' && '#f85149' || '#2ea043' }}; font-size: 16px; font-weight: 600;">● ${{ github.event.client_payload.status == 'FAILED' && 'Failed' || 'Live' }}</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colspan="2" style="padding: 12px 0; border-bottom: 1px solid #30363d;">
+                        <span style="color: #8b949e; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Commit</span><br>
+                        <code style="background: #0d1117; color: #58a6ff; padding: 4px 8px; border-radius: 4px; font-size: 14px; font-family: 'SFMono-Regular', Consolas, monospace;">${{ github.event.client_payload.commit }}</code>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 12px 0; border-bottom: 1px solid #30363d;">
+                        <span style="color: #8b949e; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Author</span><br>
+                        <span style="color: #c9d1d9; font-size: 16px;">👤 ${{ github.event.client_payload.deployer }}</span>
+                      </td>
+                      <td style="padding: 12px 0; border-bottom: 1px solid #30363d; text-align: right;">
+                        <span style="color: #8b949e; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Time</span><br>
+                        <span style="color: #c9d1d9; font-size: 14px;">🕐 ${{ github.event.client_payload.timestamp }}</span>
+                      </td>
+                    </tr>
+                  </table>
+                  
+                  <!-- Commit Message -->
+                  <div style="margin-top: 20px; background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 16px;">
+                    <span style="color: #8b949e; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">💬 Commit Message</span>
+                    <p style="margin: 8px 0 0 0; color: #c9d1d9; font-size: 14px; line-height: 1.5;">${{ github.event.client_payload.message }}</p>
+                  </div>
+                  
+                </div>
+                
+                <!-- Footer -->
+                <div style="text-align: center; padding: 20px; color: #8b949e; font-size: 12px;">
+                  <p style="margin: 0;">Powered by <strong style="color: #c9d1d9;">Logimax CI/CD</strong></p>
+                  <p style="margin: 8px 0 0 0; color: #6e7681;">Automated deployment notification • Do not reply</p>
+                </div>
+                
+              </div>
+            </body>
+            </html>
+
+      - name: 📋 Log Summary
+        run: |
+          STATUS="${{ github.event.client_payload.status }}"
+          if [ "$STATUS" = "FAILED" ]; then
+            echo "## ❌ Deployment FAILED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ✅ Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | ${{ github.event.client_payload.server }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch** | ${{ github.event.client_payload.branch }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.event.client_payload.commit }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Author** | ${{ github.event.client_payload.deployer }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Status** | ${{ github.event.client_payload.status }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Time** | ${{ github.event.client_payload.timestamp }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: 📊 Log to DevOps Dashboard
+        if: always()
+        continue-on-error: true
+        run: |
+          SERVER="${{ github.event.client_payload.server }}"
+          BRANCH="${{ github.event.client_payload.branch }}"
+          COMMIT="${{ github.event.client_payload.commit }}"
+          USER="${{ github.event.client_payload.deployer }}"
+          MESSAGE="${{ github.event.client_payload.message }}"
+          DEPLOY_STATUS="${{ github.event.client_payload.status }}"
+          DEPLOY_TYPE="${{ github.event.client_payload.deploy_type || 'source' }}"
+          
+          # Map status to lowercase
+          if [ "$DEPLOY_STATUS" = "FAILED" ]; then
+            STATUS="failed"
+          else
+            STATUS="success"
+          fi
+          
+          # Determine environment from server name
+          ENV="staging"
+          if [[ "$SERVER" == *"dev"* ]] || [[ "$SERVER" == *"Develop"* ]]; then
+            ENV="dev"
+          elif [[ "$SERVER" == *"qa"* ]] || [[ "$SERVER" == *"QA"* ]]; then
+            ENV="qa"
+          elif [[ "$SERVER" == *"staging"* ]] || [[ "$SERVER" == *"Staging"* ]]; then
+            ENV="staging"
+          fi
+          
+          DEVOPS_URL="${{ secrets.DEVOPS_API_URL }}"
+          DEVOPS_SECRET="${{ secrets.WEBHOOK_SECRET }}"
+          
+          if [ -z "$DEVOPS_URL" ]; then
+            echo "⚠️ DEVOPS_API_URL not set — skipping"
+            exit 0
+          fi
+          
+          echo "📡 [DEBUG] Logging to DevOps: URL=$DEVOPS_URL/api/webhooks/deploy-log"
+          NOTIFY_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$DEVOPS_URL/api/webhooks/deploy-log" \
+            -H "Content-Type: application/json" \
+            -H "X-Webhook-Secret: $DEVOPS_SECRET" \
+            -d "{
+              \"client_id\": \"source\",
+              \"client_name\": \"${{ github.repository }}\",
+              \"environment\": \"$ENV\",
+              \"status\": \"$STATUS\",
+              \"branch\": \"$BRANCH\",
+              \"commit_sha\": \"$COMMIT\",
+              \"commit_message\": \"$MESSAGE\",
+              \"triggered_by\": \"$USER\",
+              \"trigger_type\": \"github_action\",
+              \"deploy_type\": \"$DEPLOY_TYPE\"
+            }" --max-time 10 2>&1 || echo "000")
+          
+          N_HTTP=$(echo "$NOTIFY_RESPONSE" | tail -1)
+          N_BODY=$(echo "$NOTIFY_RESPONSE" | head -n -1)
+          echo "📡 [DEBUG] DevOps HTTP: $N_HTTP"
+          echo "📡 [DEBUG] DevOps response: $N_BODY"
+          if [ "$N_HTTP" -lt 200 ] 2>/dev/null || [ "$N_HTTP" -ge 300 ] 2>/dev/null; then
+            echo "::warning::DevOps dashboard log failed (HTTP $N_HTTP): $N_BODY"
+          else
+            echo "📊 Logged deployment to DevOps dashboard"
+          fi
+

@@ -1,0 +1,713 @@
+# =============================================================================
+# DEPLOY MONO-REPO CLIENTS
+# Deploys source code to mono-repo client servers (override system clients)
+# Smart path detection: client override changes deploy only to that client,
+# core changes deploy to all mono-repo clients.
+#
+# TRIGGER: workflow_dispatch ONLY (from DevOps Tool)
+# No push-based triggers — all deploys are manual via DevOps Tool approval.
+#
+# Branch mapping:
+#   support    → client staging
+#   Production → client production
+# =============================================================================
+
+name: 🚀 Deploy Mono-Repo Client
+
+on:
+  workflow_dispatch:
+    inputs:
+      client_id:
+        description: 'Client to deploy (leave empty for ALL mono-repo clients)'
+        required: false
+        type: string
+        default: ''
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      deploy_notes:
+        description: 'Deployment notes (optional)'
+        required: false
+        type: string
+
+
+  # Push triggers removed — all deploys are manual via DevOps Tool only
+
+# =============================================================================
+# ENVIRONMENT VARIABLES
+# =============================================================================
+env:
+  STAGING_BRANCH: support
+  PRODUCTION_BRANCH: Production
+  DEVOPS_API_URL: ${{ secrets.DEVOPS_API_URL }}
+  DEVOPS_WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+
+# =============================================================================
+# PERMISSIONS — needed for peter-evans/repository-dispatch (contents:write)
+# =============================================================================
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  # =========================================================================
+  # JOB 1: Detect what changed and which clients need deployment
+  # =========================================================================
+  detect-scope:
+    runs-on: ubuntu-latest
+    outputs:
+      affected_clients: ${{ steps.detect.outputs.affected_clients }}
+      deploy_all: ${{ steps.detect.outputs.deploy_all }}
+      environment: ${{ steps.env.outputs.environment }}
+      has_clients: ${{ steps.detect.outputs.has_clients }}
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: 🎯 Determine Environment
+        id: env
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "environment=${{ inputs.environment }}" >> $GITHUB_OUTPUT
+          else
+            BRANCH="${{ github.ref_name }}"
+            case "$BRANCH" in
+              support) echo "environment=staging" >> $GITHUB_OUTPUT ;;
+              Production) echo "environment=production" >> $GITHUB_OUTPUT ;;
+              *) echo "environment=unknown" >> $GITHUB_OUTPUT ;;
+            esac
+          fi
+
+      - name: 🔍 Detect Clients from Config Directory
+        id: detect
+        run: |
+          # ── Dynamic client discovery: scan config/clients/*.json ──
+          ALL_CLIENTS=$(ls config/clients/*.json 2>/dev/null | xargs -I{} basename {} .json | grep -v 'default' | sort)
+
+          if [ -z "$ALL_CLIENTS" ]; then
+            echo "⚠️ No mono-repo clients found in config/clients/"
+            echo "has_clients=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "📋 Registered mono-repo clients: $ALL_CLIENTS"
+
+          # ── Manual trigger with specific client ──
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.client_id }}" ]; then
+            CLIENT="${{ inputs.client_id }}"
+            # Validate client exists
+            if [ ! -f "config/clients/${CLIENT}.json" ]; then
+              echo "❌ Client '${CLIENT}' not found in config/clients/"
+              echo "has_clients=false" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+            echo "deploy_all=false" >> $GITHUB_OUTPUT
+            echo "affected_clients=[\"${CLIENT}\"]" >> $GITHUB_OUTPUT
+            echo "has_clients=true" >> $GITHUB_OUTPUT
+            echo "📌 Manual deploy for: ${CLIENT}"
+            exit 0
+          fi
+
+          # ── Manual trigger with empty client_id = ALL ──
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -z "${{ inputs.client_id }}" ]; then
+            echo "deploy_all=true" >> $GITHUB_OUTPUT
+            echo "has_clients=true" >> $GITHUB_OUTPUT
+            echo "📌 Manual deploy for ALL mono-repo clients"
+            exit 0
+          fi
+
+          # ── Auto-trigger: detect what changed ──
+          CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+
+          if [ -z "$CHANGED" ]; then
+            echo "⚠️ No changes detected"
+            echo "has_clients=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Core code changes → deploy ALL clients
+          CORE_CHANGED=$(echo "$CHANGED" | grep -E '^(admin/|system/|features/|index\.php)' || true)
+
+          if [ -n "$CORE_CHANGED" ]; then
+            echo "🔄 Core code changed — deploying to ALL mono-repo clients"
+            echo "deploy_all=true" >> $GITHUB_OUTPUT
+            echo "has_clients=true" >> $GITHUB_OUTPUT
+          else
+            # Only client-specific overrides changed
+            CLIENT_IDS=$(echo "$CHANGED" | grep -oP '^clients/\K[^/]+' | grep -v 'registry.json' | grep -v 'fetch-' | grep -v 'repos_raw' | sort -u || true)
+
+            if [ -n "$CLIENT_IDS" ]; then
+              JSON_ARRAY=$(echo "$CLIENT_IDS" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+              echo "🎯 Client-specific changes detected: $CLIENT_IDS"
+              echo "deploy_all=false" >> $GITHUB_OUTPUT
+              echo "affected_clients=$JSON_ARRAY" >> $GITHUB_OUTPUT
+              echo "has_clients=true" >> $GITHUB_OUTPUT
+            else
+              echo "⚠️ No deployable client changes detected"
+              echo "has_clients=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: 📋 Summary
+        run: |
+          echo "## 🔍 Deploy Scope Detection" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | ${{ steps.env.outputs.environment }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Deploy All** | ${{ steps.detect.outputs.deploy_all }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Affected Clients** | ${{ steps.detect.outputs.affected_clients || 'All' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Trigger** | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: ✅ Validate Client Configs
+        if: steps.detect.outputs.has_clients == 'true'
+        run: |
+          # Phase 2.4b: Validate each client config has required fields
+          INVALID=0
+          for CONFIG in config/clients/*.json; do
+            CLIENT=$(basename "$CONFIG" .json)
+            [ "$CLIENT" = "default" ] || [ "$CLIENT" = "schema" ] && continue
+            
+            # Check required webhook_url fields
+            STAGING_URL=$(jq -r '.deploy.staging.webhook_url // empty' "$CONFIG" 2>/dev/null)
+            PROD_URL=$(jq -r '.deploy.production.webhook_url // empty' "$CONFIG" 2>/dev/null)
+            
+            if [ -z "$STAGING_URL" ] && [ -z "$PROD_URL" ]; then
+              echo "❌ $CLIENT: Missing both staging and production webhook_url"
+              INVALID=$((INVALID + 1))
+            fi
+          done
+          
+          if [ "$INVALID" -gt 0 ]; then
+            echo "::error::$INVALID client config(s) have validation errors"
+            exit 1
+          fi
+          echo "✅ All client configs valid"
+
+  # =========================================================================
+  # JOB 2: Staging deploy (DevOps approval required for ALL triggers)
+  # =========================================================================
+  deploy-staging:
+    needs: detect-scope
+    if: >-
+      needs.detect-scope.outputs.has_clients == 'true' &&
+      needs.detect-scope.outputs.environment == 'staging'
+    runs-on: ubuntu-latest
+    environment: client-staging
+    timeout-minutes: 15
+
+    steps:
+      - name: 📲 Checkout
+        uses: actions/checkout@v4
+
+      - name: 📋 Request Approval (push-triggered)
+        id: staging-approval
+        if: github.event_name == 'push'
+        env:
+          AFFECTED: ${{ needs.detect-scope.outputs.affected_clients }}
+          DEPLOY_ALL: ${{ needs.detect-scope.outputs.deploy_all }}
+        run: |
+          if [ -z "$DEVOPS_API_URL" ]; then
+            echo "⚠️ DEVOPS_API_URL not set — cannot create approval request"
+            exit 1
+          fi
+
+          COMMIT_SHA=$(git rev-parse --short HEAD)
+          COMMIT_MSG=$(git log -1 --pretty=%B | head -n1)
+
+          if [ "$DEPLOY_ALL" = "true" ]; then
+            CLIENTS=$(ls config/clients/*.json | xargs -I{} basename {} .json | grep -v 'default' | grep -v 'schema')
+          else
+            CLIENTS=$(echo "$AFFECTED" | jq -r '.[]' 2>/dev/null || echo "")
+          fi
+
+          CREATED=0
+          CLIENT_NAMES=""
+          for CLIENT in $CLIENTS; do
+            CONFIG="config/clients/${CLIENT}.json"
+            CLIENT_NAME=$(jq -r '.client_name // empty' "$CONFIG" 2>/dev/null)
+            [ -z "$CLIENT_NAME" ] && CLIENT_NAME="$CLIENT"
+            [ -n "$CLIENT_NAMES" ] && CLIENT_NAMES="${CLIENT_NAMES}, "
+            CLIENT_NAMES="${CLIENT_NAMES}${CLIENT_NAME}"
+
+            echo "📡 [DEBUG] Approval for ${CLIENT}: URL=${DEVOPS_API_URL}/api/webhooks/deploy-log"
+            RESPONSE=$(curl -sk -w "\n%{http_code}" -X POST "${DEVOPS_API_URL}/api/webhooks/deploy-log" \
+              -H "Content-Type: application/json" \
+              -H "X-Webhook-Secret: $DEVOPS_WEBHOOK_SECRET" \
+              -d "{
+                \"client_id\": \"${CLIENT}\",
+                \"client_name\": \"${CLIENT_NAME}\",
+                \"environment\": \"staging\",
+                \"status\": \"pending_approval\",
+                \"branch\": \"${{ github.ref_name }}\",
+                \"commit_sha\": \"${COMMIT_SHA}\",
+                \"commit_message\": \"${COMMIT_MSG}\",
+                \"triggered_by\": \"${{ github.actor }}\",
+                \"trigger_type\": \"push\",
+                \"deploy_notes\": \"Auto-detected push to ${{ github.ref_name }}. Awaiting approval in DevOps Tool.\"
+              }" --max-time 10 2>&1)
+
+            A_HTTP=$(echo "$RESPONSE" | tail -1)
+            A_BODY=$(echo "$RESPONSE" | head -n -1)
+            echo "📡 [DEBUG] Approval HTTP: $A_HTTP | Response: $A_BODY"
+            if [ "$A_HTTP" -ge 200 ] 2>/dev/null && [ "$A_HTTP" -lt 300 ] 2>/dev/null; then
+              echo "📋 Created pending approval for ${CLIENT_NAME} (staging)"
+              CREATED=$((CREATED + 1))
+            else
+              echo "::error::❌ Approval FAILED for ${CLIENT_NAME} (HTTP $A_HTTP): $A_BODY"
+            fi
+          done
+
+          echo "display_names=$CLIENT_NAMES" >> $GITHUB_OUTPUT
+          echo "📋 Created $CREATED pending approval(s). Approve in DevOps Tool to deploy."
+          echo "::notice::⏳ Deployment requires approval in DevOps Tool. $CREATED client(s) awaiting approval."
+          exit 1
+
+      - name: 🔐 Verify DevOps Approval
+        if: github.event_name == 'push'
+        env:
+          AFFECTED: ${{ needs.detect-scope.outputs.affected_clients }}
+          DEPLOY_ALL: ${{ needs.detect-scope.outputs.deploy_all }}
+        run: |
+          if [ -z "$DEVOPS_API_URL" ]; then
+            echo "ℹ️ DEVOPS_API_URL not set, skipping approval verification"
+            exit 0
+          fi
+
+          # Build client list
+          if [ "$DEPLOY_ALL" = "true" ]; then
+            CLIENTS=$(ls config/clients/*.json | xargs -I{} basename {} .json | grep -v 'default')
+          else
+            CLIENTS=$(echo "$AFFECTED" | jq -r '.[]' 2>/dev/null || echo "")
+          fi
+
+          BLOCKED=0
+          for CLIENT in $CLIENTS; do
+            echo "📡 [DEBUG] Verifying approval for $CLIENT: URL=${DEVOPS_API_URL}/api/webhooks/verify-approval"
+            RESPONSE=$(curl -sk -w "\n%{http_code}" "${DEVOPS_API_URL}/api/webhooks/verify-approval?client_id=${CLIENT}&environment=staging" \
+              -H "X-Webhook-Secret: $DEVOPS_WEBHOOK_SECRET" \
+              --max-time 10 2>&1 || echo '{}\n000')
+            V_HTTP=$(echo "$RESPONSE" | tail -1)
+            V_BODY=$(echo "$RESPONSE" | head -n -1)
+            echo "📡 [DEBUG] Verify HTTP: $V_HTTP | Response: $V_BODY"
+            APPROVED=$(echo "$V_BODY" | jq -r '.data.approved' 2>/dev/null)
+            if [ "$APPROVED" != "true" ]; then
+              echo "❌ $CLIENT: No approved deployment found in DevOps Tool"
+              BLOCKED=$((BLOCKED + 1))
+            else
+              DEPLOY_ID=$(echo "$V_BODY" | jq -r '.data.deployment_id' 2>/dev/null)
+              echo "✅ $CLIENT: Approved (deployment #$DEPLOY_ID)"
+            fi
+          done
+
+          if [ "$BLOCKED" -gt 0 ]; then
+            echo "::error::$BLOCKED client(s) not approved in DevOps Tool. Deploy via DevOps Tool UI first."
+            exit 1
+          fi
+
+      - name: 🚀 Deploy to Staging
+        id: staging-deploy
+        env:
+          DEPLOY_ALL: ${{ needs.detect-scope.outputs.deploy_all }}
+          AFFECTED: ${{ needs.detect-scope.outputs.affected_clients }}
+          MONO_WEBHOOK_SECRET: ${{ secrets.MONO_WEBHOOK_SECRET }}
+        run: |
+          COMMIT_SHA=$(git rev-parse --short HEAD)
+          COMMIT_MSG=$(git log -1 --pretty=%B | head -n1)
+
+          echo "═══════════════════════════════════════════"
+          echo "🚀 Mono-Repo Staging Deployment"
+          echo "═══════════════════════════════════════════"
+          echo "📋 Commit: $COMMIT_SHA — $COMMIT_MSG"
+          echo ""
+
+          # Build client list
+          if [ "$DEPLOY_ALL" = "true" ]; then
+            CLIENTS=$(ls config/clients/*.json | xargs -I{} basename {} .json | grep -v 'default')
+          else
+            CLIENTS=$(echo "$AFFECTED" | jq -r '.[]' 2>/dev/null || echo "")
+          fi
+
+          FAILED=0
+          for CLIENT in $CLIENTS; do
+            echo "───────────────────────────────────────"
+            echo "📦 Deploying client: $CLIENT (staging)"
+            echo "───────────────────────────────────────"
+
+            # Read webhook URL from client config
+            CONFIG="config/clients/${CLIENT}.json"
+            WEBHOOK_URL=$(jq -r '.deploy.staging.webhook_url // empty' "$CONFIG" 2>/dev/null)
+            BRANCH=$(jq -r '.deploy.staging.branch // "support"' "$CONFIG" 2>/dev/null)
+
+            if [ -z "$WEBHOOK_URL" ]; then
+              echo "⚠️ No staging webhook_url in $CONFIG — skipping"
+              continue
+            fi
+
+            if [ -z "$MONO_WEBHOOK_SECRET" ]; then
+              echo "⚠️ MONO_WEBHOOK_SECRET not set in repo secrets"
+              FAILED=1
+              continue
+            fi
+
+            # SSL verification flag from config (skip if ssl_verify=false)
+            SSL_VERIFY=$(jq -r '.deploy.ssl_verify // true' "$CONFIG" 2>/dev/null)
+            CURL_OPTS="-s"
+            [ "$SSL_VERIFY" = "false" ] && CURL_OPTS="-sk"
+
+            echo "📡 [DEBUG] Webhook URL: $WEBHOOK_URL"
+            echo "📡 [DEBUG] Secret length: ${#MONO_WEBHOOK_SECRET} chars"
+            RESPONSE=$(curl $CURL_OPTS -w "\n%{http_code}" -X POST "$WEBHOOK_URL" \
+              -H "Content-Type: application/json" \
+              -H "X-Webhook-Secret: $MONO_WEBHOOK_SECRET" \
+              -d "{\"environment\": \"staging\", \"branch\": \"$BRANCH\", \"commit\": \"$COMMIT_SHA\", \"devops_api_url\": \"$DEVOPS_API_URL\", \"devops_webhook_secret\": \"$DEVOPS_WEBHOOK_SECRET\"}" \
+              --max-time 30 2>&1 || echo "000")
+
+            HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+            BODY=$(echo "$RESPONSE" | head -n -1)
+            echo "📡 [DEBUG] Webhook HTTP: $HTTP_CODE"
+            echo "📡 [DEBUG] Webhook response: $BODY"
+
+            if [ "$HTTP_CODE" -ge 200 ] 2>/dev/null && [ "$HTTP_CODE" -lt 300 ] 2>/dev/null; then
+              echo "✅ Webhook triggered (HTTP $HTTP_CODE)"
+            else
+              echo "::error::❌ Webhook FAILED for $CLIENT (HTTP $HTTP_CODE): $BODY"
+              FAILED=1
+            fi
+          done
+
+          if [ "$FAILED" -ne 0 ]; then
+            echo "⚠️ Some deployments had issues."
+          fi
+
+      - name: 📊 Deployment Summary
+        if: always()
+        run: |
+          echo "## 🚀 Mono-Repo Staging Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | staging |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Deploy All** | ${{ needs.detect-scope.outputs.deploy_all }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Affected** | ${{ needs.detect-scope.outputs.affected_clients || 'All mono-repo clients' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Triggered By** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: 🏷️ Resolve Client Display Names
+        if: always()
+        id: staging-names
+        env:
+          AFFECTED: ${{ needs.detect-scope.outputs.affected_clients }}
+          DEPLOY_ALL: ${{ needs.detect-scope.outputs.deploy_all }}
+        run: |
+          if [ "$DEPLOY_ALL" = "true" ]; then
+            CLIENTS=$(ls config/clients/*.json | xargs -I{} basename {} .json | grep -v 'default' | grep -v 'schema')
+          else
+            CLIENTS=$(echo "$AFFECTED" | jq -r '.[]' 2>/dev/null || echo "")
+          fi
+          NAMES=""
+          for CLIENT in $CLIENTS; do
+            CONFIG="config/clients/${CLIENT}.json"
+            NAME=$(jq -r '.client_name // empty' "$CONFIG" 2>/dev/null)
+            [ -z "$NAME" ] && NAME="$CLIENT"
+            [ -n "$NAMES" ] && NAMES="${NAMES}, "
+            NAMES="${NAMES}${NAME}"
+          done
+          [ -z "$NAMES" ] && NAMES="All mono-repo clients"
+          echo "display_names=$NAMES" >> $GITHUB_OUTPUT
+          echo "🏷️ Display names: $NAMES"
+
+      - name: 📧 Trigger Pending Approval Notification
+        if: always() && steps.staging-approval.outcome == 'failure'
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: Logimax-Technologies/etail_development_src
+          event-type: deployment-pending
+          client-payload: |
+            {
+              "server": "${{ steps.staging-approval.outputs.display_names || steps.staging-names.outputs.display_names }}",
+              "environment": "staging",
+              "branch": "${{ github.ref_name }}",
+              "commit": "${{ github.sha }}",
+              "message": "${{ github.event.head_commit.message || '' }}",
+              "timestamp": "${{ github.event.head_commit.timestamp || '' }}",
+              "deployer": "${{ github.actor }}",
+              "deploy_type": "mono-repo"
+            }
+
+      # NOTE: Staging deploy notification email is now sent server-side
+      # by webhook-deploy.php → DevOps API /deploy-log → email service.
+      # Removed premature GitHub Actions dispatch (fired before deploy completed).
+
+      # NOTE: Premature status update REMOVED — this step reported job.status
+      # ("success" = webhook HTTP 200), NOT the actual deploy result.
+      # Real deploy status is reported server-side by:
+      #   Staging:    webhook-deploy.php → DevOps API /deploy-log
+      #   Production: deploy-mono.sh → DevOps API /mono-deploy (start/end)
+
+  # =========================================================================
+  # JOB 3: Production deploy (DevOps approval required for ALL triggers)
+  # =========================================================================
+  deploy-production:
+    needs: detect-scope
+    if: >-
+      needs.detect-scope.outputs.has_clients == 'true' &&
+      needs.detect-scope.outputs.environment == 'production'
+    runs-on: ubuntu-latest
+    environment: client-production
+    timeout-minutes: 15
+
+    steps:
+      - name: 📲 Checkout
+        uses: actions/checkout@v4
+
+      - name: 📋 Request Approval (push-triggered)
+        id: prod-approval
+        if: github.event_name == 'push'
+        env:
+          AFFECTED: ${{ needs.detect-scope.outputs.affected_clients }}
+          DEPLOY_ALL: ${{ needs.detect-scope.outputs.deploy_all }}
+        run: |
+          if [ -z "$DEVOPS_API_URL" ]; then
+            echo "⚠️ DEVOPS_API_URL not set — cannot create approval request"
+            exit 1
+          fi
+
+          COMMIT_SHA=$(git rev-parse --short HEAD)
+          COMMIT_MSG=$(git log -1 --pretty=%B | head -n1)
+
+          if [ "$DEPLOY_ALL" = "true" ]; then
+            CLIENTS=$(ls config/clients/*.json | xargs -I{} basename {} .json | grep -v 'default' | grep -v 'schema')
+          else
+            CLIENTS=$(echo "$AFFECTED" | jq -r '.[]' 2>/dev/null || echo "")
+          fi
+
+          CREATED=0
+          CLIENT_NAMES=""
+          for CLIENT in $CLIENTS; do
+            CONFIG="config/clients/${CLIENT}.json"
+            CLIENT_NAME=$(jq -r '.client_name // empty' "$CONFIG" 2>/dev/null)
+            [ -z "$CLIENT_NAME" ] && CLIENT_NAME="$CLIENT"
+            [ -n "$CLIENT_NAMES" ] && CLIENT_NAMES="${CLIENT_NAMES}, "
+            CLIENT_NAMES="${CLIENT_NAMES}${CLIENT_NAME}"
+
+            echo "📡 [DEBUG] Prod approval for ${CLIENT}: URL=${DEVOPS_API_URL}/api/webhooks/deploy-log"
+            RESPONSE=$(curl -sk -w "\n%{http_code}" -X POST "${DEVOPS_API_URL}/api/webhooks/deploy-log" \
+              -H "Content-Type: application/json" \
+              -H "X-Webhook-Secret: $DEVOPS_WEBHOOK_SECRET" \
+              -d "{
+                \"client_id\": \"${CLIENT}\",
+                \"client_name\": \"${CLIENT_NAME}\",
+                \"environment\": \"production\",
+                \"status\": \"pending_approval\",
+                \"branch\": \"${{ github.ref_name }}\",
+                \"commit_sha\": \"${COMMIT_SHA}\",
+                \"commit_message\": \"${COMMIT_MSG}\",
+                \"triggered_by\": \"${{ github.actor }}\",
+                \"trigger_type\": \"push\",
+                \"deploy_notes\": \"Auto-detected push to ${{ github.ref_name }}. Awaiting approval in DevOps Tool.\"
+              }" --max-time 10 2>&1)
+
+            A_HTTP=$(echo "$RESPONSE" | tail -1)
+            A_BODY=$(echo "$RESPONSE" | head -n -1)
+            echo "📡 [DEBUG] Approval HTTP: $A_HTTP | Response: $A_BODY"
+            if [ "$A_HTTP" -ge 200 ] 2>/dev/null && [ "$A_HTTP" -lt 300 ] 2>/dev/null; then
+              echo "📋 Created pending approval for ${CLIENT_NAME} (production)"
+              CREATED=$((CREATED + 1))
+            else
+              echo "::error::❌ Approval FAILED for ${CLIENT_NAME} (HTTP $A_HTTP): $A_BODY"
+            fi
+          done
+
+          echo "display_names=$CLIENT_NAMES" >> $GITHUB_OUTPUT
+          echo "📋 Created $CREATED pending approval(s). Approve in DevOps Tool to deploy."
+          echo "::notice::⏳ Production deployment requires approval in DevOps Tool. $CREATED client(s) awaiting approval."
+          exit 1
+
+      - name: 🔐 Verify DevOps Approval
+        if: github.event_name == 'push'
+        env:
+          AFFECTED: ${{ needs.detect-scope.outputs.affected_clients }}
+          DEPLOY_ALL: ${{ needs.detect-scope.outputs.deploy_all }}
+        run: |
+          if [ -z "$DEVOPS_API_URL" ]; then
+            echo "ℹ️ DEVOPS_API_URL not set, skipping approval verification"
+            exit 0
+          fi
+
+          # Build client list
+          if [ "$DEPLOY_ALL" = "true" ]; then
+            CLIENTS=$(ls config/clients/*.json | xargs -I{} basename {} .json | grep -v 'default')
+          else
+            CLIENTS=$(echo "$AFFECTED" | jq -r '.[]' 2>/dev/null || echo "")
+          fi
+
+          BLOCKED=0
+          for CLIENT in $CLIENTS; do
+            echo "📡 [DEBUG] Verifying prod approval for $CLIENT: URL=${DEVOPS_API_URL}/api/webhooks/verify-approval"
+            RESPONSE=$(curl -sk -w "\n%{http_code}" "${DEVOPS_API_URL}/api/webhooks/verify-approval?client_id=${CLIENT}&environment=production" \
+              -H "X-Webhook-Secret: $DEVOPS_WEBHOOK_SECRET" \
+              --max-time 10 2>&1 || echo '{}\n000')
+            V_HTTP=$(echo "$RESPONSE" | tail -1)
+            V_BODY=$(echo "$RESPONSE" | head -n -1)
+            echo "📡 [DEBUG] Verify HTTP: $V_HTTP | Response: $V_BODY"
+            APPROVED=$(echo "$V_BODY" | jq -r '.data.approved' 2>/dev/null)
+            if [ "$APPROVED" != "true" ]; then
+              echo "❌ $CLIENT: No approved deployment found in DevOps Tool"
+              BLOCKED=$((BLOCKED + 1))
+            else
+              DEPLOY_ID=$(echo "$V_BODY" | jq -r '.data.deployment_id' 2>/dev/null)
+              echo "✅ $CLIENT: Approved (deployment #$DEPLOY_ID)"
+            fi
+          done
+
+          if [ "$BLOCKED" -gt 0 ]; then
+            echo "::error::$BLOCKED client(s) not approved in DevOps Tool. Deploy via DevOps Tool UI first."
+            exit 1
+          fi
+
+      - name: 🚀 Deploy to Production
+        id: prod-deploy
+        env:
+          DEPLOY_ALL: ${{ needs.detect-scope.outputs.deploy_all }}
+          AFFECTED: ${{ needs.detect-scope.outputs.affected_clients }}
+          MONO_WEBHOOK_SECRET: ${{ secrets.MONO_WEBHOOK_SECRET }}
+        run: |
+          COMMIT_SHA=$(git rev-parse --short HEAD)
+          COMMIT_MSG=$(git log -1 --pretty=%B | head -n1)
+
+          echo "═══════════════════════════════════════════"
+          echo "🚀 Mono-Repo PRODUCTION Deployment"
+          echo "═══════════════════════════════════════════"
+          echo "📋 Commit: $COMMIT_SHA — $COMMIT_MSG"
+          echo ""
+
+          # Build client list
+          if [ "$DEPLOY_ALL" = "true" ]; then
+            CLIENTS=$(ls config/clients/*.json | xargs -I{} basename {} .json | grep -v 'default')
+          else
+            CLIENTS=$(echo "$AFFECTED" | jq -r '.[]' 2>/dev/null || echo "")
+          fi
+
+          FAILED=0
+          for CLIENT in $CLIENTS; do
+            echo "───────────────────────────────────────"
+            echo "📦 Deploying client: $CLIENT (production)"
+            echo "───────────────────────────────────────"
+
+            CONFIG="config/clients/${CLIENT}.json"
+            WEBHOOK_URL=$(jq -r '.deploy.production.webhook_url // empty' "$CONFIG" 2>/dev/null)
+            BRANCH=$(jq -r '.deploy.production.branch // "Production"' "$CONFIG" 2>/dev/null)
+
+            if [ -z "$WEBHOOK_URL" ]; then
+              echo "⚠️ No production webhook_url in $CONFIG — skipping"
+              continue
+            fi
+
+            if [ -z "$MONO_WEBHOOK_SECRET" ]; then
+              echo "⚠️ MONO_WEBHOOK_SECRET not set in repo secrets"
+              FAILED=1
+              continue
+            fi
+
+            SSL_VERIFY=$(jq -r '.deploy.ssl_verify // true' "$CONFIG" 2>/dev/null)
+            CURL_OPTS="-s"
+            [ "$SSL_VERIFY" = "false" ] && CURL_OPTS="-sk"
+
+            echo "📡 [DEBUG] Prod webhook URL: $WEBHOOK_URL"
+            echo "📡 [DEBUG] Secret length: ${#MONO_WEBHOOK_SECRET} chars"
+            RESPONSE=$(curl $CURL_OPTS -w "\n%{http_code}" -X POST "$WEBHOOK_URL" \
+              -H "Content-Type: application/json" \
+              -H "X-Webhook-Secret: $MONO_WEBHOOK_SECRET" \
+              -d "{\"environment\": \"production\", \"branch\": \"$BRANCH\", \"commit\": \"$COMMIT_SHA\", \"devops_api_url\": \"$DEVOPS_API_URL\", \"devops_webhook_secret\": \"$DEVOPS_WEBHOOK_SECRET\"}" \
+              --max-time 30 2>&1 || echo "000")
+
+            HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+            BODY=$(echo "$RESPONSE" | head -n -1)
+            echo "📡 [DEBUG] Webhook HTTP: $HTTP_CODE"
+            echo "📡 [DEBUG] Webhook response: $BODY"
+
+            if [ "$HTTP_CODE" -ge 200 ] 2>/dev/null && [ "$HTTP_CODE" -lt 300 ] 2>/dev/null; then
+              echo "✅ Webhook triggered (HTTP $HTTP_CODE)"
+            else
+              echo "::error::❌ Webhook FAILED for $CLIENT (HTTP $HTTP_CODE): $BODY"
+              FAILED=1
+            fi
+          done
+
+          if [ "$FAILED" -ne 0 ]; then
+            echo "⚠️ Some deployments had issues."
+          fi
+
+      - name: 📊 Deployment Summary
+        if: always()
+        run: |
+          echo "## 🚀 Mono-Repo Production Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | production |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Deploy All** | ${{ needs.detect-scope.outputs.deploy_all }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Affected** | ${{ needs.detect-scope.outputs.affected_clients || 'All mono-repo clients' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Triggered By** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: 🏷️ Resolve Client Display Names
+        if: always()
+        id: prod-names
+        env:
+          AFFECTED: ${{ needs.detect-scope.outputs.affected_clients }}
+          DEPLOY_ALL: ${{ needs.detect-scope.outputs.deploy_all }}
+        run: |
+          if [ "$DEPLOY_ALL" = "true" ]; then
+            CLIENTS=$(ls config/clients/*.json | xargs -I{} basename {} .json | grep -v 'default' | grep -v 'schema')
+          else
+            CLIENTS=$(echo "$AFFECTED" | jq -r '.[]' 2>/dev/null || echo "")
+          fi
+          NAMES=""
+          for CLIENT in $CLIENTS; do
+            CONFIG="config/clients/${CLIENT}.json"
+            NAME=$(jq -r '.client_name // empty' "$CONFIG" 2>/dev/null)
+            [ -z "$NAME" ] && NAME="$CLIENT"
+            [ -n "$NAMES" ] && NAMES="${NAMES}, "
+            NAMES="${NAMES}${NAME}"
+          done
+          [ -z "$NAMES" ] && NAMES="All mono-repo clients"
+          echo "display_names=$NAMES" >> $GITHUB_OUTPUT
+          echo "🏷️ Display names: $NAMES"
+
+      - name: 📧 Trigger Pending Approval Notification
+        if: always() && steps.prod-approval.outcome == 'failure'
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: Logimax-Technologies/etail_development_src
+          event-type: deployment-pending
+          client-payload: |
+            {
+              "server": "${{ steps.prod-approval.outputs.display_names || steps.prod-names.outputs.display_names }}",
+              "environment": "production",
+              "branch": "${{ github.ref_name }}",
+              "commit": "${{ github.sha }}",
+              "message": "${{ github.event.head_commit.message || '' }}",
+              "timestamp": "${{ github.event.head_commit.timestamp || '' }}",
+              "deployer": "${{ github.actor }}",
+              "deploy_type": "mono-repo"
+            }
+
+      # NOTE: Production deploy notification email is now sent server-side
+      # by webhook-deploy.php → DevOps API /deploy-log → email service.
+      # Removed premature GitHub Actions dispatch (fired before deploy completed).
+
+      # NOTE: Premature status update REMOVED — this step reported job.status
+      # ("success" = webhook HTTP 200), NOT the actual deploy result.
+      # Real deploy status is reported server-side by:
+      #   Production: deploy-mono.sh → DevOps API /mono-deploy (start/end)

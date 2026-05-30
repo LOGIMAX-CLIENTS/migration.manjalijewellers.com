@@ -1,0 +1,328 @@
+name: 📧 Production Deployment Report
+# Detailed HTML email report for Production (symlink) deployments only
+
+on:
+  repository_dispatch:
+    types: [production-deployed]
+  workflow_dispatch:
+    inputs:
+      status:
+        description: 'Status'
+        required: true
+        default: 'success'
+      environment:
+        description: 'Environment'
+        required: true
+        default: 'Production'
+
+jobs:
+  send-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: 📊 Prepare Report
+        id: data
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            STATUS="${{ github.event.client_payload.status }}"
+            ENVIRONMENT="${{ github.event.client_payload.server }}"
+            BRANCH="${{ github.event.client_payload.branch }}"
+            COMMIT="${{ github.event.client_payload.commit }}"
+            # Dispatchers send 'deployer', fallback to 'user' for legacy compat
+            AUTHOR="${{ github.event.client_payload.deployer || github.event.client_payload.user }}"
+            TIMESTAMP="${{ github.event.client_payload.timestamp }}"
+            MESSAGE="${{ github.event.client_payload.message }}"
+            REPO="${{ github.event.client_payload.repository || github.repository }}"
+            RELEASE="${{ github.event.client_payload.release_id || 'N/A' }}"
+            PREVIOUS="${{ github.event.client_payload.previous_release || 'N/A' }}"
+          else
+            STATUS="${{ inputs.status }}"
+            ENVIRONMENT="${{ inputs.environment }}"
+            BRANCH="${{ github.ref_name }}"
+            COMMIT="${{ github.sha }}"
+            AUTHOR="${{ github.actor }}"
+            TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S %Z')"
+            MESSAGE="Manual trigger"
+            REPO="${{ github.repository }}"
+            RELEASE="N/A"
+            PREVIOUS="N/A"
+          fi
+          
+          # Case-insensitive status check
+          STATUS_LOWER=$(echo "$STATUS" | tr '[:upper:]' '[:lower:]')
+          if [[ "$STATUS_LOWER" == "success" ]] || [[ "$STATUS_LOWER" == "completed" ]]; then
+            ICON="✅"
+            STATUS_COLOR="#28a745"
+            STATUS_BG="#d4edda"
+            STATUS_DISPLAY="SUCCESS"
+          else
+            ICON="❌"
+            STATUS_COLOR="#dc3545"
+            STATUS_BG="#f8d7da"
+            STATUS_DISPLAY="FAILED"
+          fi
+          
+          echo "status=$STATUS_DISPLAY" >> $GITHUB_OUTPUT
+          echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "commit=$COMMIT" >> $GITHUB_OUTPUT
+          echo "author=$AUTHOR" >> $GITHUB_OUTPUT
+          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+          echo "message=$MESSAGE" >> $GITHUB_OUTPUT
+          echo "repo=$REPO" >> $GITHUB_OUTPUT
+          echo "release=$RELEASE" >> $GITHUB_OUTPUT
+          echo "previous=$PREVIOUS" >> $GITHUB_OUTPUT
+          echo "icon=$ICON" >> $GITHUB_OUTPUT
+          echo "color=$STATUS_COLOR" >> $GITHUB_OUTPUT
+          echo "bg=$STATUS_BG" >> $GITHUB_OUTPUT
+
+      - name: 🗄 Fetch Migration Status
+        id: migrations
+        continue-on-error: true
+        env:
+          DEVOPS_URL: ${{ secrets.DEVOPS_API_URL }}
+          DEVOPS_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+        run: |
+          MIGRATION_APPLIED="0"
+          MIGRATION_FAILED="0"
+          MIGRATION_LATEST="None"
+          MIGRATION_STATUS="no_data"
+
+          if [ -n "$DEVOPS_URL" ] && [ -n "$DEVOPS_SECRET" ]; then
+            echo "📡 [DEBUG] Fetching migration status: URL=${DEVOPS_URL}/api/webhooks/migration-status"
+            # The server field contains client display name(s)
+            # Try to get migration status from DevOps API
+            RESPONSE=$(curl -s -w "\n%{http_code}" --max-time 10 \
+              -H "Content-Type: application/json" \
+              -H "X-Webhook-Secret: $DEVOPS_SECRET" \
+              "${DEVOPS_URL}/api/webhooks/migration-status" 2>&1 || echo '{}\n000')
+
+            M_HTTP=$(echo "$RESPONSE" | tail -1)
+            M_BODY=$(echo "$RESPONSE" | head -n -1)
+            echo "📡 [DEBUG] Migration HTTP: $M_HTTP"
+            echo "📡 [DEBUG] Migration response: $M_BODY"
+
+            if echo "$M_BODY" | jq -e '.success' > /dev/null 2>&1; then
+              # Sum up migration stats across all clients in this deploy
+              MIGRATION_APPLIED=$(echo "$M_BODY" | jq '[.data.clients[] | select(.environment=="production") | .total_applied // 0] | add // 0' 2>/dev/null || echo "0")
+              MIGRATION_FAILED=$(echo "$M_BODY" | jq '[.data.clients[] | select(.environment=="production") | .total_failed // 0] | add // 0' 2>/dev/null || echo "0")
+              MIGRATION_LATEST=$(echo "$M_BODY" | jq -r '[.data.clients[] | select(.environment=="production")] | sort_by(.latest_applied_at) | last | .latest_migration // "None"' 2>/dev/null || echo "None")
+
+              if [ "$MIGRATION_FAILED" -gt 0 ]; then
+                MIGRATION_STATUS="failed"
+              elif [ "$MIGRATION_APPLIED" -gt 0 ]; then
+                MIGRATION_STATUS="success"
+              else
+                MIGRATION_STATUS="up_to_date"
+              fi
+            fi
+          fi
+
+          echo "applied=$MIGRATION_APPLIED" >> $GITHUB_OUTPUT
+          echo "failed=$MIGRATION_FAILED" >> $GITHUB_OUTPUT
+          echo "latest=$MIGRATION_LATEST" >> $GITHUB_OUTPUT
+          echo "status=$MIGRATION_STATUS" >> $GITHUB_OUTPUT
+
+      - name: 📧 Send Detailed Report
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER || 'smtp.gmail.com' }}
+          server_port: ${{ secrets.SMTP_PORT || '587' }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          from: "Production Deploy <${{ secrets.SMTP_USERNAME }}>"
+          to: ${{ secrets.DEPLOY_NOTIFY_EMAILS }}
+          subject: "${{ steps.data.outputs.icon }} [PRODUCTION] ${{ steps.data.outputs.status }} - ${{ steps.data.outputs.branch }}"
+          html_body: |
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; padding: 20px; margin: 0; }
+                .container { max-width: 650px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+                .header { background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%); color: #fff; padding: 35px; text-align: center; }
+                .header h1 { margin: 0; font-size: 28px; font-weight: 700; }
+                .header .subtitle { opacity: 0.9; font-size: 14px; margin-top: 8px; }
+                .status-badge { display: inline-block; margin-top: 20px; padding: 12px 30px; border-radius: 30px; font-weight: bold; font-size: 18px; background: ${{ steps.data.outputs.bg }}; color: ${{ steps.data.outputs.color }}; }
+                .content { padding: 30px; }
+                .section { margin-bottom: 25px; background: #f8f9fa; border-radius: 10px; padding: 20px; }
+                .section-title { font-size: 13px; color: #e94560; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; font-weight: 600; }
+                .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+                .info-item { background: #fff; padding: 12px 15px; border-radius: 8px; border: 1px solid #e9ecef; }
+                .info-label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+                .info-value { font-size: 15px; color: #333; font-weight: 600; margin-top: 4px; }
+                .commit-section { background: #2d2d42; color: #fff; border-radius: 10px; padding: 20px; margin-top: 20px; }
+                .commit-section .section-title { color: #ff6b6b; }
+                .commit-hash { font-family: 'Monaco', 'Consolas', monospace; background: #1a1a2e; padding: 10px 15px; border-radius: 6px; font-size: 13px; color: #00d97e; margin: 10px 0; display: inline-block; }
+                .commit-message { font-style: italic; color: #ccc; padding: 15px; background: #1a1a2e; border-radius: 6px; margin-top: 10px; border-left: 3px solid #e94560; }
+                .release-info { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+                .release-box { background: #1a1a2e; padding: 15px; border-radius: 8px; text-align: center; }
+                .release-label { font-size: 10px; color: #888; text-transform: uppercase; }
+                .release-value { font-size: 14px; color: #00d97e; font-family: monospace; margin-top: 5px; }
+                .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #e9ecef; }
+                .footer a { color: #e94560; text-decoration: none; font-weight: 500; }
+                .warning { background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 15px; margin-top: 20px; color: #856404; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1>🚀 Production Deployment</h1>
+                  <div class="subtitle">Zero-downtime Symlink Deployment</div>
+                  <div class="status-badge">${{ steps.data.outputs.icon }} ${{ steps.data.outputs.status }}</div>
+                </div>
+                
+                <div class="content">
+                  <div class="section">
+                    <div class="section-title">📦 Deployment Overview</div>
+                    <div class="info-grid">
+                      <div class="info-item">
+                        <div class="info-label">Environment</div>
+                        <div class="info-value">${{ steps.data.outputs.environment }}</div>
+                      </div>
+                      <div class="info-item">
+                        <div class="info-label">Branch</div>
+                        <div class="info-value">${{ steps.data.outputs.branch }}</div>
+                      </div>
+                      <div class="info-item">
+                        <div class="info-label">Deployed By</div>
+                        <div class="info-value">${{ steps.data.outputs.author }}</div>
+                      </div>
+                      <div class="info-item">
+                        <div class="info-label">Timestamp</div>
+                        <div class="info-value">${{ steps.data.outputs.timestamp }}</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="commit-section">
+                    <div class="section-title">📝 Commit Details</div>
+                    <div>
+                      <strong style="color:#888">Commit Hash:</strong>
+                      <div class="commit-hash">${{ steps.data.outputs.commit }}</div>
+                    </div>
+                    <div class="commit-message">
+                      "${{ steps.data.outputs.message }}"
+                    </div>
+                    <div class="release-info">
+                      <div class="release-box">
+                        <div class="release-label">Current Release</div>
+                        <div class="release-value">${{ steps.data.outputs.release }}</div>
+                      </div>
+                      <div class="release-box">
+                        <div class="release-label">Previous Release</div>
+                        <div class="release-value">${{ steps.data.outputs.previous }}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="section" style="margin-top: 20px;">
+                    <div class="section-title">🗄 Database Migrations</div>
+                    <div class="info-grid">
+                      <div class="info-item">
+                        <div class="info-label">Status</div>
+                        <div class="info-value" style="color: ${{ steps.migrations.outputs.status == 'failed' && '#dc3545' || steps.migrations.outputs.status == 'success' && '#28a745' || '#666' }}">
+                          ${{ steps.migrations.outputs.status == 'failed' && '❌ Failed' || steps.migrations.outputs.status == 'success' && '✅ Applied' || steps.migrations.outputs.status == 'up_to_date' && '✅ Up to Date' || 'ℹ️ No Data' }}
+                        </div>
+                      </div>
+                      <div class="info-item">
+                        <div class="info-label">Applied</div>
+                        <div class="info-value">${{ steps.migrations.outputs.applied }} migration(s)</div>
+                      </div>
+                      <div class="info-item" style="grid-column: span 2">
+                        <div class="info-label">Latest Migration</div>
+                        <div class="info-value" style="font-family: 'Monaco', 'Consolas', monospace; font-size: 13px;">${{ steps.migrations.outputs.latest }}</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="warning">
+                    ⚠️ <strong>Rollback Available:</strong> If issues occur, run <code>./rollback.sh</code> on the server to instantly revert to the previous release.
+                    <br><br>
+                    🗄 <strong>Migration Note:</strong> If migrations were applied, a code rollback will NOT revert schema changes. Contact the DevOps team for manual DB rollback if needed.
+                  </div>
+                </div>
+                
+                <div class="footer">
+                  <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">View in GitHub Actions</a>
+                  &nbsp;|&nbsp;
+                  <a href="https://github.com/${{ github.repository }}/commits/${{ steps.data.outputs.branch }}">View Commits</a>
+                  <br><br>
+                  🔒 This is a production deployment notification.
+                </div>
+              </div>
+            </body>
+            </html>
+
+      - name: 📋 GitHub Summary
+        if: always()
+        run: |
+          echo "## ${{ steps.data.outputs.icon }} Production Deployment Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | **${{ steps.data.outputs.status }}** |" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | ${{ steps.data.outputs.environment }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | ${{ steps.data.outputs.branch }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Author | ${{ steps.data.outputs.author }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ steps.data.outputs.commit }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Message | ${{ steps.data.outputs.message }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Release | ${{ steps.data.outputs.release }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Migrations Applied | ${{ steps.migrations.outputs.applied }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Migrations Failed | ${{ steps.migrations.outputs.failed }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Latest Migration | ${{ steps.migrations.outputs.latest }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: 📊 Log to DevOps Dashboard
+        if: always()
+        continue-on-error: true
+        run: |
+          STATUS="${{ steps.data.outputs.status }}"
+          ENVIRONMENT="${{ steps.data.outputs.environment }}"
+          BRANCH="${{ steps.data.outputs.branch }}"
+          COMMIT="${{ steps.data.outputs.commit }}"
+          AUTHOR="${{ steps.data.outputs.author }}"
+          MESSAGE="${{ steps.data.outputs.message }}"
+          RELEASE="${{ steps.data.outputs.release }}"
+          
+          # Map status to lowercase
+          if [[ "$STATUS" == "SUCCESS" ]]; then
+            DB_STATUS="success"
+          else
+            DB_STATUS="failed"
+          fi
+          
+          DEVOPS_URL="${{ secrets.DEVOPS_API_URL }}"
+          DEVOPS_SECRET="${{ secrets.WEBHOOK_SECRET }}"
+          
+          if [ -z "$DEVOPS_URL" ]; then
+            echo "⚠️ DEVOPS_API_URL not set — skipping"
+            exit 0
+          fi
+          
+          echo "📡 [DEBUG] Logging prod deploy to DevOps: URL=$DEVOPS_URL/api/webhooks/deploy-log"
+          RPT_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$DEVOPS_URL/api/webhooks/deploy-log" \
+            -H "Content-Type: application/json" \
+            -H "X-Webhook-Secret: $DEVOPS_SECRET" \
+            -d "{
+              \"client_id\": \"source\",
+              \"client_name\": \"${{ github.repository }}\",
+              \"environment\": \"production\",
+              \"status\": \"$DB_STATUS\",
+              \"branch\": \"$BRANCH\",
+              \"commit_sha\": \"$COMMIT\",
+              \"commit_message\": \"$MESSAGE (Release: $RELEASE)\",
+              \"triggered_by\": \"$AUTHOR\",
+              \"trigger_type\": \"github_action\",
+              \"deploy_type\": \"source\"
+            }" --max-time 10 2>&1 || echo "000")
+          
+          R_HTTP=$(echo "$RPT_RESPONSE" | tail -1)
+          R_BODY=$(echo "$RPT_RESPONSE" | head -n -1)
+          echo "📡 [DEBUG] DevOps HTTP: $R_HTTP"
+          echo "📡 [DEBUG] DevOps response: $R_BODY"
+          if [ "$R_HTTP" -lt 200 ] 2>/dev/null || [ "$R_HTTP" -ge 300 ] 2>/dev/null; then
+            echo "::warning::DevOps dashboard log failed (HTTP $R_HTTP): $R_BODY"
+          else
+            echo "📊 Logged production deployment to DevOps dashboard"
+          fi

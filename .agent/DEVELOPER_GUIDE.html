@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Bug Remediation System — How It Works</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            color: #1a1a2e;
+            background: #fff;
+            line-height: 1.6;
+            font-size: 12.5px;
+        }
+        
+        @media print {
+            body { font-size: 10.5px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none; }
+            .section { break-inside: avoid; }
+        }
+        
+        .container { max-width: 900px; margin: 0 auto; padding: 24px; }
+        
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: white;
+            padding: 30px 35px;
+            border-radius: 14px;
+            margin-bottom: 24px;
+        }
+        .header h1 { font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+        .header .subtitle { font-size: 13px; opacity: 0.85; }
+        .header .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 3px 10px;
+            border-radius: 16px;
+            font-size: 10px;
+            margin-top: 8px;
+        }
+        
+        .section {
+            margin-bottom: 22px;
+            border: 1px solid #e8e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .section-header {
+            background: #f7f7fb;
+            padding: 11px 16px;
+            border-bottom: 1px solid #e8e8f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-header .num {
+            background: #0f3460;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+        .section-header h2 { font-size: 14px; font-weight: 700; }
+        .section-body { padding: 14px 16px; }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 8px 0;
+            font-size: 11px;
+        }
+        th {
+            background: #f0f0f8;
+            text-align: left;
+            padding: 6px 10px;
+            font-weight: 600;
+            border-bottom: 2px solid #ddd;
+        }
+        td {
+            padding: 5px 10px;
+            border-bottom: 1px solid #eee;
+            vertical-align: top;
+        }
+        tr:hover { background: #fafafe; }
+        
+        .flow-box {
+            background: #f7f9fc;
+            border: 2px solid #e0e4f0;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin: 6px 0;
+        }
+        .flow-box.highlight {
+            border-color: #0f3460;
+            background: #eef2ff;
+        }
+        .flow-box h4 {
+            font-size: 12px;
+            color: #0f3460;
+            margin-bottom: 4px;
+        }
+        .flow-arrow {
+            text-align: center;
+            font-size: 18px;
+            color: #0f3460;
+            margin: 2px 0;
+        }
+        
+        .alert {
+            padding: 10px 14px;
+            border-radius: 6px;
+            margin: 8px 0;
+            font-size: 11px;
+        }
+        .alert-warn { background: #fff8e1; border-left: 4px solid #ffa000; }
+        .alert-info { background: #e3f2fd; border-left: 4px solid #1565c0; }
+        .alert-danger { background: #fce4ec; border-left: 4px solid #c62828; }
+        .alert-success { background: #e8f5e9; border-left: 4px solid #2e7d32; }
+        
+        code {
+            background: #f0f0f5;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-family: 'Consolas', monospace;
+            font-size: 10.5px;
+        }
+        pre {
+            background: #1a1a2e;
+            color: #e0e0e0;
+            padding: 10px 14px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 8px 0;
+            font-size: 10.5px;
+            line-height: 1.5;
+        }
+        pre.light {
+            background: #f7f9fc;
+            color: #1a1a2e;
+            border: 2px solid #e0e4f0;
+        }
+        
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .tag {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: 600;
+        }
+        .tag-red { background: #fce4ec; color: #c62828; }
+        .tag-blue { background: #e3f2fd; color: #0d47a1; }
+        .tag-green { background: #e8f5e9; color: #1b5e20; }
+        .tag-purple { background: #f3e5f5; color: #6a1b9a; }
+        
+        .checklist { list-style: none; padding: 0; }
+        .checklist li {
+            padding: 3px 0 3px 20px;
+            position: relative;
+        }
+        .checklist li::before {
+            content: '☐';
+            position: absolute;
+            left: 0;
+            font-size: 12px;
+        }
+        
+        h3 { font-size: 13px; color: #0f3460; margin: 10px 0 6px; }
+        p { margin: 4px 0; }
+
+        .example-box {
+            background: #f0f7ff;
+            border: 1px solid #b3d4fc;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin: 6px 0;
+            font-size: 11px;
+        }
+        .example-box strong { color: #0d47a1; }
+        
+        .footer {
+            text-align: center;
+            margin-top: 24px;
+            padding: 12px;
+            color: #888;
+            font-size: 10px;
+            border-top: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- HEADER -->
+    <div class="header">
+        <h1>🛡️ AI Bug Remediation System</h1>
+        <div class="subtitle">How It Works — Workflows, Knowledge Brain & Step-by-Step Guide</div>
+        <div class="badge">📖 Read this before using the system for the first time</div>
+    </div>
+
+    <!-- SECTION 1: WHAT IS THIS -->
+    <div class="section">
+        <div class="section-header">
+            <div class="num">1</div>
+            <h2>What Is This System?</h2>
+        </div>
+        <div class="section-body">
+            <p>This is a new <strong>AI-assisted bug finding and fixing system</strong> layered on top of our existing codebase. It adds structured knowledge and repeatable workflows:</p>
+            <div class="two-col" style="margin-top: 8px;">
+                <div class="flow-box">
+                    <h4>📚 Knowledge Brain</h4>
+                    <p>Documents describing how each module works — business rules, database tables, methods, and risks.</p>
+                    <p><strong>Location:</strong> <code>knowledge_brain/</code></p>
+                </div>
+                <div class="flow-box">
+                    <h4>⚙️ Workflows</h4>
+                    <p>Step-by-step procedures to find, fix, test, and document bugs consistently.</p>
+                    <p><strong>Location:</strong> <code>.agent/workflows/</code></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: FIRST DAY -->
+    <div class="section">
+        <div class="section-header">
+            <div class="num">2</div>
+            <h2>Before You Start — Read These 5 Files</h2>
+        </div>
+        <div class="section-body">
+            <table>
+                <tr><th>#</th><th>File</th><th>Why</th></tr>
+                <tr><td>1</td><td><code>.agent/config.md</code></td><td>Verify project root, PHP path, URLs</td></tr>
+                <tr><td>2</td><td><code>_SYSTEM/SYSTEM_COVERAGE.md</code></td><td>Which modules have documentation</td></tr>
+                <tr><td>3</td><td><code>_SYSTEM/TAG_STATUS_MAP.md</code></td><td>The most critical shared data</td></tr>
+                <tr><td>4</td><td><code>_SYSTEM/SHARED_TABLES.md</code></td><td>Which DB tables are dangerous</td></tr>
+                <tr><td>5</td><td><code>.agent/workflows/00-INDEX.md</code></td><td>All available workflows</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- SECTION 3: WORKFLOW EXAMPLES -->
+    <div class="section">
+        <div class="section-header">
+            <div class="num">3</div>
+            <h2>How To Call Each Workflow — With Examples</h2>
+        </div>
+        <div class="section-body">
+
+            <!-- Build Module Brain -->
+            <h3>🔨 /build-module-brain — Build Knowledge For a Module</h3>
+            <table>
+                <tr><th>Input</th><th>Example</th></tr>
+                <tr><td>Module name</td><td>Sales</td></tr>
+                <tr><td>Controller</td><td><code>application/controllers/admin_ret_sales.php</code></td></tr>
+                <tr><td>Model</td><td><code>application/models/ret_sales_model.php</code></td></tr>
+                <tr><td>JS file</td><td><code>assets/js/sales.js</code></td></tr>
+                <tr><td>View folder</td><td><code>application/views/admin/sales/</code></td></tr>
+            </table>
+            <div class="example-box">
+                <strong>Say:</strong> "Build a module brain for the <strong>Sales</strong> module. Controller: <code>admin_ret_sales.php</code>, Model: <code>ret_sales_model.php</code>, JS: <code>sales.js</code>"
+            </div>
+            <div class="alert alert-warn">
+                <strong>Rounds:</strong> Keep running until <code>COVERAGE_TRACKER.md</code> = 100%. Usually 3-6 rounds.
+            </div>
+
+            <!-- Bug Intake Triage -->
+            <h3>📋 /bug-intake-triage — Classify a New Bug</h3>
+            <table>
+                <tr><th>Input</th><th>Example</th></tr>
+                <tr><td>Module</td><td>Estimation</td></tr>
+                <tr><td>Bug description</td><td>"Partial tag shows full weight instead of partial"</td></tr>
+                <tr><td>Reporter</td><td>Client / QA / Internal</td></tr>
+                <tr><td>Environment</td><td>Production</td></tr>
+            </table>
+            <div class="example-box">
+                <strong>Say:</strong> "Triage this bug: In <strong>Estimation</strong>, partial tag calculation type 3 shows wrong weight. Reported by <strong>client</strong> on production."
+            </div>
+            <p><strong>Output:</strong> Bug ID (e.g., <code>EST-CLT01</code>), severity (P0-P3), track (A/B)</p>
+
+            <!-- Fix Single Bug -->
+            <h3>🔧 /fix-single-bug — Fix One Bug</h3>
+            <table>
+                <tr><th>Input</th><th>Example</th></tr>
+                <tr><td>Bug ID</td><td><code>EST-CLT01</code> (from triage)</td></tr>
+            </table>
+            <div class="example-box">
+                <strong>Say:</strong> "Fix bug <strong>EST-CLT01</strong> — partial tag weight calculation error"
+            </div>
+
+            <div class="two-col">
+                <div>
+                    <!-- Fix Architecture Bug -->
+                    <h3>🔬 /fix-architecture-bug (Track A)</h3>
+                    <div class="example-box">
+                        <strong>Say:</strong> "Fix architecture bug <strong>TAG-R201</strong> — SQL injection in stock issue model"<br>
+                        <span class="tag tag-blue">AI fixes → Human approves diff</span>
+                    </div>
+                </div>
+                <div>
+                    <!-- Fix Business Bug -->
+                    <h3>📊 /fix-business-bug (Track B)</h3>
+                    <div class="example-box">
+                        <strong>Say:</strong> "Fix business bug <strong>BIL-CLT03</strong> — loyalty points not deducted"<br>
+                        <span class="tag tag-purple">Human validates logic → Then AI applies</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Other workflows -->
+            <h3>Other Workflows</h3>
+            <table>
+                <tr><th>Workflow</th><th>Input</th><th>Example Call</th></tr>
+                <tr><td><code>/test-and-verify</code></td><td>Bug ID</td><td>"Test and verify fix for <strong>EST-CLT01</strong>"</td></tr>
+                <tr><td><code>/learn-and-improve</code></td><td>Bug ID</td><td>"Run learn and improve for <strong>EST-CLT01</strong>"</td></tr>
+                <tr><td><code>/build-system-brain</code></td><td>Mode</td><td>"Build system brain — <strong>initial build</strong>" or "— <strong>incremental add</strong>"</td></tr>
+                <tr><td><code>/module-bug-audit</code></td><td>Module name</td><td>"Run full bug audit on <strong>Estimation</strong>"</td></tr>
+                <tr><td><code>/setup-existing-client</code></td><td>Client + path</td><td>"Set up for <strong>ABC Jewellers</strong> at <code>C:\...\ABC</code>"</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- SECTION 4: THE FLOW -->
+    <div class="section">
+        <div class="section-header">
+            <div class="num">4</div>
+            <h2>The Complete Flow — Three Phases</h2>
+        </div>
+        <div class="section-body">
+
+            <h3>🔷 Phase A: Build Knowledge (Before You Can Fix Bugs)</h3>
+            <div class="flow-box highlight">
+                <h4>Run <code>/build-module-brain</code> (give: module name + file paths)</h4>
+                <table>
+                    <tr><th>Round</th><th>Coverage</th><th>What's Added</th></tr>
+                    <tr><td>1</td><td>~50%</td><td>Module overview, method index</td></tr>
+                    <tr><td>2</td><td>~75%</td><td>AJAX map, security, schema, settings</td></tr>
+                    <tr><td>3</td><td>~95%</td><td>Business rules, views, model deep index</td></tr>
+                    <tr><td>4+</td><td>→ 100%</td><td>Data flows, cross-module map, forensic template</td></tr>
+                </table>
+                <div class="alert alert-warn" style="margin-bottom: 0;">
+                    <strong>⚠️ Keep running rounds until COVERAGE_TRACKER.md = 100%</strong>
+                </div>
+            </div>
+
+            <h3>🔷 Phase B: Build Cross-Module Knowledge (After 3+ Module Brains)</h3>
+            <div class="flow-box">
+                <h4>Run <code>/build-system-brain</code> → Creates 11 documents in <code>_SYSTEM/</code></h4>
+                <p>Re-run in "Incremental Add" mode (5 min) after each new module brain.</p>
+            </div>
+
+            <h3>🔷 Phase C: Fix Bugs (Daily Work)</h3>
+            
+            <div class="flow-box" style="border-color: #c62828;">
+                <h4>Step 1: <code>/bug-intake-triage</code> — Classify</h4>
+                <p>Give: description + module → Get: Bug ID + severity + track</p>
+            </div>
+            <div class="flow-arrow">↓</div>
+            
+            <div class="flow-box highlight">
+                <h4>Step 2: <code>/fix-single-bug</code> — Fix (give: Bug ID)</h4>
+                <p>Diagnose → Locate → Assess → Fix → Syntax Check → Test → Approval → Close</p>
+            </div>
+            <div class="flow-arrow">↓</div>
+            
+            <div class="flow-box">
+                <h4>Step 3: <code>/test-and-verify</code> + <code>/learn-and-improve</code></h4>
+                <p>Test the fix → Update brain + patterns → Close GitHub issue</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: RULES -->
+    <div class="section">
+        <div class="section-header">
+            <div class="num">5</div>
+            <h2>Important Rules — Before / During / After Code Changes</h2>
+        </div>
+        <div class="section-body">
+            <div class="two-col">
+                <div>
+                    <h3>Before ANY Change</h3>
+                    <ul class="checklist">
+                        <li>Read module brain</li>
+                        <li>Check <code>SHARED_TABLES.md</code></li>
+                        <li>Check <code>TAG_STATUS_MAP.md</code> if tag_status involved</li>
+                        <li>Check <code>CLEANUP_GAPS.md</code> if delete/cancel</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>During Changes</h3>
+                    <ul class="checklist">
+                        <li>CI3 query builder — no raw SQL</li>
+                        <li>No magic numbers</li>
+                        <li>Business logic in models</li>
+                        <li><code>parseFloat()</code> + <code>toFixed(2)</code> for money</li>
+                        <li>Server-side validation always</li>
+                    </ul>
+                </div>
+            </div>
+            <h3>After Changes</h3>
+            <ul class="checklist">
+                <li>Run <code>/learn-and-improve</code></li>
+                <li>Update GitHub Issue</li>
+                <li>Update <code>ACTIVE_BUGS.md</code></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- SECTION 6: DONT'S -->
+    <div class="section">
+        <div class="section-header">
+            <div class="num">6</div>
+            <h2>Common Mistakes to Avoid</h2>
+        </div>
+        <div class="section-body">
+            <table>
+                <tr><th>❌ Never</th><th>✅ Instead</th></tr>
+                <tr><td>Fix without reading the brain</td><td>Read <code>MODULE_BRAIN.md</code> + <code>_SYSTEM/</code></td></tr>
+                <tr><td>Write raw SQL</td><td>Use CI3 query builder</td></tr>
+                <tr><td>Use magic numbers: <code>where('status', 1)</code></td><td>Use constants or comments</td></tr>
+                <tr><td>Copy-paste a function</td><td>Extend with a parameter</td></tr>
+                <tr><td>Skip <code>/learn-and-improve</code></td><td>Always run it after fixes</td></tr>
+                <tr><td>Hardcode dates, UIDs, tax rates</td><td>Use <code>ret_settings</code> or config</td></tr>
+                <tr><td>Trust client form values</td><td>Recalculate server-side</td></tr>
+                <tr><td>Put logic in controllers</td><td>Business logic in models</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- SECTION 7: GLOSSARY + BIG PICTURE -->
+    <div class="section">
+        <div class="section-header">
+            <div class="num">7</div>
+            <h2>Glossary & Big Picture</h2>
+        </div>
+        <div class="section-body">
+            <table>
+                <tr><th>Term</th><th>What It Means</th></tr>
+                <tr><td><strong>Module Brain</strong></td><td>8-14 docs describing ONE module's code, rules, and risks</td></tr>
+                <tr><td><strong>System Brain</strong></td><td>11 cross-module docs showing interactions & risks (<code>_SYSTEM/</code>)</td></tr>
+                <tr><td><strong>Coverage Tracker</strong></td><td>Checklist showing % documented. 100% = brain is done</td></tr>
+                <tr><td><strong>Track A</strong></td><td>System bugs — AI fixes, human approves diff</td></tr>
+                <tr><td><strong>Track B</strong></td><td>Business bugs — Human validates logic first</td></tr>
+                <tr><td><strong>P0 Critical</strong></td><td>Money wrong / data loss → Fix same day</td></tr>
+                <tr><td><strong>P1 Major</strong></td><td>Wrong display / broken rules → Fix in 3 days</td></tr>
+                <tr><td><strong>P2 Minor</strong></td><td>Edge cases → Fix next sprint</td></tr>
+                <tr><td><strong>Pattern Library</strong></td><td>Reusable fix templates. Check before writing new fixes</td></tr>
+                <tr><td><strong>Graceful Fallback</strong></td><td>If <code>_SYSTEM/</code> missing, workflows skip those steps</td></tr>
+            </table>
+
+            <pre class="light" style="margin-top: 12px;">
+  Phase A: Build Module Brains (until COVERAGE_TRACKER = 100%)
+          │
+          ▼
+  Phase B: Build System Brain (when 3+ brains exist)
+          │
+          ▼
+  Phase C: Fix Bugs (daily)
+  /bug-intake-triage → /fix-single-bug → /test-and-verify → /learn-and-improve
+          │                                                          │
+          └──────────────────────────────────────────────────────────┘
+                    Brain stays current through the feedback loop
+            </pre>
+            <div class="alert alert-success">
+                <strong>✅ The system gets smarter over time.</strong> Every bug fixed → brain updated → next fix faster.
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>AI Bug Remediation System — How It Works v3.0</p>
+        <p>Generated: 2026-03-05 | To save as PDF: Open in Chrome → Ctrl+P → "Save as PDF"</p>
+    </div>
+
+</div>
+
+</body>
+</html>

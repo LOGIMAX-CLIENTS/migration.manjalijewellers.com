@@ -1,0 +1,136 @@
+# =============================================================================
+# SYNC TO LOGIMAX-CLIENTS ORGANIZATION
+# Dropdown filtered to LOGIMAX-CLIENTS repos only
+# =============================================================================
+
+name: 🔄 Sync to LOGIMAX-CLIENTS
+
+on:
+  workflow_dispatch:
+    inputs:
+      client_repo:
+        description: 'Select client repository'
+        required: true
+        type: choice
+        options:
+          - adamsjewellers.com
+          - aiswaryamthangamaligai.com
+          - anbgoldanddiamonds.com
+          - anigalifestyle.com-
+          - bjsjewellery.com
+          - chiraakjewelleryhouse.in
+          - cpljewellers.com
+          - dineshjewellery.in
+          - djmjewels.in
+          - edja.in
+          - erp.aumvallivilasjewellers.com
+          - erp.harijewellery.in
+          - erp.konikajewellery.com
+          - erp.kvtjewellers.com
+          - erp.lakshmanaacharison.in
+          - erp.manepally.com
+          - erp.rhrjewellers.com
+          - erp.shridhisilver.com
+          - erp.silvergallerie.com
+          - erp.sparqlediamonds.com
+          - erp.sriammanjewellers.in
+          - erp.sriganeshjewels.com
+          - erp.srjewellery.in
+          - erp.srivenkateswari.com
+          - gokulamjewels.com
+          - grsamichettyjewellers.com
+          - gulabparadise.com
+          - harrisnadarjewellery.com
+          - jaimahaveerjewellery.com
+          - jeweloneretail.in
+          - kamadhenujewelstvm.com
+          - karpagamjewels.com
+          - khazanchijewels.com
+          - khimjidhanlaxmi.com
+          - kovainprjewellery.com
+          - lezilver.balajijewellery.co.in
+          - logimaxindia.com
+          - lskjewellers.com
+          - ltmjewellers.com
+          - manjalijewellers.in
+          - migration.coimbatorejewellers.in
+          - migration.gulabparadise.com
+          - migration.sreekumaranjewellers.com
+          - mydeengovindarajanjewellers.com
+          - nacquickplan.com
+          - namasrinivasajewellers.com
+          - navratnajewellery
+          - newkarpagamjewellery.com
+          - nprthangamaligai.in
+          - nskjewels.com
+          - php8.logimaxindia.com
+          - plans.sriaumjewellery.com
+          - pondythangamaaligai.com
+          - prashwajewels.com
+          - radhajewellers.com
+          - radhajewellers.com-migration
+          - ragavendrajewellers.in
+          - retail.coimbatorejewellers.in
+          - retail.ssmjewellery.in
+          - retail.sumangalijewellery.com
+          - rkjeweller.com
+          - sarangapani
+          - sarangapanijewels.com
+          - saravanaonline.com
+          - savingscheme.logimaxindia.com
+          - sayarjewellers.com
+          - schemes.theamethyststore.com
+          - shop.ariajewellers.in
+          - shop.gupthagem.com
+          - silver.chiraakjewelleryhouse.in
+          - silvers.ovcjewellers.com
+          - skjewels.in
+          - sktmonline.com
+          - sreemangallakshmijewells.com
+          - srijewels
+          - srisithivinayagarjewellers.com
+          - venkateshwaraafinegold.com
+          - vrsjewellery.com
+          - www.anbjewellers.in
+          - www.balajijewellery.co.in
+          - www.chinnannanjewellery.com
+          - www.dcnmjewels.com
+          - www.ovcjewellers.com
+          - www.rangasjewellery.com
+          - www.shriparvathamjewellery.com
+          - www.sktmjewellery.in
+          - www.thangalakshmijewellery.com
+      source_branch:
+        description: 'Source branch to sync from'
+        required: true
+        default: 'Production'
+        type: choice
+        options:
+          - Production
+          - support
+          - QA
+      target_branch:
+        description: 'Target branch in client repo'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+          - main
+      auto_merge:
+        description: 'Auto-merge if no conflicts'
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  sync:
+    uses: ./.github/workflows/sync-to-client.yml
+    with:
+      client_repo: ${{ inputs.client_repo }}
+      client_org: LOGIMAX-CLIENTS
+      source_branch: ${{ inputs.source_branch }}
+      target_branch: ${{ inputs.target_branch }}
+      auto_merge: ${{ inputs.auto_merge }}
+    secrets: inherit

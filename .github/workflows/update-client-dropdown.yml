@@ -1,0 +1,272 @@
+# =============================================================================
+# AUTO-UPDATE CLIENT DROPDOWN & SYNC NEW CLIENTS
+# 1. Regenerates dropdown options from clients/registry.json
+# 2. Detects new clients and triggers initial sync
+# Triggers: When registry.json changes OR manual trigger
+# =============================================================================
+
+name: 🔄 Update Client Dropdown
+
+on:
+  push:
+    paths:
+      - 'clients/registry.json'
+    branches:
+      - main
+      - Production
+  workflow_dispatch:
+    inputs:
+      skip_sync:
+        description: 'Skip auto-sync for new clients'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  update-dropdown:
+    runs-on: ubuntu-latest
+    # Prevent infinite loops - skip if triggered by bot commits
+    if: github.actor != 'github-actions[bot]'
+    permissions:
+      contents: write
+    outputs:
+      new_clients: ${{ steps.detect_new.outputs.new_clients }}
+      new_count: ${{ steps.detect_new.outputs.new_count }}
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 2  # Need previous commit to compare
+      
+      - name: 🔍 Detect New Clients
+        id: detect_new
+        run: |
+          echo "📋 Detecting new clients..."
+          
+          # Get current clients
+          CURRENT_CLIENTS=$(jq -r '.clients[].repo' clients/registry.json | sort)
+          
+          # Try to get previous version
+          if git show HEAD~1:clients/registry.json > /tmp/old_registry.json 2>/dev/null; then
+            PREVIOUS_CLIENTS=$(jq -r '.clients[].repo' /tmp/old_registry.json | sort)
+            
+            # Find new clients (in current but not in previous)
+            NEW_CLIENTS=$(comm -23 <(echo "$CURRENT_CLIENTS") <(echo "$PREVIOUS_CLIENTS"))
+            
+            if [ -n "$NEW_CLIENTS" ]; then
+              NEW_COUNT=$(echo "$NEW_CLIENTS" | wc -l)
+              echo "🆕 Found $NEW_COUNT new client(s):"
+              echo "$NEW_CLIENTS"
+              
+              # Convert to JSON array for output
+              NEW_JSON=$(echo "$NEW_CLIENTS" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+              echo "new_clients=$NEW_JSON" >> $GITHUB_OUTPUT
+              echo "new_count=$NEW_COUNT" >> $GITHUB_OUTPUT
+            else
+              echo "✅ No new clients detected"
+              echo "new_clients=[]" >> $GITHUB_OUTPUT
+              echo "new_count=0" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "⚠️ No previous version to compare - skipping new client detection"
+            echo "new_clients=[]" >> $GITHUB_OUTPUT
+            echo "new_count=0" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: 📋 Read All Clients
+        id: clients
+        run: |
+          echo "📋 Reading clients from registry.json..."
+          
+          # Extract all client repo names and format as YAML options
+          OPTIONS=$(jq -r '.clients[].repo' clients/registry.json | sort | awk '{print "          - " $0}')
+          COUNT=$(jq '.clients | length' clients/registry.json)
+          
+          echo "📦 Found $COUNT clients"
+          echo "$OPTIONS" > /tmp/client_options.txt
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+      
+      - name: 🔄 Update Sync Workflow Files
+        run: |
+          # Update sync-to-client.yml
+          WORKFLOW_FILE=".github/workflows/sync-to-client.yml"
+          echo "📝 Updating $WORKFLOW_FILE..."
+          
+          # Read the workflow file and replace the options section
+          # This is a simplified approach - replaces between markers
+          
+          # Create temp file with header
+          cat > /tmp/new_workflow.yml << 'HEADER'
+          # =============================================================================
+          # SYNC SOURCE CODE TO CLIENT REPOSITORIES
+          # Pushes latest source code to selected client repos
+          # Creates PR if conflicts exist, auto-merges if clean
+          # 
+          # ACCESS CONTROL:
+          # - Requires 'client-sync' environment approval
+          # - Client list from: clients/registry.json
+          # - All syncs are logged to dashboard
+          # =============================================================================
+
+          name: 🔄 Sync to Client
+
+          on:
+            workflow_call:
+              inputs:
+                client_repo:
+                  required: true
+                  type: string
+                client_org:
+                  required: true
+                  type: string
+                  default: 'LOGIMAX-CLIENTS'
+                source_branch:
+                  required: true
+                  type: string
+                  default: 'Production'
+                target_branch:
+                  required: true
+                  type: string
+                  default: 'staging'
+                auto_merge:
+                  required: false
+                  type: boolean
+                  default: true
+            workflow_dispatch:
+              inputs:
+                client_repo:
+                  description: 'Select client repository'
+                  required: true
+                  type: choice
+                  options:
+          HEADER
+          
+          # Append client options
+          cat /tmp/client_options.txt >> /tmp/new_workflow.yml
+          
+          # Append rest of inputs and workflow
+          cat >> /tmp/new_workflow.yml << 'MIDDLE'
+                client_org:
+                  description: 'Client organization'
+                  required: true
+                  default: 'LOGIMAX-CLIENTS'
+                  type: choice
+                  options:
+                    - LOGIMAX-CLIENTS
+                    - Logimax-Technologies
+                source_branch:
+                  description: 'Source branch to sync from'
+                  required: true
+                  default: 'Production'
+                  type: choice
+                  options:
+                    - Production
+                    - Retail_1.1.1.0001
+                    - support
+                    - QA
+                target_branch:
+                  description: 'Target branch in client repo'
+                  required: true
+                  default: 'staging'
+                  type: choice
+                  options:
+                    - staging
+                    - production
+                    - main
+                auto_merge:
+                  description: 'Auto-merge if no conflicts'
+                  required: true
+                  default: true
+                  type: boolean
+          MIDDLE
+          
+          # Get the rest of the original workflow (from 'env:' onwards)
+          sed -n '/^env:/,$p' "$WORKFLOW_FILE" >> /tmp/new_workflow.yml
+          
+          # Replace the file
+          mv /tmp/new_workflow.yml "$WORKFLOW_FILE"
+          
+          echo "✅ Updated $WORKFLOW_FILE"
+          
+          # Also update sync-logimax-clients.yml
+          if [ -f ".github/workflows/sync-logimax-clients.yml" ]; then
+            echo "📝 Updating sync-logimax-clients.yml..."
+            # Similar update for team-specific workflow
+          fi
+      
+      - name: 📝 Summary
+        run: |
+          echo "## 🔄 Client Dropdown Update" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Total Clients:** ${{ steps.clients.outputs.count }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.detect_new.outputs.new_count }}" != "0" ]; then
+            echo "### 🆕 New Clients Detected" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo '${{ steps.detect_new.outputs.new_clients }}' | jq -r '.[]' >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: 💾 Commit Changes
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          
+          if git diff --quiet .github/workflows/; then
+            echo "✅ No changes needed"
+          else
+            git add .github/workflows/
+            git commit -m "🔄 Auto-update: Client dropdown (${{ steps.clients.outputs.count }} clients)
+            
+            $(if [ '${{ steps.detect_new.outputs.new_count }}' != '0' ]; then echo 'New clients: ${{ steps.detect_new.outputs.new_clients }}'; fi)
+            Triggered by: ${{ github.actor }}"
+            git push
+          fi
+
+  # =========================================================================
+  # JOB 2: Auto-sync new clients
+  # =========================================================================
+  sync-new-clients:
+    needs: update-dropdown
+    if: needs.update-dropdown.outputs.new_count != '0' && inputs.skip_sync != true
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        client: ${{ fromJson(needs.update-dropdown.outputs.new_clients) }}
+      max-parallel: 2
+      fail-fast: false
+    
+    steps:
+      - name: 🚀 Trigger Sync for ${{ matrix.client }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            console.log('🚀 Triggering initial sync for: ${{ matrix.client }}');
+            
+            // Trigger the sync workflow
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'sync-to-client.yml',
+              ref: 'main',
+              inputs: {
+                client_repo: '${{ matrix.client }}',
+                client_org: 'LOGIMAX-CLIENTS',
+                source_branch: 'Production',
+                target_branch: 'staging',
+                auto_merge: 'false'  // Don't auto-merge initial sync
+              }
+            });
+            
+            console.log('✅ Sync triggered for ${{ matrix.client }}');
+      
+      - name: 📝 Log
+        run: |
+          echo "## 🆕 Initial Sync Triggered" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Client:** ${{ matrix.client }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Target:** LOGIMAX-CLIENTS/${{ matrix.client }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** Production → staging" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,324 @@
+# =============================================================================
+# SOURCE REPOSITORY DEPLOYMENT
+# Deploys source code to the 4 environments.
+#
+# Branch mapping:
+#   Retail_1.1.1.0001 → dev       (auto-deploy on push)
+#   QA                → qa        (auto-deploy on push)
+#   support           → staging   (DevOps Tool only — manual workflow_dispatch)
+#   PRODUCTION        → production (DevOps Tool only — manual workflow_dispatch)
+#
+# All environments run database migrations via scripts/run-migrations.sh
+# =============================================================================
+
+name: 🚀 Source Deploy
+
+on:
+  push:
+    branches:
+      - Retail_1.1.1.0001
+      - QA
+    paths:
+      - 'admin/**'
+      - 'database/**'
+      - 'scripts/**'
+      - 'features/**'
+      - 'config/**'
+
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options: [dev, qa, staging, production]
+      approval_source:
+        description: 'Who approved this deploy (devops = skip approval gate)'
+        required: false
+        default: ''
+        type: string
+
+# =============================================================================
+# ENVIRONMENT VARIABLES
+# =============================================================================
+env:
+  DEVOPS_API_URL: ${{ secrets.DEVOPS_API_URL }}
+  DEVOPS_WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  # ===========================================================================
+  # DETERMINE ENVIRONMENT
+  # ===========================================================================
+  determine-env:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.env.outputs.environment }}
+      branch: ${{ steps.env.outputs.branch }}
+      display_name: ${{ steps.env.outputs.display_name }}
+      needs_approval: ${{ steps.env.outputs.needs_approval }}
+    steps:
+      - name: 🔍 Determine Environment
+        id: env
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            ENV="${{ github.event.inputs.environment }}"
+          else
+            BRANCH="${{ github.ref_name }}"
+            case "$BRANCH" in
+              Retail_1.1.1.0001) ENV="dev" ;;
+              QA) ENV="qa" ;;
+              support) ENV="staging" ;;
+              PRODUCTION) ENV="production" ;;
+              *) echo "::error::Unknown branch: $BRANCH"; exit 1 ;;
+            esac
+          fi
+
+          case "$ENV" in
+            dev)
+              echo "environment=dev" >> $GITHUB_OUTPUT
+              echo "branch=Retail_1.1.1.0001" >> $GITHUB_OUTPUT
+              echo "display_name=Development" >> $GITHUB_OUTPUT
+              echo "needs_approval=false" >> $GITHUB_OUTPUT
+              ;;
+            qa)
+              echo "environment=qa" >> $GITHUB_OUTPUT
+              echo "branch=QA" >> $GITHUB_OUTPUT
+              echo "display_name=QA" >> $GITHUB_OUTPUT
+              echo "needs_approval=false" >> $GITHUB_OUTPUT
+              ;;
+            staging)
+              echo "environment=staging" >> $GITHUB_OUTPUT
+              echo "branch=support" >> $GITHUB_OUTPUT
+              echo "display_name=Staging" >> $GITHUB_OUTPUT
+              echo "needs_approval=true" >> $GITHUB_OUTPUT
+              ;;
+            production)
+              echo "environment=production" >> $GITHUB_OUTPUT
+              echo "branch=PRODUCTION" >> $GITHUB_OUTPUT
+              echo "display_name=Production" >> $GITHUB_OUTPUT
+              echo "needs_approval=true" >> $GITHUB_OUTPUT
+              ;;
+          esac
+          echo "📋 Environment: $ENV"
+
+  # ===========================================================================
+  # DEPLOY
+  # ===========================================================================
+  deploy:
+    needs: determine-env
+    runs-on: ubuntu-latest
+    if: needs.determine-env.outputs.environment != ''
+    environment: ${{ needs.determine-env.outputs.environment }}
+    env:
+      DEVOPS_API_URL: ${{ secrets.DEVOPS_API_URL }}
+      DEVOPS_WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+    steps:
+    # -------------------------------------------------------------------------
+    # APPROVAL FLOW — Only for staging/production via workflow_dispatch
+    # Dev/QA skip this entirely
+    # -------------------------------------------------------------------------
+    - name: 📋 Request Approval (staging/production only)
+      id: approval-request
+      if: >-
+        github.event_name == 'push'
+        && needs.determine-env.outputs.needs_approval == 'true'
+      run: |
+        if [ -z "$DEVOPS_API_URL" ]; then
+          echo "⚠️ DEVOPS_API_URL not set — cannot create approval request"
+          echo "::warning::DEVOPS_API_URL secret is not configured. Set it in repo Settings → Secrets."
+          echo "approval_requested=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        ENV="${{ needs.determine-env.outputs.environment }}"
+        COMMIT_SHA=$(echo "${{ github.sha }}" | head -c 7)
+        COMMIT_MSG=$(echo '${{ github.event.head_commit.message }}' | head -n1 | sed 's/"/\\"/g')
+
+        echo "📡 [DEBUG] Approval request: URL=${DEVOPS_API_URL}/api/webhooks/deploy-log"
+        RESPONSE=$(curl -sk -w "\n%{http_code}" -X POST "${DEVOPS_API_URL}/api/webhooks/deploy-log" \
+          -H "Content-Type: application/json" \
+          -H "X-Webhook-Secret: $DEVOPS_WEBHOOK_SECRET" \
+          -d "{
+            \"client_id\": \"source\",
+            \"client_name\": \"Source Repository\",
+            \"environment\": \"${ENV}\",
+            \"status\": \"pending_approval\",
+            \"branch\": \"${{ github.ref_name }}\",
+            \"commit_sha\": \"${COMMIT_SHA}\",
+            \"commit_message\": \"${COMMIT_MSG}\",
+            \"triggered_by\": \"${{ github.actor }}\",
+            \"trigger_type\": \"push\",
+            \"deploy_type\": \"source\",
+            \"deploy_notes\": \"Auto-detected push to ${{ github.ref_name }}. Awaiting approval in DevOps Tool.\"
+          }" --max-time 10 2>&1)
+
+        HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+        BODY=$(echo "$RESPONSE" | head -n -1)
+        echo "📡 [DEBUG] Approval HTTP: $HTTP_CODE"
+        if [ "$HTTP_CODE" -ge 200 ] 2>/dev/null && [ "$HTTP_CODE" -lt 300 ] 2>/dev/null; then
+          echo "📋 Created pending approval for Source ($ENV)"
+          echo "::notice::⏳ Source $ENV deployment requires approval in DevOps Tool."
+        else
+          echo "::error::❌ Failed to create approval (HTTP $HTTP_CODE): $BODY"
+        fi
+
+        echo "approval_requested=true" >> $GITHUB_OUTPUT
+
+    - name: 🔐 Verify DevOps Approval
+      if: >-
+        github.event_name == 'workflow_dispatch'
+        && needs.determine-env.outputs.needs_approval == 'true'
+      run: |
+        # Skip approval if triggered from DevOps Tool (already approved)
+        APPROVAL_SOURCE="${{ github.event.inputs.approval_source }}"
+        if [ "$APPROVAL_SOURCE" = "devops" ]; then
+          echo "✅ Triggered from DevOps Tool — approval already granted"
+          exit 0
+        fi
+
+        if [ -z "$DEVOPS_API_URL" ]; then
+          echo "ℹ️ DEVOPS_API_URL not set, skipping approval verification"
+          exit 0
+        fi
+
+        ENV="${{ needs.determine-env.outputs.environment }}"
+
+        echo "📡 [DEBUG] Verify approval: URL=${DEVOPS_API_URL}/api/webhooks/verify-approval?client_id=source&environment=${ENV}"
+        RESPONSE=$(curl -sk -w "\n%{http_code}" "${DEVOPS_API_URL}/api/webhooks/verify-approval?client_id=source&environment=${ENV}" \
+          -H "X-Webhook-Secret: $DEVOPS_WEBHOOK_SECRET" \
+          --max-time 10 2>&1 || echo '{}\n000')
+        V_HTTP=$(echo "$RESPONSE" | tail -1)
+        V_BODY=$(echo "$RESPONSE" | head -n -1)
+        echo "📡 [DEBUG] Verify HTTP: $V_HTTP | Response: $V_BODY"
+        APPROVED=$(echo "$V_BODY" | jq -r '.data.approved' 2>/dev/null)
+
+        if [ "$APPROVED" != "true" ]; then
+          # Create pending approval record so it shows in DevOps dashboard
+          echo "📡 Creating approval record for source $ENV..."
+          curl -sk -X POST "${DEVOPS_API_URL}/api/webhooks/deploy-log" \
+            -H "Content-Type: application/json" \
+            -H "X-Webhook-Secret: $DEVOPS_WEBHOOK_SECRET" \
+            -d "{
+              \"client_id\": \"source\",
+              \"client_name\": \"Source Repository\",
+              \"environment\": \"${ENV}\",
+              \"status\": \"pending_approval\",
+              \"branch\": \"${{ github.ref_name }}\",
+              \"commit_sha\": \"${COMMIT_SHA}\",
+              \"commit_message\": \"${COMMIT_MSG}\",
+              \"triggered_by\": \"${{ github.actor }}\",
+              \"trigger_type\": \"workflow_dispatch\"
+            }" --max-time 10 > /dev/null 2>&1
+
+          echo "::notice::⏳ Source $ENV deploy needs approval in DevOps Tool. Approve, then re-run."
+          exit 1
+        fi
+
+        DEPLOY_ID=$(echo "$V_BODY" | jq -r '.data.deployment_id' 2>/dev/null)
+        echo "✅ Source $ENV deploy approved (deployment #$DEPLOY_ID)"
+
+    # -------------------------------------------------------------------------
+    # DEPLOY — runs for:
+    #   - push events on dev/qa (auto-deploy, no approval needed)
+    #   - workflow_dispatch on any environment (after approval check)
+    # -------------------------------------------------------------------------
+    - name: 🚀 Deploy
+      id: deploy
+      if: >-
+        github.event_name == 'workflow_dispatch'
+        || (github.event_name == 'push' && needs.determine-env.outputs.needs_approval == 'false')
+      run: |
+        ENV="${{ needs.determine-env.outputs.environment }}"
+        BRANCH="${{ needs.determine-env.outputs.branch }}"
+
+        if [ -z "${{ secrets.WEBHOOK_SECRET }}" ]; then
+          echo "❌ WEBHOOK_SECRET not set"
+          exit 1
+        fi
+
+        PAYLOAD="{\"ref\":\"refs/heads/$BRANCH\",\"environment\":\"$ENV\",\"run_migrations\":true,\"head_commit\":{\"id\":\"${{ github.sha }}\",\"message\":\"$(echo '${{ github.event.head_commit.message }}' | head -n1 | sed 's/"/\\\\\"/g')\"},\"repository\":{\"full_name\":\"${{ github.repository }}\"},\"pusher\":{\"name\":\"${{ github.actor }}\"}}"
+
+        SIGNATURE=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "${{ secrets.WEBHOOK_SECRET }}" | awk '{print "sha256="$2}')
+
+        echo "📡 [DEBUG] Deploying to $ENV..."
+        echo "📡 [DEBUG] Webhook URL: ${{ secrets.WEBHOOK_URL }}"
+        RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${{ secrets.WEBHOOK_URL }}" \
+          -H "Content-Type: application/json" \
+          -H "X-Hub-Signature-256: $SIGNATURE" \
+          -H "X-GitHub-Event: push" \
+          -d "$PAYLOAD" --max-time 30 2>&1 || echo "000")
+
+        HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+        BODY=$(echo "$RESPONSE" | head -n -1)
+        echo "📡 [DEBUG] Deploy HTTP: $HTTP_CODE"
+        echo "📡 [DEBUG] Deploy response: $BODY"
+
+        if [ "$HTTP_CODE" -ge 200 ] 2>/dev/null && [ "$HTTP_CODE" -lt 300 ] 2>/dev/null; then
+          echo "✅ Webhook triggered (HTTP $HTTP_CODE)"
+        else
+          echo "::error::❌ Webhook FAILED (HTTP $HTTP_CODE): $BODY"
+          exit 1
+        fi
+
+    # NOTE: Premature DevOps notify REMOVED — this step reported job.status
+    # ("success" = webhook HTTP 200), NOT the actual deploy result on the server.
+    # Real deploy status is reported server-side by:
+    #   Dev/QA/Staging: source-webhook.php → DevOps API /deploy-log
+    #   Production:     deploy-production.sh → DevOps API /mono-deploy (start/end)
+
+    - name: 📧 Trigger Pending Approval Notification
+      if: >-
+        always()
+        && steps.approval-request.outputs.approval_requested == 'true'
+      uses: peter-evans/repository-dispatch@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        repository: ${{ github.repository }}
+        event-type: deployment-pending
+        client-payload: |
+          {
+            "server": "${{ needs.determine-env.outputs.display_name }}",
+            "environment": "${{ needs.determine-env.outputs.environment }}",
+            "branch": "${{ github.ref_name }}",
+            "commit": "${{ github.sha }}",
+            "message": "${{ github.event.head_commit.message || '' }}",
+            "timestamp": "${{ github.event.head_commit.timestamp || '' }}",
+            "deployer": "${{ github.actor }}",
+            "deploy_type": "source"
+          }
+
+    # NOTE: Deploy notification email is now sent server-side
+    # by source-webhook.php → DevOps API /deploy-log → email service.
+    # Removed premature GitHub Actions dispatch (fired before deploy completed).
+
+    - name: 📊 Deployment Summary
+      if: always()
+      run: |
+        ENV="${{ needs.determine-env.outputs.environment }}"
+        if [ "${{ github.event_name }}" = "push" ]; then
+          if [ "${{ needs.determine-env.outputs.needs_approval }}" = "false" ]; then
+            echo "## 🚀 Source Auto-Deploy ($ENV)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Push to \`${{ github.ref_name }}\` → auto-deploying to **$ENV** (no approval needed)." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ⏳ Source Deploy — Approval Requested" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Push to \`${{ github.ref_name }}\` detected. Approval request sent to DevOps Tool." >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "## 🚀 Source Approval Deploy" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| **Environment** | ${{ needs.determine-env.outputs.environment }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Branch** | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Triggered By** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Trigger** | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Status** | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY

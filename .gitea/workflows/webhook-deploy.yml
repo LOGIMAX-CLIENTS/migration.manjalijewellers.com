@@ -1,0 +1,220 @@
+name: 🔐 Secure Webhook Deployment
+
+on:
+  push:
+    branches: [Retail_1.1.1.0001]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: host
+    timeout-minutes: 5
+
+    steps:
+    # ---------------------------------------------------------
+    # STEP 1 — CHECKOUT CODE (Minimal)
+    # ---------------------------------------------------------
+    - name: 📥 Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 1  # Only need latest, not full history
+
+    # ---------------------------------------------------------
+    # STEP 2 — COLLECT COMMIT INFO (Optimized)
+    # ---------------------------------------------------------
+    - name: 🔎 Collect Commit Info
+      id: info
+      run: |
+        # Clean branch name
+        echo "branch=${{ gitea.ref_name }}" >> $GITHUB_OUTPUT
+        
+        # Clean commit message (escape for JSON)
+        COMMIT_MSG=$(git log -1 --pretty=%B | sed 's/"/\\"/g' | tr '\n' ' ')
+        echo "commit_message=$COMMIT_MSG" >> $GITHUB_OUTPUT
+        
+        echo "commit_sha=${{ gitea.sha }}" >> $GITHUB_OUTPUT
+        echo "commit_author=$(git log -1 --pretty=%an)" >> $GITHUB_OUTPUT
+        echo "commit_email=$(git log -1 --pretty=%ae)" >> $GITHUB_OUTPUT
+        echo "repo=${{ gitea.repository }}" >> $GITHUB_OUTPUT
+        echo "trigger_time=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+
+    # ---------------------------------------------------------
+    # STEP 3 — TRIGGER WEBHOOK (REPLACES SSH!)
+    # ---------------------------------------------------------
+    - name: 🎯 Trigger Secure Webhook
+      id: webhook
+      run: |
+        echo "🔐 Preparing webhook request..."
+        
+        # Load secrets
+        WEBHOOK_SECRET="${{ secrets.WEBHOOK_SECRET }}"
+        WEBHOOK_URL="${{ secrets.WEBHOOK_URL }}"
+        
+        echo "Webhook URL: ${WEBHOOK_URL}"
+        echo "Repository: ${{ steps.info.outputs.repo }}"
+        
+        # Build payload for Gitea
+        PAYLOAD=$(cat << EOF
+
+        {
+          "ref": "refs/heads/${{ steps.info.outputs.branch }}",
+          "head_commit": {
+            "id": "${{ steps.info.outputs.commit_sha }}",
+            "message": "${{ steps.info.outputs.commit_message }}",
+            "timestamp": "${{ steps.info.outputs.trigger_time }}",
+            "author": {
+              "name": "${{ steps.info.outputs.commit_author }}",
+              "email": "${{ steps.info.outputs.commit_email }}"
+            }
+          },
+          "repository": {
+            "full_name": "${{ steps.info.outputs.repo }}"
+          }
+        }
+        EOF
+        )
+        
+        echo "Payload (first 100 chars):"
+        echo "${PAYLOAD:0:100}..."
+        
+        # Generate HMAC SHA256 signature
+        SIGNATURE=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" | awk '{print "sha256="$2}')
+        
+        echo "Sending webhook request..."
+        
+        # Send with verbose output
+        RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" \
+          -X POST "$WEBHOOK_URL" \
+          -H "Content-Type: application/json" \
+          -H "X-Gitea-Signature: $SIGNATURE" \
+          -H "X-Gitea-Event: push" \
+          -d "$PAYLOAD")
+        
+        # Extract HTTP status
+        HTTP_STATUS=$(echo "$RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
+        RESPONSE_BODY=$(echo "$RESPONSE" | grep -v "HTTP_STATUS:")
+        
+        echo "✅ Webhook HTTP Status: $HTTP_STATUS"
+        echo "Response: $RESPONSE_BODY"
+        
+        # Set outputs
+        echo "http_status=$HTTP_STATUS" >> $GITHUB_OUTPUT
+        echo "response_body<<EOF" >> $GITHUB_OUTPUT
+        echo "$RESPONSE_BODY" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        
+        # Check for success
+        if [[ "$HTTP_STATUS" =~ ^2[0-9][0-9]$ ]]; then
+          echo "status=success" >> $GITHUB_OUTPUT
+          echo "✅ Webhook triggered successfully!"
+        else
+          echo "status=failed" >> $GITHUB_OUTPUT
+          echo "❌ Webhook failed with HTTP $HTTP_STATUS"
+          exit 1
+        fi
+
+    # ---------------------------------------------------------
+    # STEP 4 — EMAIL REPORT (Updated)
+    # ---------------------------------------------------------
+    # - name: 📧 Send Email Report
+    #   if: always()
+    #   uses: dawidd6/action-send-mail@v3
+    #   with:
+    #     server_address: smtp.gmail.com
+    #     server_port: 587
+    #     username: ${{ secrets.SMTP_USERNAME }}
+    #     password: ${{ secrets.SMTP_PASSWORD }}
+    #     from: "Deploy Bot <${{ secrets.SMTP_USERNAME }}>"
+    #     to: "${{ steps.info.outputs.commit_email }}, ${{ secrets.MAIL_TO }}"
+    #     subject: "Webhook Deployment ${{ steps.webhook.outputs.status }} — ${{ steps.info.outputs.branch }}"
+    #     body: |
+    #       WEBHOOK DEPLOYMENT REPORT
+    #       =========================
+          
+    #       Status: ${{ job.status }}
+    #       Webhook Status: ${{ steps.webhook.outputs.status }}
+    #       HTTP Status: ${{ steps.webhook.outputs.http_status }}
+          
+    #       Branch: ${{ steps.info.outputs.branch }}
+    #       Commit: ${{ steps.info.outputs.commit_sha }}
+    #       Author: ${{ steps.info.outputs.commit_author }}
+    #       Time: $(TZ='Asia/Kolkata' date '+%d-%m-%Y %I:%M:%S %p IST')
+          
+    #       Commit Message:
+    #       ${{ steps.info.outputs.commit_message }}
+          
+    #       Webhook Response:
+    #       ${{ steps.webhook.outputs.response_body }}
+          
+    #       Note: Deployment runs in background on server.
+    #       Check /tmp/deploy_gitea_*.log for completion.
+
+    - name: 📧 Send Email Report
+      if: always()
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 587
+        username: ${{ secrets.SMTP_USERNAME }}
+        password: ${{ secrets.SMTP_PASSWORD }}
+        from: "Deploy Bot <${{ secrets.SMTP_USERNAME }}>"
+        to: "${{ steps.info.outputs.commit_email }}, ${{ secrets.MAIL_TO }}"
+        subject: "Deployment ${{ job.status }} — ${{ steps.info.outputs.branch }} @ $(date -u +'%H:%M UTC')"
+        html_body: |
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+              .container { background: white; border-radius: 8px; padding: 25px; max-width: 700px; margin: 0 auto; }
+              .header { background: #0366d6; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+              .status-success { color: #28a745; font-weight: bold; }
+              .status-failed { color: #dc3545; font-weight: bold; }
+              .details { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0; }
+              .log { background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 12px; white-space: pre-wrap; margin: 15px 0; }
+              .footer { margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h2>🚀 Deployment Report</h2>
+                <p>Branch: <strong>${{ steps.info.outputs.branch }}</strong></p>
+              </div>
+              
+              <div class="details">
+                <p><strong>📅 Time:</strong> $(TZ='Asia/Kolkata' date '+%d-%m-%Y %I:%M:%S %p IST')</p>
+                <p><strong>🌿 Branch:</strong> ${{ steps.info.outputs.branch }}</p>
+                <p><strong>🔨 Commit:</strong> ${{ steps.info.outputs.commit_sha }}</p>
+                <p><strong>👤 Author:</strong> ${{ steps.info.outputs.commit_author }}</p>
+                <p><strong>📧 Email:</strong> ${{ steps.info.outputs.commit_email }}</p>
+              </div>
+              
+              <div class="details">
+                <p><strong>📋 Webhook Status:</strong> 
+                  <span class="${{ steps.webhook.outputs.status == 'success' && 'status-success' || 'status-failed' }}">
+                    ${{ steps.webhook.outputs.status }}
+                  </span>
+                </p>
+                <p><strong>🌐 HTTP Code:</strong> ${{ steps.webhook.outputs.http_status }}</p>
+              </div>
+              
+              <div class="details">
+                <h4>📝 Commit Message:</h4>
+                <p>${{ steps.info.outputs.commit_message }}</p>
+              </div>
+              
+              <div class="details">
+                <h4>📊 Deployment Output:</h4>
+                <div class="log">${{ steps.webhook.outputs.response_body }}</div>
+              </div>
+              
+              <div class="footer">
+                <p><strong>📁 Server Logs:</strong></p>
+                <p>• Deployment log: <code>/home/retaillogimaxind/deploy-logs/RetailAdmin/deploy.log</code></p>
+                <p>• Webhook log: <code>/home/retaillogimaxind/webhooks/webhook-gitea.log</code></p>
+                <p><br>This email was automatically generated by Gitea Actions.</p>
+              </div>
+            </div>
+          </body>
+          </html>

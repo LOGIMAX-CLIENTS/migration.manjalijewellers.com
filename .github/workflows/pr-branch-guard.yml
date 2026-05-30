@@ -1,0 +1,256 @@
+# =============================================================================
+# PR BRANCH GUARD
+# Enforces branching strategy for the cherry-pick promotion workflow.
+#
+# Rules:
+#   1. Branch naming: must be feature/, bugfix/, or hotfix/
+#   2. No environment-to-environment merges (prevents bleeding)
+#   3. Promotion order: dev → QA → support → PRODUCTION (controllable)
+#   4. Hotfix bypass: hotfix/* can go directly to any env (including PRODUCTION)
+#
+# Control:
+#   - Set repo variable ENFORCE_PROMOTION_ORDER = true/false
+#     (Settings → Secrets and variables → Variables → New repository variable)
+#   - Default: true (strict promotion order enforced)
+# =============================================================================
+
+name: 🛡️ Branch Guard
+
+on:
+  pull_request:
+    branches:
+      - Retail_1.1.1.0001
+      - QA
+      - support
+      - PRODUCTION
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  validate-branch:
+    name: 🔍 Validate PR Branch Rules
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+    - name: 🛡️ Branch Guard Check
+      env:
+        GH_TOKEN: ${{ github.token }}
+        ENFORCE_PROMOTION: ${{ vars.ENFORCE_PROMOTION_ORDER || 'true' }}
+      run: |
+        HEAD="${{ github.head_ref }}"
+        BASE="${{ github.base_ref }}"
+        REPO="${{ github.repository }}"
+
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "🛡️  Branch Guard"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "  Source: $HEAD"
+        echo "  Target: $BASE"
+        echo "  Promotion enforcement: $ENFORCE_PROMOTION"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+
+        ERRORS=""
+        WARNINGS=""
+
+        # =====================================================================
+        # RULE 1: Block environment-to-environment merges
+        # =====================================================================
+        ENV_BRANCHES="Retail_1.1.1.0001 QA support PRODUCTION"
+        for branch in $ENV_BRANCHES; do
+          if [ "$HEAD" = "$branch" ]; then
+            ERRORS="${ERRORS}\n❌ BLOCKED: Cannot merge environment branch '$HEAD' into '$BASE'."
+            ERRORS="${ERRORS}\n   Environment branches must never merge into each other."
+            ERRORS="${ERRORS}\n   Create a feature branch instead: git checkout -b feature/your-change origin/PRODUCTION"
+          fi
+        done
+
+        if [ -n "$ERRORS" ]; then
+          echo -e "$ERRORS"
+          echo ""
+          echo "::error::Environment-to-environment merge blocked. Use a feature branch."
+          exit 1
+        fi
+
+        # =====================================================================
+        # RULE 2: Enforce branch naming convention
+        # =====================================================================
+        VALID_PREFIX=false
+        BRANCH_TYPE=""
+
+        case "$HEAD" in
+          feature/*)  VALID_PREFIX=true; BRANCH_TYPE="feature" ;;
+          bugfix/*)   VALID_PREFIX=true; BRANCH_TYPE="bugfix" ;;
+          hotfix/*)   VALID_PREFIX=true; BRANCH_TYPE="hotfix" ;;
+        esac
+
+        if [ "$VALID_PREFIX" = "false" ]; then
+          echo "❌ BLOCKED: Branch name '$HEAD' does not follow naming convention."
+          echo ""
+          echo "   Required prefixes:"
+          echo "     feature/  → New features (e.g., feature/add-gst-report)"
+          echo "     bugfix/   → Bug fixes (e.g., bugfix/fix-invoice-total)"
+          echo "     hotfix/   → Urgent production fixes (e.g., hotfix/critical-login-fix)"
+          echo ""
+          echo "   Rename your branch:"
+          echo "     git branch -m $HEAD feature/$HEAD"
+          echo "     git push origin :$HEAD feature/$HEAD"
+          echo ""
+          echo "::error::Branch '$HEAD' must start with feature/, bugfix/, or hotfix/"
+          exit 1
+        fi
+
+        echo "✅ Rule 1: Branch naming — $BRANCH_TYPE/ prefix valid"
+
+        # =====================================================================
+        # RULE 3: Hotfix bypass
+        # hotfix/* branches can target any environment directly
+        # =====================================================================
+        if [ "$BRANCH_TYPE" = "hotfix" ]; then
+          echo "✅ Rule 2: Hotfix bypass — '$HEAD' can target any environment"
+          echo ""
+          echo "🔥 Hotfix detected — promotion order bypassed."
+          echo "   '$HEAD' → '$BASE' is allowed."
+
+          # Add summary
+          echo "## 🛡️ Branch Guard — Passed (Hotfix Bypass)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch naming | ✅ \`$BRANCH_TYPE/\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Env-to-env block | ✅ Not an env branch |" >> $GITHUB_STEP_SUMMARY
+          echo "| Promotion order | ⏭️ Bypassed (hotfix) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Result** | ✅ **$HEAD → $BASE** |" >> $GITHUB_STEP_SUMMARY
+          exit 0
+        fi
+
+        # =====================================================================
+        # RULE 4: Promotion order enforcement
+        # feature/bugfix must follow: dev → QA → support → PRODUCTION
+        # Controllable via ENFORCE_PROMOTION_ORDER repo variable
+        # =====================================================================
+        PROMOTION_CHECK="skipped"
+
+        if [ "$ENFORCE_PROMOTION" = "true" ]; then
+          # Define the required prerequisite for each target
+          PREREQ=""
+          PREREQ_DISPLAY=""
+
+          case "$BASE" in
+            Retail_1.1.1.0001)
+              # Dev is the first stop — no prerequisite
+              PREREQ=""
+              ;;
+            QA)
+              PREREQ="Retail_1.1.1.0001"
+              PREREQ_DISPLAY="Dev (Retail_1.1.1.0001)"
+              ;;
+            support)
+              PREREQ="QA"
+              PREREQ_DISPLAY="QA"
+              ;;
+            PRODUCTION)
+              PREREQ="support"
+              PREREQ_DISPLAY="Staging (support)"
+              ;;
+          esac
+
+          if [ -n "$PREREQ" ]; then
+            echo ""
+            echo "🔍 Checking promotion order: '$HEAD' must be merged in '$PREREQ' before '$BASE'..."
+
+            # Check if there's a merged PR from this branch to the prerequisite
+            MERGED_COUNT=$(gh pr list \
+              --repo "$REPO" \
+              --head "$HEAD" \
+              --base "$PREREQ" \
+              --state merged \
+              --json number \
+              --jq 'length' 2>/dev/null || echo "0")
+
+            if [ "$MERGED_COUNT" = "0" ] || [ -z "$MERGED_COUNT" ]; then
+              echo ""
+              echo "❌ BLOCKED: '$HEAD' has not been merged into '$PREREQ_DISPLAY' yet."
+              echo ""
+              echo "   Promotion order: Dev → QA → Staging → Production"
+              echo ""
+              echo "   Required steps before merging to '$BASE':"
+
+              case "$BASE" in
+                QA)
+                  echo "     1. Create PR: $HEAD → Retail_1.1.1.0001 (Dev)"
+                  echo "     2. Get it merged and tested"
+                  echo "     3. Then create PR: $HEAD → QA"
+                  ;;
+                support)
+                  echo "     1. Merge $HEAD → Retail_1.1.1.0001 (Dev) first"
+                  echo "     2. Merge $HEAD → QA and get QA sign-off"
+                  echo "     3. Then create PR: $HEAD → support"
+                  ;;
+                PRODUCTION)
+                  echo "     1. Merge $HEAD → Retail_1.1.1.0001 (Dev) first"
+                  echo "     2. Merge $HEAD → QA and get QA sign-off"
+                  echo "     3. Merge $HEAD → support and get UAT sign-off"
+                  echo "     4. Then create PR: $HEAD → PRODUCTION"
+                  ;;
+              esac
+
+              echo ""
+              echo "   💡 If this is urgent, use a hotfix/ branch instead:"
+              echo "      git checkout -b hotfix/$(echo $HEAD | sed 's|^[^/]*/||') origin/PRODUCTION"
+              echo ""
+              echo "::error::Promotion order violation: '$HEAD' must be merged into '$PREREQ_DISPLAY' before targeting '$BASE'."
+
+              # Summary for failed check
+              echo "## 🛡️ Branch Guard — Failed" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
+              echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+              echo "| Branch naming | ✅ \`$BRANCH_TYPE/\` |" >> $GITHUB_STEP_SUMMARY
+              echo "| Env-to-env block | ✅ Not an env branch |" >> $GITHUB_STEP_SUMMARY
+              echo "| Promotion order | ❌ Not merged in \`$PREREQ\` yet |" >> $GITHUB_STEP_SUMMARY
+              echo "| **Result** | ❌ **Blocked** |" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "**Fix:** Merge \`$HEAD\` into \`$PREREQ_DISPLAY\` first, then retry." >> $GITHUB_STEP_SUMMARY
+              exit 1
+            fi
+
+            echo "✅ Rule 3: Promotion order — verified merged in '$PREREQ_DISPLAY' (${MERGED_COUNT} merged PR(s))"
+            PROMOTION_CHECK="passed"
+          else
+            echo "✅ Rule 3: Promotion order — Dev is the first stop, no prerequisite needed"
+            PROMOTION_CHECK="first-stop"
+          fi
+        else
+          echo "ℹ️  Rule 3: Promotion order — DISABLED (ENFORCE_PROMOTION_ORDER = false)"
+          PROMOTION_CHECK="disabled"
+        fi
+
+        # =====================================================================
+        # ALL CHECKS PASSED
+        # =====================================================================
+        echo ""
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "✅ All branch guard checks passed!"
+        echo "   '$HEAD' → '$BASE' is approved."
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+        # Summary
+        echo "## 🛡️ Branch Guard — Passed" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
+        echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Branch naming | ✅ \`$BRANCH_TYPE/\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| Env-to-env block | ✅ Not an env branch |" >> $GITHUB_STEP_SUMMARY
+        if [ "$PROMOTION_CHECK" = "passed" ]; then
+          echo "| Promotion order | ✅ Merged in \`$PREREQ\` |" >> $GITHUB_STEP_SUMMARY
+        elif [ "$PROMOTION_CHECK" = "first-stop" ]; then
+          echo "| Promotion order | ✅ First stop (no prereq) |" >> $GITHUB_STEP_SUMMARY
+        elif [ "$PROMOTION_CHECK" = "disabled" ]; then
+          echo "| Promotion order | ⏭️ Disabled |" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "| **Result** | ✅ **$HEAD → $BASE** |" >> $GITHUB_STEP_SUMMARY

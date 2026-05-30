@@ -1,0 +1,178 @@
+name: "Sync with Hub"
+on:
+  workflow_dispatch:
+    inputs:
+      source_branch:
+        description: 'Source branch to sync from'
+        required: true
+        default: 'Retail_1.1.1.0001'
+      sync_id:
+        description: 'Internal Sync ID'
+        required: true
+      files:
+        description: 'Comma-separated files (optional)'
+        required: false
+        default: ''
+      cherry_pick_sha:
+        description: 'Commit SHA to cherry-pick (optional)'
+        required: false
+        default: ''
+      exclude_files:
+        description: 'Comma-separated files/patterns to exclude from sync'
+        required: false
+        default: ''
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Sync from Hub
+        id: sync_logic
+        env:
+          HUB_TOKEN: ${{ secrets.HUB_TOKEN }}
+        run: |
+          set -e
+          git config user.name "Logimax DevOps"
+          git config user.email "devops@logimaxindia.com"
+          git config --local --unset-all http.https://github.com/.extraheader || true
+
+          echo "Fetching from Hub..."
+          git fetch "https://x-access-token:$HUB_TOKEN@github.com/Logimax-Technologies/etail_development_src.git" ${{ github.event.inputs.source_branch }}
+
+          CHERRY_SHA="${{ github.event.inputs.cherry_pick_sha }}"
+          FILES="${{ github.event.inputs.files }}"
+
+          if [ -n "$CHERRY_SHA" ]; then
+            echo "Cherry-picking $CHERRY_SHA..."
+            if ! git cherry-pick "$CHERRY_SHA"; then
+              echo "Cherry-pick conflict. Manual resolution needed."
+              git cherry-pick --abort
+              echo "has_changes=false" >> $GITHUB_OUTPUT
+              echo "error=Cherry-pick conflict" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          elif [ -n "$FILES" ]; then
+            IFS=',' read -ra ADDR <<< "$FILES"
+            for file in "${ADDR[@]}"; do
+              git checkout FETCH_HEAD -- "$file" || echo "Skipping missing: $file"
+            done
+            if git status --porcelain | grep -q '^[MARCD]'; then
+              git commit -m "sync: selective updates from ${{ github.event.inputs.source_branch }}"
+              echo "has_changes=true" >> $GITHUB_OUTPUT
+            else
+              echo "has_changes=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            if git merge-base --is-ancestor FETCH_HEAD HEAD 2>/dev/null; then
+              echo "Already up to date."
+              echo "has_changes=false" >> $GITHUB_OUTPUT
+            else
+              git merge FETCH_HEAD --no-edit
+              echo "has_changes=true" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Revert Excluded Files
+        if: steps.sync_logic.outputs.has_changes == 'true'
+        run: |
+          EXCLUDES="${{ github.event.inputs.exclude_files }}"
+          if [ -z "$EXCLUDES" ]; then
+            echo "No exclude list — skipping"
+            exit 0
+          fi
+
+          echo "Reverting excluded files..."
+          REVERTED=0
+          IFS=',' read -ra PATTERNS <<< "$EXCLUDES"
+          for pattern in "${PATTERNS[@]}"; do
+            pattern=$(echo "$pattern" | xargs)  # trim whitespace
+            # Check if the file was modified in the merge
+            if git diff HEAD~1 --name-only | grep -q "^$pattern$" 2>/dev/null; then
+              echo "  Reverting: $pattern"
+              git checkout HEAD~1 -- "$pattern" 2>/dev/null && REVERTED=1 || echo "  (not found, skipping)"
+            fi
+          done
+
+          if [ "$REVERTED" -eq 1 ]; then
+            git add -A
+            git commit --amend --no-edit
+            echo "Protected files reverted successfully"
+          else
+            echo "No excluded files were modified"
+          fi
+
+      - name: Create Pull Request
+        if: steps.sync_logic.outputs.has_changes == 'true'
+        id: cpr
+        env:
+          HUB_TOKEN: ${{ secrets.HUB_TOKEN }}
+        run: |
+          set -e
+          git remote set-url origin "https://x-access-token:$HUB_TOKEN@github.com/${{ github.repository }}.git"
+          git push origin HEAD:refs/heads/sync/hub-updates --force
+
+          CHERRY_SHA="${{ github.event.inputs.cherry_pick_sha }}"
+          SOURCE="${{ github.event.inputs.source_branch }}"
+          BASE="${{ github.ref_name }}"
+
+          if [ -n "$CHERRY_SHA" ]; then
+            TITLE="Cherry-pick ${CHERRY_SHA:0:7} from Hub"
+          else
+            TITLE="Sync: Updates from Hub ($SOURCE)"
+          fi
+          BODY="Automated sync from $SOURCE to $BASE"
+
+          PR_PAYLOAD=$(jq -n \
+            --arg title "$TITLE" \
+            --arg head "sync/hub-updates" \
+            --arg base "$BASE" \
+            --arg body "$BODY" \
+            '{title: $title, head: $head, base: $base, body: $body}')
+
+          PR_RESPONSE=$(curl -s -X POST \
+            -H "Authorization: token $HUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls" \
+            -d "$PR_PAYLOAD")
+
+          PR_URL=$(echo "$PR_RESPONSE" | jq -r '.html_url // empty')
+          PR_NUMBER=$(echo "$PR_RESPONSE" | jq -r '.number // empty')
+
+          if [ -n "$PR_URL" ] && [ "$PR_URL" != "null" ]; then
+            echo "PR Created: $PR_URL"
+            echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          else
+            ERR=$(echo "$PR_RESPONSE" | jq -r '.errors[0].message // .message // "Unknown"')
+            if [[ "$ERR" == *"already exists"* ]]; then
+              echo "PR already exists"
+            elif [[ "$ERR" == *"No commits"* ]]; then
+              echo "Branches identical"
+            else
+              echo "PR Failed: $ERR"
+              exit 1
+            fi
+          fi
+
+      - name: Report Status
+        if: always()
+        run: |
+          STATUS="success"
+          if [ "${{ job.status }}" != "success" ]; then STATUS="failed"; fi
+          PR_NUM=${{ steps.cpr.outputs.pr_number || 'null' }}
+          PR_URL="${{ steps.cpr.outputs.pr_url || '' }}"
+          curl -s -X POST "${{ secrets.SYNC_STATUS_URL }}" \
+            -H "Content-Type: application/json" \
+            -H "X-Webhook-Secret: ${{ secrets.WEBHOOK_SECRET }}" \
+            -d "{\"syncId\": \"${{ github.event.inputs.sync_id }}\", \"status\": \"$STATUS\", \"pr_number\": $PR_NUM, \"pr_url\": \"$PR_URL\"}" || true

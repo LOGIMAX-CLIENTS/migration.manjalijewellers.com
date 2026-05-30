@@ -1,0 +1,407 @@
+# =============================================================================
+# DEPLOY PORT_MAX TOOL TO ALL MONO-REPO CLIENTS
+# Triggers when port_max/ files change on support or Production branches.
+# Sends webhook to every mono-repo client server to run port_max/deploy.sh,
+# which handles Composer install, npm build, and frontend deployment.
+#
+# Pipeline: Detect Scope → Deploy Staging / Deploy Production
+#
+# Branch mapping:
+#   support    → client staging
+#   Production → client production
+#
+# ── APPROVAL GATE ──
+# Production deploys require manual approval via GitHub Environments.
+# =============================================================================
+
+name: 🔧 Deploy Port_Max Tool
+
+on:
+  workflow_dispatch:
+    inputs:
+      client_id:
+        description: 'Client to deploy (leave empty for ALL mono-repo clients)'
+        required: false
+        type: string
+        default: ''
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      deploy_notes:
+        description: 'Deployment notes (optional)'
+        required: false
+        type: string
+
+  # Auto-trigger on push to support (staging) or Production (prod)
+  push:
+    branches: [support, Production]
+    paths:
+      - 'port_max/**'
+
+# =============================================================================
+# ENVIRONMENT VARIABLES
+# =============================================================================
+env:
+  STAGING_BRANCH: support
+  PRODUCTION_BRANCH: Production
+  DEVOPS_API_URL: ${{ secrets.DEVOPS_API_URL }}
+  DEVOPS_WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+
+# =============================================================================
+# PERMISSIONS
+# =============================================================================
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  # =========================================================================
+  # JOB 1: Detect environment and which clients need deployment
+  # =========================================================================
+  detect-scope:
+    runs-on: ubuntu-latest
+    outputs:
+      affected_clients: ${{ steps.detect.outputs.affected_clients }}
+      deploy_all: ${{ steps.detect.outputs.deploy_all }}
+      environment: ${{ steps.env.outputs.environment }}
+      has_clients: ${{ steps.detect.outputs.has_clients }}
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 2
+
+      - name: 🎯 Determine Environment
+        id: env
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "environment=${{ inputs.environment }}" >> $GITHUB_OUTPUT
+          else
+            BRANCH="${{ github.ref_name }}"
+            case "$BRANCH" in
+              support) echo "environment=staging" >> $GITHUB_OUTPUT ;;
+              Production) echo "environment=production" >> $GITHUB_OUTPUT ;;
+              *) echo "environment=unknown" >> $GITHUB_OUTPUT ;;
+            esac
+          fi
+
+      - name: 🔍 Detect Clients from Config Directory
+        id: detect
+        run: |
+          # ── Dynamic client discovery: scan config/clients/*.json ──
+          ALL_CLIENTS=$(ls config/clients/*.json 2>/dev/null | xargs -I{} basename {} .json | grep -v 'default' | sort)
+
+          if [ -z "$ALL_CLIENTS" ]; then
+            echo "⚠️ No mono-repo clients found in config/clients/"
+            echo "has_clients=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "📋 Registered mono-repo clients: $ALL_CLIENTS"
+
+          # ── Manual trigger with specific client ──
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.client_id }}" ]; then
+            CLIENT="${{ inputs.client_id }}"
+            if [ ! -f "config/clients/${CLIENT}.json" ]; then
+              echo "❌ Client '${CLIENT}' not found in config/clients/"
+              echo "has_clients=false" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+            echo "deploy_all=false" >> $GITHUB_OUTPUT
+            echo "affected_clients=[\"${CLIENT}\"]" >> $GITHUB_OUTPUT
+            echo "has_clients=true" >> $GITHUB_OUTPUT
+            echo "📌 Manual Port_Max deploy for: ${CLIENT}"
+            exit 0
+          fi
+
+          # ── Port_Max changes always deploy to ALL clients ──
+          echo "🔧 Port_Max tool changed — deploying to ALL mono-repo clients"
+          echo "deploy_all=true" >> $GITHUB_OUTPUT
+          echo "has_clients=true" >> $GITHUB_OUTPUT
+
+      - name: ✅ Validate Client Configs
+        if: steps.detect.outputs.has_clients == 'true'
+        run: |
+          INVALID=0
+          for CONFIG in config/clients/*.json; do
+            CLIENT=$(basename "$CONFIG" .json)
+            [ "$CLIENT" = "default" ] || [ "$CLIENT" = "schema" ] && continue
+
+            STAGING_URL=$(jq -r '.deploy.staging.webhook_url // empty' "$CONFIG" 2>/dev/null)
+            PROD_URL=$(jq -r '.deploy.production.webhook_url // empty' "$CONFIG" 2>/dev/null)
+
+            if [ -z "$STAGING_URL" ] && [ -z "$PROD_URL" ]; then
+              echo "❌ $CLIENT: Missing both staging and production webhook_url"
+              INVALID=$((INVALID + 1))
+            fi
+          done
+
+          if [ "$INVALID" -gt 0 ]; then
+            echo "::error::$INVALID client config(s) have validation errors"
+            exit 1
+          fi
+          echo "✅ All client configs valid"
+
+      - name: 📋 Summary
+        run: |
+          echo "## 🔧 Port_Max Deploy Scope Detection" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | ${{ steps.env.outputs.environment }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Deploy All** | ${{ steps.detect.outputs.deploy_all }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Affected Clients** | ${{ steps.detect.outputs.affected_clients || 'All' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Trigger** | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Build** | Server-side (via port_max/deploy.sh) |" >> $GITHUB_STEP_SUMMARY
+
+  # =========================================================================
+  # JOB 2: Staging deploy
+  # =========================================================================
+  deploy-staging:
+    needs: detect-scope
+    if: >-
+      needs.detect-scope.outputs.has_clients == 'true' &&
+      needs.detect-scope.outputs.environment == 'staging' &&
+      (github.event_name == 'workflow_dispatch' || vars.AUTO_DEPLOY_CLIENTS == 'true')
+    runs-on: ubuntu-latest
+    environment: client-staging
+    timeout-minutes: 15
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: 🚀 Deploy Port_Max to Staging
+        env:
+          DEPLOY_ALL: ${{ needs.detect-scope.outputs.deploy_all }}
+          AFFECTED: ${{ needs.detect-scope.outputs.affected_clients }}
+          MONO_WEBHOOK_SECRET: ${{ secrets.MONO_WEBHOOK_SECRET }}
+        run: |
+          COMMIT_SHA=$(git rev-parse --short HEAD)
+          COMMIT_MSG=$(git log -1 --pretty=%B | head -n1)
+
+          echo "═══════════════════════════════════════════"
+          echo "🔧 Port_Max Staging Deployment"
+          echo "═══════════════════════════════════════════"
+          echo "📋 Commit: $COMMIT_SHA — $COMMIT_MSG"
+          echo "📋 Build: Server-side (composer install + npm build via port_max/deploy.sh)"
+          echo ""
+
+          # Build client list
+          if [ "$DEPLOY_ALL" = "true" ]; then
+            CLIENTS=$(ls config/clients/*.json | xargs -I{} basename {} .json | grep -v 'default')
+          else
+            CLIENTS=$(echo "$AFFECTED" | jq -r '.[]' 2>/dev/null || echo "")
+          fi
+
+          FAILED=0
+          SUCCESS=0
+          for CLIENT in $CLIENTS; do
+            echo "───────────────────────────────────────"
+            echo "📦 Deploying Port_Max to: $CLIENT (staging)"
+            echo "───────────────────────────────────────"
+
+            CONFIG="config/clients/${CLIENT}.json"
+            WEBHOOK_URL=$(jq -r '.deploy.staging.webhook_url // empty' "$CONFIG" 2>/dev/null)
+            BRANCH=$(jq -r '.deploy.staging.branch // "support"' "$CONFIG" 2>/dev/null)
+
+            if [ -z "$WEBHOOK_URL" ]; then
+              echo "⚠️ No staging webhook_url in $CONFIG — skipping"
+              continue
+            fi
+
+            if [ -z "$MONO_WEBHOOK_SECRET" ]; then
+              echo "⚠️ MONO_WEBHOOK_SECRET not set in repo secrets"
+              FAILED=$((FAILED + 1))
+              continue
+            fi
+
+            SSL_VERIFY=$(jq -r '.deploy.ssl_verify // true' "$CONFIG" 2>/dev/null)
+            CURL_OPTS="-s"
+            [ "$SSL_VERIFY" = "false" ] && CURL_OPTS="-sk"
+
+            RESPONSE=$(curl $CURL_OPTS -w "\n%{http_code}" -X POST "$WEBHOOK_URL" \
+              -H "Content-Type: application/json" \
+              -H "X-Webhook-Secret: $MONO_WEBHOOK_SECRET" \
+              -d "{\"environment\": \"staging\", \"branch\": \"$BRANCH\", \"commit\": \"$COMMIT_SHA\", \"component\": \"port_max\", \"devops_api_url\": \"$DEVOPS_API_URL\", \"devops_webhook_secret\": \"$DEVOPS_WEBHOOK_SECRET\"}" \
+              --max-time 60 || echo "000")
+
+            HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+            BODY=$(echo "$RESPONSE" | head -n -1)
+
+            if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+              echo "✅ Webhook triggered (HTTP $HTTP_CODE)"
+              SUCCESS=$((SUCCESS + 1))
+            else
+              echo "❌ Webhook FAILED (HTTP $HTTP_CODE): $BODY"
+              FAILED=$((FAILED + 1))
+            fi
+          done
+
+          echo ""
+          echo "═══════════════════════════════════════════"
+          echo "📊 Results: $SUCCESS succeeded, $FAILED failed"
+          echo "═══════════════════════════════════════════"
+
+          [ "$FAILED" -ne 0 ] && echo "⚠️ Some deployments had issues."
+
+      - name: 📊 Deployment Summary
+        if: always()
+        run: |
+          echo "## 🔧 Port_Max Staging Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Component** | Port_Max Tool |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | staging |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Build Mode** | Server-side (port_max/deploy.sh) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Triggered By** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: 📧 Trigger Staging Notification
+        if: always()
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: Logimax-Technologies/etail_development_src
+          event-type: staging-deployed
+          client-payload: |
+            {
+              "status": "${{ job.status == 'success' && 'SUCCESS' || 'FAILED' }}",
+              "branch": "${{ github.ref_name }}",
+              "commit": "${{ github.sha }}",
+              "message": "${{ github.event.head_commit.message || '' }}",
+              "deployer": "${{ github.actor }}",
+              "deploy_type": "port_max"
+            }
+
+  # =========================================================================
+  # JOB 3: Production deploy (approval gate)
+  # =========================================================================
+  deploy-production:
+    needs: detect-scope
+    if: >-
+      needs.detect-scope.outputs.has_clients == 'true' &&
+      needs.detect-scope.outputs.environment == 'production' &&
+      (github.event_name == 'workflow_dispatch' || vars.AUTO_DEPLOY_CLIENTS == 'true')
+    runs-on: ubuntu-latest
+    environment: client-production
+    timeout-minutes: 15
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: 🚀 Deploy Port_Max to Production
+        env:
+          DEPLOY_ALL: ${{ needs.detect-scope.outputs.deploy_all }}
+          AFFECTED: ${{ needs.detect-scope.outputs.affected_clients }}
+          MONO_WEBHOOK_SECRET: ${{ secrets.MONO_WEBHOOK_SECRET }}
+        run: |
+          COMMIT_SHA=$(git rev-parse --short HEAD)
+          COMMIT_MSG=$(git log -1 --pretty=%B | head -n1)
+
+          echo "═══════════════════════════════════════════"
+          echo "🔧 Port_Max PRODUCTION Deployment"
+          echo "═══════════════════════════════════════════"
+          echo "📋 Commit: $COMMIT_SHA — $COMMIT_MSG"
+          echo "📋 Build: Server-side (composer install + npm build via port_max/deploy.sh)"
+          echo ""
+
+          # Build client list
+          if [ "$DEPLOY_ALL" = "true" ]; then
+            CLIENTS=$(ls config/clients/*.json | xargs -I{} basename {} .json | grep -v 'default')
+          else
+            CLIENTS=$(echo "$AFFECTED" | jq -r '.[]' 2>/dev/null || echo "")
+          fi
+
+          FAILED=0
+          SUCCESS=0
+          for CLIENT in $CLIENTS; do
+            echo "───────────────────────────────────────"
+            echo "📦 Deploying Port_Max to: $CLIENT (production)"
+            echo "───────────────────────────────────────"
+
+            CONFIG="config/clients/${CLIENT}.json"
+            WEBHOOK_URL=$(jq -r '.deploy.production.webhook_url // empty' "$CONFIG" 2>/dev/null)
+            BRANCH=$(jq -r '.deploy.production.branch // "Production"' "$CONFIG" 2>/dev/null)
+
+            if [ -z "$WEBHOOK_URL" ]; then
+              echo "⚠️ No production webhook_url in $CONFIG — skipping"
+              continue
+            fi
+
+            if [ -z "$MONO_WEBHOOK_SECRET" ]; then
+              echo "⚠️ MONO_WEBHOOK_SECRET not set in repo secrets"
+              FAILED=$((FAILED + 1))
+              continue
+            fi
+
+            SSL_VERIFY=$(jq -r '.deploy.ssl_verify // true' "$CONFIG" 2>/dev/null)
+            CURL_OPTS="-s"
+            [ "$SSL_VERIFY" = "false" ] && CURL_OPTS="-sk"
+
+            RESPONSE=$(curl $CURL_OPTS -w "\n%{http_code}" -X POST "$WEBHOOK_URL" \
+              -H "Content-Type: application/json" \
+              -H "X-Webhook-Secret: $MONO_WEBHOOK_SECRET" \
+              -d "{\"environment\": \"production\", \"branch\": \"$BRANCH\", \"commit\": \"$COMMIT_SHA\", \"component\": \"port_max\", \"devops_api_url\": \"$DEVOPS_API_URL\", \"devops_webhook_secret\": \"$DEVOPS_WEBHOOK_SECRET\"}" \
+              --max-time 60 || echo "000")
+
+            HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+            BODY=$(echo "$RESPONSE" | head -n -1)
+
+            if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+              echo "✅ Webhook triggered (HTTP $HTTP_CODE)"
+              SUCCESS=$((SUCCESS + 1))
+            else
+              echo "❌ Webhook FAILED (HTTP $HTTP_CODE): $BODY"
+              FAILED=$((FAILED + 1))
+            fi
+          done
+
+          echo ""
+          echo "═══════════════════════════════════════════"
+          echo "📊 Results: $SUCCESS succeeded, $FAILED failed"
+          echo "═══════════════════════════════════════════"
+
+          [ "$FAILED" -ne 0 ] && echo "⚠️ Some deployments had issues."
+
+      - name: 📊 Deployment Summary
+        if: always()
+        run: |
+          echo "## 🔧 Port_Max Production Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Component** | Port_Max Tool |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | production |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Build Mode** | Server-side (port_max/deploy.sh) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Triggered By** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: 📧 Trigger Production Notification
+        if: always()
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: Logimax-Technologies/etail_development_src
+          event-type: production-deployed
+          client-payload: |
+            {
+              "status": "${{ job.status == 'success' && 'SUCCESS' || 'FAILED' }}",
+              "branch": "${{ github.ref_name }}",
+              "commit": "${{ github.sha }}",
+              "message": "${{ github.event.head_commit.message || '' }}",
+              "deployer": "${{ github.actor }}",
+              "deploy_type": "port_max"
+            }

@@ -1,0 +1,376 @@
+
+name: ⚡ Fast Auto-Deploy
+
+on:
+  push:
+    branches: [Retail_1.1.1.0001, main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: host
+    timeout-minutes: 10
+
+    steps:
+
+    # ---------------------------------------------------------
+    # STEP 1 — CHECKOUT FULL HISTORY
+    # ---------------------------------------------------------
+    - name: 📥 Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    # ---------------------------------------------------------
+    # STEP 2 — FETCH REMOTE REFS
+    # ---------------------------------------------------------
+    - name: 🔄 Fetch remote refs
+      run: git fetch --all
+
+    # ---------------------------------------------------------
+    # STEP 3 — COLLECT COMMIT INFO
+    # ---------------------------------------------------------
+    - name: 🔎 Collect Commit Info
+      id: info
+      run: |
+        echo "branch=${{ gitea.ref_name }}" >> $GITHUB_OUTPUT
+        echo "commit_sha=${{ gitea.sha }}" >> $GITHUB_OUTPUT
+        echo "before_sha=${{ gitea.before_sha }}" >> $GITHUB_OUTPUT
+
+        echo "commit_message=$(git log -1 --pretty=%B | tr '\n' ' ')" >> $GITHUB_OUTPUT
+        echo "commit_author=$(git log -1 --pretty=%an)" >> $GITHUB_OUTPUT
+        echo "commit_email=$(git log -1 --pretty=%ae)" >> $GITHUB_OUTPUT
+        echo "current_time=$(TZ='Asia/Kolkata' date '+%d-%m-%Y %I:%M:%S %p IST')" >> $GITHUB_OUTPUT
+
+    # ---------------------------------------------------------
+    # STEP 4 — PHP SYNTAX CHECK
+    # ---------------------------------------------------------
+    # - name: 🧪 PHP Syntax Check (Full Project, Filtered)
+    #   id: lint
+    #   run: |
+    #     echo "🔍 Scanning PHP files..."
+
+    #     ERR=0
+    #     OUTPUT=""
+
+    #     IGNORE_DIRS="^./vendor/|^./system/|^./assets/|^./application/libraries/Zend/|^./application/libraries/dompdf/|^./application/third_party/PHPExcel/"
+
+    #     FILES=$(find . -type f -name "*.php" | grep -Ev "$IGNORE_DIRS" || true)
+
+    #     echo "Total PHP files scanned: $(echo "$FILES" | wc -l)"
+
+    #     echo "$FILES" | while read -r FILE; do
+    #     RESULT=$(php -l "$FILE" 2>&1)
+    #     STATUS=$?
+
+    #     if [[ $STATUS -ne 0 ]]; then
+    #       ERR=1
+    #       OUTPUT="${OUTPUT}\n❌ ERROR in $FILE\n$RESULT\n"
+    #     fi
+    #     done
+
+
+    #     echo "files checked success"
+
+    #     # Export lint output
+    #     {
+    #       echo "lint_output<<EOF"
+    #       echo -e "$OUTPUT"
+    #       echo "EOF"
+    #     } >> "$GITHUB_OUTPUT"
+
+    #     if [[ $ERR -ne 0 ]]; then
+    #       echo "❌ Lint errors found"
+    #       exit 1
+    #     else
+    #       echo "✅ No PHP syntax errors"
+    #     fi
+    
+    # - name: 🧪 PHP Syntax Check (CHANGED FILES ONLY)
+    #   id: lint
+    #   run: |
+    #     echo "🔍 Checking changed PHP files..."
+
+    #     AFTER=$(git rev-parse HEAD)
+    #     BEFORE=$(git rev-parse HEAD^)
+
+    #     echo "Before: $BEFORE"
+    #     echo "After:  $AFTER"
+
+    #     CHANGED_FILES=$(git diff --name-only $BEFORE $AFTER -- '*.php')
+
+    #     echo "Changed PHP Files:"
+    #     echo "$CHANGED_FILES"
+
+    #     if [ -z "$CHANGED_FILES" ]; then
+    #       echo "✅ No changed PHP files."
+    #       echo "lint_output=No PHP files changed" >> $GITHUB_OUTPUT
+    #       exit 0
+    #     fi
+
+    #     ERR=0
+    #     OUTPUT=""
+
+    #     while IFS= read -r FILE; do
+    #       [ -z "$FILE" ] && continue
+
+    #       echo "▶ Linting $FILE"
+    #       RESULT=$(php -l "$FILE" 2>&1)
+
+    #       if [ $? -ne 0 ]; then
+    #         ERR=1
+    #         OUTPUT="${OUTPUT}\n❌ ERROR in $FILE\n$RESULT\n"
+    #       fi
+    #     done <<< "$CHANGED_FILES"
+
+    #     {
+    #       echo "lint_output<<EOF"
+    #       echo -e "$OUTPUT"
+    #       echo "EOF"
+    #     } >> $GITHUB_OUTPUT
+
+    #     if [ $ERR -ne 0 ]; then
+    #       echo "❌ Lint errors found"
+    #       exit 1
+    #     else
+    #       echo "✅ No PHP lint errors"
+    #     fi
+
+    # - name: 🧪 PHP Syntax Check (CHANGED FILES ONLY)
+    #   id: lint
+    #   run: |
+    #     echo "🔍 Checking changed PHP files..."
+
+    #     BEFORE=$(git rev-parse HEAD^)
+    #     AFTER=$(git rev-parse HEAD)
+
+    #     CHANGED_FILES=$(git diff --name-only $BEFORE $AFTER -- '*.php' | tr -d '\r')
+
+    #     echo "Changed PHP Files:"
+    #     echo "$CHANGED_FILES"
+
+    #     if [ -z "$CHANGED_FILES" ]; then
+    #       echo "lint_output=No PHP files changed" >> $GITHUB_OUTPUT
+    #       exit 0
+    #     fi
+
+    #     ERR=0
+    #     OUTPUT=""
+
+    #     while IFS= read -r FILE; do
+    #       echo "▶ Linting: $FILE"
+
+    #       RESULT=$(php -l "$FILE" 2>&1)
+    #       STATUS=$?   # MUST be immediately after php -l
+
+    #       if [[ $STATUS -ne 0 ]]; then
+    #         ERR=1
+    #         OUTPUT="${OUTPUT}\n❌ ERROR in $FILE\n$RESULT\n"
+    #       fi
+
+    #     done <<< "$CHANGED_FILES"
+
+    #     {
+    #       echo "lint_output<<EOF"
+    #       echo -e "$OUTPUT"
+    #       echo "EOF"
+    #     } >> $GITHUB_OUTPUT
+
+    #     if [[ $ERR -ne 0 ]]; then
+    #       exit 1
+    #     fi
+
+    #     echo "✅ PHP lint passed."
+
+    # - name: 🧪 PHP Syntax Check (CHANGED FILES ONLY)
+    #   id: lint
+    #   run: |
+    #     echo "🔍 Checking changed PHP files..."
+
+    #     AFTER="${{ gitea.sha }}"
+
+    #     # Fallback: If Gitea didn't send before_sha (common in merges), use parent commit
+    #     if [ -n "${{ gitea.before_sha }}" ]; then
+    #       BEFORE="${{ gitea.before_sha }}"
+    #     else
+    #       BEFORE=$(git rev-parse "${AFTER}^")
+    #     fi
+
+    #     echo "Before: $BEFORE"
+    #     echo "After:  $AFTER"
+
+    #     # Get changed PHP files
+    #     CHANGED_FILES=$(git diff --name-only "$BEFORE" "$AFTER" -- '*.php' | tr -d '\r')
+
+    #     echo "Changed PHP Files:"
+    #     echo "$CHANGED_FILES"
+
+    #     if [ -z "$CHANGED_FILES" ]; then
+    #       echo "lint_output=No PHP files changed" >> $GITHUB_OUTPUT
+    #       exit 0
+    #     fi
+
+    #     ERR=0
+    #     OUTPUT=""
+
+    #     echo "🚧 Starting lint loop..."
+
+    #     while IFS= read -r FILE; do
+    #       [ -z "$FILE" ] && continue
+
+    #       echo "▶ Linting: $FILE"
+
+    #       # Run lint with captured output
+    #       LINT_RESULT=$(php -l "$FILE" 2>&1)
+    #       STATUS=$?
+
+    #       if [[ $STATUS -ne 0 ]]; then
+    #         ERR=1
+
+    #         # Extract error line number
+    #         LINE=$(echo "$LINT_RESULT" | grep -oE "line [0-9]+" | awk '{print $2}')
+
+    #         # Capture context around error
+    #         if [[ -n "$LINE" ]]; then
+    #           CONTEXT=$(sed -n "$((LINE-2)),$((LINE+2))p" "$FILE" | nl -ba)
+    #         else
+    #           CONTEXT="(No context available)"
+    #         fi
+
+    #         OUTPUT="${OUTPUT}\n❌ ERROR in $FILE\n$LINT_RESULT\n\n➡ Code Snippet Around Line $LINE:\n$CONTEXT\n\n----------------------------------------\n"
+    #       fi
+
+    #     done <<< "$CHANGED_FILES"
+
+    #     # Send lint result to email step
+    #     {
+    #       echo "lint_output<<EOF"
+    #       echo -e "$OUTPUT"
+    #       echo "EOF"
+    #     } >> $GITHUB_OUTPUT
+
+    #     if [[ $ERR -ne 0 ]]; then
+    #       echo "❌ Lint errors found"
+    #       exit 1
+    #     fi
+
+    #     echo "✅ No PHP lint errors"
+
+
+
+    # ---------------------------------------------------------
+    # STEP 5 — SSH SETUP
+    # ---------------------------------------------------------
+    - name: 🔐 SSH Setup
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa_gitea
+        chmod 600 ~/.ssh/id_rsa_gitea
+        ssh-keyscan -H ${{ secrets.CPANEL_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+
+
+    # ---------------------------------------------------------
+    # STEP 6 — DEPLOY THROUGH SSH
+    # ---------------------------------------------------------
+    - name: 🚀 Execute Deployment
+      id: deploy-step
+      run: |
+        echo "Starting deployment..."
+        
+        SSH_USER="${{ secrets.CPANEL_USER }}"
+        SSH_HOST="${{ secrets.CPANEL_HOST }}"
+        
+        # Remove any whitespace from host
+        SSH_HOST=$(echo "$SSH_HOST" | tr -d '[:space:]')
+        
+        echo "SSH Host: $SSH_HOST"
+        echo "SSH User: $SSH_USER"
+        echo "Branch: ${{ steps.info.outputs.branch }}"
+        
+        # Clean SSH command without nested bash -lc
+        SSH_COMMAND="cd /home/retaillogimaxind/public_html/livetest_etail_v3 && ./deploy.sh '${{ steps.info.outputs.branch }}'"
+        
+        echo "Executing: $SSH_COMMAND"
+        
+        # Test connection first
+        echo "Testing SSH connection..."
+        ssh -o ConnectTimeout=10 -o BatchMode=yes -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa_gitea $SSH_USER@$SSH_HOST "echo 'SSH connection successful'"
+        
+        # Execute deployment with detailed logging
+        echo "Starting deployment command..."
+        {
+          OUTPUT=$(ssh \
+            -o ConnectTimeout=30 \
+            -o LogLevel=VERBOSE \
+            -o StrictHostKeyChecking=no \
+            -i ~/.ssh/id_rsa_gitea \
+            $SSH_USER@$SSH_HOST \
+            "$SSH_COMMAND" 2>&1)
+          
+          EXIT_CODE=$?
+          
+          echo "Exit Code: $EXIT_CODE"
+          echo "Output:"
+          echo "$OUTPUT"
+        } | tee /tmp/deploy.log
+        
+        # Capture output for later use
+        DEPLOY_OUTPUT=$(cat /tmp/deploy.log)
+        
+        echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+        
+        {
+          echo "deploy_output<<EOF"
+          echo "$DEPLOY_OUTPUT"
+          echo "EOF"
+        } >> $GITHUB_OUTPUT
+        
+        if [[ $EXIT_CODE -eq 0 ]]; then
+          echo "status=success" >> $GITHUB_OUTPUT
+          echo "error_type=none" >> $GITHUB_OUTPUT
+        else
+          echo "status=failed" >> $GITHUB_OUTPUT
+          ERR_MSG=$(echo "$OUTPUT" | tail -50 | tr '\n' ' ')
+          echo "error_message=$ERR_MSG" >> $GITHUB_OUTPUT
+          echo "error_type=deployment_error" >> $GITHUB_OUTPUT
+          exit 1
+        fi
+
+    # ---------------------------------------------------------
+    # STEP 7 — EMAIL REPORT
+    # ---------------------------------------------------------
+    - name: 📧 Send Email Report
+      if: always()
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 587
+        username: ${{ secrets.SMTP_USERNAME }}
+        password: ${{ secrets.SMTP_PASSWORD }}
+        from: "Deploy Bot <${{ secrets.SMTP_USERNAME }}>"
+        to: "${{ steps.info.outputs.commit_email }}, ${{ secrets.MAIL_TO }}"
+        subject: "Deployment ${{ steps.deploy-step.outputs.status }} — ${{ steps.info.outputs.branch }}"
+        body: |
+          DEPLOYMENT REPORT
+          =================
+
+          Status: ${{ job.status }}
+          Branch: ${{ steps.info.outputs.branch }}
+          Commit: ${{ steps.info.outputs.commit_sha }}
+          Author: ${{ steps.info.outputs.commit_author }}
+          Email:  ${{ steps.info.outputs.commit_email }}
+          Time:   ${{ steps.info.outputs.current_time }}
+
+          Commit Message:
+          ${{ steps.info.outputs.commit_message }}
+
+          -------------------------------------------------------
+          PHP LINT ERRORS (if any)
+          -------------------------------------------------------
+          ${{ steps.lint.outputs.lint_output }}
+
+          -------------------------------------------------------
+          LAST 20 LINES OF DEPLOY OUTPUT
+          -------------------------------------------------------
+          ${{ steps.deploy-step.outputs.deploy_output }}

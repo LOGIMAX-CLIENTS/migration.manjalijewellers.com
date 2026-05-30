@@ -1,0 +1,157 @@
+# =============================================================================
+# BATCH SYNC FAILURE NOTIFICATION HANDLER
+# Sends notifications when batch sync operations fail
+# Triggered via repository_dispatch from sync-batch.yml
+# =============================================================================
+
+name: 📧 Batch Sync Failure Alert
+
+on:
+  repository_dispatch:
+    types: [batch-sync-failure]
+  workflow_dispatch:
+    inputs:
+      clients:
+        description: 'Failed clients (comma-separated)'
+        required: true
+        type: string
+      source_branch:
+        description: 'Source branch'
+        required: true
+        default: 'Production'
+        type: string
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: 📊 Prepare Notification Data
+        id: data
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            CLIENTS="${{ github.event.client_payload.clients }}"
+            SOURCE_BRANCH="${{ github.event.client_payload.source_branch }}"
+            TRIGGERED_BY="${{ github.event.client_payload.triggered_by }}"
+            RUN_URL="${{ github.event.client_payload.run_url }}"
+          else
+            CLIENTS="${{ inputs.clients }}"
+            SOURCE_BRANCH="${{ inputs.source_branch }}"
+            TRIGGERED_BY="${{ github.actor }}"
+            RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          fi
+          
+          echo "clients=$CLIENTS" >> $GITHUB_OUTPUT
+          echo "source_branch=$SOURCE_BRANCH" >> $GITHUB_OUTPUT
+          echo "triggered_by=$TRIGGERED_BY" >> $GITHUB_OUTPUT
+          echo "run_url=$RUN_URL" >> $GITHUB_OUTPUT
+          echo "timestamp=$(date '+%Y-%m-%d %H:%M:%S %Z')" >> $GITHUB_OUTPUT
+
+      - name: 📧 Send Failure Notification
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER || 'smtp.gmail.com' }}
+          server_port: ${{ secrets.SMTP_PORT || '587' }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          from: "⚠️ Sync Alert <${{ secrets.SMTP_USERNAME }}>"
+          to: ${{ secrets.MAIL_TO }}
+          subject: "⚠️ Batch Sync Failed - ${{ steps.data.outputs.source_branch }}"
+          content_type: text/html
+          html_body: |
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #0d1117; color: #c9d1d9;">
+              <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                
+                <!-- Header -->
+                <div style="background: linear-gradient(135deg, #da3633 0%, #f85149 100%); border-radius: 12px 12px 0 0; padding: 30px; text-align: center;">
+                  <div style="font-size: 48px; margin-bottom: 10px;">⚠️</div>
+                  <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">Batch Sync Failed</h1>
+                  <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.85); font-size: 14px;">Action required</p>
+                </div>
+                
+                <!-- Main Content -->
+                <div style="background-color: #161b22; border: 1px solid #30363d; border-top: none; border-radius: 0 0 12px 12px; padding: 24px;">
+                  
+                  <!-- Details Grid -->
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                      <td style="padding: 12px 0; border-bottom: 1px solid #30363d;">
+                        <span style="color: #8b949e; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Failed Clients</span><br>
+                        <span style="color: #f85149; font-size: 16px; font-weight: 500;">${{ steps.data.outputs.clients }}</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 12px 0; border-bottom: 1px solid #30363d;">
+                        <span style="color: #8b949e; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Source Branch</span><br>
+                        <span style="color: #c9d1d9; font-size: 16px; font-weight: 500;">🔀 ${{ steps.data.outputs.source_branch }}</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 12px 0; border-bottom: 1px solid #30363d;">
+                        <span style="color: #8b949e; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Triggered By</span><br>
+                        <span style="color: #c9d1d9; font-size: 16px;">👤 ${{ steps.data.outputs.triggered_by }}</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 12px 0;">
+                        <span style="color: #8b949e; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Time</span><br>
+                        <span style="color: #c9d1d9; font-size: 14px;">🕐 ${{ steps.data.outputs.timestamp }}</span>
+                      </td>
+                    </tr>
+                  </table>
+                  
+                  <!-- Action Button -->
+                  <div style="margin-top: 24px; text-align: center;">
+                    <a href="${{ steps.data.outputs.run_url }}" style="display: inline-block; background: linear-gradient(135deg, #238636 0%, #2ea043 100%); color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">View Run Details</a>
+                  </div>
+                  
+                </div>
+                
+                <!-- Footer -->
+                <div style="text-align: center; padding: 20px; color: #8b949e; font-size: 12px;">
+                  <p style="margin: 0;">Powered by <strong style="color: #c9d1d9;">Logimax CI/CD</strong></p>
+                  <p style="margin: 8px 0 0 0; color: #6e7681;">Automated failure notification • Do not reply</p>
+                </div>
+                
+              </div>
+            </body>
+            </html>
+
+      - name: 📋 Log Summary
+        run: |
+          echo "## ⚠️ Batch Sync Failure Alert Sent" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Failed Clients** | ${{ steps.data.outputs.clients }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Source Branch** | ${{ steps.data.outputs.source_branch }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Triggered By** | ${{ steps.data.outputs.triggered_by }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Time** | ${{ steps.data.outputs.timestamp }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: 📊 Log to Dashboard
+        if: always()
+        continue-on-error: true
+        run: |
+          DASHBOARD_API="${{ secrets.DASHBOARD_API_URL || 'https://retail.logimaxindia.com/develop/cicd/docs/api' }}"
+          
+          curl -s -X POST "$DASHBOARD_API/deployment-history.php" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"action\": \"record\",
+              \"client_id\": \"batch-sync\",
+              \"client_name\": \"Batch Sync: ${{ steps.data.outputs.clients }}\",
+              \"environment\": \"sync\",
+              \"status\": \"failed\",
+              \"branch\": \"${{ steps.data.outputs.source_branch }}\",
+              \"commit_sha\": \"\",
+              \"commit_message\": \"Batch sync failed\",
+              \"triggered_by\": \"${{ steps.data.outputs.triggered_by }}\",
+              \"trigger_type\": \"batch_sync\"
+            }" || echo "⚠️ Failed to log to dashboard (non-critical)"
