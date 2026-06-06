@@ -409,6 +409,12 @@ class sync_api extends REST_Controller
                     				"gst" 			 => $transaction->gst,
                     				"gst_type" 		 => $transaction->gst_type,
                     				"receipt_no"     => $transaction->receipt_no,
+                    				"days"              => $transaction->days,
+                    				"saved_benefits_wgt" => $transaction->saved_benefits,
+                    				"saved_benefit_amt" => $transaction->saved_benefit_amt,
+                    				"benefit_value"     => $transaction->benefit_value,
+                    				"benefit_type"      => $transaction->benefit_type,
+                    				"is_digi"           => $transaction->is_digi,
                     				"new_customer" 	 => 'N'					
                     			);
 					if($this->config->item('no_branch') == 1){
@@ -792,7 +798,7 @@ class sync_api extends REST_Controller
                     				"sync_scheme_code" => $cus->sync_scheme_code, 
                                     "reg_date"		 => $cus->reg_date,
 									"salutation"     => $cus->salutation, 
-									"account_name"	 =>	$cus->ac_name,
+									"account_name"	 =>	$cus->account_name,
 									"firstname"		 =>	$cus->firstname,
 									"lastname"		 =>	$cus->lastname,
 									"address1"		 =>	$cus->address1,
@@ -816,12 +822,14 @@ class sync_api extends REST_Controller
                                     "is_closed"         => ($cus->is_closed != "" && $cus->is_closed != null ? $cus->is_closed : 0),
                                     "closed_by"         => $cus->closed_by,
                                     "closing_date"      => $cus->closing_date,
-                                    "closing_amount"    => $cus->closing_amount,
-                                    "closing_weight"    => $cus->closing_weight,
+                                    "closing_amount"    => ($cus->is_digi == 1 ? $cus->maturity_amount : $cus->closing_amount),
+                                    "closing_weight"    => ($cus->is_digi == 1 ? $cus->maturity_weight : $cus->closing_weight),
                                     "closing_add_chgs"  => $cus->closing_add_chgs,
                                     "additional_benefits"=> $cus->additional_benefits,
                                     "remark_close"      => $cus->remark_close,
                                     "ref_no"            => $cus->ref_no,
+                                    "is_digi"           => $cus->is_digi,
+                                    "maturity_date"     => $cus->maturity_date,
                                     "id_branch" 	    => ($branch == 0 ? NULL:$branch),
                                     "branch_code"       => $cus->branch_code,
                     			);

@@ -5625,7 +5625,7 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
     // Customer Reg& transaction records  // HH	
     function get_intertable_list($mobile, $clientid, $ref_no, $group_code, $cus = "")
     {
-        $sql = "SELECT * FROM `customer_reg` WHERE 1=1" .
+        $sql = "SELECT * FROM `customer_reg` WHERE 1=1 " .
             ($mobile != '' ? "AND mobile = '" . $mobile . "' " : "") .
             ($clientid != '' ? "AND clientid = '" . $clientid . "' " : "") .
             ($ref_no != '' ? "AND ref_no = '" . $ref_no . "' " : "") .
