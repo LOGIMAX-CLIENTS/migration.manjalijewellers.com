@@ -475,7 +475,9 @@ class Syncapi_model extends CI_Model
 				  IFNULL(sa.ref_no,'')as client_id,
 				  IFNULL(p.discountAmt,'0.00') as discountAmt,
 				  IFNULL(p.payment_amount,'0.00') as amount,
+				  IFNULL(p.saved_benefit_amt,'0.00') as saved_benefit_amt,
 				  IFNULL(p.metal_weight,'0.00') as weight,
+				  IFNULL(p.saved_benefits,'0.000') as saved_benefits_wgt,
 				  IFNULL(p.payment_mode,'') as payment_mode,
 				  IFNULL(p.payment_status,'') as payment_status,
 				  IFNULL(p.bank_name,'') as bank_name,
@@ -484,7 +486,7 @@ class Syncapi_model extends CI_Model
 				  IFNULL(p.card_no,'')    as card_no,
 				  IFNULL(sa.id_scheme_account,'') as id_scheme_account,
 				  IFNULL(p.id_payment,'') as ref_no,
-				  IF(sa.scheme_acc_number!='','N',sa.is_new) as new_customer,
+				  IF(sa.scheme_acc_number!='','N',sa.is_new) as new_customer,s.is_digi,
 				  IFNULL(p.metal_rate,'') as rate,p.remark as remarks,
 				  b.warehouse
 				FROM
@@ -626,7 +628,7 @@ class Syncapi_model extends CI_Model
 		               Date_Format(sa.start_date,'%Y-%m-%d')  as reg_date,sh.sync_scheme_code,sh.code as group_code,
 					   c.title as salutation,sa.account_name as ac_name,c.firstname,c.lastname,sa.group_code,sa.scheme_acc_number as scheme_ac_no, 
 					   a.address1 as address1,a.address2 as address2,a.address3 as address3,ct.name as city,a.pincode,s.name as state,cy.name as country,
-					   c.phone,c.mobile,c.email,
+					   c.phone,c.mobile,c.email,sh.is_digi,
 					   Date_Format(c.date_of_birth,'%Y-%m-%d') as dt_of_birth,
 					   Date_Format(date_of_wed,'%Y-%m-%d') as wed_date,
 					   IF(sa.scheme_acc_number!='','N',sa.is_new) as new_customer,c.reference_no as cus_ref_no

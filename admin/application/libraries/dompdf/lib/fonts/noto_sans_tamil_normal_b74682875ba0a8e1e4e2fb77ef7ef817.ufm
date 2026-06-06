@@ -1,0 +1,236 @@
+StartFontMetrics 4.1
+Notice Converted by PHP-font-lib
+Comment https://github.com/PhenX/php-font-lib
+EncodingScheme FontSpecific
+Copyright Copyright 2022 The Noto Project Authors (https://github.com/notofonts/tamil)
+FontName Noto Sans Tamil
+FontSubfamily Regular
+UniqueID 2.004;GOOG;NotoSansTamil-Regular
+FullName Noto Sans Tamil Regular
+Version Version 2.004
+PostScriptName NotoSansTamil-Regular
+LicenseURL https://scripts.sil.org/OFL
+Weight Medium
+ItalicAngle 0
+IsFixedPitch false
+UnderlineThickness 50
+UnderlinePosition -100
+FontHeightOffset 0
+Ascender 870
+Descender -370
+FontBBox -493 -244 960 944
+StartCharMetrics 218
+U 0 ; WX 0 ; N NULL ; G 1
+U 13 ; WX 260 ; N CR ; G 2
+U 32 ; WX 260 ; N space ; G 3
+U 33 ; WX 269 ; N exclam.tamil ; G 4
+U 34 ; WX 426 ; N quotedbl.tamil ; G 5
+U 35 ; WX 646 ; N numbersign.tamil ; G 6
+U 36 ; WX 572 ; N dollar ; G 204
+U 37 ; WX 831 ; N percent.tamil ; G 7
+U 38 ; WX 732 ; N ampersand ; G 197
+U 39 ; WX 250 ; N quotesingle.tamil ; G 8
+U 40 ; WX 321 ; N parenleft.tamil ; G 9
+U 41 ; WX 321 ; N parenright.tamil ; G 10
+U 42 ; WX 551 ; N asterisk.tamil ; G 11
+U 43 ; WX 572 ; N plus.tamil ; G 12
+U 44 ; WX 250 ; N comma.tamil ; G 13
+U 45 ; WX 322 ; N hyphen.tamil ; G 14
+U 46 ; WX 268 ; N period.tamil ; G 15
+U 47 ; WX 393 ; N slash.tamil ; G 16
+U 48 ; WX 572 ; N zero.tamil ; G 17
+U 49 ; WX 572 ; N one.tamil ; G 18
+U 50 ; WX 572 ; N two.tamil ; G 19
+U 51 ; WX 572 ; N three.tamil ; G 20
+U 52 ; WX 572 ; N four.tamil ; G 21
+U 53 ; WX 572 ; N five.tamil ; G 22
+U 54 ; WX 572 ; N six.tamil ; G 23
+U 55 ; WX 572 ; N seven.tamil ; G 24
+U 56 ; WX 572 ; N eight.tamil ; G 25
+U 57 ; WX 572 ; N nine.tamil ; G 26
+U 58 ; WX 268 ; N colon.tamil ; G 27
+U 59 ; WX 268 ; N semicolon.tamil ; G 28
+U 60 ; WX 572 ; N less.tamil ; G 29
+U 61 ; WX 572 ; N equal.tamil ; G 30
+U 62 ; WX 572 ; N greater.tamil ; G 31
+U 63 ; WX 445 ; N question.tamil ; G 32
+U 64 ; WX 899 ; N at ; G 196
+U 65 ; WX 639 ; N A ; G 68
+U 66 ; WX 650 ; N B ; G 76
+U 67 ; WX 632 ; N C ; G 77
+U 68 ; WX 730 ; N D ; G 79
+U 69 ; WX 556 ; N E ; G 81
+U 70 ; WX 519 ; N F ; G 86
+U 71 ; WX 728 ; N G ; G 87
+U 72 ; WX 741 ; N H ; G 88
+U 73 ; WX 339 ; N I ; G 89
+U 74 ; WX 273 ; N J ; G 94
+U 75 ; WX 619 ; N K ; G 95
+U 76 ; WX 524 ; N L ; G 96
+U 77 ; WX 907 ; N M ; G 97
+U 78 ; WX 760 ; N N ; G 98
+U 79 ; WX 781 ; N O ; G 100
+U 80 ; WX 605 ; N P ; G 108
+U 81 ; WX 781 ; N Q ; G 110
+U 82 ; WX 622 ; N R ; G 111
+U 83 ; WX 549 ; N S ; G 112
+U 84 ; WX 556 ; N T ; G 113
+U 85 ; WX 731 ; N U ; G 114
+U 86 ; WX 600 ; N V ; G 119
+U 87 ; WX 930 ; N W ; G 120
+U 88 ; WX 586 ; N X ; G 121
+U 89 ; WX 566 ; N Y ; G 122
+U 90 ; WX 572 ; N Z ; G 124
+U 91 ; WX 318 ; N bracketleft.tamil ; G 33
+U 92 ; WX 393 ; N backslash.tamil ; G 34
+U 93 ; WX 323 ; N bracketright.tamil ; G 35
+U 94 ; WX 572 ; N asciicircum.tamil ; G 36
+U 95 ; WX 444 ; N underscore.tamil ; G 37
+U 96 ; WX 281 ; N grave ; G 210
+U 97 ; WX 561 ; N a ; G 125
+U 98 ; WX 615 ; N b ; G 133
+U 99 ; WX 480 ; N c ; G 134
+U 100 ; WX 615 ; N d ; G 136
+U 101 ; WX 564 ; N e ; G 138
+U 102 ; WX 344 ; N f ; G 143
+U 103 ; WX 615 ; N g ; G 144
+U 104 ; WX 618 ; N h ; G 145
+U 105 ; WX 258 ; N i ; G 146
+U 106 ; WX 258 ; N j ; G 152
+U 107 ; WX 534 ; N k ; G 154
+U 108 ; WX 258 ; N l ; G 155
+U 109 ; WX 935 ; N m ; G 156
+U 110 ; WX 618 ; N n ; G 157
+U 111 ; WX 605 ; N o ; G 159
+U 112 ; WX 615 ; N p ; G 167
+U 113 ; WX 615 ; N q ; G 169
+U 114 ; WX 413 ; N r ; G 170
+U 115 ; WX 479 ; N s ; G 171
+U 116 ; WX 361 ; N t ; G 173
+U 117 ; WX 618 ; N u ; G 174
+U 118 ; WX 508 ; N v ; G 179
+U 119 ; WX 786 ; N w ; G 180
+U 120 ; WX 529 ; N x ; G 181
+U 121 ; WX 510 ; N y ; G 182
+U 122 ; WX 470 ; N z ; G 185
+U 123 ; WX 369 ; N braceleft.tamil ; G 38
+U 124 ; WX 551 ; N bar.tamil ; G 39
+U 125 ; WX 369 ; N braceright.tamil ; G 40
+U 126 ; WX 572 ; N asciitilde.tamil ; G 41
+U 160 ; WX 260 ; N uni00A0.tamil ; G 42
+U 161 ; WX 269 ; N exclamdown ; G 188
+U 162 ; WX 572 ; N cent ; G 203
+U 163 ; WX 572 ; N sterling ; G 206
+U 165 ; WX 572 ; N yen ; G 207
+U 167 ; WX 513 ; N section ; G 199
+U 168 ; WX 580 ; N dieresis ; G 209
+U 169 ; WX 832 ; N copyright ; G 200
+U 170 ; WX 357 ; N ordfeminine ; G 186
+U 171 ; WX 509 ; N guillemotleft ; G 61
+U 173 ; WX 322 ; N uni00AD.tamil ; G 43
+U 174 ; WX 832 ; N registered ; G 201
+U 175 ; WX 500 ; N overscore ; G 215
+U 176 ; WX 428 ; N degree ; G 67
+U 178 ; WX 312 ; N uni00B2 ; G 54
+U 179 ; WX 329 ; N uni00B3 ; G 55
+U 180 ; WX 281 ; N acute ; G 211
+U 182 ; WX 655 ; N paragraph ; G 198
+U 183 ; WX 268 ; N periodcentered ; G 190
+U 184 ; WX 225 ; N cedilla ; G 216
+U 186 ; WX 376 ; N ordmasculine ; G 187
+U 187 ; WX 509 ; N guillemotright ; G 62
+U 191 ; WX 434 ; N questiondown ; G 189
+U 192 ; WX 639 ; N Agrave ; G 72
+U 193 ; WX 639 ; N Aacute ; G 69
+U 194 ; WX 639 ; N Acircumflex ; G 70
+U 195 ; WX 639 ; N Atilde ; G 74
+U 196 ; WX 639 ; N Adieresis ; G 71
+U 197 ; WX 639 ; N Aring ; G 73
+U 198 ; WX 881 ; N AE ; G 75
+U 199 ; WX 632 ; N Ccedilla ; G 78
+U 200 ; WX 556 ; N Egrave ; G 85
+U 201 ; WX 556 ; N Eacute ; G 82
+U 202 ; WX 556 ; N Ecircumflex ; G 83
+U 203 ; WX 556 ; N Edieresis ; G 84
+U 204 ; WX 339 ; N Igrave ; G 93
+U 205 ; WX 339 ; N Iacute ; G 90
+U 206 ; WX 339 ; N Icircumflex ; G 91
+U 207 ; WX 339 ; N Idieresis ; G 92
+U 208 ; WX 730 ; N Eth ; G 80
+U 209 ; WX 760 ; N Ntilde ; G 99
+U 210 ; WX 781 ; N Ograve ; G 104
+U 211 ; WX 781 ; N Oacute ; G 101
+U 212 ; WX 781 ; N Ocircumflex ; G 102
+U 213 ; WX 781 ; N Otilde ; G 106
+U 214 ; WX 781 ; N Odieresis ; G 103
+U 215 ; WX 572 ; N multiply.tamil ; G 51
+U 216 ; WX 781 ; N Oslash ; G 105
+U 217 ; WX 731 ; N Ugrave ; G 118
+U 218 ; WX 731 ; N Uacute ; G 115
+U 219 ; WX 731 ; N Ucircumflex ; G 116
+U 220 ; WX 731 ; N Udieresis ; G 117
+U 221 ; WX 566 ; N Yacute ; G 123
+U 222 ; WX 605 ; N Thorn ; G 109
+U 223 ; WX 631 ; N germandbls ; G 172
+U 224 ; WX 561 ; N agrave ; G 129
+U 225 ; WX 561 ; N aacute ; G 126
+U 226 ; WX 561 ; N acircumflex ; G 127
+U 227 ; WX 561 ; N atilde ; G 131
+U 228 ; WX 561 ; N adieresis ; G 128
+U 229 ; WX 561 ; N aring ; G 130
+U 230 ; WX 864 ; N ae ; G 132
+U 231 ; WX 480 ; N ccedilla ; G 135
+U 232 ; WX 564 ; N egrave ; G 142
+U 233 ; WX 564 ; N eacute ; G 139
+U 234 ; WX 564 ; N ecircumflex ; G 140
+U 235 ; WX 564 ; N edieresis ; G 141
+U 236 ; WX 258 ; N igrave ; G 151
+U 237 ; WX 258 ; N iacute ; G 148
+U 238 ; WX 258 ; N icircumflex ; G 149
+U 239 ; WX 258 ; N idieresis ; G 150
+U 240 ; WX 605 ; N eth ; G 137
+U 241 ; WX 618 ; N ntilde ; G 158
+U 242 ; WX 605 ; N ograve ; G 163
+U 243 ; WX 605 ; N oacute ; G 160
+U 244 ; WX 605 ; N ocircumflex ; G 161
+U 245 ; WX 605 ; N otilde ; G 165
+U 246 ; WX 605 ; N odieresis ; G 162
+U 247 ; WX 572 ; N divide.tamil ; G 52
+U 248 ; WX 605 ; N oslash ; G 164
+U 249 ; WX 618 ; N ugrave ; G 178
+U 250 ; WX 618 ; N uacute ; G 175
+U 251 ; WX 618 ; N ucircumflex ; G 176
+U 252 ; WX 618 ; N udieresis ; G 177
+U 253 ; WX 510 ; N yacute ; G 183
+U 254 ; WX 615 ; N thorn ; G 168
+U 255 ; WX 510 ; N ydieresis ; G 184
+U 305 ; WX 258 ; N dotlessi ; G 147
+U 338 ; WX 928 ; N OE ; G 107
+U 339 ; WX 946 ; N oe ; G 166
+U 710 ; WX 418 ; N circumflex ; G 212
+U 730 ; WX 300 ; N ring ; G 213
+U 732 ; WX 447 ; N tilde ; G 214
+U 768 ; WX 0 ; N gravecomb ; G 64
+U 769 ; WX 0 ; N acutecomb ; G 65
+U 771 ; WX 0 ; N tildecomb ; G 208
+U 772 ; WX 0 ; N uni0304 ; G 66
+U 776 ; WX 0 ; N uni0308 ; G 63
+U 8203 ; WX 0 ; N uni200B ; G 57
+U 8211 ; WX 500 ; N endash.tamil ; G 44
+U 8212 ; WX 1000 ; N emdash.tamil ; G 45
+U 8216 ; WX 232 ; N quoteleft.tamil ; G 46
+U 8217 ; WX 232 ; N quoteright.tamil ; G 47
+U 8218 ; WX 250 ; N quotesinglbase ; G 192
+U 8220 ; WX 420 ; N quotedblleft.tamil ; G 48
+U 8221 ; WX 420 ; N quotedblright.tamil ; G 49
+U 8222 ; WX 416 ; N quotedblbase ; G 193
+U 8226 ; WX 376 ; N bullet ; G 191
+U 8230 ; WX 804 ; N ellipsis.tamil ; G 50
+U 8249 ; WX 310 ; N guilsinglleft ; G 194
+U 8250 ; WX 310 ; N guilsinglright ; G 195
+U 8308 ; WX 360 ; N uni2074 ; G 56
+U 8364 ; WX 572 ; N Euro ; G 205
+U 8482 ; WX 773 ; N trademark ; G 202
+U 8722 ; WX 572 ; N minus.tamil ; G 53
+EndCharMetrics
+EndFontMetrics
