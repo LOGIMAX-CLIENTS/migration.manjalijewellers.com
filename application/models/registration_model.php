@@ -749,11 +749,25 @@ function upload_img__($field,$img_path,$filename)
     				$result[] =  $data;
 			    }else{
     			    if($id_scheme > 0){
+						// Digi Gold duplicate prevention - skip if customer already has an active digi scheme
+						$sch_digi_check = $this->db->query("SELECT is_digi FROM scheme WHERE id_scheme = " . $id_scheme);
+						if ($sch_digi_check->num_rows() > 0 && $sch_digi_check->row()->is_digi == 1) {
+							$digi_exists = $this->db->query(
+								"SELECT sa.id_scheme_account FROM scheme_account sa
+								 LEFT JOIN scheme s ON s.id_scheme = sa.id_scheme
+								 WHERE s.is_digi = 1 AND sa.active = 1 AND sa.is_closed = 0
+								 AND sa.id_customer = " . $data['id_customer']
+							);
+							if ($digi_exists->num_rows() > 0) {
+								continue; // Customer already has an active digi gold account, skip this entry
+							}
+						}
+
     					$records = array( 	'id_customer' 		=> $data['id_customer'],
     									'id_scheme'			=> $id_scheme,
     									'scheme_acc_number' => $row->scheme_ac_no,
     									'ref_no'            => $row->clientid,
-    									'account_name' 		=> $row->account_name,
+    									'account_name' 		=> ($row->account_name != '' || $row->account_name != NULL ? $row->account_name : $row->ac_name),
     									'group_code' 		=> $row->group_code,
     									'start_date' 		=> $row->reg_date,
     									'maturity_date' 	=> $row->maturity_date,
@@ -763,6 +777,8 @@ function upload_img__($field,$img_path,$filename)
     									'fixed_rate_on' 	=> $row->fixed_rate_on,
     									'fixed_metal_rate' 	=> $row->fixed_metal_rate,
     									'fixed_wgt' 		=> $row->fixed_wgt,
+    									'closing_amount'  	=> $row->closing_amount,
+    									'closing_weight'  	=> $row->closing_weight,
     									'id_branch' 		=> ($row->id_branch > 0 ? $row->id_branch : $data['id_branch'] ),
     									'date_add' 			=> date("Y-m-d H:i:s"),
     									'is_registered' 	=> 1,
@@ -854,6 +870,10 @@ function upload_img__($field,$img_path,$filename)
         	                                    'payment_status'    =>$row->payment_status,
         	                                    //	'dues' =>$row->NO_OF_INSTAL,
         	                                    'payment_type'      =>'Offline',
+        	                                    'saved_benefits'    => $row->saved_benefits_wgt,
+        	                                    'saved_benefit_amt' => $row->saved_benefit_amt,
+        	                                    'benefit_value'     => $row->benefit_value,
+        	                                    'benefit_type'      => $row->benefit_type,
         	                                    'is_offline'	    => 1,
         	                                    'due_type'          =>$row->due_type,
         	                                    'due_month'         =>$row->due_month,
