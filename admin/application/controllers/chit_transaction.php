@@ -941,7 +941,79 @@ class Chit_transaction extends CI_Controller
 		
 	}
 
+	 //To insert payment and registration details in intermediate table
+
 	function insert_common_data($id_payment)
+
+	{
+
+
+		$model = 'syncapi_model';
+
+		$this->load->model($model);
+
+		
+
+		//getting payment detail
+
+		$pay_data = $this->$model->getPaymentByID($id_payment);	
+	
+
+		//storing temp values
+
+		$ref_no = $pay_data[0]['ref_no'];
+
+		$id_scheme_account = $pay_data[0]['id_scheme_account']; 
+
+		$isCusRegExists = $this->$model->checkCusRegExists($id_scheme_account,$ref_no);
+
+		if(!$isCusRegExists['status']){
+
+		     $reg = $this->$model->getCustomerByID($id_scheme_account);	
+
+             //insert customer registration detail
+
+             if($reg)
+
+             {
+
+            	$reg[0]['record_to']= 1 ;
+
+            	$reg[0]['is_registered_online']= 2 ;  // 2 - online record
+
+            	$reg[0]['ref_no']		= $ref_no;
+
+            	$status = $this->$model->insert_CustomerReg($reg[0]);
+
+             }	
+
+		}
+
+		$isTranExists = $this->$model->checkTransExists($ref_no);
+
+
+		if(!$isTranExists['status'])
+
+		{
+
+            //insert payment detail
+
+            $pay_data[0]['record_to'] = 1;	
+
+            $pay_data[0]['payment_type'] = 1;	// 1 - online 
+
+
+            $status =	$this->$model->insert_transaction($pay_data[0]); 
+
+		}
+
+		//echo $this->db->last_query();exit;
+
+		return true;
+
+	}
+
+	function insert_common_data_s($id_payment)
 	{
 		$model = self::SYN_MODEL;
 

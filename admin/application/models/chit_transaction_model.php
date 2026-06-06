@@ -1497,7 +1497,7 @@ class Chit_transaction_model extends CI_Model
 
 		$isTranExists = $this->$model->checkTransExists($ref_no);
 
-		if(!$isTranExists)
+		if(!$isTranExists['status'])
 
 		{
 
