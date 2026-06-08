@@ -3194,6 +3194,14 @@ class Admin_services extends CI_Controller
 
 								"payment_ref_number" => $trans['ref_no'],
 
+								"saved_benefits" => $trans['saved_benefits_wgt'],
+
+								"saved_benefit_amt" => $trans['saved_benefit_amt'],
+
+								"benefit_value" => $trans['benefit_value'],
+
+								"benefit_type" => $trans['benefit_type'],
+
 								"date_upd" 			=> date('Y-m-d H:i:s')
 
 							);
