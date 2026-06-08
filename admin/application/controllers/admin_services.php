@@ -4060,6 +4060,12 @@ class Admin_services extends CI_Controller
 
 		$id_scheme_account = $pay_data[0]['id_scheme_account'];
 
+		// Validate gent_clientid setting — skip client_id if disabled
+		$chit_settings = $this->db->query("SELECT gent_clientid FROM chit_settings LIMIT 1")->row_array();
+		if(empty($chit_settings['gent_clientid']) || $chit_settings['gent_clientid'] == 0){
+			$pay_data[0]['client_id'] = '';
+		}
+
 		$isCusRegExists = $this->$model->checkCusRegExists($id_scheme_account, $ref_no);
 
 		if (!$isCusRegExists['status']) {
@@ -4077,6 +4083,11 @@ class Admin_services extends CI_Controller
 				$reg[0]['is_registered_online'] = 2;  // 2 - online record
 
 				$reg[0]['ref_no']		= $ref_no;
+
+				// Skip clientid if gent_clientid is disabled
+				if(empty($chit_settings['gent_clientid']) || $chit_settings['gent_clientid'] == 0){
+					$reg[0]['clientid'] = NULL;
+				}
 
 				$status = $this->$model->insert_CustomerReg($reg[0]);
 			}
