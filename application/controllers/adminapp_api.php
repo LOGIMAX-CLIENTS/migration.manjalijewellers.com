@@ -837,7 +837,7 @@ class Adminapp_api extends REST_Controller
 			$result['customer'] = $cus;
 			if(sizeof($cus)>0){
 		  
-				if(((!empty($cus['allocated_employee']) && $data['login_employee'] == $cus['allocated_employee'])||(!empty($cus['allocated_agent']) && $data['login_employee'] == $cus['allocated_agent'])) && $cus['active'] == 1){
+				if(((!empty($cus['allocated_employee']) && $data['id_employee'] == $cus['allocated_employee'])||(!empty($cus['allocated_agent']) && $data['id_employee'] == $cus['allocated_agent'])) && $cus['active'] == 1){
 					//send data true
 					$result['isValid'] = TRUE;
 					$schemeAcc = $this->mobileapi_model->get_payment_details($cus['id_customer'],$cus['id_branch'],$id_sch_acc); 
@@ -855,7 +855,7 @@ class Adminapp_api extends REST_Controller
 					}
 
 					$result['msg'] = 'Customer data retrieved successfully...';
-				}elseif(((!empty($cus['allocated_employee']) && $data['login_employee'] == $cus['allocated_employee']) || (!empty($cus['allocated_agent']) && $data['login_employee'] == $cus['allocated_agent']) )&& $cus['active'] == 0){
+				}elseif(((!empty($cus['allocated_employee']) && $data['id_employee'] == $cus['allocated_employee']) || (!empty($cus['allocated_agent']) && $data['id_employee'] == $cus['allocated_agent']) )&& $cus['active'] == 0){
 					//inactive false
 					$result['isValid']= FALSE; 
 					$result['msg'] = 'Customer is not active. Kindly contact administrator...';
