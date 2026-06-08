@@ -1736,10 +1736,36 @@ class Mobile_api extends REST_Controller
         $result = $this->$model->getClassification($id);
         $this->response($result, 200);
     }
-    //to get visible to customers schemes only
     function getVisClass_get()
     {
+        $id_branch = ($this->get('id_branch') == 'null' ? '' : $this->get('id_branch'));
+        // Get all classifications
         $result = $this->scheme_modal->get_classifications();
+        // Filter by active schemes only when branchwise_scheme is enabled and id_branch is provided
+        $cs = $this->db->query("SELECT branchwise_scheme FROM chit_settings LIMIT 1")->row_array();
+        if ($cs['branchwise_scheme'] == 1 && $id_branch != '') {
+            $model = self::MOD_MOB;
+            $activeSchemes = $this->$model->get_activeSchemes($id_branch);
+            $activeClassIds = array();
+            if (!empty($activeSchemes)) {
+                foreach ($activeSchemes as $sch) {
+                    if (!empty($sch['id_classification'])) {
+                        $activeClassIds[$sch['id_classification']] = true;
+                    }
+                }
+            }
+            if (!empty($activeClassIds) && isset($result['classification'])) {
+                $filtered = array();
+                foreach ($result['classification'] as $cls) {
+                    if (isset($activeClassIds[$cls['id_classification']])) {
+                        $filtered[] = $cls;
+                    }
+                }
+                $result['classification'] = $filtered;
+            } else if (empty($activeClassIds)) {
+                $result['classification'] = array();
+            }
+        }
         $this->response($result, 200);
     }
     //Branch Wise Show Scheme Classify //
