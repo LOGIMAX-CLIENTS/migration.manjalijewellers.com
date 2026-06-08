@@ -965,6 +965,12 @@ class Chit_transaction extends CI_Controller
 
 		$id_scheme_account = $pay_data[0]['id_scheme_account']; 
 
+		// Validate gent_clientid setting — skip client_id if disabled
+		$chit_settings = $this->db->query("SELECT gent_clientid FROM chit_settings LIMIT 1")->row_array();
+		if(empty($chit_settings['gent_clientid']) || $chit_settings['gent_clientid'] == 0){
+			$pay_data[0]['client_id'] = '';
+		}
+
 		$isCusRegExists = $this->$model->checkCusRegExists($id_scheme_account,$ref_no);
 
 		if(!$isCusRegExists['status']){
@@ -982,6 +988,11 @@ class Chit_transaction extends CI_Controller
             	$reg[0]['is_registered_online']= 2 ;  // 2 - online record
 
             	$reg[0]['ref_no']		= $ref_no;
+
+            	// Skip clientid if gent_clientid is disabled
+            	if(empty($chit_settings['gent_clientid']) || $chit_settings['gent_clientid'] == 0){
+            		$reg[0]['clientid'] = NULL;
+            	}
 
             	$status = $this->$model->insert_CustomerReg($reg[0]);
 
@@ -1030,13 +1041,19 @@ class Chit_transaction extends CI_Controller
 			$isCusRegExists = $this->$model->checkCusRegExists($id_scheme_account,$ref_no);
 
 			$reg = $this->$model->getCustomerByID($id_scheme_account);
-
 			$reg_1 = $this->$model->getCustomerDet($id_scheme_account);
 
 			if($this->config->item('directAPI') == '1'){
 
 				$reg[0]['clientid'] = "ON-".$id_scheme_account ;
 				$pay_data[0]['client_id'] = "ON-".$id_scheme_account ;
+			}
+
+			// Skip clientid if gent_clientid is disabled
+			$chit_settings = $this->db->query("SELECT gent_clientid FROM chit_settings LIMIT 1")->row_array();
+			if(empty($chit_settings['gent_clientid']) || $chit_settings['gent_clientid'] == 0){
+				$reg[0]['clientid'] = NULL;
+				$pay_data[0]['client_id'] = '';
 			}
 
 			$reg[0]['record_to']= 1 ;
