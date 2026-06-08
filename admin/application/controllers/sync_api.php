@@ -391,6 +391,7 @@ class sync_api extends REST_Controller
                     				"weight" 		 =>  $transaction->weight,
                     				"rate" 			 =>  $transaction->rate,
                     				"metal" 		 => $transaction->metal,
+									"mobile" 		 => $transaction->mobile,
                     				"payment_mode" 	 => $transaction->payment_mode,
                     				"payment_type" 	 => 2, // offline
                     				"payment_status" => $transaction->payment_status,
