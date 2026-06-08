@@ -82,7 +82,7 @@ $config['rest_auth'] = false;
 |	array('admin' => '1234')
 |
 */
-$config['rest_valid_logins'] = array('logimax' => 'etail_v2#wc@2022');
+$config['rest_valid_logins'] = array('manjali' => 'manjali@2026');
 
 /*
 |--------------------------------------------------------------------------
