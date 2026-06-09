@@ -835,8 +835,33 @@ class Adminapp_api extends REST_Controller
 		        } */
 
 			$result['customer'] = $cus;
-			if(sizeof($cus)>0){
-		  
+		if(sizeof($cus)>0){
+		
+			// Check if employee allocation is enabled in settings
+			$emp_alloc_setting = $this->db->query("SELECT employee_allocation FROM chit_settings LIMIT 1")->row();
+			$is_allocation_enabled = (!empty($emp_alloc_setting) && intval($emp_alloc_setting->employee_allocation) === 1);
+
+			if(!$is_allocation_enabled){
+				// Employee allocation is disabled - return data without allocation check
+				if($cus['active'] == 1){
+					$result['isValid'] = TRUE;
+					$schemeAcc = $this->mobileapi_model->get_payment_details($cus['id_customer'],$cus['id_branch'],$id_sch_acc); 
+					$result['cusSchemes'] = $this->array_sort($schemeAcc['chits'], 'allow_pay',SORT_DESC);
+					$result['currency'] = $this->mobileapi_model->get_currency($data['emp_branch']);
+					$customr_jonedbranch = $this->mobileapi_model->getCusSchejoinedbranch($cusdata['id_customer']);
+					if ($result['currency']['currency']['cost_center'] == 3) {
+						if (count($result['cusSchemes']) > 0) {
+							$result['branches'] = $this->mobileapi_model->branchesData($customr_jonedbranch);
+						}
+					}
+					$result['msg'] = 'Customer data retrieved successfully...';
+				}else{
+					$result['isValid']= FALSE; 
+					$result['msg'] = 'Customer is not active. Kindly contact administrator...';
+					$result['cusSchemes'] = [];
+				}
+			}else{
+				// Employee allocation is enabled - check allocation
 				if(((!empty($cus['allocated_employee']) && $data['id_employee'] == $cus['allocated_employee'])||(!empty($cus['allocated_agent']) && $data['id_employee'] == $cus['allocated_agent'])) && $cus['active'] == 1){
 					//send data true
 					$result['isValid'] = TRUE;
@@ -867,12 +892,13 @@ class Adminapp_api extends REST_Controller
 					$result['msg'] = 'Customer not allocated to the employee. Kindly contact administrator...';
 					$result['cusSchemes'] = [];
 				}
-			}else{
-				//customer not available false
-				$result['isValid']= FALSE;
-				$result['msg'] = 'Customer data not available...';
-				$result['cusSchemes'] = [];
-		        }
+			}
+		}else{
+			//customer not available false
+			$result['isValid']= FALSE;
+			$result['msg'] = 'Customer data not available...';
+			$result['cusSchemes'] = [];
+	        }
 		}else{
 		   $result['customer'] = [];
 		   $result['cusSchemes'] =[];
