@@ -2898,6 +2898,7 @@ async function account_detail_view(data) {
         // var pay_wgt = parseFloat(pay_amt / cur_metal_rate).toFixed(3);
          var pay_wgt = (formatMetalWeight(pay_amt / cur_metal_rate));
         if (schemeType == 1 || schemeType == 2 || schemeType == 3 && (flex_schType == 2 || flex_schType == 3 || flex_schType == 4 || flex_schType == 5 || flex_schType == 8)) {
+            $('#payment_weight_block').css('display', 'block');
             $('#payment_weight').val(pay_wgt);
         } else {
             $('#payment_weight_block').css('display', 'none');

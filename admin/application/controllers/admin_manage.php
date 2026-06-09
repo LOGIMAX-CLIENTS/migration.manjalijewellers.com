@@ -1097,7 +1097,7 @@ class Admin_manage extends CI_Controller
                     redirect('account/new');
                 } else {
                     $this->db->trans_rollback();
-                    $this->session->set_flashdata('chit_alert', array('message' => 'Unable to proceed your request', 'class' => 'danger', 'title' => 'Delete Scheme Account'));
+                    $this->session->set_flashdata('chit_alert', array('message' => $data['msg'], 'class' => 'danger', 'title' => 'Delete Scheme Account'));
                     redirect('account/new');
                 }
                 break;
