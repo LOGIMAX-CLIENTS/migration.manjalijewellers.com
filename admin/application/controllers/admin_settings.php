@@ -1956,7 +1956,8 @@ class Admin_settings extends CI_Controller
                     'custom_AccDisplayFrmt' => (isset($general['schemeaccNo_displayFrmt']) ? ($general['schemeaccNo_displayFrmt'] == 2 && $acc_format != '' ? $acc_format : NULL) : NULL),
                     'custom_ReceiptDisplayFrmt' => (isset($general['receiptNo_displayFrmt']) ? ($general['receiptNo_displayFrmt'] == 2 && $receipt_format != '' ? $receipt_format : NULL) : NULL),
                     'chitCollectionEmpCount' => (isset($general['chitCollectionEmpCount']) ? $general['chitCollectionEmpCount'] : 0),
-                    'restrict_lastPayment_days' => (isset($general['restrict_lastPayment_days']) ? $general['restrict_lastPayment_days'] : 0)
+                    'restrict_lastPayment_days' => (isset($general['restrict_lastPayment_days']) ? $general['restrict_lastPayment_days'] : 0),
+                    'employee_allocation' => (isset($general['employee_allocation']) ? $general['employee_allocation'] : 0)
                 );
                 $status = $this->$model->settingsDB('insert', $id, $gen_info);
                 //added by durga 30/12/2022 starts here 
@@ -2096,6 +2097,7 @@ class Admin_settings extends CI_Controller
                     'custom_ReceiptDisplayFrmt' => (isset($general['receiptNo_displayFrmt']) ? ($general['receiptNo_displayFrmt'] == 2 && $receipt_format != '' ? $receipt_format : NULL) : NULL),
                     'chitCollectionEmpCount' => (isset($general['chitCollectionEmpCount']) ? $general['chitCollectionEmpCount'] : 0),
                     'restrict_lastPayment_days' => (isset($general['restrict_lastPayment_days']) ? $general['restrict_lastPayment_days'] : 0),
+                    'employee_allocation' => (isset($general['employee_allocation']) ? $general['employee_allocation'] : 0),
                     'vs_booking_time' => (isset($general['fn_from']) ? (isset($general['an_to']) ? $general['fn_from'] . '-' . $general['an_to'] : '') : 0),
                     'show_kyc_optional' => (isset($general['show_kyc_optional']) ? $general['show_kyc_optional'] : 0),
                     'pan_req_amt' => (isset($general['pan_req_amt']) ? $general['pan_req_amt'] : 0),

@@ -1186,7 +1186,7 @@ class Admin_settings_model extends CI_Model
 								scheme_wise_acc_no,wallet_balance_type,wallet_amt_per_points,wallet_points,enableSilver_rateDisc,silverDiscAmt,isOTPRegForPayment,isOTPReqToLogin,enable_dth,payOTP_exp,loginOTP_exp,req_otp_login,enable_dth,req_gift_issue_otp,req_prize_issue_otp,metal_wgt_decimal,metal_wgt_roundoff,
 								enableGoldrateDisc_18k,goldDiscAmt_18k,is_branchwise_cus_reg,sch_limit,edit_custom_entry_date,getExisting_balance,is_branchwise_rate,branchwise_scheme,custom_entry_date,emp_ref_by,cost_center,enable_coin_enq,gent_clientid,cusName_edit,
 								vs_enable,enable_coin_book,auto_debit,auto_debit_allow_app_pay,enable_digi_gold,show_video_shop,show_customer_order,
-                                block_kyc_by, pan_required_by, pan_req_amt,show_kyc_optional
+                                block_kyc_by, pan_required_by, pan_req_amt,show_kyc_optional,employee_allocation
 						  From chit_settings
 						  Where id_chit_settings=" . $id;
                     // print_r($sql);exit; 

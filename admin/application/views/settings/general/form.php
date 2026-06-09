@@ -235,6 +235,16 @@
       									</div>
       								</div>
       							</div>
+								<div class="row">
+      								<div class="col-sm-12">
+      									<div class="form-group">
+      										<label class="checkbox-inline">
+      											<input type="checkbox" id="employee_allocation" name="general[employee_allocation]" value="1" <?php if ($general['employee_allocation'] == 1) { ?>checked="true" <?php } ?> />
+      											Need Employee Allocation
+      										</label>
+      									</div>
+      								</div>
+      							</div>
       							<!--Restrict Last Installment in online gateway if any pending available(In hours count) Dt: 7/8/2023,By:Abi-->
       							<div class="row">
       								<div class="col-sm-12">
