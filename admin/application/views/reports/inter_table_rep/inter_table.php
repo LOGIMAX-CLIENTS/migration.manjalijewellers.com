@@ -163,7 +163,9 @@
                         <th>Record To</th>
                         <th>Payment Date</th>
                         <th>Amount</th>
-                        <th>Weight</th>
+                        <th>Metal Weight</th>
+                        <th>Saved Benefit</th>
+                        <th>Saved Benefit Amt</th>
                         <th>Metal Rate</th>
                         <th>Pay Mode</th>
                         <th>Ref No</th>
