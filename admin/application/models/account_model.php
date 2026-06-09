@@ -1395,9 +1395,9 @@ sa.maturity_date,sa.id_scheme_account,s.store_closing_balance ,
             $this->db->where('id_scheme_account', $id);
             $status = $this->db->delete(self::ACC_TABLE);
             //print_r($this->db->last_query());exit;
-            $status = array("status" => 1);
+            $status = array("status" => 1, "msg" => "Scheme account deleted successfully");
         } else {
-            $status = array("status" => 0);
+            $status = array("status" => 0, "msg" => $data['msg']);
         }
         return $status;
     }
@@ -1405,9 +1405,9 @@ sa.maturity_date,sa.id_scheme_account,s.store_closing_balance ,
     {
         $query = $this->db->query("SELECT p.id_scheme_account FROM payment p where p.id_scheme_account=" . $id . "");
         if ($query->num_rows() > 0) {
-            return array("status" => 0);
+            return array("status" => 0, "msg" => "Unable to delete the account. This account has " . $query->num_rows() . " payment(s).");
         } else {
-            return array("status" => 1);
+            return array("status" => 1, "msg" => "");
         }
     }
     //delete associated payments
