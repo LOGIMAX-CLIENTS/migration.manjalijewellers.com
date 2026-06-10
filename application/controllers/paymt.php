@@ -55,6 +55,7 @@ class Paymt extends CI_Controller {
 	    }
 		$this->load->model('registration_model');
 		$this->load->model('payment_modal');
+		$this->load->model('digigold_modal');
 		$this->load->model('scheme_modal');		
 		$this->load->model('email_model');
 		$this->load->model('services_modal');
