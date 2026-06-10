@@ -1464,7 +1464,7 @@ if($record->pay_duration == 0){
 	
 	function getPayGenData($id_payment)
 	{
-		$sql = "Select p.date_payment,p.payment_mode,p.id_transaction,sa.id_customer,firstPayment_amt,s.code as group_code,s.sync_scheme_code,sa.id_branch as branch,cs.scheme_wise_acc_no,cs.gent_clientid,firstPayamt_as_payamt,s.firstPayamt_maxpayable,p.id_payment,sa.id_scheme_account,sa.scheme_acc_number,sa.id_scheme,cs.schemeacc_no_set,cs.receipt_no_set,cs.scheme_wise_receipt,p.ref_trans_id,cs.edit_custom_entry_date,sa.custom_entry_date,p.payment_amount,flexible_sch_type,p.id_branch,s.is_lucky_draw, s.max_members, s.code,s.one_time_premium,p.id_transaction,p.offline_tran_uniqueid,b.warehouse,
+		$sql = "Select p.date_payment,p.payment_mode,p.id_transaction,sa.id_customer,firstPayment_amt,s.code as group_code,s.sync_scheme_code,sa.id_branch as branch,cs.scheme_wise_acc_no,cs.gent_clientid,s.firstPayamt_as_payamt,s.firstPayamt_maxpayable,p.id_payment,sa.id_scheme_account,sa.scheme_acc_number,sa.id_scheme,cs.schemeacc_no_set,cs.receipt_no_set,cs.scheme_wise_receipt,p.ref_trans_id,cs.edit_custom_entry_date,sa.custom_entry_date,p.payment_amount,flexible_sch_type,p.id_branch,s.is_lucky_draw, s.max_members, s.code,s.one_time_premium,p.id_transaction,p.offline_tran_uniqueid,b.warehouse,
 	            p.payment_type,p.payment_mode,cs.allow_referral,s.agent_refferal,s.agent_credit_type,s.emp_refferal,sa.referal_code,s.rate_fix_by,s.rate_select,sa.fixed_wgt,p.due_type,p.receipt_no,p.payment_status,s.firstPayment_as_wgt
 	            From payment p
 				 left join scheme_account sa on sa.id_scheme_account=p.id_scheme_account

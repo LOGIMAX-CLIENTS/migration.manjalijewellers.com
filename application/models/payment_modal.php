@@ -421,7 +421,7 @@ COUNT(Distinct Date_Format(pay.date_payment,'%Y%m'))) as installment,lg.paid_ins
         as missed_ins,s.avg_calc_ins,sa.avg_payable,
 	    PERIOD_DIFF(Date_Format(curdate(),'%Y%m'), Date_Format(sa.start_date,'%Y%m')) as months_from_startdate,PERIOD_DIFF(Date_Format(sa.maturity_date,'%Y%m'),Date_Format(curdate(),'%Y%m')) as tot_ins,
         sg.group_code as scheme_group_code, UNIX_TIMESTAMP(Date_Format(sg.start_date,'%Y-%m-%d')) as group_start_date,UNIX_TIMESTAMP(Date_Format(sg.end_date,'%Y-%m-%d')) as  group_end_date,  cs.has_lucky_draw,cs.allow_wallet,cs.useWalletForChit,
-        sa.id_scheme_account,s.allowSecondPay,s.free_payment,sa.firstPayment_amt,sa.firstpayment_wgt,s.firstPayamt_maxpayable,sa.is_registered,firstPayamt_as_payamt,s.flexible_sch_type,sa.id_branch as sch_join_branch,
+        sa.id_scheme_account,s.allowSecondPay,s.free_payment,sa.firstPayment_amt,sa.firstpayment_wgt,s.firstPayamt_maxpayable,sa.is_registered,s.firstPayamt_as_payamt,s.flexible_sch_type,sa.id_branch as sch_join_branch,
         s.id_scheme,s.maturity_days,s.get_amt_in_schjoin,
         c.id_customer,
         c.firstname,c.lastname,c.email,
@@ -993,7 +993,7 @@ COUNT(Distinct Date_Format(pay.date_payment,'%Y%m'))) as installment,lg.paid_ins
             	    PERIOD_DIFF(Date_Format(curdate(),'%Y%m'), Date_Format(sa.start_date,'%Y%m')) as months_from_startdate,PERIOD_DIFF(Date_Format(sa.maturity_date,'%Y%m'),Date_Format(curdate(),'%Y%m')) as tot_ins,
  					s.flx_denomintion,s.gst_type,s.gst,s.amount,cs.branchWiseLogin,s.discount_type,s.discount_installment,s.discount as discount_set,sa.maturity_date as maturity_date,
 					s.setlmnt_type,IF(s.discount=1,s.firstPayDisc_value,0.00) as discount,s.firstPayDisc_by,s.firstPayDisc,s.charge_head,s.charge_type,s.charge,sa.is_new,s.flexible_sch_type,
-					sa.id_scheme_account,s.id_scheme,s.firstPayamt_maxpayable,sa.firstPayment_amt,sa.firstpayment_wgt,sa.is_registered,firstPayamt_as_payamt,s.get_amt_in_schjoin,
+					sa.id_scheme_account,s.id_scheme,s.firstPayamt_maxpayable,sa.firstPayment_amt,sa.firstpayment_wgt,sa.is_registered,s.firstPayamt_as_payamt,s.get_amt_in_schjoin,
 					c.id_customer,c.id_branch as cus_reg_branch,sa.id_branch as sch_join_branch,
 					IF(sa.scheme_acc_number !='',CONCAT(s.code,' ',sa.scheme_acc_number),'') as chit_number,
 					IFNULL(sa.account_name,if(c.lastname is null,c.firstname,concat(c.firstname,' ',c.lastname))) as account_name,s.free_payment,
@@ -2421,7 +2421,7 @@ Left Join customer c on (c.id_customer=sa.id_customer)
     }
     function getPayIds($txnid)
     {
-        $sql = "Select  p.due_type,(select e.id_employee from employee e where e.emp_code = sa.referal_code and sa.referal_code != '' and sa.referal_code is not null) as ref_emp_id,sa.id_customer,firstPayment_amt,s.code as group_code,s.sync_scheme_code,sa.id_branch as branch,cs.scheme_wise_acc_no,cs.gent_clientid,firstPayamt_as_payamt,s.firstPayamt_maxpayable,p.id_payment,sa.id_scheme_account,sa.scheme_acc_number,sa.id_scheme,cs.schemeacc_no_set,cs.receipt_no_set,cs.scheme_wise_receipt,p.ref_trans_id,cs.edit_custom_entry_date,sa.custom_entry_date,p.payment_amount,flexible_sch_type,p.id_branch,s.is_lucky_draw, s.max_members, s.code,s.one_time_premium,p.id_transaction,p.offline_tran_uniqueid,b.warehouse,
+        $sql = "Select  p.due_type,(select e.id_employee from employee e where e.emp_code = sa.referal_code and sa.referal_code != '' and sa.referal_code is not null) as ref_emp_id,sa.id_customer,firstPayment_amt,s.code as group_code,s.sync_scheme_code,sa.id_branch as branch,cs.scheme_wise_acc_no,cs.gent_clientid,s.firstPayamt_as_payamt,s.firstPayamt_maxpayable,p.id_payment,sa.id_scheme_account,sa.scheme_acc_number,sa.id_scheme,cs.schemeacc_no_set,cs.receipt_no_set,cs.scheme_wise_receipt,p.ref_trans_id,cs.edit_custom_entry_date,sa.custom_entry_date,p.payment_amount,flexible_sch_type,p.id_branch,s.is_lucky_draw, s.max_members, s.code,s.one_time_premium,p.id_transaction,p.offline_tran_uniqueid,b.warehouse,
 	p.payment_ref_number,p.gst_type,IFNULL(p.gst_amount,0) as gst_amount,IFNULL(p.discountAmt,0) as discountAmt,IFNULL(p.actual_trans_amt,0) as actual_trans_amt,
 	p.payment_type,p.payment_mode,cs.allow_referral,s.agent_refferal,s.agent_credit_type,s.emp_refferal,sa.referal_code,s.firstPayment_as_wgt,sa.firstpayment_wgt,p.metal_weight,p.redeemed_amount,wa.id_wallet_account,p.date_payment 
 			 From payment p
