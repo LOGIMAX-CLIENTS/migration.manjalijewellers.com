@@ -1381,14 +1381,14 @@ $('#scheme').on('change', function() {
 });
 
 function get_customer_detail(id) {
-    get_schemes(id);
     $.ajax({
         type: 'GET',
         url: base_url + 'index.php/customer/get_customer/' + id,
         dataType: 'json',
         success: function(data) {
-            //console.log(data);
             set_customer(data);
+            // Call get_schemes after branch is set so schemes are filtered by customer's branch
+            get_schemes(id, data.id_branch || '');
         }
     });
 }
@@ -1611,6 +1611,14 @@ function imageExists(url, callback) {
 }
 
 function set_customer(data) {
+    // Auto-select customer's branch in branch dropdown
+    if (data.id_branch != null && data.id_branch != '' && data.id_branch > 0) {
+        if ($('#branch_select').length > 0) {
+            $('#branch_select').val(data.id_branch).trigger('change');
+        }
+        $('#id_branch').val(data.id_branch);
+    }
+
     var ac_name = $('#account_name').val();
     var address = (data.address ? data.address : "") + (data.address1 ? data.address1 + ", " : "") + (data.city ? data.city : "") + (data.pincode ? " - " + data.pincode : "");
     var mobile = (data.mobile ? data.mobile : "-");

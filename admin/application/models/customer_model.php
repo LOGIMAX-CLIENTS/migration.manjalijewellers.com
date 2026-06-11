@@ -144,7 +144,7 @@ class Customer_model extends CI_Model
         $customers = $this->db->query("Select
 		   c.id_customer,c.firstname,c.lastname,c.date_of_birth,c.date_of_wed,if(c.lastname is null,c.firstname,concat(c.firstname,' ',c.lastname)) as name,
 		   a.address1,a.address2,a.address3,ct.name as city,a.pincode,s.name as state,cy.name as country,
-		   c.phone,c.mobile,c.email,c.nominee_name,c.nominee_relationship,c.nominee_mobile,
+		   c.phone,c.mobile,c.email,c.nominee_name,c.nominee_relationship,c.nominee_mobile,c.id_branch,
 		   c.cus_img,c.pan,c.pan_proof,c.voterid,c.voterid_proof,c.rationcard,c.rationcard_proof,a.id_country,a.id_city,a.id_state,c.id_employee,
 		   (Select count(id_scheme_account) as accounts from scheme_account where id_customer=1 and active=1 and is_closed=0) as accounts,
    	c.comments,c.username,c.passwd,c.is_new,c.active,c.`date_add`,c.`date_upd`
