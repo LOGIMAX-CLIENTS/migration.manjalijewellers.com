@@ -7087,7 +7087,7 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
                     if ($rcpt['added_by'] == 6 && $rcpt['metal_rate']) { // Sync Payment
                         $rcpt['metal_weight'] = $rcpt['tot_metal_weight'];
                     } else {
-                        $rcpt['metal_weight'] = ($rcpt['payment_amount'] * (100 / (100 + $rcpt['gst']))) / $rcpt['metal_rate'];
+                        $rcpt['metal_weight'] = (!empty($rcpt['metal_rate']) && $rcpt['metal_rate'] > 0) ? ($rcpt['payment_amount'] * (100 / (100 + $rcpt['gst']))) / $rcpt['metal_rate'] : 0;
                     }
                 } else {
                     if ($rcpt['gst_type'] == 0) {
@@ -7095,7 +7095,7 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
                         $rcpt['metal_weight'] = $rcpt['metal_weight2'];
                     } else if ($rcpt['gst_type'] == 1) {
                         // exclusive gst
-                        $rcpt['metal_weight'] = ($rcpt['payment_amount'] * (100 / (100 + $rcpt['gst']))) / $rcpt['metal_rate'];
+                        $rcpt['metal_weight'] = (!empty($rcpt['metal_rate']) && $rcpt['metal_rate'] > 0) ? ($rcpt['payment_amount'] * (100 / (100 + $rcpt['gst']))) / $rcpt['metal_rate'] : 0;
                     }
                 }
                 $result[] = $rcpt;

@@ -1702,7 +1702,7 @@ function get_allcustomeremail_list()
 										FROM customer c
 										LEFT JOIN branch b on b.id_branch=c.id_branch
 										left join (
-												SELECT  br.id_branch,m.mjdmagoldrate_22ct,m.goldrate_22ct,m.goldrate_24ct,m.silverrate_1gm,m.silverrate_1kg,m.mjdmasilverrate_1gm,platinum_1g,
+												SELECT  br.id_branch,m.mjdmagoldrate_22ct,m.goldrate_22ct,m.goldrate_24ct,m.goldrate_18ct,m.silverrate_1gm,m.silverrate_1kg,m.mjdmasilverrate_1gm,platinum_1g,
 												m.updatetime
 												FROM metal_rates m 
 												LEFT JOIN branch_rate br on br.id_metalrate=m.id_metalrates and br.id_branch=".$id_branch."
