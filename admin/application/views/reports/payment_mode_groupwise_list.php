@@ -50,57 +50,52 @@
       <div class="col-xs-12">
 
         <div class="box">
+          
           <div class="box-header">
-
-            <!-- <div class="col-xs-4">
+              <div class="row">
+                 <!-- <div class="col-xs-4">
                    <h3 class="box-title">Payment Mode And Group wise Chit Collection Report</h3>  
                    </div> -->
 
-            <?php if ($this->session->userdata('branch_settings') == 1) { ?>
-                <?php if($this->session->userdata('login_branch') == 1) { ?>
+                  <?php if ($this->session->userdata('branch_settings') == 1) { ?>
+                      <div class="col-md-3">
+                          <div class="form-group">
+                              <label>Paid Branch</label>
+
+                              <?php if($this->session->userdata('login_branch') == 1) { ?>
+                                  <select id="branch_select" class="form-control" multiple></select>
+                              <?php } else { ?>
+                                  <select id="branch_select" class="form-control"></select>
+                              <?php } ?>
+
+                              <input id="id_branch" name="scheme[id_branch]" type="hidden" value="" />
+                          </div>
+                      </div>
+                  <?php } ?>
+
+                  <div class="col-md-3">
+                      <div class="form-group">
+                          <label id="mode_wise_daterange" style="display:block;font-weight:bold;">
+                          </label>
+
+                          <button class="btn btn-default btn_date_range" id="payment_group_modewise_date">
+                              <span style="display:none;" id="rpts_payments1"></span>
+                              <span style="display:none;" id="rpts_payments2"></span>
+                              <i class="fa fa-calendar"></i> PaymentDate
+                              <i class="fa fa-caret-down"></i>
+                          </button>
+                      </div>
+                  </div>
+
                   <div class="col-md-2">
-                    <div class="form-group">
-                      <label>Paid Branch </label>
-                      <select id="branch_select" class="form-control" multiple></select>
-                      <input id="id_branch" name="scheme[id_branch]" type="hidden" value="" />
-                    </div>
+                      <div class="form-group" style="margin-top:25px;">
+                          <button type="button" class="btn btn-primary" id="search_mode_list">
+                              Search
+                          </button>
+                      </div>
                   </div>
-                <?php } else { ?>
-                <div class="col-md-2">
-                  <div class="form-group">
-                    <label>Paid Branch </label>
-                    <select id="branch_select" class="form-control"></select>
-                    <input id="id_branch" name="scheme[id_branch]" type="hidden" value="" />
-                  </div>
-                <?php } ?>
-            <?php } ?>
 
-            <div class="col-md-2">
-              <span id="mode_wise_daterange" style="font-weight:bold;"></span>
-
-              <div class="form-group">
-
-                <button class="btn btn-default btn_date_range" id="payment_group_modewise_date">
-                  <span style="display:none;" id="rpts_payments1"></span>
-                  <span style="display:none;" id="rpts_payments2"></span>
-                  <i class="fa fa-calendar"></i> PaymentDate
-                  <i class="fa fa-caret-down"></i>
-                </button>
               </div>
-
-            </div>
-
-            <div class="col-md-2 " style = "margin-top:15px;">
-              <label for=""></label>
-              <label for=""></label>
-              <label for=""></label>
-              <button type="button" class="btn btn-primary " id="search_mode_list" value="">Search</button>
-            </div>
-
-            <input type="hidden" id="branch_filter" value="<?php echo $this->session->userdata('id_branch') ?>">
-            <input type="hidden" id="login_branch_name" value="<?php echo $this->session->userdata('branch_name') ?>">
-
-            <!-- /.box-header -->
           </div>
           <div class="box-body">
             <!-- Alert -->

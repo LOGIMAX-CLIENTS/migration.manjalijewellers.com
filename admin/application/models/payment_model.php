@@ -5614,7 +5614,7 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
 					  LEFT JOIN employee e ON (e.id_employee=p.id_employee)
 					  LEFT JOIN postdate_payment pp ON (sa.id_scheme_account = pp.id_scheme_account)
 						WHERE p.id_employee is not null and sc.active=1 AND (p.payment_status=1 or pp.payment_status=1) " . ($id_emp != 0 && $id_emp != '' ? ' and p.id_employee =' . $id_emp : '') . "
-						    " . ($from_date != '' ? " And (date(p.date_payment) BETWEEN '" . date('Y-m-d', strtotime($from_date)) . "' AND '" . date('Y-m-d', strtotime($to_date)) . "')" : '') . " " . ($id_branch != 0 && $id_branch != '' ? ' and p.id_branch IN (' . $id_branch : '') . ")
+						    " . ($from_date != '' ? " And (date(p.date_payment) BETWEEN '" . date('Y-m-d', strtotime($from_date)) . "' AND '" . date('Y-m-d', strtotime($to_date)) . "')" : '') . " " . ($id_branch != 0 && $id_branch != '' ? ' and p.id_branch IN (' . $id_branch . ')' : '') . "
 						GROUP BY p.id_employee,s.code";
         //print_r($sql_1);exit;
         $payments = $this->db->query($sql_1)->result_array();
@@ -6421,6 +6421,10 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
     {
         $responseData = array();
         $limit = '';
+        $from_date = !empty($data['from_date']) ? date('Y-m-d', strtotime(str_replace('/', '-', $data['from_date']))) : date('Y-m-d');
+        $to_date = !empty($data['to_date']) ? date('Y-m-d', strtotime(str_replace('/', '-', $data['to_date']))) : date('Y-m-d');
+        $id_branch = isset($data['id_branch']) ? $data['id_branch'] : '';
+        $id_status_msg = isset($data['id_status_msg']) ? $data['id_status_msg'] : '';
         $sql = "SELECT
         p.id_payment,p.is_offline,sa.id_branch,sa.ref_no,sa.id_scheme_account,p.id_branch as pay_branch,
         cs.has_lucky_draw,
@@ -6466,10 +6470,10 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
         Left Join branch b on (p.id_branch=b.id_branch)
         Left Join payment_mode pm on (p.payment_mode=pm.id_mode)		
         Left Join payment_status_message psm On (p.payment_status=psm.id_status_msg)
-        Where (date(p.date_payment) BETWEEN '" . date('Y-m-d', strtotime($data['from_date'])) . "' AND '" . date('Y-m-d', strtotime($data['to_date'])) . "') 
+        Where (date(p.date_payment) BETWEEN '" . $from_date . "' AND '" . $to_date . "') 
         and (p.added_by = 1 or p.added_by = 2)
-        " . ($data['id_branch'] != '' && $data['id_branch'] > 0 ? " and p.id_branch=" . $data['id_branch'] . "" : '') . "
-        " . ($data['id_status_msg'] != '' ? " and p.payment_status=" . $data['id_status_msg'] . "" : '') . "
+        " . ($id_branch != '' && $id_branch > 0 ? " and p.id_branch=" . $id_branch . "" : '') . "
+        " . ($id_status_msg != '' ? " and p.payment_status=" . $id_status_msg . "" : '') . "
         ORDER BY p.id_branch,p.id_payment DESC " . ($limit != NULL ? " LIMIT " . $limit . " OFFSET " . $limit : " ");
         $result = $this->db->query($sql)->result_array();
         foreach ($result as $r) {
