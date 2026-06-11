@@ -502,16 +502,13 @@ $(document).ready(function () {
         endDate: moment(),
       },
       function (start, end) {
-        get_online_payment_report(
-          start.format("YYYY-MM-DD"),
-          end.format("YYYY-MM-DD")
-        );
         //$('#online_payment_report_date').html(start.format('D/M/YYYY') + ' - ' + end.format('D/M/YYYY'));
         $("#reportrange span").html(
           start.format("MMMM D, YYYY") + " - " + end.format("MMMM D, YYYY")
         );
-        $("#from_date").text(start.format("DD-MM-YYYY"));
-        $("#to_date").text(end.format("DD-MM-YYYY"));
+        $("#from_date").text(start.format("YYYY-MM-DD"));
+        $("#to_date").text(end.format("YYYY-MM-DD"));
+        get_online_payment_report();
       }
     );
   }
@@ -7917,7 +7914,7 @@ function generate_online_offline_collection(selected_date = "", added_by = "") {
         var gstno = "";
       }
       var title = "";
-      title += get_title("All Scheme Report As on Date");
+      title += get_title(selected_date, selected_date, "All Scheme Report As on Date");
       var select_date =
         "<b><span style='font-size:15pt;'>All Scheme Report As on Date   </span></b></br>" +
         "<span style=font-size:13pt;>Transaction Details &nbsp;&nbsp;Selected Date&nbsp;&nbsp;:&nbsp;" +

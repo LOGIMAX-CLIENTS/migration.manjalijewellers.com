@@ -54,6 +54,7 @@ class Paymt extends CI_Controller {
         	redirect("user/maintenance");
 	    }
 		$this->load->model('registration_model');
+		$this->load->helper('metal_wgt_digit');
 		$this->load->model('payment_modal');
 		$this->load->model('digigold_modal');
 		$this->load->model('scheme_modal');		
@@ -2283,56 +2284,49 @@ class Paymt extends CI_Controller {
 					 // AB - digi_benefits & weight...  RAHUL DIGI UPDATES
 
 					$dg_saved_benefit = 0;
-
 					$dg_benefit_value = 0;
-
 					$dg_benefit_type = 0;
-
 					$dg_saved_benefit_amt = 0;
+					$dg_other_benefit_wgt = 0;
+					$dg_other_benefit_amt = 0;
 
 					if ($chit['is_digi'] == 1) {
-
-						$metal_wgt = number_format(($pay->amount / $pay->udf3), 3);
+						$data = array('amount' => $pay->amount, 'metal_rate' => $pay->udf3);
+						$metal_wgt = formatMetalWeight($this->amount_to_weight($data));
 
 						if ($chit['interest'] == 1) {
+							$digi_account = $this->digigold_modal->digiGold_account($cusData['id_customer'], $chit['id_scheme']);
+							$digi_benefitData = $this->digigold_modal->get_digi_benefit($digi_account);
 
-							$digi_account = $this->digigold_modal->digiGold_account($cusData['id_customer']);
-
-							$digi_benefit = $this->digigold_modal->get_digi_benefit($digi_account);
-
-							if (sizeof($digi_benefit) > 0) {
-
-								if ($digi_benefit['interest_type'] == 0) {
-
-									$dg_saved_benefit_amt = $pay->amount * ($digi_benefit['interest_value'] / 100);
-
-									// print_r($dg_saved_benefit_amt);exit;
-
-                    			} else {
-
-									$dg_saved_benefit_amt = $digi_benefit['interest_value'];
-
+							if (sizeof($digi_benefitData) > 0) {
+								foreach ($digi_benefitData as $digi_benefit) {
+									if ($digi_benefit['commodity'] == $chit['id_metal']) {
+										if ($digi_benefit['interest_type'] == 0) {
+											$ben = $pay->amount * ($digi_benefit['interest_value'] / 100);
+										} else {
+											$ben = $digi_benefit['interest_value'];
+										}
+										$dg_saved_benefit_amt = $ben;
+										$data = array('amount' => $dg_saved_benefit_amt, 'metal_rate' => $pay->udf3);
+										$dg_saved_benefit = formatMetalWeight($this->amount_to_weight($data));
+										$dg_benefit_value = $digi_benefit['interest_value'];
+										$dg_benefit_type = $digi_benefit['interest_type']; // 0-percent, 1- amount
+									} else {
+										// Cross-commodity benefit (e.g. silver benefit on gold scheme)
+										$other_metal_rate = $this->payment_modal->get_metalrate_by_branch($id_branch, $digi_benefit['commodity'], '');
+										if ($digi_benefit['interest_type'] == 0) {
+											$dg_other_benefit_wgt = $metal_wgt * ($digi_benefit['interest_value'] / 100);
+											$dg_other_benefit_amt = $dg_other_benefit_wgt * $other_metal_rate;
+										} else {
+											$dg_other_benefit_amt = $digi_benefit['interest_value'];
+											$dg_other_benefit_wgt = $dg_other_benefit_amt * $other_metal_rate;
+										}
+										$dg_other_benefit_wgt = formatMetalWeight(($dg_other_benefit_wgt * 1000) / 1000);
+									}
 								}
-
-								// $dg_saved_benefit = number_format(($dg_saved_benefit_amt / $pay->udf3),3) ;//echo '<pre>';print_r($dg_saved_benefit);exit; 
-
-								$dg_saved_benefit = number_format(floor(($dg_saved_benefit_amt / $pay->udf3) * 1000) / 1000, 3, '.', '');
-
-								$dg_benefit_value = $digi_benefit['interest_value'];
-
-								$dg_benefit_type = $digi_benefit['interest_type']; // 0-percent, 1- amount
-
 							}
-
 						}
-
                     }
-
-
-
-
-
-
 
 
 					   if($allow_flag){
@@ -2353,7 +2347,7 @@ class Paymt extends CI_Controller {
 									"actual_trans_amt"   => (isset($actAmount) ? $actAmount : 0.00),
 									"act_amount"         => (isset($pay->amount)? $pay->amount : NULL ),
 									"date_payment" 		 =>  date('Y-m-d H:i:s'),
-									"metal_rate"         => (isset($pay->udf3) && $pay->udf3 !='' ? $pay->udf3 : NULL),
+									"metal_rate"         => (isset($pay->udf3) && $pay->udf3 !='' && $pay->udf3 > 0 ? $pay->udf3 : $this->payment_modal->getMetalRate('')['goldrate_22ct']),
 									"metal_weight"       =>  $metal_wgt,
 									"id_transaction"     => ($gateway == 0 ?NULL:(isset($txnid) ? $txnid.'-'.$i : NULL)),
 									"ref_trans_id"       => ($gateway == 0 ?NULL:(isset($txnid) ? $txnid : NULL)),// to update pay status after trans complete.
@@ -2374,6 +2368,12 @@ class Paymt extends CI_Controller {
 							 		"id_agent"        => (isset($payData['id_employee']) && $payData['login_type'] == 'AGENT' ?$payData['id_employee'] :NULL),
 							 		"payment_mode" =>  (isset($payData['pay_mode']) ?$payData['pay_mode'] : NULL),
 							 		"card_no"        => (isset($payData['refernceNo']) ?$payData['refernceNo'] : NULL),
+							 		"saved_benefits"      => $dg_saved_benefit,   //digi scheme benefit weight
+							 		"benefit_value"       => $dg_benefit_value,
+							 		"benefit_type"        => $dg_benefit_type,
+							 		"saved_benefit_amt"   => $dg_saved_benefit_amt,  //digi scheme benefit amount
+							 		'dg_other_benefit_wgt' => (!empty($dg_other_benefit_wgt) ? $dg_other_benefit_wgt : NULL),
+							 		'dg_other_benefit_amt' => (!empty($dg_other_benefit_amt) ? $dg_other_benefit_amt : NULL),
 							// 	    "is_point_credited"   => 1
 									//status - 0 (pending), will change to 1 after approved at backend
 								);  
@@ -2714,6 +2714,24 @@ class Paymt extends CI_Controller {
 							}
 						}
 				}
+
+						// [FIX] Update start_date on first payment (matching onPayTranStream -> upd_firstPayDateAsStartDate)
+						if (empty($pay['scheme_acc_number'])) {
+							$start_date_data = array('start_date' => $pay['date_payment']);
+							if (!empty($pay['start_year'])) {
+								$start_date_data['start_year'] = $pay['start_year'];
+							}
+							$this->payment_modal->update_account($start_date_data, $pay['id_scheme_account']);
+
+							// Calculate maturity date based on start_date + maturity_days (matching onPayTranStream -> upd_maturityDate)
+							$settings = $this->payment_modal->getSchemeData($pay['id_scheme_account']);
+							if ($settings['maturity_type'] > 0 && $settings['maturity_days'] != null && $settings['maturity_days'] > 0) {
+								$maturity_date = date('Y-m-d', strtotime("+" . $settings['maturity_days'] . " days", strtotime($pay['date_payment'])));
+								$maturity_data = array('maturity_date' => $maturity_date);
+								$this->payment_modal->update_account($maturity_data, $pay['id_scheme_account']);
+							}
+						}
+
 						/*Agent and employee incentive starts
 						Coded By Haritha 15-9-22
 						*/
@@ -2754,6 +2772,18 @@ class Paymt extends CI_Controller {
                     			 	         }
                 		                }
                 		            }
+                                }
+                            // [FIX] Customer referral incentive (matching onPayTranStream L644-665)
+                                if(isset($pay['allow_referral']) && $pay['allow_referral'] == 1) {
+                                	$ref_data = $this->payment_modal->get_refdata($pay['id_scheme_account']);
+                                	if(!empty($ref_data)) {
+	                                	$ischkref = $this->payment_modal->get_ischkrefamtadd($pay['id_scheme_account']);
+	                                	if($ref_data['ref_benifitadd_ins_type'] == 1 && $ref_data['referal_code'] != '' && ($ref_data['ref_benifitadd_ins'] == $ref_data['paid_installments']) && $ischkref == TRUE) {
+	                                		$this->insert_referral_data($ref_data['id_scheme_account'], $ref_data);
+	                                	} else if($ref_data['ref_benifitadd_ins_type'] == 0 && $ref_data['referal_code'] != '' && $ischkref == TRUE) {
+	                                		$this->insert_referral_data($ref_data['id_scheme_account'], $ref_data);
+	                                	}
+	                                }
                                 }
 						//ends
 
@@ -3033,6 +3063,44 @@ class Paymt extends CI_Controller {
     								    }else if($this->config->item('integrationType') == 2){
     								        $this->insert_common_data($pay['id_payment']);
     								    }
+    								 }
+
+    								 // [FIX] Update start_date on first payment (matching onPayTranStream -> upd_firstPayDateAsStartDate)
+    								 if (empty($pay['scheme_acc_number'])) {
+    								 	$start_date_data = array('start_date' => $pay['date_payment']);
+    								 	if (!empty($pay['start_year'])) {
+    								 		$start_date_data['start_year'] = $pay['start_year'];
+    								 	}
+    								 	$this->payment_modal->update_account($start_date_data, $pay['id_scheme_account']);
+
+    								 	// Calculate maturity date (matching onPayTranStream -> upd_maturityDate)
+    								 	$settings = $this->payment_modal->getSchemeData($pay['id_scheme_account']);
+    								 	if ($settings['maturity_type'] > 0 && $settings['maturity_days'] != null && $settings['maturity_days'] > 0) {
+    								 		$maturity_date = date('Y-m-d', strtotime("+" . $settings['maturity_days'] . " days", strtotime($pay['date_payment'])));
+    								 		$maturity_data = array('maturity_date' => $maturity_date);
+    								 		$this->payment_modal->update_account($maturity_data, $pay['id_scheme_account']);
+    								 	}
+    								 }
+
+    								 // [FIX] Due date/installment update (matching onPayTranStream -> updatedue_details)
+    								 $dt_pay = date('Y-m-d', strtotime(str_replace("/", "-", $pay['date_payment'])));
+    								 $ins_cycle = $this->payment_modal->get_due_date($pay['due_type'], $dt_pay, $pay['id_scheme_account']);
+    								 if (sizeof($ins_cycle[0]) > 0) {
+    								 	$cycle_data = array(
+    								 		'due_date' => (isset($ins_cycle[0]['due_date_from']) ? $ins_cycle[0]['due_date_from'] : NULL),
+    								 		'due_date_to' => (isset($ins_cycle[0]['due_date_to']) ? $ins_cycle[0]['due_date_to'] : NULL),
+    								 		'grace_date' => (isset($ins_cycle[0]['grace_date']) ? $ins_cycle[0]['grace_date'] : NULL),
+    								 		'installment' => (isset($ins_cycle[0]['installment']) ? $ins_cycle[0]['installment'] : NULL),
+    								 		'is_limit_exceed' => (isset($ins_cycle[0]['is_limit_exceed']) ? $ins_cycle[0]['is_limit_exceed'] : 0),
+    								 	);
+    								 	$this->payment_modal->updData($cycle_data, 'id_payment', $pay['id_payment'], 'payment');
+    								 }
+
+    								 // [FIX] Update paid installments count (matching onPayTranStream -> getPaidInsData)
+    								 $paid = $this->payment_modal->getPaidInsData($pay['id_scheme_account']);
+    								 if (sizeof($paid) > 0) {
+    								 	$paid_ins = array('total_paid_ins' => $paid['paid_installments']);
+    								 	$this->payment_modal->updData($paid_ins, 'id_scheme_account', $pay['id_scheme_account'], 'scheme_account');
     								 }
     								 
     								if($service['sms'] == 1)
