@@ -7898,7 +7898,7 @@ class Mobile_api extends REST_Controller
 	 *   get_plan_detail(), get_subscriptionData(), insertData(), updateData()
 	 * ═══════════════════════════════════════════════════════════════ */
 
-	function cf_subscription()
+	function cf_subscription_post()
 	{
 		$type      = $this->input->post('type');
 		$id_sch_ac = $this->input->post('id_sch_ac');
