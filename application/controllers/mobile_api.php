@@ -8015,8 +8015,11 @@ class Mobile_api extends REST_Controller
 					return;
 				}
 
-				// Call Cashfree API (new endpoint: {api_url}/pg/subscriptions)
-				$api_url = rtrim($planDetail['api_url'], '/') . '/pg/subscriptions';
+				// Call Cashfree API (new endpoint: {base_domain}/pg/subscriptions)
+				// Strip any path from api_url — server may have /pg/orders/ in it
+				$parsed_url = parse_url($planDetail['api_url']);
+				$base_domain = $parsed_url['scheme'] . '://' . $parsed_url['host'];
+				$api_url = $base_domain . '/pg/subscriptions';
 				$res = $this->_cf_api_call($api_url, $cf_payload, $planDetail['param_3'], $planDetail['param_1']);
 
 				// Log request and response
@@ -8092,7 +8095,10 @@ class Mobile_api extends REST_Controller
 					return;
 				}
 
-				$api_url = rtrim($planDetail['api_url'], '/') . '/pg/subscriptions/' . $subData['subscription_id'] . '/cancel';
+				// Strip any path from api_url — server may have /pg/orders/ in it
+				$parsed_url = parse_url($planDetail['api_url']);
+				$base_domain = $parsed_url['scheme'] . '://' . $parsed_url['host'];
+				$api_url = $base_domain . '/pg/subscriptions/' . $subData['subscription_id'] . '/cancel';
 				$res = $this->_cf_api_call($api_url, array(), $planDetail['param_3'], $planDetail['param_1']);
 
 				// Log
