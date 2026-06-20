@@ -1123,12 +1123,12 @@ class Admin_reports extends CI_Controller
 	}
 	function ajax_get_autodebit_subscription()
 	{
-		$model =	self::PAY_MODEL;
+		$this->load->model('autodebit_model');
 		$from_date  = $this->input->post('from_date');
 		$to_date     = $this->input->post('to_date');
 		$id_customer    = $this->input->post('id_customer');
 		$mobile     = $this->input->post('mobile');
-		$data = $this->$model->ajax_get_autodebit_subscription($from_date, $to_date, $id_customer, $mobile);
+		$data = $this->autodebit_model->ajax_get_autodebit_subscription($from_date, $to_date, $id_customer, $mobile);
 		echo json_encode($data);
 	}
 	//Autodebit subscription Status Report//
