@@ -2088,7 +2088,8 @@ IFNULL(IF(sa.is_opening=1,IFNULL(balance_weight,0)+IFNULL(SUM(p.metal_weight),0)
 				    max(p.date_payment)                 as last_paid_date,
 					sa.active as chit_active,
 					sa.is_closed as is_closed, cs.has_lucky_draw,sa.group_code as scheme_group_code,
-						(SELECT m.goldrate_22ct FROM metal_rates m  order by id_metalrates Desc LIMIT 1) as metal_rate
+						(SELECT m.goldrate_22ct FROM metal_rates m  order by id_metalrates Desc LIMIT 1) as metal_rate,
+					IFNULL(sa.auto_debit_status, 0) as auto_debit_status
                         -- ,s.min_amount as payable
 				From scheme_account sa
 				Left Join scheme s On (sa.id_scheme=s.id_scheme)
@@ -2279,7 +2280,8 @@ IFNULL(IF(sa.is_opening=1,IFNULL(balance_weight,0)+IFNULL(SUM(p.metal_weight),0)
                 'max_amount' => $record['max_amount'],
                 'payable' => $record['payable'],
                 //DGS-DCNM
-                'show_paymentMonthwise' => $record['show_paymentMonthwise']
+                'show_paymentMonthwise' => $record['show_paymentMonthwise'],
+                'auto_debit_status' => (int) $record['auto_debit_status']
             );
             // Derive allow_pay from get_payment_details (same logic used by customerSchemes API)
             $allow_pay = 'N';
