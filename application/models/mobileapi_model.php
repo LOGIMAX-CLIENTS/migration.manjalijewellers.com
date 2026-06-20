@@ -85,6 +85,8 @@ class Mobileapi_model extends CI_Model
                     cost_center,
                     block_pay_mins,
                     cs.is_kyc_required,
+                    cs.auto_debit,
+                    cs.auto_debit_allow_app_pay,
                     c.company_name,
                     cs.currency_symbol,
                     cs.rate_history,
