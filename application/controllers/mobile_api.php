@@ -7888,10 +7888,10 @@ class Mobile_api extends REST_Controller
     }
 
 	/* ═══════════════════════════════════════════════════════════════
-	 * Cashfree Auto-Debit Subscription
+	 * Cashfree Auto-Debit Subscription (New API — v2025-01-01)
 	 * 
 	 * POST mobile_api/cf_subscription
-	 * Payload: {type: 1|2, id_sch_ac: INT, app_id, platform, request_from, app_version}
+	 * Payload: {type: 1|2, id_sch_ac: INT, plan_amount (optional for weight-based)}
 	 * type 1 = Subscribe, type 2 = Unsubscribe
 	 * 
 	 * Uses scheme_modal model methods:
@@ -7900,206 +7900,154 @@ class Mobile_api extends REST_Controller
 
 	function cf_subscription_post()
 	{
-		$type      = $this->input->post('type');
-		$id_sch_ac = $this->input->post('id_sch_ac');
+		$post_data = $this->get_values();
+		$type      = isset($post_data['type']) ? $post_data['type'] : '';
+		$id_sch_ac = isset($post_data['id_sch_ac']) ? $post_data['id_sch_ac'] : '';
 
 		if (empty($type) || empty($id_sch_ac)) {
 			echo json_encode(array('status' => false, 'msg' => 'Missing required parameters (type, id_sch_ac)'));
 			return;
 		}
 
-		// Status mapping: Cashfree status string => integer
-		$auth_status = array(
-			'INITIALIZED'           => 1,
-			'BANK_APPROVAL_PENDING' => 2,
-			'ACTIVE'                => 3,
-			'ON_HOLD'               => 4,
-			'CANCELLED'             => 5,
-			'COMPLETED'             => 6
-		);
-
 		switch ($type) {
 			case '1': // ─── Subscribe ───────────────────────────────
-				$planDetail    = $this->scheme_modal->get_plan_detail($id_sch_ac);
-				$subscriptionId = uniqid(time());
+				$planDetail = $this->scheme_modal->get_plan_detail($id_sch_ac);
 
-				if (sizeof($planDetail) > 0) {
-					// Guard: Already subscribed
-					if ($planDetail['id_auto_debit_subscription'] > 0) {
-						echo json_encode(array(
-							'status' => false,
-							'msg'    => 'Already subscription created, Kindly check the authorization status...'
-						));
-						return;
-					}
-
-					$pendingIns = $planDetail['total_installments'] - $planDetail['paid_installments'];
-
-					if ($pendingIns > 0) {
-						$expires_on = date('Y-m-d H:i:s', strtotime('+' . $pendingIns . ' months', strtotime(date('Y-m-d H:i:s'))));
-						$gen_email  = $this->_cf_random_strings(8) . '@gmail.com';
-
-						// Insert local subscription record
-						$insSubscription = array(
-							'id_scheme_account' => $id_sch_ac,
-							'subscription_id'   => $subscriptionId,
-							'plan_id'           => $planDetail['sync_scheme_code'],
-							'first_charge_delay' => 1,
-							'expires_on'        => $expires_on,
-							'status'            => 0,
-							'created_on'        => date('Y-m-d H:i:s'),
-							'added_by'          => 1,  // 1 = Mobile App
-						);
-						$ins = $this->scheme_modal->insertData($insSubscription, 'auto_debit_subscription');
-
-						if ($ins['status']) {
-							// Build Cashfree API payload
-							$subscriptionData = array(
-								'subscriptionId'   => $subscriptionId,
-								'planId'           => $planDetail['sync_scheme_code'],
-								'customerName'     => $planDetail['cus_name'],
-								'customerEmail'    => !empty($planDetail['email']) ? $planDetail['email'] : $gen_email,
-								'customerPhone'    => $planDetail['mobile'],
-								'firstChargeDelay' => 1,
-								'authAmount'       => 1,
-								'expiresOn'        => $expires_on,
-								'returnUrl'        => $this->config->item('base_url') . 'index.php/cf_autodebit/autoDebitRURL/M/' . $id_sch_ac
-							);
-
-							// Call Cashfree API
-							$res = $this->_cf_curl('', $subscriptionData, $planDetail);
-
-							// Log the request and response
-							$this->_cf_logToFile('cf_subscription', array(
-								'action'   => 'subscribe',
-								'id_sch_ac' => $id_sch_ac,
-								'request'  => $subscriptionData,
-								'response' => $res
-							));
-
-							if ($res['status'] == FALSE) {
-								echo json_encode(array(
-									'status' => false,
-									'msg'    => 'Error in processing request...',
-									'error'  => isset($res['result']) ? $res['result'] : ''
-								));
-								return;
-							}
-
-							$response = $res['result'];
-
-							if ($response->status == 'OK') {
-								// Update subscription record with Cashfree response
-								$updSubscription = array(
-									'message'          => $response->message,
-									'sub_reference_id' => $response->subReferenceId,
-									'auth_status'      => $auth_status[$response->subStatus],
-									'auth_link'        => $response->authLink,
-									'status'           => 1,
-									'last_update'      => date('Y-m-d H:i:s')
-								);
-								$this->scheme_modal->updateData(
-									$updSubscription,
-									'id_auto_debit_subscription',
-									$ins['insertID'],
-									'auto_debit_subscription'
-								);
-
-								// Update scheme_account auto_debit_status
-								$updSchAc = array(
-									'auto_debit_status' => $auth_status[$response->subStatus],
-									'date_upd'          => date('Y-m-d H:i:s')
-								);
-								$this->scheme_modal->updateData(
-									$updSchAc,
-									'id_scheme_account',
-									$id_sch_ac,
-									'scheme_account'
-								);
-
-								echo json_encode(array(
-									'status'    => true,
-									'msg'       => 'Subscription created successfully. Kindly do the authorization process by clicking the Authorize button.',
-									'auth_link' => $response->authLink,
-									'sub_status' => $response->subStatus
-								));
-							} else {
-								echo json_encode(array(
-									'status' => false,
-									'msg'    => 'Error in subscription process: ' . (isset($response->message) ? $response->message : 'try again later...')
-								));
-							}
-						} else {
-							echo json_encode(array(
-								'status' => false,
-								'msg'    => 'Error in subscription process, try again later...'
-							));
-						}
-					} else {
-						echo json_encode(array(
-							'status' => false,
-							'msg'    => 'You have already paid your installments...'
-						));
-					}
-				} else {
-					echo json_encode(array(
-						'status' => false,
-						'msg'    => 'No record found...'
-					));
+				if (empty($planDetail) || sizeof($planDetail) == 0) {
+					echo json_encode(array('status' => false, 'msg' => 'No record found...'));
+					return;
 				}
-				break;
 
-			case '2': // ─── Unsubscribe ────────────────────────────
-				$planDetail = $this->scheme_modal->get_subscriptionData($id_sch_ac);
-
-				if (empty($planDetail)) {
+				// Guard: Already subscribed
+				if ($planDetail['id_auto_debit_subscription'] > 0) {
 					echo json_encode(array(
 						'status' => false,
-						'msg'    => 'No active subscription found...'
+						'msg'    => 'Already subscription created, Kindly check the authorization status...'
 					));
 					return;
 				}
 
-				$post_data = array('subReferenceId' => $planDetail['sub_reference_id']);
-				$res       = $this->_cf_curl($planDetail['sub_reference_id'] . '/cancel', $post_data, $planDetail);
+				$pendingIns = $planDetail['total_installments'] - $planDetail['paid_installments'];
 
-				// Log the request and response
+				if ($pendingIns <= 0) {
+					echo json_encode(array('status' => false, 'msg' => 'You have already paid all your installments...'));
+					return;
+				}
+
+				// Determine plan amount based on scheme_type
+				// scheme_type: 0=Amount, 1=Weight, 2=Amount to Weight, 3=Flexible Amount
+				$plan_amount = 0;
+				if ($planDetail['scheme_type'] == 0 || $planDetail['scheme_type'] == 2) {
+					$plan_amount = floatval($planDetail['scheme_amount']);
+				} elseif ($planDetail['scheme_type'] == 3) {
+					$plan_amount = floatval($planDetail['min_amount']);
+				} else {
+					// Weight-based — amount from POST (app calculates based on rate × weight)
+					$plan_amount = isset($post_data['plan_amount']) ? floatval($post_data['plan_amount']) : 0;
+				}
+
+				if ($plan_amount <= 0) {
+					echo json_encode(array('status' => false, 'msg' => 'Invalid plan amount'));
+					return;
+				}
+
+				// Determine plan type: PERIODIC or ON_DEMAND
+				// auto_debit_plan_type: 0=Periodic, 1=On Demand
+				$plan_type = ($planDetail['auto_debit_plan_type'] == 1) ? 'ON_DEMAND' : 'PERIODIC';
+
+				// Generate unique subscription_id
+				$subscription_id = 'SUB_' . $id_sch_ac . '_' . time();
+
+				// Return URL — cf_autodebit callback on front-end
+				$return_url = $this->config->item('base_url') . 'index.php/cf_autodebit/autoDebitRURL/M/' . $id_sch_ac;
+
+				// First charge date (1st of next month for PERIODIC)
+				$first_charge_date = date('Y-m-d', strtotime('first day of next month'));
+
+				$gen_email  = $this->_cf_random_strings(8) . '@noemail.com';
+
+				// Build new Cashfree API payload (v2025-01-01 format)
+				$cf_payload = array(
+					'subscription_id'     => $subscription_id,
+					'customer_details'    => array(
+						'customer_name'  => trim($planDetail['cus_name']),
+						'customer_email' => !empty($planDetail['email']) ? $planDetail['email'] : $gen_email,
+						'customer_phone' => $planDetail['mobile']
+					),
+					'plan_details' => array(
+						'plan_name'             => $planDetail['scheme_name'] . ' - ' . $planDetail['code'],
+						'plan_type'             => $plan_type,
+						'plan_currency'         => 'INR',
+						'plan_recurring_amount' => $plan_amount,
+						'plan_max_amount'       => $plan_amount,
+						'plan_max_cycles'       => intval($planDetail['total_installments'])
+					),
+					'subscription_meta' => array(
+						'return_url' => $return_url
+					),
+					'authorization_details' => array(
+						'authorization_amount' => 1  // Re 1 authorization charge (refundable)
+					)
+				);
+
+				// Add periodic-specific fields
+				if ($plan_type == 'PERIODIC') {
+					$cf_payload['plan_details']['plan_recurring_interval'] = 1;
+					$cf_payload['plan_details']['plan_recurring_interval_type'] = 1; // 1 = Month
+					$cf_payload['subscription_meta']['first_charge_date'] = $first_charge_date;
+				}
+
+				// Insert local subscription record
+				$insSubscription = array(
+					'id_scheme_account' => $id_sch_ac,
+					'subscription_id'   => $subscription_id,
+					'plan_id'           => $planDetail['sync_scheme_code'],
+					'first_charge_delay' => 1,
+					'expires_on'        => date('Y-m-d H:i:s', strtotime('+' . $pendingIns . ' months')),
+					'status'            => 0,
+					'created_on'        => date('Y-m-d H:i:s'),
+					'added_by'          => 1,  // 1 = Mobile App
+				);
+				$ins = $this->scheme_modal->insertData($insSubscription, 'auto_debit_subscription');
+
+				if (!$ins['status']) {
+					echo json_encode(array('status' => false, 'msg' => 'Error in subscription process, try again later...'));
+					return;
+				}
+
+				// Call Cashfree API (new endpoint: {api_url}/pg/subscriptions)
+				$api_url = rtrim($planDetail['api_url'], '/') . '/pg/subscriptions';
+				$res = $this->_cf_api_call($api_url, $cf_payload, $planDetail['param_3'], $planDetail['param_1']);
+
+				// Log request and response
 				$this->_cf_logToFile('cf_subscription', array(
-					'action'   => 'unsubscribe',
+					'action'    => 'subscribe',
 					'id_sch_ac' => $id_sch_ac,
-					'request'  => $post_data,
-					'response' => $res
+					'api_url'   => $api_url,
+					'request'   => $cf_payload,
+					'response'  => $res
 				));
 
-				if ($res['status'] == FALSE) {
-					echo json_encode(array(
-						'status' => false,
-						'msg'    => 'Error in processing request...',
-						'error'  => isset($res['result']) ? $res['result'] : ''
-					));
-					return;
-				}
-
-				$response = $res['result'];
-
-				if ($response->status == 'OK') {
-					// Mark subscription as cancelled
+				if (isset($res['cf_subscription_id'])) {
+					// Success — update local subscription record
 					$updSubscription = array(
-						'message'     => $response->message,
-						'auth_status' => 5,  // CANCELLED
-						'status'      => 0,
-						'last_update' => date('Y-m-d H:i:s')
+						'sub_reference_id' => isset($res['sub_reference_id']) ? $res['sub_reference_id'] : null,
+						'auth_status'      => 1, // INITIALIZED
+						'auth_link'        => isset($res['authorization_link']) ? $res['authorization_link'] : null,
+						'message'          => isset($res['status']) ? $res['status'] : 'INITIALIZED',
+						'status'           => 1,
+						'last_update'      => date('Y-m-d H:i:s')
 					);
-					$upd = $this->scheme_modal->updateData(
+					$this->scheme_modal->updateData(
 						$updSubscription,
 						'id_auto_debit_subscription',
-						$planDetail['id_auto_debit_subscription'],
+						$ins['insertID'],
 						'auto_debit_subscription'
 					);
 
-					// Update scheme_account status
+					// Update scheme_account auto_debit_status = 1 (Pending)
 					$updSchAc = array(
-						'auto_debit_status' => 5,  // CANCELLED
+						'auto_debit_status' => 1,
 						'date_upd'          => date('Y-m-d H:i:s')
 					);
 					$this->scheme_modal->updateData(
@@ -8109,23 +8057,82 @@ class Mobile_api extends REST_Controller
 						'scheme_account'
 					);
 
-					if ($upd > 0) {
-						echo json_encode(array(
-							'status' => true,
-							'msg'    => 'You are successfully unsubscribed from cashfree auto-debit process.'
-						));
-					} else {
-						echo json_encode(array(
-							'status' => false,
-							'msg'    => 'Error in unsubscription process, kindly contact admin...'
-						));
-					}
+					echo json_encode(array(
+						'status'    => true,
+						'msg'       => 'Subscription created successfully. Kindly do the authorization process.',
+						'auth_link' => isset($res['authorization_link']) ? $res['authorization_link'] : '',
+						'sub_status' => isset($res['status']) ? $res['status'] : 'INITIALIZED'
+					));
 				} else {
+					// API error
+					$error_msg = isset($res['message']) ? $res['message'] : 'Failed to create subscription';
 					echo json_encode(array(
 						'status' => false,
-						'msg'    => 'Error in unsubscription process: ' . (isset($response->message) ? $response->message : 'try again later...')
+						'msg'    => $error_msg,
+						'data'   => $res
 					));
 				}
+				break;
+
+			case '2': // ─── Unsubscribe ────────────────────────────
+				$planDetail = $this->scheme_modal->get_subscriptionData($id_sch_ac);
+
+				if (empty($planDetail)) {
+					echo json_encode(array('status' => false, 'msg' => 'No active subscription found...'));
+					return;
+				}
+
+				// Cancel via new API: POST {api_url}/subscriptions/{subscription_id}/cancel
+				$subData = $this->db->query("SELECT subscription_id FROM auto_debit_subscription 
+											 WHERE id_auto_debit_subscription = " . intval($planDetail['id_auto_debit_subscription']))
+									->row_array();
+
+				if (empty($subData)) {
+					echo json_encode(array('status' => false, 'msg' => 'Subscription record not found'));
+					return;
+				}
+
+				$api_url = rtrim($planDetail['api_url'], '/') . '/pg/subscriptions/' . $subData['subscription_id'] . '/cancel';
+				$res = $this->_cf_api_call($api_url, array(), $planDetail['param_3'], $planDetail['param_1']);
+
+				// Log
+				$this->_cf_logToFile('cf_subscription', array(
+					'action'    => 'unsubscribe',
+					'id_sch_ac' => $id_sch_ac,
+					'api_url'   => $api_url,
+					'response'  => $res
+				));
+
+				// Mark cancelled regardless of API response (matching Autodebit.php pattern)
+				$updSubscription = array(
+					'auth_status' => 5,  // CANCELLED
+					'status'      => 0,
+					'message'     => isset($res['status']) ? $res['status'] : 'CANCELLED',
+					'last_update' => date('Y-m-d H:i:s')
+				);
+				$this->scheme_modal->updateData(
+					$updSubscription,
+					'id_auto_debit_subscription',
+					$planDetail['id_auto_debit_subscription'],
+					'auto_debit_subscription'
+				);
+
+				// Update scheme_account status
+				$updSchAc = array(
+					'auto_debit_status' => 5,  // CANCELLED
+					'date_upd'          => date('Y-m-d H:i:s')
+				);
+				$this->scheme_modal->updateData(
+					$updSchAc,
+					'id_scheme_account',
+					$id_sch_ac,
+					'scheme_account'
+				);
+
+				echo json_encode(array(
+					'status' => true,
+					'msg'    => 'You are successfully unsubscribed from cashfree auto-debit process.'
+				));
 				break;
 
 			default:
@@ -8138,37 +8145,45 @@ class Mobile_api extends REST_Controller
 	}
 
 	/**
-	 * Cashfree Subscription API cURL call
-	 * Reused for both subscribe and unsubscribe
+	 * New Cashfree API call (v2025-01-01)
+	 * Matches admin/Autodebit.php::_cashfreeApiCall()
 	 */
-	private function _cf_curl($subsc_api, $postData, $gateway)
+	private function _cf_api_call($url, $payload, $clientId, $secretKey, $method = 'POST')
 	{
 		$curl = curl_init();
-		curl_setopt_array($curl, array(
-			CURLOPT_URL            => $gateway['api_url'] . 'api/v2/subscriptions/' . $subsc_api,
+
+		$options = array(
+			CURLOPT_URL            => $url,
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_ENCODING       => '',
 			CURLOPT_MAXREDIRS      => 10,
 			CURLOPT_TIMEOUT        => 30,
+			CURLOPT_FOLLOWLOCATION => true,
 			CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
-			CURLOPT_CUSTOMREQUEST  => 'POST',
-			CURLOPT_POSTFIELDS     => json_encode($postData),
+			CURLOPT_CUSTOMREQUEST  => $method,
 			CURLOPT_HTTPHEADER     => array(
-				'cache-control: no-cache',
-				'content-type: application/x-www-form-urlencoded',
-				'X-Client-Id: ' . $gateway['param_3'],
-				'X-Client-Secret:' . $gateway['param_1']
-			),
-		));
+				'Content-Type: application/json',
+				'x-client-id: ' . $clientId,
+				'x-client-secret: ' . $secretKey,
+				'x-api-version: 2025-01-01'
+			)
+		);
+
+		if ($method == 'POST' && !empty($payload)) {
+			$options[CURLOPT_POSTFIELDS] = json_encode($payload);
+		}
+
+		curl_setopt_array($curl, $options);
+
 		$response = curl_exec($curl);
-		$err = curl_error($curl);
+		$err      = curl_error($curl);
 		curl_close($curl);
 
 		if ($err) {
-			return array('status' => FALSE, 'result' => $err);
-		} else {
-			return array('status' => TRUE, 'result' => json_decode($response));
+			return array('status' => false, 'message' => 'cURL Error: ' . $err);
 		}
+
+		return json_decode($response, true); // Returns associative array
 	}
 
 	/**
@@ -8194,3 +8209,4 @@ class Mobile_api extends REST_Controller
 		file_put_contents($log_path, $log_entry, FILE_APPEND);
 	}
 }
+
