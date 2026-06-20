@@ -1642,6 +1642,18 @@ $route['metal/metalname_list']	          = 'admin_manage/get_metal_name';
 
 $route['reports/get_autodebit_subscription']       = 'admin_reports/get_autodebit_subscription';
 
+$route['reports/ajax_autodebit_subscription']      = 'admin_reports/ajax_get_autodebit_subscription';
+
+// Auto Debit Subscription Routes
+$route['subscription/create/(:num)']               = 'Autodebit/create/$1';
+$route['autodebit/callback/(:num)']                = 'Autodebit/callback/$1';
+$route['autodebit/webhook']                        = 'Autodebit/webhook';
+$route['subscription/cancel/(:num)']               = 'Autodebit/cancel/$1';
+$route['subscription/retry/(:num)']                = 'Autodebit/retry/$1';
+$route['autodebit/redirect/(:any)']                = 'Autodebit/redirect/$1';
+$route['autodebit/redirect/(:any)/(:any)']         = 'Autodebit/redirect/$1/$2';
+
+
 $route['settings/retail_setting/list']              = 'admin_usersms/ret_settings_form/list';
 
 $route['settings/retail_setting/ajax']              = 'admin_usersms/ret_settings_form/Ajax';
