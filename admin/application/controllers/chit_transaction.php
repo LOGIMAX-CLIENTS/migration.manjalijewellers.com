@@ -1064,7 +1064,8 @@ class Chit_transaction extends CI_Controller
 
 			$runDirectAPI = true;
 
-		} elseif($isCusRegExists['status'] && $isCusRegExists['clientid'] == null && $isCusRegExists['is_transferred'] == 'N' && $chit_settings['gent_clientid'] == 1) {
+		} 
+       /*  elseif($isCusRegExists['status'] && $isCusRegExists['clientid'] == null && $isCusRegExists['is_transferred'] == 'N' && $chit_settings['gent_clientid'] == 1) {
 
 			$reg_data = array(
 				'clientid' => "ON-".$id_scheme_account
@@ -1073,7 +1074,8 @@ class Chit_transaction extends CI_Controller
 
 			$runDirectAPI = true;
 
-		} elseif ($isCusRegExists['status'] && $isCusRegExists['is_transferred'] == 'N') {
+		}  */
+        elseif ($isCusRegExists['status'] && $isCusRegExists['is_transferred'] == 'N') {
 
 			$runDirectAPI = true;
 		} else {
@@ -1186,29 +1188,22 @@ class Chit_transaction extends CI_Controller
 
 			$runPayDirect = true;
 
-		} elseif ($isTranExists['status'] && ($isTranExists['clientid'] == null || $isTranExists['clientid'] == '') && $chit_settings['gent_clientid'] == 1) {
+		} 
+        /* elseif ($isTranExists['status'] && ($isTranExists['clientid'] == null || $isTranExists['clientid'] == '') && $chit_settings['gent_clientid'] == 1) {
 			$trans_data = array(
 				'client_id' => $pay_data[0]['client_id']
 			);
 			$this->$model->update_transaction($trans_data,$isTranExists['id_transaction']);
 
 			$runPayDirect = true;
-		} else if ($isTranExists['status'] && $isTranExists['is_transferred'] == 'N' && ($payID_data[0]['scheme_acc_number'] != null || $payID_data[0]['scheme_acc_number'] != '')) {
+		}  */
+        else if ($isTranExists['status'] && $isTranExists['is_transferred'] == 'N' && ($payID_data[0]['scheme_acc_number'] != null || $payID_data[0]['scheme_acc_number'] != '')) {
 
 			$runPayDirect = true;
 
 		}else {
 			
 			$runPayDirect = false;
-		}
-
-		// Update installment number on payment and total_paid_ins on scheme_account
-		$this->load->model('chit_transaction_model');
-		$payment_det = $this->chit_transaction_model->get_payment_details($id_payment);
-		if (!empty($payment_det)) {
-			$this->chit_transaction_model->updatedue_details($payment_det);
-			// Re-fetch payID_data to get updated installment value
-			$payID_data = $this->$model->getPayIDdet($id_payment);
 		}
 
 			//For online payments Send in direct API and update receipt no , ref no 
@@ -1221,7 +1216,7 @@ class Chit_transaction extends CI_Controller
                         "schemename" => $payID_data[0]['scheme_name'],
                         "schemeamount" => (float)$pay_data[0]['amount'],
                         "groupno" => ($payID_data[0]['scheme_acc_number'] ? $payID_data[0]['scheme_acc_number'] : ''),
-                        "groupname" => ($grp_name != "" ? $grp_name : $payID_data[0]['group_code']),
+                        "groupname" => ($payID_data[0]['group_code'] != "" ? $payID_data[0]['group_code'] : ''),
                         "customermobile" => (int) $pay_data[0]['mobile'],
                         "cardnumber" => $pay_data[0]['mobile'],
                         "customerid" => (int)$payID_data[0]['id_customer'],
