@@ -2408,7 +2408,19 @@ class Paymt extends CI_Controller {
 					}
 				 }
 			//	 echo $this->db->last_query();exit;
-				 if($this->db->trans_status()=== TRUE)
+				 // [DEBUG] First trans_status check
+				 $_ts1 = $this->db->trans_status();
+				 $_dbg_err1 = $this->db->error();
+				 $_dbg_last1 = $this->db->last_query();
+				 $_dbg_log1 = "\n[DEBUG-TRANS1] " . date('Y-m-d H:i:s') . 
+				 	"\ntrans_status: " . ($_ts1 ? 'TRUE' : 'FALSE') .
+				 	"\ngateway: " . $gateway .
+				 	"\nDB Error: " . json_encode($_dbg_err1) .
+				 	"\nLast Query: " . substr($_dbg_last1, 0, 500) .
+				 	"\npayIds: " . $payIds;
+				 @file_put_contents('d:/xampp7/htdocs/manjalijewellers/log/debug_trans_' . date('Y-m-d') . '.txt', $_dbg_log1, FILE_APPEND | LOCK_EX);
+				 
+				 if($_ts1 === TRUE)
 	             { 
 				 	$this->db->trans_commit();
 					 if($gateway == 0){ // For admin app
@@ -2835,7 +2847,18 @@ class Paymt extends CI_Controller {
 				}
 			} 
        // }              
-		if($this->db->trans_status()=== TRUE)
+		// [DEBUG] Log trans_status result before check
+		$_ts = $this->db->trans_status();
+		$_dbg_err = $this->db->error();
+		$_dbg_last = $this->db->last_query();
+		$_dbg_log = "\n[DEBUG-adminAppSuccess] " . date('Y-m-d H:i:s') . 
+			"\ntrans_status: " . ($_ts ? 'TRUE' : 'FALSE') .
+			"\nDB Error: " . json_encode($_dbg_err) .
+			"\nLast Query: " . substr($_dbg_last, 0, 500) .
+			"\npay_ids: " . json_encode($pay_ids);
+		file_put_contents('log/debug_adminapp_' . date('Y-m-d') . '.txt', $_dbg_log, FILE_APPEND | LOCK_EX);
+		
+		if($_ts === TRUE)
 	    {
 	    	$serv_model= self::SERV_MODEL;
 	    	foreach ($pay_ids as $pay_id)
