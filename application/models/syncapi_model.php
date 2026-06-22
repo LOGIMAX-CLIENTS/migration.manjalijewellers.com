@@ -282,16 +282,20 @@ class Syncapi_model extends CI_Model
 				  IF(sa.ref_no = '' || sa.ref_no is NULL ,NULL,sa.ref_no) as clientid,
 				  IFNULL(p.discountAmt,'0.00') as discountAmt,
 				  IFNULL(p.payment_amount,'0.00') as amount,
+				  IFNULL(p.saved_benefit_amt,'0.00') as saved_benefit_amt,
 				  IFNULL(p.metal_weight,'0.00') as weight,
+				  IFNULL(p.saved_benefits,'0.000') as saved_benefits_wgt,
 				  IFNULL(p.payment_mode,'') as payment_mode,
 				  IFNULL(p.payment_status,'') as payment_status,
+				  IFNULL(p.benefit_value,'') as benefit_value,
+				  IFNULL(p.benefit_type,'') as benefit_type,
 				  IFNULL(p.bank_name,'') as bank_name,
 				  IFNULL(p.bank_branch,'') as  branch_name,
 				  IFNULL(s.id_metal,'') as metal,  
 				  IFNULL(p.card_no,'')    as card_no,
 				  IFNULL(sa.id_scheme_account,'') as id_scheme_account,
 				  IFNULL(p.id_payment,'') as ref_no,
-				  IF(sa.scheme_acc_number!='','N',sa.is_new) as new_customer,
+				  IF(sa.scheme_acc_number!='','N',sa.is_new) as new_customer,s.is_digi,
 				  IFNULL(p.metal_rate,'') as rate,p.remark as remarks,
 				  b.warehouse
 				FROM
@@ -393,7 +397,15 @@ class Syncapi_model extends CI_Model
 
 	function getCustomerDet($id_scheme_account)
 	{
-		$sql = "SELECT c.id_customer, IFNULL(c.nominee_mobile,'-')AS nomineeMobile, IFNULL(cy.name,'-') AS city, IFNULL(ad.pincode,'-') AS pincode, IFNULL(st.name,'-') AS state, IFNULL(cn.name,'-') AS country, IFNULL(v.village_name,'-') AS area, sa.id_scheme FROM customer c LEFT JOIN scheme_account sa ON c.id_customer = sa.id_customer LEFT JOIN address ad ON ad.id_customer = c.id_customer LEFT JOIN village v ON c.id_village = v.id_village LEFT JOIN city cy ON ad.id_city = cy.id_city LEFT JOIN state st ON ad.id_state = st.id_state LEFT JOIN country cn ON ad.id_country = cn.id_country WHERE sa.id_scheme_account = '$id_scheme_account'";
+		$sql = "SELECT c.id_customer, IFNULL(c.nominee_mobile,'-')AS nomineeMobile, IFNULL(cy.name,'-') AS city, IFNULL(ad.pincode,'-') AS pincode, IFNULL(st.name,'-') AS state, IFNULL(cn.name,'-') AS country, s.total_installments,s.max_weight,s.maturity_installment,s.maturity_days,s.closing_maturity_days,s.maturity_type,IFNULL(v.village_name,'-') AS area, sa.id_scheme FROM customer c 
+		LEFT JOIN scheme_account sa ON c.id_customer = sa.id_customer 
+		LEFT JOIN scheme s ON s.id_scheme = sa.id_scheme 
+		LEFT JOIN address ad ON ad.id_customer = c.id_customer 
+		LEFT JOIN village v ON c.id_village = v.id_village 
+		LEFT JOIN city cy ON ad.id_city = cy.id_city 
+		LEFT JOIN state st ON ad.id_state = st.id_state 
+		LEFT JOIN country cn ON ad.id_country = cn.id_country 
+		WHERE sa.id_scheme_account = '$id_scheme_account'";
 
 		$r = $this->db->query($sql);
 		// print_r($this->db->last_query()); exit;
@@ -401,10 +413,10 @@ class Syncapi_model extends CI_Model
 		return $r->result_array();
 	}
 
-	function getCustomerRegbyID($client_id)
+	function getCustomerRegbyID($id_scheme_account)
 	{
 		 
-	        $sql = "SELECT * FROM customer_reg WHERE clientid='$client_id'";
+	        $sql = "SELECT * FROM customer_reg WHERE id_scheme_account ='$id_scheme_account'";
 	
 		return $this->db->query($sql)->result_array();
 	}

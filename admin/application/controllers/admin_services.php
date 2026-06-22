@@ -4050,7 +4050,7 @@ class Admin_services extends CI_Controller
 
 	//To insert payment and registration details in intermediate table
 
-	function insert_common_data($id_payment)
+	function insert_common_data_old($id_payment)
 
 	{
 

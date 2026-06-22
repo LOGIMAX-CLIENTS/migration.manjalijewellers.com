@@ -323,7 +323,7 @@ class Admin_payment extends CI_Controller
                         if ($this->config->item('integrationType') == 1) {
                             $this->insert_common_data_jil($status['insertID']);
                         } else if ($this->config->item('integrationType') == 2) {
-                            $this->insert_common_data($status['insertID']);
+                            $this->chit_transaction_model->insert_common_data($status['insertID']);
                         }
                         $pay_status_array = array(
                             'id_payment' => (isset($status['insertID']) ? $status['insertID'] : NULL),
@@ -2015,7 +2015,7 @@ class Admin_payment extends CI_Controller
                                     if ($this->config->item('integrationType') == 1) {
                                         $this->insert_common_data_jil($status['insertID']);
                                     } else if ($this->config->item('integrationType') == 2) {
-                                        $this->insert_common_data($status['insertID']);
+                                        $this->chit_transaction_model->insert_common_data($status['insertID']);
                                     } else if ($this->config->item('integrationType') == 5) {
                                         //echo "<pre>";print_r($_POST);
                                         $AccDt = array(
@@ -2354,7 +2354,7 @@ class Admin_payment extends CI_Controller
                             if ($this->config->item('integrationType') == 1) {
                                 $this->insert_common_data_jil($status['updateID']);
                             } else if ($this->config->item('integrationType') == 2) {
-                                $this->insert_common_data($status['updateID']);
+                                $this->chit_transaction_model->insert_common_data($status['updateID']);
                             }
                             //send sms/mail to Customer if success
                             $payData = $this->$model->getPpayment_data($status['updateID']);
@@ -2653,7 +2653,7 @@ class Admin_payment extends CI_Controller
                             if ($this->config->item('integrationType') == 1) {
                                 $this->insert_common_data_jil($pay_insert['insertID']);
                             } else if ($this->config->item('integrationType') == 2) {
-                                $this->insert_common_data($pay_insert['insertID']);
+                                $this->chit_transaction_model->insert_common_data($pay_insert['insertID']);
                             }
                             $acdata = $this->$model->isAcnoAvailable($pay_array['id_scheme_account']);
                             if ($acdata['status']) {
@@ -2888,7 +2888,7 @@ class Admin_payment extends CI_Controller
                     if ($this->config->item('integrationType') == 1) {
                         $this->insert_common_data_jil($id_payment);
                     } else if ($this->config->item('integrationType') == 2) {
-                        $this->insert_common_data($id_payment);
+                        $this->chit_transaction_model->insert_common_data($id_payment);
                     }
                     $pay = $this->$model->paymentDB("get", $id_payment);
                     // Referral Code :- allow_referral - 0 => No , 1 => Yes
@@ -3259,7 +3259,7 @@ class Admin_payment extends CI_Controller
         return true;
     }
     //To insert payment and registration details in intermediate table
-    function insert_common_data($id_payment)
+    function insert_common_data_old($id_payment)
     {
         $model = self::API_MODEL;
         $this->load->model($model);
@@ -4076,7 +4076,7 @@ class Admin_payment extends CI_Controller
                                             /*if($this->config->item('integrationType') == 1){
                                             $this->insert_common_data_jil($py['id_payment']);
                                         }else if($this->config->item('integrationType') == 2){
-                                            $this->insert_common_data($py['id_payment']);
+                                            $this->chit_transaction_model->insert_common_data($py['id_payment']);
                                         }*/
                                             $pay = $this->$model->paymentDB("get", $py['id_payment']);
                                             // Multi mode payment
@@ -4167,7 +4167,7 @@ class Admin_payment extends CI_Controller
                                             if ($this->config->item('integrationType') == 1) {
                                                 $this->insert_common_data_jil($pay['id_payment']);
                                             } else if ($this->config->item('integrationType') == 2) {
-                                                $this->insert_common_data($pay['id_payment']);
+                                                $this->chit_transaction_model->insert_common_data($pay['id_payment']);
                                             }
                                         }
                                     }

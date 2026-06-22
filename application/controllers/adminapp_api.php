@@ -2008,7 +2008,7 @@ class Adminapp_api extends REST_Controller
 					if($this->config->item('integrationType') == 1){
 						$this->insert_common_data_jil($pay['id_payment']);
 					}else if($this->config->item('integrationType') == 2){
-						$this->insert_common_data($pay['id_payment']);
+						$this->mobileapi_model->insert_common_data($pay['id_payment']);
 					}
 				 }  
  
@@ -2487,7 +2487,7 @@ class Adminapp_api extends REST_Controller
                                     if($this->config->item('integrationType') == 1){
                                         $this->insert_common_data_jil($pay['id_payment']);
                                     }else if($this->config->item('integrationType') == 2){
-                                        $this->insert_common_data($pay['id_payment']);
+                                        $this->mobileapi_model->insert_common_data($pay['id_payment']);
                                     }  		            
         		        		}
         		        		
@@ -3028,7 +3028,7 @@ class Adminapp_api extends REST_Controller
                                     if($this->config->item('integrationType') == 1){
                                         $this->insert_common_data_jil($pay['id_payment']);
                                     }else if($this->config->item('integrationType') == 2){
-                                        $this->insert_common_data($pay['id_payment']);
+                                        $this->mobileapi_model->insert_common_data($pay['id_payment']);
                                     }  		            
         		        		}
         		        		

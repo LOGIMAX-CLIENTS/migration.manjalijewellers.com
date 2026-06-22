@@ -1390,11 +1390,11 @@ class Paymt extends CI_Controller {
 										$receipt['custom_entry_date']=$pay['custom_entry_date'];
 										$payment['status'] = $this->payment_modal->update_receipt($pay['id_payment'],$receipt);
 								}*/
-								//$this->insert_common_data($pay['id_payment']);  
+								//$this->mobileapi_model->insert_common_data($pay['id_payment']);  
 								  if($this->config->item('integrationType') == 1){
 								        $this->insert_common_data_jil($pay['id_payment']);
 								    }else if($this->config->item('integrationType') == 2){
-								        $this->insert_common_data($pay['id_payment']);
+								        $this->mobileapi_model->insert_common_data($pay['id_payment']);
 								    }  		            
     		        		}
 						}
@@ -1594,11 +1594,11 @@ class Paymt extends CI_Controller {
 											$receipt['custom_entry_date']=$pay['custom_entry_date'];
 											$payment['status'] = $this->payment_modal->update_receipt($pay['id_payment'],$receipt);
 									}*/
-									//$this->insert_common_data($pay['id_payment']);  
+									//$this->mobileapi_model->insert_common_data($pay['id_payment']);  
 								  if($this->config->item('integrationType') == 1){
 								        $this->insert_common_data_jil($pay['id_payment']);
 								    }else if($this->config->item('integrationType') == 2){
-								        $this->insert_common_data($pay['id_payment']);
+								        $this->mobileapi_model->insert_common_data($pay['id_payment']);
 								    }
 								}						
 						}
@@ -1889,7 +1889,7 @@ class Paymt extends CI_Controller {
 								if($this->config->item('integrationType') == 1){
 									$this->insert_common_data_jil($pay['id_payment']);
 								}else if($this->config->item('integrationType') == 2){
-									$this->insert_common_data($pay['id_payment']);
+									$this->mobileapi_model->insert_common_data($pay['id_payment']);
 								}
     						 }
     					}
@@ -2829,7 +2829,7 @@ class Paymt extends CI_Controller {
 						if($this->config->item('integrationType') == 1){
 							$this->insert_common_data_jil($pay['id_payment']);
 						}else if($this->config->item('integrationType') == 2){
-							$this->insert_common_data($pay['id_payment']);
+							$this->mobileapi_model->insert_common_data($pay['id_payment']);
 						}
 					 }
 				}
@@ -3057,11 +3057,11 @@ class Paymt extends CI_Controller {
     												$receipt['custom_entry_date']=$pay['custom_entry_date'];
     												$payment['status'] = $this->payment_modal->update_receipt($pay['id_payment'],$receipt);
     										}*/
-    									  //$this->insert_common_data($pay['id_payment']);  
+    									  //$this->mobileapi_model->insert_common_data($pay['id_payment']);  
     								    if($this->config->item('integrationType') == 1){
     								        $this->insert_common_data_jil($pay['id_payment']);
     								    }else if($this->config->item('integrationType') == 2){
-    								        $this->insert_common_data($pay['id_payment']);
+    								        $this->mobileapi_model->insert_common_data($pay['id_payment']);
     								    }
     								 }
 
@@ -3713,7 +3713,7 @@ class Paymt extends CI_Controller {
 			return true;
 	}
 	//To insert payment and registration details in intermediate table
-	function insert_common_data($id_payment)
+	function insert_common_data_old($id_payment)
 	{
 		$model = self::API_MODEL;
 		$this->load->model($model);

@@ -11,6 +11,7 @@ class Services extends CI_Controller {
 		$this->load->model('services_modal'); 
 		$this->load->model('email_model'); 
 		$this->load->model('sms_model'); 
+		$this->load->model('mobileapi_model');
 		$this->load->model('login_model');
 		$this->comp = $this->login_model->company_details();
 		if($this->config->item("integrationType") == 5){ // Do customer registration in offline
@@ -189,7 +190,7 @@ class Services extends CI_Controller {
     									$receipt['custom_entry_date']=$pay['custom_entry_date'];
     									$payment['status'] = $this->payment_modal->update_receipt($pay['id_payment'],$receipt);
     							}*/
-    							$this->insert_common_data($pay['id_payment']);
+    							$this->mobileapi_model->insert_common_data($pay['id_payment']);
     						 }
     						 
     						if($service['sms'] == 1)
@@ -243,7 +244,7 @@ class Services extends CI_Controller {
 	    return $response;
     }
     //To insert payment and registration details in intermediate table
-	function insert_common_data($id_payment)
+	function insert_common_data_old($id_payment)
 	{
 		$model = self::API_MODEL;
 		$this->load->model($model);
@@ -789,7 +790,7 @@ class Services extends CI_Controller {
     							if( $this->config->item('auto_pay_approval') == 2 && ($this->config->item('integrationType') == 2 || $this->config->item('integrationType') == 3))
     							{ 	 
                                     if($this->config->item('integrationType') == 2){
-                                        $this->insert_common_data($pay['id_payment']);
+                                        $this->mobileapi_model->insert_common_data($pay['id_payment']);
                                     }  		            
         		        		}
     						}
