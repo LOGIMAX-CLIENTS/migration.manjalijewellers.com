@@ -1311,10 +1311,6 @@ class Chit_transaction_model extends CI_Model
 
 		$isCusRegExists = $this->$model->checkCusRegExists($id_scheme_account,$ref_no);
 
-        if ($isCusRegExists['status']) {
-            $pay_data[0]['client_id'] = $isCusRegExists['clientid'] ;
-        }
-
 		$reg = $this->$model->getCustomerByID($id_scheme_account);
 
 		$reg_1 = $this->$model->getCustomerDet($id_scheme_account);
@@ -1409,16 +1405,16 @@ class Chit_transaction_model extends CI_Model
             
 			$response = $this->sendtoDirectApi('/scheme-joining-insertion/insert',$account);
 
-			if($response['success'] == true) {
+			if($response->success == true) {
 				$cus_reg_data = $this->$model->getCustomerRegbyID($id_scheme_account);
 				
 				$acc_data = array(
-					'scheme_acc_number' => $response['data']['softwareJoinNo'],
-					'ref_no'            => $response['data']['clientid'],
+					'scheme_acc_number' => $response->data->softwareJoinNo,
+					'ref_no'            => $response->data->clientid,
 					'date_upd'          => date("Y-m-d H:i:s")
 				);
 
-				if (!empty($response['data']['softwareJoinNo'])) {
+				if (!empty($response->data->softwareJoinNo)) {
 					$acc_status = $this->$model->update_account(
 						$acc_data, 
 						$cus_reg_data[0]['id_scheme_account'], 
@@ -1444,6 +1440,10 @@ class Chit_transaction_model extends CI_Model
 		$isTranExists = $this->$model->checkTransExists($ref_no);
 	
 		$payID_data = $this->$model->getPayIDdet($id_payment);
+
+        if ($isCusRegExists['status']) {
+            $pay_data[0]['client_id'] = $isCusRegExists['clientid'] ;
+        }
 
 		if(!$isTranExists['status'])
 		{
@@ -1478,40 +1478,43 @@ class Chit_transaction_model extends CI_Model
 
 		if ($runPayDirect && $this->config->item('directAPI') == '1') {
 				$payment = array(
-				"paymentbranch" => (int)$pay_data[0]['id_branch'],
-				"schemeid" => (int)$payID_data[0]['id_scheme'],
-				"schemename" => $payID_data[0]['scheme_name'],
-				"schemeamount" => (float)$pay_data[0]['amount'],
-				"groupno" => $payID_data[0]['scheme_acc_number'],
-				"groupname" => ($grp_name != "" ? $grp_name : $payID_data[0]['group_code']),
-				"customermobile" => (int) $pay_data[0]['mobile'],
-				"cardnumber" => $pay_data[0]['mobile'],
-				"customerid" => (int)$payID_data[0]['id_customer'],
-				"monthyear" => $pay_data[0]['payment_date'],
-				"saved_benefits" => $pay_data[0]['saved_benefits_wgt'],
-				"saved_benefit_amt" => $pay_data[0]['saved_benefit_amt'],
-				"installment" => (int) $payID_data[0]['installment'],
-				"benefit_value" => $pay_data[0]['benefit_value'],
-				"benefit_type" => (int) $pay_data[0]['benefit_type'],
-				"is_digi" => (int) $pay_data[0]['is_digi'],
-				"goldrate" => (int)$pay_data[0]['rate'],
-				"customername" => $payID_data[0]['customername'],
-				"onlinepaymentrefid" => $pay_data[0]['pay_trans_id'],
-				"onlinepayment" => ($payID_data[0]['added_by'] == 2 || $payID_data[0]['added_by'] == 4) ? 1 : 0,
-				"onlineamount" => (float)$pay_data[0]['amount'],
-				"clientid" => $payID_data[0]['clientid'],
-				"schemerefid" => $id_payment
+                    "payment" => array(
+                        "paymentbranch" => (int)$pay_data[0]['id_branch'],
+                        "schemeid" => (int)$payID_data[0]['id_scheme'],
+                        "schemename" => $payID_data[0]['scheme_name'],
+                        "schemeamount" => (float)$pay_data[0]['amount'],
+                        "groupno" => $payID_data[0]['scheme_acc_number'],
+                        "groupname" => ($grp_name != "" ? $grp_name : $payID_data[0]['group_code']),
+                        "customermobile" => (int) $pay_data[0]['mobile'],
+                        "cardnumber" => $pay_data[0]['mobile'],
+                        "customerid" => (int)$payID_data[0]['id_customer'],
+                        "monthyear" => $pay_data[0]['payment_date'],
+                        "saved_weight" => $pay_data[0]['weight'],
+                        "saved_benefits" => $pay_data[0]['saved_benefits_wgt'],
+                        "saved_benefit_amt" => $pay_data[0]['saved_benefit_amt'],
+                        "installment" => (int) $payID_data[0]['installment'],
+                        "benefit_value" => $pay_data[0]['benefit_value'],
+                        "benefit_type" => (int) $pay_data[0]['benefit_type'],
+                        "is_digi" => (int) $pay_data[0]['is_digi'],
+                        "goldrate" => (int)$pay_data[0]['rate'],
+                        "customername" => $payID_data[0]['customername'],
+                        "onlinepaymentrefid" => ($pay_data[0]['pay_trans_id'] ? $pay_data[0]['pay_trans_id'] : ''),
+                        "onlinepayment" => ($payID_data[0]['added_by'] == 2 || $payID_data[0]['added_by'] == 4) ? 1 : 0,
+                        "onlineamount" => (float)$pay_data[0]['amount'],
+                        "clientid" => $payID_data[0]['clientid'],
+                        "schemerefid" => $id_payment
+                    )
 			);
 				
 				$response = $this->sendtoDirectApi('/scheme-payment-entry-insertion/insert',$payment);
 						
-				if ($response['success'] == true) {
-					$isClientID =  $this->$model->checkClientID($pay_data[0]['id_scheme_account'],$response['data']['clientid']);
+				if ($response->success == true) {
+					$isClientID =  $this->$model->checkClientID($pay_data[0]['id_scheme_account'],$response->data->clientid);
 
-					if (!empty($response['data']['softwarePaymentId'])) {
+					if (!empty($response->data->softwarePaymentId)) {
 						if ($isClientID['status']) {
 							$pay_array = array(
-								'receipt_no' => $response['data']['softwarePaymentId'],
+								'receipt_no' => $response->data->softwarePaymentId,
 								'date_upd'	 => date("Y-m-d H:i:s")
 							);
 
@@ -1540,8 +1543,7 @@ class Chit_transaction_model extends CI_Model
 	function sendtoDirectApi($api,$postData)
 	{
 		$url = $this->config->item('directAPIurl').$api;
-		$payLoad[] = $postData;
-	
+
 		$curl = curl_init();
 
 		curl_setopt_array($curl, array(
@@ -1552,7 +1554,7 @@ class Chit_transaction_model extends CI_Model
 			CURLOPT_TIMEOUT => 30,
 			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
 			CURLOPT_CUSTOMREQUEST => "POST",
-			CURLOPT_POSTFIELDS => json_encode($payLoad),
+			CURLOPT_POSTFIELDS => json_encode($postData),
 			CURLOPT_SSL_VERIFYPEER => false,
 			CURLOPT_HTTPHEADER => array(
 				"cache-control: no-cache",

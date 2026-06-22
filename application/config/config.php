@@ -43,10 +43,10 @@ $config['iPackage'] = ''; // app store package
 // Scheme Settings
 $config['default_acno_label'] = 'Transaction Pending';
 // Integration 
-$config['integrationType'] = 0;  // 1 - jilaba , 2 - sync tool, 3 - EJ ERP Integration, 4 -  SKTM (SCM,TKTM only - Tool for offline, API for online), 5 - Khimji Integration (Directly integration with ACME without storing data in intermediate tables)
+$config['integrationType'] = 2;  // 1 - jilaba , 2 - sync tool, 3 - EJ ERP Integration, 4 -  SKTM (SCM,TKTM only - Tool for offline, API for online), 5 - Khimji Integration (Directly integration with ACME without storing data in intermediate tables)
 $config['autoSyncExisting'] = 1; // 1 - Yes, 0 - No
-$config['directAPI'] = 0;// 1 - Yes, 0 - No (only for SKTM space)
-$config['directAPIurl'] = 'https://chitappback.spacetextiles.net/v1/';
+$config['directAPI'] = 1;// 1 - Yes, 0 - No (only for SKTM space)
+$config['directAPIurl'] = 'http://43.205.83.64:8007/api';
 
 // EJ ERP Integration Settings
 $config['erp_baseURL'] = ''; // TEST
