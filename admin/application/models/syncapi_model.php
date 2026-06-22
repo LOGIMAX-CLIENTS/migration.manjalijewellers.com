@@ -625,7 +625,7 @@ class Syncapi_model extends CI_Model
 	function getCustomerByID($id_scheme_account)
 	{
 		$sql = "SELECT
-		               IF(ref_no = '' || ref_no is NULL ,NULL,ref_no) as clientid,
+		               IF(ref_no = '' || ref_no is NULL ,'',ref_no) as clientid,
 					   sa.id_scheme_account as  id_scheme_account,sa.id_branch,maturity_date,
 		               Date_Format(sa.start_date,'%Y-%m-%d')  as reg_date,sh.sync_scheme_code,sh.code as group_code,
 					   c.title as salutation,sa.account_name as ac_name,c.firstname,c.lastname,sa.group_code,sa.scheme_acc_number as scheme_ac_no, 

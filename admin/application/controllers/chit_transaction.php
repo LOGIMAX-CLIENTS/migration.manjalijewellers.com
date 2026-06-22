@@ -1202,14 +1202,6 @@ class Chit_transaction extends CI_Controller
 			$runPayDirect = false;
 		}
 
-		// Update installment number on payment and total_paid_ins on scheme_account
-		$this->load->model('chit_transaction_model');
-		$payment_det = $this->chit_transaction_model->get_payment_details($id_payment);
-		if (!empty($payment_det)) {
-			$this->chit_transaction_model->updatedue_details($payment_det);
-			// Re-fetch payID_data to get updated installment value
-			$payID_data = $this->$model->getPayIDdet($id_payment);
-		}
 
 			//For online payments Send in direct API and update receipt no , ref no 
 

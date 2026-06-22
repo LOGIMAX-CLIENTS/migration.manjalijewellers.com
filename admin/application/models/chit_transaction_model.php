@@ -1335,7 +1335,8 @@ class Chit_transaction_model extends CI_Model
 
 			$runDirectAPI = true;
 
-		} elseif($isCusRegExists['status'] && $isCusRegExists['clientid'] == null && $isCusRegExists['is_transferred'] == 'N' && $chit_settings['gent_clientid'] == 1) {
+		} 
+       /*  elseif($isCusRegExists['status'] && $isCusRegExists['clientid'] == null && $isCusRegExists['is_transferred'] == 'N' && $chit_settings['gent_clientid'] == 1) {
 
 			$reg_data = array(
 				'clientid' => "ON-".$id_scheme_account
@@ -1344,7 +1345,8 @@ class Chit_transaction_model extends CI_Model
 
 			$runDirectAPI = true;
 
-		} elseif ($isCusRegExists['status'] && $isCusRegExists['is_transferred'] == 'N') {
+		}  */
+        elseif ($isCusRegExists['status'] && $isCusRegExists['is_transferred'] == 'N') {
 
 			$runDirectAPI = true;
 		} else {
