@@ -11,6 +11,7 @@ class Cf_autodebit extends CI_Controller {
 		$this->load->model('login_model');
 		$this->load->model('services_modal');
 		$this->load->model('sms_model');
+		$this->load->model('mobileapi_model');
 		$this->comp = $this->login_model->company_details();
 		$this->payment_status = array(
 										'pending'   => 7,
@@ -572,7 +573,7 @@ class Cf_autodebit extends CI_Controller {
 					if($this->config->item('integrationType') == 1){
 						$this->insert_common_data_jil($ins['insertID']);
 					}else if($this->config->item('integrationType') == 2){
-						$this->insert_common_data($ins['insertID']);
+						$this->mobileapi_model->insert_common_data($ins['insertID']);
 					}
 				 }
 		    }
@@ -646,7 +647,7 @@ class Cf_autodebit extends CI_Controller {
 			return true;
 	}
 	//To insert payment and registration details in intermediate table
-	function insert_common_data($id_payment)
+	function insert_common_data_old($id_payment)
 	{
 		$model = "syncapi_model";
 		$this->load->model($model);

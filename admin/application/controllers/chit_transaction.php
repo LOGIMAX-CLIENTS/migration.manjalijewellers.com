@@ -932,7 +932,7 @@ class Chit_transaction extends CI_Controller
 
 		if (!empty($acc_upd)) {
 			foreach ($acc_upd as $acc) {
-				$this->insert_common_data($acc['ref_no']);
+				$this->chit_transaction_model->insert_common_data($acc['ref_no']);
 			}
 		}else {
 			echo "No Results found";
@@ -943,7 +943,7 @@ class Chit_transaction extends CI_Controller
 
 	 //To insert payment and registration details in intermediate table
 
-	function insert_common_data($id_payment)
+	function insert_common_data_old($id_payment)
 
 	{
 
@@ -1024,250 +1024,266 @@ class Chit_transaction extends CI_Controller
 
 	}
 
-	function insert_common_data_s($id_payment)
+	function insert_common_data($id_payment)
 	{
 		$model = self::SYN_MODEL;
 
 		$this->load->model($model);
 
 		//getting payment detail
+
 		$pay_data = $this->$model->getPaymentByID($id_payment);
 
-		if(!empty($pay_data)){
-			//storing temp values
-			$ref_no = $pay_data[0]['ref_no'];
-			$id_scheme_account = $pay_data[0]['id_scheme_account']; 
+		//storing temp values
+		$ref_no = $pay_data[0]['ref_no'];
+		$id_scheme_account = $pay_data[0]['id_scheme_account']; 
 
-			$isCusRegExists = $this->$model->checkCusRegExists($id_scheme_account,$ref_no);
+		$isCusRegExists = $this->$model->checkCusRegExists($id_scheme_account,$ref_no);
 
-			$reg = $this->$model->getCustomerByID($id_scheme_account);
-			$reg_1 = $this->$model->getCustomerDet($id_scheme_account);
+        if ($isCusRegExists['status']) {
+            $pay_data[0]['client_id'] = $isCusRegExists['clientid'] ;
+        }
 
-			if($this->config->item('directAPI') == '1'){
+		$reg = $this->$model->getCustomerByID($id_scheme_account);
 
-				$reg[0]['clientid'] = "ON-".$id_scheme_account ;
-				$pay_data[0]['client_id'] = "ON-".$id_scheme_account ;
-			}
+		$reg_1 = $this->$model->getCustomerDet($id_scheme_account);
 
-			// Skip clientid if gent_clientid is disabled
-			$chit_settings = $this->db->query("SELECT gent_clientid FROM chit_settings LIMIT 1")->row_array();
-			if(empty($chit_settings['gent_clientid']) || $chit_settings['gent_clientid'] == 0){
-				$reg[0]['clientid'] = NULL;
-				$pay_data[0]['client_id'] = '';
-			}
+		$reg[0]['record_to']= 1 ;
 
-			$reg[0]['record_to']= 1 ;
+		$reg[0]['is_registered_online']= 2 ;  // 2 - online record
 
-			$reg[0]['is_registered_online']= 2 ;  // 2 - online record
-
-			$reg[0]['ref_no']		= $ref_no;
-			
-			if(!$isCusRegExists['status']) {
-
-				//insert customer registration detail
-				$status = $this->$model->insert_CustomerReg($reg[0]);
-
-				$runDirectAPI = true;
-
-			} elseif($isCusRegExists['status'] && $isCusRegExists['clientid'] == null) {
-
-				$reg_data = array(
-					'clientid' => $reg[0]['clientid'],
-				);
-				$this->$model->update_CustomerReg($reg_data, $isCusRegExists['id_customer_reg']);
-
-				$runDirectAPI = true;
-
-			} elseif ($isCusRegExists['status'] && $isCusRegExists['is_transferred'] == 'N') {
-
-				$runDirectAPI = true;
-			} else {
-
-				$runDirectAPI = false; // for all other cases
-			}
-
-			if($runDirectAPI && $this->config->item('directAPI') == '1') {
-
-				if (!empty($reg[0]['maturity_date'])) {
-
-					$maturitydate = $reg[0]['maturity_date'];
-				} else {
-
-					$total_installment = $reg_1[0]['total_installment'];
-						$maturitydate = date('Y-m-d', strtotime("+" . $reg_1[0]['maturity_days'] . " days" , strtotime($reg[0]['reg_date'])));
-
-					$maturitydate = date('Y-m-d', strtotime("+" . $total_installment . " months", strtotime($reg[0]['reg_date']))); 
-					if($reg_1[0]['maturity_type'] == 2){
-						$maturitydate = date('Y-m-d', strtotime("+" . $reg_1[0]['maturity_days']+ $account['customer']['closing_maturity_days'] . " days", strtotime($account['customer']['start_date'])));
-
-					}
-					else{
-						$maturitydate = date('Y-m-d', strtotime("+" .$reg_1[0]['closing_maturity_days'] . " days", strtotime($reg[0]['reg_date'])));
-					} 
-				}
-			
-				$account = array( 
-					"id" => (int) $reg_1[0]['id_customer'], 
-					"customerid"=> (int) $reg_1[0]['id_customer'], 
-					"customerName"=> $reg[0]['firstname'],
-					"mobileNo" => (int)$reg[0]['mobile'],
-					"branch"=> (int)$reg[0]['id_branch'], 
-					"insert_update" => 1, 
-					"schemeid" => (int)$reg_1[0]['id_scheme'], 
-					"schemerefid" => (int)$id_scheme_account,
-					"cardnumber"=> (int)$reg[0]['mobile'],
-					"startdate"=> $reg[0]['reg_date'],
-					"enddate"=> $maturitydate, 
-					"schemeamount"=> (int)$pay_data[0]['amount'], 
-					"clientid" => $reg[0]['clientid'],
-					"groupname"=> $reg[0]['sync_scheme_code'],
-					"CreatedBy"=> 1,
-					"nomineeMobile" => (int)$reg_1[0]['nomineeMobile'], 
-					"doorNo" => "NA", 
-					"street" => "NA", 
-					"area" => $reg_1[0]['area'], 
-					"taluk" => "NA", 
-					"city" => $reg_1[0]['city'], 
-					"pinCode" => (int)$reg_1[0]['pincode'], 
-					"state" => $reg_1[0]['state'], 
-				);
-
-				$response = $this->sendtoDirectApi('common/bulkcustomerinsert', $account);
-
-				if($response->status == 200) {
-					$cus_reg_data = $this->$model->getCustomerRegbyID($response->data[0]->clientid);
-					
-					$acc_data = array(
-						'group_code'        => $cus_reg_data[0]['group_code'],
-						'scheme_acc_number' => $response->data[0]->groupnumber,
-						'ref_no'            => $response->data[0]->clientid,
-						'date_upd'          => date("Y-m-d H:i:s")
-					);
-
-					if (!empty($response->data[0]->groupnumber)) {
-						$acc_status = $this->$model->update_account(
-							$acc_data, 
-							$cus_reg_data[0]['id_scheme_account'], 
-							$cus_reg_data[0]['id_customer_reg']
-						);
-					}
-					
-				}
-
-				// Log response
-				if (!is_dir($this->log_dir.'/directAPI')) {
-					mkdir($this->log_dir.'/directAPI', 0777, true);
-				}
-
-				$log_path = $this->log_dir.'/directAPI/response'.date("Y-m-d").'.txt';
-				$ldata = "\n".date('d-m-Y H:i:s')
-					." \n Acc Postdata : ".json_encode($account,true)
-					." \n Acc Response :".json_encode($response,true);
-
-				file_put_contents($log_path, $ldata, FILE_APPEND | LOCK_EX);
-			}
-
-			$isTranExists = $this->$model->checkTransExists($ref_no);
+		$reg[0]['ref_no']		= $ref_no;
+		$grp_name = '';
 		
-			$payID_data = $this->$model->getPayIDdet($id_payment);
+		/* if(!$isCusRegExists['status']) {
 
-			if(!$isTranExists['status'])
-			{
+            // Skip clientid if gent_clientid is disabled
+            $chit_settings = $this->db->query("SELECT gent_clientid FROM chit_settings LIMIT 1")->row_array();
+            if(empty($chit_settings['gent_clientid']) || $chit_settings['gent_clientid'] == 0){
+                $reg[0]['clientid'] = '';
+                $pay_data[0]['client_id'] = '';
+            }
+			//insert customer registration detail
+			$status = $this->$model->insert_CustomerReg($reg[0]);
 
-				//insert payment detail
+			$runDirectAPI = true;
 
-				$pay_data[0]['record_to'] = 1;	
+		} elseif($isCusRegExists['status'] && $isCusRegExists['clientid'] == null && $isCusRegExists['is_transferred'] == 'N' && $chit_settings['gent_clientid'] == 1) {
 
-				$pay_data[0]['payment_type'] = 1;	// 1 - online 
+			$reg_data = array(
+				'clientid' => "ON-".$id_scheme_account
+			);
+			$this->$model->update_CustomerReg($reg_data, $isCusRegExists['id_customer_reg']);
 
-				$status =	$this->$model->insert_transaction($pay_data[0]); 
+			$runDirectAPI = true;
 
-				$runPayDirect = true;
+		} elseif ($isCusRegExists['status'] && $isCusRegExists['is_transferred'] == 'N') {
 
-			} elseif ($isTranExists['status'] && ($isTranExists['clientid'] == null || $isTranExists['clientid'] == '')) {
-				$trans_data = array(
-					'client_id' => $pay_data[0]['client_id']
-				);
-				$this->$model->update_transaction($trans_data,$isTranExists['id_transaction']);
+			$runDirectAPI = true;
+		} else {
 
-				$runPayDirect = true;
-			} else if ($isTranExists['status'] && $isTranExists['is_transferred'] == 'N' && ($payID_data[0]['scheme_acc_number'] != null || $payID_data[0]['scheme_acc_number'] != '')) {
-
-				$runPayDirect = true;
-
-			}else {
-				
-				$runPayDirect = false;
-			}
-
-				//For online payments Send in direct API and update receipt no , ref no 
-
-			if ($runPayDirect && $this->config->item('directAPI') == '1') {
-				$payment = array(
-						"paymentbranch" => (int)$pay_data[0]['id_branch'],
-						"schemeid" => (int)$payID_data[0]['id_scheme'], 
-						"schemename"=>$payID_data[0]['scheme_name'], 
-						"schemeamount"=> (float)$pay_data[0]['amount'],
-						"groupno"=> (int)$payID_data[0]['scheme_acc_number'],
-						"groupname"=> $payID_data[0]['sync_scheme_code'],
-						"customermobile"=> (int)$pay_data[0]['mobile'],
-						"cardnumber"=> (int)$pay_data[0]['mobile'],
-						"customerid"=> (int)$payID_data[0]['id_customer'],
-						"monthyear"=> $pay_data[0]['payment_date'],
-						"goldrate"=> (int)$pay_data[0]['rate'],
-						"customername"=> $payID_data[0]['customername'], 
-						"onlinepaymentrefid" => $pay_data[0]['pay_trans_id'], 
-						// "onlinepaymentrefid" => 12345, 
-						"onlinepayment" => 1,
-						"onlineamount"=> (float)$pay_data[0]['amount'],
-						"createdby" => 1, 
-						"clientid"=> $payID_data[0]['clientid'],
-						"schemerefid" => $id_payment
-					);
-					
-					$response = $this->sendtoDirectApi('common/bulkpaymentinsert',$payment);
-							
-					if ($response->status == 200) {
-						$isClientID =  $this->$model->checkClientID($pay_data[0]['id_scheme_account'],$response->data[0]->clientid);
-
-						if (!empty($response->data[0]->paymentreceiptnumber)) {
-							if ($isClientID['status']) {
-								$pay_array = array(
-									'receipt_no' => $response->data[0]->paymentreceiptnumber,
-									'date_upd'	 => date("Y-m-d H:i:s")
-								);
-
-								$pay_status = $this->$model->updatedirPayment($pay_array,$pay_data[0]['ref_no']);
-
-								echo "receipt number updated for payment id : ".$id_payment."<br/>";
-							}
-						}
-						
-					}
-
-					if (!is_dir($this->log_dir.'/directAPI')) 
-					{
-						mkdir($this->log_dir.'/directAPI', 0777, true);
-					}
-					$log_path = $this->log_dir.'/directAPI/response'.date("Y-m-d").'.txt';
-					$ldata = "\n".date('d-m-Y H:i:s')." \n Postdata : ".json_encode($payment,true)." \n Response :".json_encode($response,true);
-					file_put_contents($log_path,$ldata,FILE_APPEND | LOCK_EX);
-			}
-		}else {
-			echo "<h5 style = 'color:red;'>No payment found with id : ".$id_payment. "</h5>" ;
+			$runDirectAPI = false; // for all other cases
 		}
 
-			//echo $this->db->last_query();exit;
+		if($runDirectAPI && $this->config->item('directAPI') == '1') {
+
+            if (!empty($reg[0]['maturity_date'])) {
+
+                $maturitydate = $reg[0]['maturity_date'];
+            } else {
+
+                $total_installment = $reg_1[0]['total_installment'];
+                    $maturitydate = date('Y-m-d', strtotime("+" . $reg_1[0]['maturity_days'] . " days" , strtotime($reg[0]['reg_date'])));
+
+                $maturitydate = date('Y-m-d', strtotime("+" . $total_installment . " months", strtotime($reg[0]['reg_date']))); 
+                if($reg_1[0]['maturity_type'] == 2){
+                    $maturitydate = date('Y-m-d', strtotime("+" . ($reg_1[0]['maturity_days'] + $reg_1[0]['closing_maturity_days']) . " days", strtotime($reg[0]['reg_date'])));
+
+                }
+                else{
+                    $maturitydate = date('Y-m-d', strtotime("+" .$reg_1[0]['closing_maturity_days'] . " days", strtotime($reg[0]['reg_date'])));
+                } 
+            }
+		
+			$account = array(
+				'customer' => array(
+					'customerid'    => $reg_1[0]['id_customer'],
+					'customerName'  => $reg[0]['firstname'],
+					'mobileNo'      => $reg[0]['mobile'],
+					'branch'        => (int) $reg[0]['id_branch'],
+					'insert_update' => 1,
+					'cardnumber'    => $reg[0]['mobile'],
+					'nomineeMobile' => $reg_1[0]['nomineeMobile'],
+					'doorNo'        => 'NA',
+					'street'        => 'NA',
+					'area'          => $reg_1[0]['area'],
+					'taluk'         => 'NA',
+					'city'          => $reg_1[0]['city'],
+					'pinCode'       => $reg_1[0]['pincode'],
+					'state'         => $reg_1[0]['state']
+				),
+				'joining' => array(
+					'clientid'     => $reg[0]['clientid'],
+					'schemeid'     => (int) $reg_1[0]['id_scheme'],
+					'schemerefid'  => (int) $id_scheme_account,
+					'schemeamount' => (int) $pay_data[0]['amount'],
+					'cardnumber'   => $reg[0]['mobile'],
+					'groupname'    => $reg[0]['sync_scheme_code'],
+					'startdate'    => $reg[0]['reg_date'],
+					'enddate'      => $maturitydate,
+					'branch'       => (int) $reg[0]['id_branch'],
+					'digi'         => (int) $reg[0]['is_digi']
+				)
+			);
+            
+			$response = $this->sendtoDirectApi('/scheme-joining-insertion/insert',$account);
+
+			if($response['success'] == true) {
+				$cus_reg_data = $this->$model->getCustomerRegbyID($id_scheme_account);
+				
+				$acc_data = array(
+					'scheme_acc_number' => $response['data']['softwareJoinNo'],
+					'ref_no'            => $response['data']['clientid'],
+					'date_upd'          => date("Y-m-d H:i:s")
+				);
+
+				if (!empty($response['data']['softwareJoinNo'])) {
+					$acc_status = $this->$model->update_account(
+						$acc_data, 
+						$cus_reg_data[0]['id_scheme_account'], 
+						$cus_reg_data[0]['id_customer_reg']
+					);
+				}
+				
+			}
+
+			// Log response
+			if (!is_dir($this->log_dir.'/directAPI')) {
+				mkdir($this->log_dir.'/directAPI', 0777, true);
+			}
+
+			$log_path = $this->log_dir.'/directAPI/response'.date("Y-m-d").'.txt';
+			$ldata = "\n".date('d-m-Y H:i:s')
+				." \n Acc Postdata : ".json_encode($account,true)
+				." \n Acc Response :".json_encode($response,true);
+
+			file_put_contents($log_path, $ldata, FILE_APPEND | LOCK_EX);
+		} */
+
+		$isTranExists = $this->$model->checkTransExists($ref_no);
+	
+		$payID_data = $this->$model->getPayIDdet($id_payment);
+
+		if(!$isTranExists['status'])
+		{
+
+			//insert payment detail
+
+			$pay_data[0]['record_to'] = 1;	
+
+			$pay_data[0]['payment_type'] = 1;	// 1 - online 
+
+			$status =	$this->$model->insert_transaction($pay_data[0]); 
+
+			$runPayDirect = true;
+
+		} elseif ($isTranExists['status'] && ($isTranExists['clientid'] == null || $isTranExists['clientid'] == '') && $chit_settings['gent_clientid'] == 1) {
+			$trans_data = array(
+				'client_id' => $pay_data[0]['client_id']
+			);
+			$this->$model->update_transaction($trans_data,$isTranExists['id_transaction']);
+
+			$runPayDirect = true;
+		} else if ($isTranExists['status'] && $isTranExists['is_transferred'] == 'N' && ($payID_data[0]['scheme_acc_number'] != null || $payID_data[0]['scheme_acc_number'] != '')) {
+
+			$runPayDirect = true;
+
+		}else {
+			
+			$runPayDirect = false;
+		}
+
+			//For online payments Send in direct API and update receipt no , ref no 
+
+		if ($runPayDirect && $this->config->item('directAPI') == '1') {
+				$payment = array(
+				"paymentbranch" => (int)$pay_data[0]['id_branch'],
+				"schemeid" => (int)$payID_data[0]['id_scheme'],
+				"schemename" => $payID_data[0]['scheme_name'],
+				"schemeamount" => (float)$pay_data[0]['amount'],
+				"groupno" => $payID_data[0]['scheme_acc_number'],
+				"groupname" => ($grp_name != "" ? $grp_name : $payID_data[0]['group_code']),
+				"customermobile" => (int) $pay_data[0]['mobile'],
+				"cardnumber" => $pay_data[0]['mobile'],
+				"customerid" => (int)$payID_data[0]['id_customer'],
+				"monthyear" => $pay_data[0]['payment_date'],
+				"saved_benefits" => $pay_data[0]['saved_benefits_wgt'],
+				"saved_benefit_amt" => $pay_data[0]['saved_benefit_amt'],
+				"installment" => (int) $payID_data[0]['installment'],
+				"benefit_value" => $pay_data[0]['benefit_value'],
+				"benefit_type" => (int) $pay_data[0]['benefit_type'],
+				"is_digi" => (int) $pay_data[0]['is_digi'],
+				"goldrate" => (int)$pay_data[0]['rate'],
+				"customername" => $payID_data[0]['customername'],
+				"onlinepaymentrefid" => $pay_data[0]['pay_trans_id'],
+				"onlinepayment" => ($payID_data[0]['added_by'] == 2 || $payID_data[0]['added_by'] == 4) ? 1 : 0,
+				"onlineamount" => (float)$pay_data[0]['amount'],
+				"clientid" => $payID_data[0]['clientid'],
+				"schemerefid" => $id_payment
+			);
+				
+				$response = $this->sendtoDirectApi('/scheme-payment-entry-insertion/insert',$payment);
+						
+				if ($response['success'] == true) {
+					$isClientID =  $this->$model->checkClientID($pay_data[0]['id_scheme_account'],$response['data']['clientid']);
+
+					if (!empty($response['data']['softwarePaymentId'])) {
+						if ($isClientID['status']) {
+							$pay_array = array(
+								'receipt_no' => $response['data']['softwarePaymentId'],
+								'date_upd'	 => date("Y-m-d H:i:s")
+							);
+
+							$pay_status = $this->$model->updatedirPayment($pay_array,$pay_data[0]['ref_no']);
+
+						}
+					}
+					
+				}
+
+				if (!is_dir($this->log_dir.'/directAPI')) 
+				{
+					mkdir($this->log_dir.'/directAPI', 0777, true);
+				}
+				$log_path = $this->log_dir.'/directAPI/response'.date("Y-m-d").'.txt';
+				$ldata = "\n".date('d-m-Y H:i:s')." \n Postdata : ".json_encode($payment,true)." \n Response :".json_encode($response,true);
+				file_put_contents($log_path,$ldata,FILE_APPEND | LOCK_EX);
+		}
+		
+		//echo $this->db->last_query();exit;
 
 		return true;
 
 	}
 
+
 	function sendtoDirectApi($api,$postData)
 	{
-		$url = $this->config->item('directAPIurl') . $api;
-		$payLoad[] = $postData;
-	
+		$url = $this->config->item('directAPIurl').$api;
+
+		// print_r(json_encode($postData));exit;
+
+		/* $response = [
+			"success" => true,
+			"message" => "string",
+			"data" => [
+				"softwarePaymentId" => "5000098",
+				"softwareVchNo" => "1",
+				"clientid" => "12345",
+			]
+		]; */
+
+
 		$curl = curl_init();
 
 		curl_setopt_array($curl, array(
@@ -1295,6 +1311,8 @@ class Chit_transaction extends CI_Controller
 		} else {
 			return json_decode($response);
 		}
+
+		return $response; 
 	}
 
 }

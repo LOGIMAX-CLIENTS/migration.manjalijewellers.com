@@ -5345,14 +5345,10 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
 		
 		if(!$isCusRegExists['status']) {
 
-            if($this->config->item('directAPI') == '1'){
-                $reg[0]['clientid'] = "ON-".$id_scheme_account ;
-                $pay_data[0]['client_id'] = "ON-".$id_scheme_account ;
-            }
             // Skip clientid if gent_clientid is disabled
             $chit_settings = $this->db->query("SELECT gent_clientid FROM chit_settings LIMIT 1")->row_array();
             if(empty($chit_settings['gent_clientid']) || $chit_settings['gent_clientid'] == 0){
-                $reg[0]['clientid'] = NULL;
+                $reg[0]['clientid'] = '';
                 $pay_data[0]['client_id'] = '';
             }
 			//insert customer registration detail
@@ -5360,7 +5356,7 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
 
 			$runDirectAPI = true;
 
-		} elseif($isCusRegExists['status'] && $isCusRegExists['clientid'] == null && $isCusRegExists['is_transferred'] == 'N') {
+		} elseif($isCusRegExists['status'] && $isCusRegExists['clientid'] == null && $isCusRegExists['is_transferred'] == 'N' && $chit_settings['gent_clientid'] == 1) {
 
 			$reg_data = array(
 				'clientid' => "ON-".$id_scheme_account
@@ -5389,7 +5385,7 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
 
                 $maturitydate = date('Y-m-d', strtotime("+" . $total_installment . " months", strtotime($reg[0]['reg_date']))); 
                 if($reg_1[0]['maturity_type'] == 2){
-                    $maturitydate = date('Y-m-d', strtotime("+" . $reg_1[0]['maturity_days']+ $account['customer']['closing_maturity_days'] . " days", strtotime($account['customer']['start_date'])));
+                    $maturitydate = date('Y-m-d', strtotime("+" . ($reg_1[0]['maturity_days'] + $reg_1[0]['closing_maturity_days']) . " days", strtotime($reg[0]['reg_date'])));
 
                 }
                 else{
@@ -5397,46 +5393,49 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
                 } 
             }
 		
-			$account = array( 
-				"id" => (int) $reg_1[0]['id_customer'], 
-				"customerid"=> (int) $reg_1[0]['id_customer'], 
-				"customerName"=> $reg[0]['firstname'],
-				"mobileNo" => (int)$reg[0]['mobile'],
-				"branch"=> (int)$reg[0]['id_branch'], 
-				"insert_update" => 1, 
-				"schemeid" => (int)$reg_1[0]['id_scheme'], 
-				"schemerefid" => (int)$id_scheme_account,
-				"cardnumber"=> (int)$reg[0]['mobile'],
-				"startdate"=> $reg[0]['reg_date'],
-				"enddate"=> $maturitydate, 
-				"schemeamount"=> (int)$pay_data[0]['amount'], 
-				"clientid" => $reg[0]['clientid'],
-				"groupname"=> $reg[0]['sync_scheme_code'],
-				"CreatedBy"=> 1,
-				"nomineeMobile" => (int)$reg_1[0]['nomineeMobile'], 
-				"doorNo" => "NA", 
-				"street" => "NA", 
-				"area" => $reg_1[0]['area'], 
-				"taluk" => "NA", 
-				"city" => $reg_1[0]['city'], 
-				"pinCode" => (int)$reg_1[0]['pincode'], 
-				"state" => $reg_1[0]['state'], 
+			$account = array(
+				'customer' => array(
+					'customerid'    => $reg_1[0]['id_customer'],
+					'customerName'  => $reg[0]['firstname'],
+					'mobileNo'      => $reg[0]['mobile'],
+					'branch'        => (int) $reg[0]['id_branch'],
+					'insert_update' => 1,
+					'cardnumber'    => $reg[0]['mobile'],
+					'nomineeMobile' => $reg_1[0]['nomineeMobile'],
+					'doorNo'        => 'NA',
+					'street'        => 'NA',
+					'area'          => $reg_1[0]['area'],
+					'taluk'         => 'NA',
+					'city'          => $reg_1[0]['city'],
+					'pinCode'       => $reg_1[0]['pincode'],
+					'state'         => $reg_1[0]['state']
+				),
+				'joining' => array(
+					'clientid'     => $reg[0]['clientid'],
+					'schemeid'     => (int) $reg_1[0]['id_scheme'],
+					'schemerefid'  => (int) $id_scheme_account,
+					'schemeamount' => (int) $pay_data[0]['amount'],
+					'cardnumber'   => $reg[0]['mobile'],
+					'groupname'    => $reg[0]['sync_scheme_code'],
+					'startdate'    => $reg[0]['reg_date'],
+					'enddate'      => $maturitydate,
+					'branch'       => (int) $reg[0]['id_branch'],
+					'digi'         => (int) $reg[0]['is_digi']
+				)
 			);
+            
+			$response = $this->sendtoDirectApi('/scheme-joining-insertion/insert',$account);
 
-			$response = $this->sendtoDirectApi('common/bulkcustomerinsert', $account);
-			$grp_name = $response->data[0]->groupname;
-
-			if($response->status == 200) {
-				$cus_reg_data = $this->$model->getCustomerRegbyID($response->data[0]->clientid);
+			if($response['success'] == true) {
+				$cus_reg_data = $this->$model->getCustomerRegbyID($id_scheme_account);
 				
 				$acc_data = array(
-					'group_code'        => $response->data[0]->groupname,
-					'scheme_acc_number' => $response->data[0]->groupnumber,
-					'ref_no'            => $response->data[0]->clientid,
+					'scheme_acc_number' => $response['data']['softwareJoinNo'],
+					'ref_no'            => $response['data']['clientid'],
 					'date_upd'          => date("Y-m-d H:i:s")
 				);
 
-				if (!empty($response->data[0]->groupnumber)) {
+				if (!empty($response['data']['softwareJoinNo'])) {
 					$acc_status = $this->$model->update_account(
 						$acc_data, 
 						$cus_reg_data[0]['id_scheme_account'], 
@@ -5476,7 +5475,7 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
 
 			$runPayDirect = true;
 
-		} elseif ($isTranExists['status'] && ($isTranExists['clientid'] == null || $isTranExists['clientid'] == '')) {
+		} elseif ($isTranExists['status'] && ($isTranExists['clientid'] == null || $isTranExists['clientid'] == '') && $chit_settings['gent_clientid'] == 1) {
 			$trans_data = array(
 				'client_id' => $pay_data[0]['client_id']
 			);
@@ -5495,38 +5494,41 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
 			//For online payments Send in direct API and update receipt no , ref no 
 
 		if ($runPayDirect && $this->config->item('directAPI') == '1') {
-			$payment = array(
-					"paymentbranch" => (int)$pay_data[0]['id_branch'],
-					"schemeid" => (int)$payID_data[0]['id_scheme'], 
-					"schemename"=>$payID_data[0]['scheme_name'], 
-					"schemeamount"=> (float)$pay_data[0]['amount'],
-					"groupno"=> (int)$payID_data[0]['scheme_acc_number'],
-					"groupname"=> ($grp_name != "" ? $grp_name : $payID_data[0]['group_code']),
-					"customermobile"=> (int)$pay_data[0]['mobile'],
-					"cardnumber"=> (int)$pay_data[0]['mobile'],
-					"customerid"=> (int)$payID_data[0]['id_customer'],
-					"monthyear"=> $pay_data[0]['payment_date'],
-					"goldrate"=> (int)$pay_data[0]['rate'],
-                    "weight" => (float)$pay_data[0]['weight'],
-					"customername"=> $payID_data[0]['customername'], 
-					"onlinepaymentrefid" => $pay_data[0]['pay_trans_id'], 
-					// "onlinepaymentrefid" => 12345, 
-					"onlinepayment" => 1,
-					"onlineamount"=> (float)$pay_data[0]['amount'],
-					"createdby" => 1, 
-					"clientid"=> $payID_data[0]['clientid'],
-					"schemerefid" => $id_payment
-				);
+				$payment = array(
+				"paymentbranch" => (int)$pay_data[0]['id_branch'],
+				"schemeid" => (int)$payID_data[0]['id_scheme'],
+				"schemename" => $payID_data[0]['scheme_name'],
+				"schemeamount" => (float)$pay_data[0]['amount'],
+				"groupno" => $payID_data[0]['scheme_acc_number'],
+				"groupname" => ($grp_name != "" ? $grp_name : $payID_data[0]['group_code']),
+				"customermobile" => (int) $pay_data[0]['mobile'],
+				"cardnumber" => $pay_data[0]['mobile'],
+				"customerid" => (int)$payID_data[0]['id_customer'],
+				"monthyear" => $pay_data[0]['payment_date'],
+				"saved_benefits" => $pay_data[0]['saved_benefits_wgt'],
+				"saved_benefit_amt" => $pay_data[0]['saved_benefit_amt'],
+				"installment" => (int) $payID_data[0]['installment'],
+				"benefit_value" => $pay_data[0]['benefit_value'],
+				"benefit_type" => (int) $pay_data[0]['benefit_type'],
+				"is_digi" => (int) $pay_data[0]['is_digi'],
+				"goldrate" => (int)$pay_data[0]['rate'],
+				"customername" => $payID_data[0]['customername'],
+				"onlinepaymentrefid" => $pay_data[0]['pay_trans_id'],
+				"onlinepayment" => ($payID_data[0]['added_by'] == 2 || $payID_data[0]['added_by'] == 4) ? 1 : 0,
+				"onlineamount" => (float)$pay_data[0]['amount'],
+				"clientid" => $payID_data[0]['clientid'],
+				"schemerefid" => $id_payment
+			);
 				
-				$response = $this->sendtoDirectApi('common/bulkpaymentinsert',$payment);
+				$response = $this->sendtoDirectApi('/scheme-payment-entry-insertion/insert',$payment);
 						
-				if ($response->status == 200) {
-					$isClientID =  $this->$model->checkClientID($pay_data[0]['id_scheme_account'],$response->data[0]->clientid);
+				if ($response['success'] == true) {
+					$isClientID =  $this->$model->checkClientID($pay_data[0]['id_scheme_account'],$response['data']['clientid']);
 
-					if (!empty($response->data[0]->paymentreceiptnumber)) {
+					if (!empty($response['data']['softwarePaymentId'])) {
 						if ($isClientID['status']) {
 							$pay_array = array(
-								'receipt_no' => $response->data[0]->paymentreceiptnumber,
+								'receipt_no' => $response['data']['softwarePaymentId'],
 								'date_upd'	 => date("Y-m-d H:i:s")
 							);
 

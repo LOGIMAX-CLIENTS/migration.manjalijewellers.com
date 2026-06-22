@@ -372,7 +372,7 @@ class Syncapi_model extends CI_Model
 		if($status){
 			$cus_reg = array( 'is_transferred' => 'Y',
 		                    'is_modified'    => 0,
-							'group_code'     => $data['group_code'],
+							'clientid'   => $data['ref_no'],
 							'scheme_ac_no'   => $data['scheme_acc_number'],
         					"date_update"		 => date('Y-m-d'),
         					'transfer_date'	 => date('Y-m-d'));
@@ -480,6 +480,8 @@ class Syncapi_model extends CI_Model
 				  IFNULL(p.saved_benefits,'0.000') as saved_benefits_wgt,
 				  IFNULL(p.payment_mode,'') as payment_mode,
 				  IFNULL(p.payment_status,'') as payment_status,
+				  IFNULL(p.benefit_value,'') as benefit_value,
+				  IFNULL(p.benefit_type,'') as benefit_type,
 				  IFNULL(p.bank_name,'') as bank_name,
 				  IFNULL(p.bank_branch,'') as  branch_name,
 				  IFNULL(s.id_metal,'') as metal,
@@ -878,7 +880,7 @@ class Syncapi_model extends CI_Model
 
 	function getPayIDdet($id_payment)
 	{
-		$sql = "SELECT sa.id_scheme, sa.id_scheme_account,sa.scheme_acc_number, s.scheme_name, s.sync_scheme_code, sa.id_customer, concat(c.firstname,' ',if(c.lastname!=NULL,c.lastname,'')) as customername, cr.clientid FROM payment p
+		$sql = "SELECT sa.id_scheme, sa.id_scheme_account,sa.scheme_acc_number, s.scheme_name,sa.group_code,p.installment, s.sync_scheme_code, sa.id_customer, concat(c.firstname,' ',if(c.lastname!=NULL,c.lastname,'')) as customername,p.added_by, cr.clientid FROM payment p
 		LEFT JOIN scheme_account sa ON p.id_scheme_account = sa.id_scheme_account
 		left JOIN scheme s ON sa.id_scheme = s.id_scheme
 		LEFT JOIN customer c ON sa.id_customer = c.id_customer
@@ -986,10 +988,10 @@ class Syncapi_model extends CI_Model
 		return $status;
 	}
 	
-	function getCustomerRegbyID($client_id)
+	function getCustomerRegbyID($id_scheme_account)
 	{
 		 
-	        $sql = "SELECT * FROM customer_reg WHERE clientid='$client_id'";
+	        $sql = "SELECT * FROM customer_reg WHERE id_scheme_account ='$id_scheme_account'";
 	
 		return $this->db->query($sql)->result_array();
 	}
