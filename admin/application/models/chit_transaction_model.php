@@ -1459,14 +1459,16 @@ class Chit_transaction_model extends CI_Model
 
 			$runPayDirect = true;
 
-		} elseif ($isTranExists['status'] && ($isTranExists['clientid'] == null || $isTranExists['clientid'] == '') && $chit_settings['gent_clientid'] == 1) {
+		} 
+        /* elseif ($isTranExists['status'] && ($isTranExists['clientid'] == null || $isTranExists['clientid'] == '') && $chit_settings['gent_clientid'] == 1) {
 			$trans_data = array(
 				'client_id' => $pay_data[0]['client_id']
 			);
 			$this->$model->update_transaction($trans_data,$isTranExists['id_transaction']);
 
 			$runPayDirect = true;
-		} else if ($isTranExists['status'] && $isTranExists['is_transferred'] == 'N' && ($payID_data[0]['scheme_acc_number'] != null || $payID_data[0]['scheme_acc_number'] != '')) {
+		}  */
+        else if ($isTranExists['status'] && $isTranExists['is_transferred'] == 'N' && ($payID_data[0]['scheme_acc_number'] != null || $payID_data[0]['scheme_acc_number'] != '')) {
 
 			$runPayDirect = true;
 
@@ -1485,7 +1487,7 @@ class Chit_transaction_model extends CI_Model
                         "schemename" => $payID_data[0]['scheme_name'],
                         "schemeamount" => (float)$pay_data[0]['amount'],
                         "groupno" => ($payID_data[0]['scheme_acc_number'] ? $payID_data[0]['scheme_acc_number'] : ''),
-                        "groupname" => ($grp_name != "" ? $grp_name : $payID_data[0]['group_code']),
+                        "groupname" => ($payID_data[0]['group_code'] != "" ? $payID_data[0]['group_code'] : ''),
                         "customermobile" => (int) $pay_data[0]['mobile'],
                         "cardnumber" => $pay_data[0]['mobile'],
                         "customerid" => (int)$payID_data[0]['id_customer'],
