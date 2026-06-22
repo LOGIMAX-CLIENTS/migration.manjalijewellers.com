@@ -1134,7 +1134,6 @@ class Chit_transaction extends CI_Controller
             
 			$response = $this->sendtoDirectApi('/scheme-joining-insertion/insert',$account);
 
-
 			if($response->success == true) {
 				$cus_reg_data = $this->$model->getCustomerRegbyID($id_scheme_account);
 				
@@ -1171,9 +1170,8 @@ class Chit_transaction extends CI_Controller
 	
 		$payID_data = $this->$model->getPayIDdet($id_payment);
 
-		if ($isCusRegExists['status']) {
-            $pay_data[0]['client_id'] = $isCusRegExists['clientid'] ;
-        }
+        $pay_data[0]['client_id'] = $payID_data[0]['clientid'] ;
+        
 
 		if(!$isTranExists['status'])
 		{
@@ -1204,36 +1202,45 @@ class Chit_transaction extends CI_Controller
 			$runPayDirect = false;
 		}
 
+		// Update installment number on payment and total_paid_ins on scheme_account
+		$this->load->model('chit_transaction_model');
+		$payment_det = $this->chit_transaction_model->get_payment_details($id_payment);
+		if (!empty($payment_det)) {
+			$this->chit_transaction_model->updatedue_details($payment_det);
+			// Re-fetch payID_data to get updated installment value
+			$payID_data = $this->$model->getPayIDdet($id_payment);
+		}
+
 			//For online payments Send in direct API and update receipt no , ref no 
 
 		if ($runPayDirect && $this->config->item('directAPI') == '1') {
 				$payment = array(
-					"payment" => array(
-							"paymentbranch" => (int)$pay_data[0]['id_branch'],
-							"schemeid" => (int)$payID_data[0]['id_scheme'],
-							"schemename" => $payID_data[0]['scheme_name'],
-							"schemeamount" => (float)$pay_data[0]['amount'],
-							"groupno" => $payID_data[0]['scheme_acc_number'],
-							"groupname" => ($grp_name != "" ? $grp_name : $payID_data[0]['group_code']),
-							"customermobile" => (int) $pay_data[0]['mobile'],
-							"cardnumber" => $pay_data[0]['mobile'],
-							"customerid" => (int)$payID_data[0]['id_customer'],
-							"monthyear" => $pay_data[0]['payment_date'],
-							"saved_weight" => $pay_data[0]['weight'],
-							"saved_benefits" => $pay_data[0]['saved_benefits_wgt'],
-							"saved_benefit_amt" => $pay_data[0]['saved_benefit_amt'],
-							"installment" => (int) $payID_data[0]['installment'],
-							"benefit_value" => $pay_data[0]['benefit_value'],
-							"benefit_type" => (int) $pay_data[0]['benefit_type'],
-							"is_digi" => (int) $pay_data[0]['is_digi'],
-							"goldrate" => (int)$pay_data[0]['rate'],
-							"customername" => $payID_data[0]['customername'],
-							"onlinepaymentrefid" => ($pay_data[0]['pay_trans_id'] ? $pay_data[0]['pay_trans_id'] : ''),
-							"onlinepayment" => ($payID_data[0]['added_by'] == 2 || $payID_data[0]['added_by'] == 4) ? 1 : 0,
-							"onlineamount" => (float)$pay_data[0]['amount'],
-							"clientid" => $payID_data[0]['clientid'],
-							"schemerefid" => $id_payment
-					)
+                    "payment" => array(
+                        "paymentbranch" => (int)$pay_data[0]['id_branch'],
+                        "schemeid" => (int)$payID_data[0]['id_scheme'],
+                        "schemename" => $payID_data[0]['scheme_name'],
+                        "schemeamount" => (float)$pay_data[0]['amount'],
+                        "groupno" => ($payID_data[0]['scheme_acc_number'] ? $payID_data[0]['scheme_acc_number'] : ''),
+                        "groupname" => ($grp_name != "" ? $grp_name : $payID_data[0]['group_code']),
+                        "customermobile" => (int) $pay_data[0]['mobile'],
+                        "cardnumber" => $pay_data[0]['mobile'],
+                        "customerid" => (int)$payID_data[0]['id_customer'],
+                        "monthyear" => $pay_data[0]['payment_date'],
+                        "saved_weight" => $pay_data[0]['weight'],
+                        "saved_benefits" => $pay_data[0]['saved_benefits_wgt'],
+                        "saved_benefit_amt" => $pay_data[0]['saved_benefit_amt'],
+                        "installment" => (int) $payID_data[0]['installment'],
+                        "benefit_value" => $pay_data[0]['benefit_value'],
+                        "benefit_type" => (int) $pay_data[0]['benefit_type'],
+                        "is_digi" => (int) $pay_data[0]['is_digi'],
+                        "goldrate" => (int)$pay_data[0]['rate'],
+                        "customername" => $payID_data[0]['customername'],
+                        "onlinepaymentrefid" => ($pay_data[0]['pay_trans_id'] ? $pay_data[0]['pay_trans_id'] : ''),
+                        "onlinepayment" => ($payID_data[0]['added_by'] == 2 || $payID_data[0]['added_by'] == 4) ? 1 : 0,
+                        "onlineamount" => (float)$pay_data[0]['amount'],
+                        "clientid" => ($payID_data[0]['clientid'] ? $payID_data[0]['clientid'] : ''),
+                        "schemerefid" => (string) $id_payment
+                    )
 			);
 				
 				$response = $this->sendtoDirectApi('/scheme-payment-entry-insertion/insert',$payment);

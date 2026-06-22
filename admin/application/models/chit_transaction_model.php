@@ -1501,7 +1501,7 @@ class Chit_transaction_model extends CI_Model
                         "onlinepayment" => ($payID_data[0]['added_by'] == 2 || $payID_data[0]['added_by'] == 4) ? 1 : 0,
                         "onlineamount" => (float)$pay_data[0]['amount'],
                         "clientid" => ($payID_data[0]['clientid'] ? $payID_data[0]['clientid'] : ''),
-                        "schemerefid" => $id_payment
+                        "schemerefid" => (string) $id_payment
                     )
 			);
 				

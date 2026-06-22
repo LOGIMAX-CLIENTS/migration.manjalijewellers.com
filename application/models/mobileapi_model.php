@@ -5458,9 +5458,8 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
 	
 		$payID_data = $this->$model->getPayIDdet($id_payment);
 
-        if ($isCusRegExists['status']) {
-            $pay_data[0]['client_id'] = $isCusRegExists['clientid'] ;
-        }
+        $pay_data[0]['client_id'] = $payID_data[0]['clientid'] ;
+        
 
 		if(!$isTranExists['status'])
 		{
@@ -5495,12 +5494,12 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
 
 		if ($runPayDirect && $this->config->item('directAPI') == '1') {
 				$payment = array(
-				"payment" => array(
+                    "payment" => array(
                         "paymentbranch" => (int)$pay_data[0]['id_branch'],
                         "schemeid" => (int)$payID_data[0]['id_scheme'],
                         "schemename" => $payID_data[0]['scheme_name'],
                         "schemeamount" => (float)$pay_data[0]['amount'],
-                        "groupno" => $payID_data[0]['scheme_acc_number'],
+                        "groupno" => ($payID_data[0]['scheme_acc_number'] ? $payID_data[0]['scheme_acc_number'] : ''),
                         "groupname" => ($grp_name != "" ? $grp_name : $payID_data[0]['group_code']),
                         "customermobile" => (int) $pay_data[0]['mobile'],
                         "cardnumber" => $pay_data[0]['mobile'],
@@ -5518,8 +5517,8 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
                         "onlinepaymentrefid" => ($pay_data[0]['pay_trans_id'] ? $pay_data[0]['pay_trans_id'] : ''),
                         "onlinepayment" => ($payID_data[0]['added_by'] == 2 || $payID_data[0]['added_by'] == 4) ? 1 : 0,
                         "onlineamount" => (float)$pay_data[0]['amount'],
-                        "clientid" => $payID_data[0]['clientid'],
-                        "schemerefid" => $id_payment
+                        "clientid" => ($payID_data[0]['clientid'] ? $payID_data[0]['clientid'] : ''),
+                        "schemerefid" => (string) $id_payment
                     )
 			);
 				
