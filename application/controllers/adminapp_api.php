@@ -1092,6 +1092,8 @@ class Adminapp_api extends REST_Controller
 		$paymentstring .= "\t   PAID DUE     ". ($payment['paid_due']). "\r\n";
 		$paymentstring .= "\t   PAID MODE    ". ($payment['payment_mode']). "\r\n";
 		$paymentstring .= "\t   PAID WGT     ". ($payment['metal_weight']). " G \r\n";
+		$paymentstring .= "\t   BENEFIT WGT  ". (isset($payment['saved_benefits']) && $payment['saved_benefits'] > 0 ? $payment['saved_benefits'] : '0.000'). " G \r\n";
+		$paymentstring .= "\t   BENEFIT AMT  INR ". (isset($payment['saved_benefit_amt']) && $payment['saved_benefit_amt'] > 0 ? number_format($payment['saved_benefit_amt'],2,'.','') : '0.00'). " \r\n";
 		$paymentstring .= "\t   MOBILE       ". ($payment['mobile']). "\r\n";
 	    $paymentstring .= "\t   METAL RATE   INR ". number_format($payment['metal_rate'],2,'.',''). "\r\n";
 	    $paymentstring .= "\t   TOTAL PAID AMT INR    ". number_format($payment['tot_paid_amount'],2,'.','')." \r\n";
