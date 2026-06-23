@@ -1514,10 +1514,10 @@ class Chit_transaction_model extends CI_Model
 				if ($response->success == true) {
 					$isClientID =  $this->$model->checkClientID($pay_data[0]['id_scheme_account'],$response->data->clientid);
 
-					if (!empty($response->data->softwarePaymentId)) {
+					if (!empty($response->data->softwareVchNo)) {
 						if ($isClientID['status']) {
 							$pay_array = array(
-								'receipt_no' => $response->data->softwarePaymentId,
+								'receipt_no' => $response->data->softwareVchNo,
 								'date_upd'	 => date("Y-m-d H:i:s")
 							);
 
