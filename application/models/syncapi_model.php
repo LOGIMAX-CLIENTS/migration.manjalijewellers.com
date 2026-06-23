@@ -279,7 +279,7 @@ class Syncapi_model extends CI_Model
 				  IF(p.receipt_no = '' || p.receipt_no is NULL ,NULL,p.receipt_no) as receipt_no,
 				  IFNULL(p.gst,0)as gst,
 				  IFNULL(p.gst_type,0)as gst_type,
-				  IF(sa.ref_no = '' || sa.ref_no is NULL ,NULL,sa.ref_no) as clientid,
+				  IF(sa.ref_no = '' || sa.ref_no is NULL ,'',sa.ref_no) as client_id,
 				  IFNULL(p.discountAmt,'0.00') as discountAmt,
 				  IFNULL(p.payment_amount,'0.00') as amount,
 				  IFNULL(p.saved_benefit_amt,'0.00') as saved_benefit_amt,
@@ -324,9 +324,6 @@ class Syncapi_model extends CI_Model
 	
 	function checkTransExists($ref_no)
 	{
-
-		$r = $this->db->query($sql);
-		
 		$sql = "SELECT * FROM transaction WHERE ref_no = '$ref_no'";
 		$r = $this->db->query($sql);
 		/* if($r->num_rows >= 1)
@@ -349,7 +346,7 @@ class Syncapi_model extends CI_Model
 
 	function getPayIDdet($id_payment)
 	{
-		$sql = "SELECT sa.id_scheme, sa.id_scheme_account,sa.scheme_acc_number, s.scheme_name, s.sync_scheme_code, sa.id_customer, concat(c.firstname,' ',if(c.lastname!=NULL,c.lastname,'')) as customername, cr.clientid FROM payment p
+		$sql = "SELECT sa.id_scheme, sa.id_scheme_account,sa.scheme_acc_number, s.scheme_name,sa.group_code,p.installment, s.sync_scheme_code, sa.id_customer, concat(c.firstname,' ',if(c.lastname!=NULL,c.lastname,'')) as customername,p.added_by, cr.clientid FROM payment p
 		LEFT JOIN scheme_account sa ON p.id_scheme_account = sa.id_scheme_account
 		left JOIN scheme s ON sa.id_scheme = s.id_scheme
 		LEFT JOIN customer c ON sa.id_customer = c.id_customer
