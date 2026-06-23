@@ -2814,6 +2814,33 @@ class Paymt extends CI_Controller {
                                                 'is_limit_exceed' => (isset($ins_cycle[0]['is_limit_exceed']) ? $ins_cycle[0]['is_limit_exceed'] : 0),
                                             );
                                             $this->mobileapi_model->updData($cycle_data, 'id_payment', $pay['id_payment'], 'payment');
+                                        } else {
+                                            // [FIX] DigiGold same-day multiple payments:
+                                            // get_due_date() returns empty when the due_date slot for today is already
+                                            // claimed by an earlier payment (NOT IN clause blocks the 2nd+ payment).
+                                            // Look up the earlier same-day payment's installment/due dates and reuse them.
+                                            $sameday_pay = $this->db->query(
+                                                "SELECT p.installment, p.due_date, p.due_date_to, p.grace_date
+                                                 FROM payment p
+                                                 WHERE p.id_scheme_account = " . (int)$pay['id_scheme_account'] . "
+                                                   AND p.payment_status = 1
+                                                   AND p.installment IS NOT NULL
+                                                   AND p.installment > 0
+                                                   AND DATE(p.due_date) = '" . $this->db->escape_str($dt_pay) . "'
+                                                   AND p.id_payment != " . (int)$pay['id_payment'] . "
+                                                 ORDER BY p.id_payment ASC
+                                                 LIMIT 1"
+                                            )->row_array();
+
+                                            if (!empty($sameday_pay) && !empty($sameday_pay['installment'])) {
+                                                $cycle_data = array(
+                                                    'due_date'    => $sameday_pay['due_date'],
+                                                    'due_date_to' => $sameday_pay['due_date_to'],
+                                                    'grace_date'  => $sameday_pay['grace_date'],
+                                                    'installment' => $sameday_pay['installment'],
+                                                );
+                                                $this->mobileapi_model->updData($cycle_data, 'id_payment', $pay['id_payment'], 'payment');
+                                            }
                                         }
                                         //RHR scheme ends....
                                         //update paid installments against account...
@@ -3094,6 +3121,30 @@ class Paymt extends CI_Controller {
     								 		'is_limit_exceed' => (isset($ins_cycle[0]['is_limit_exceed']) ? $ins_cycle[0]['is_limit_exceed'] : 0),
     								 	);
     								 	$this->payment_modal->updData($cycle_data, 'id_payment', $pay['id_payment'], 'payment');
+    								 } else {
+    								 	// [FIX] DigiGold same-day multiple payments fallback
+    								 	$sameday_pay = $this->db->query(
+    								 		"SELECT p.installment, p.due_date, p.due_date_to, p.grace_date
+    								 		 FROM payment p
+    								 		 WHERE p.id_scheme_account = " . (int)$pay['id_scheme_account'] . "
+    								 		   AND p.payment_status = 1
+    								 		   AND p.installment IS NOT NULL
+    								 		   AND p.installment > 0
+    								 		   AND DATE(p.due_date) = '" . $this->db->escape_str($dt_pay) . "'
+    								 		   AND p.id_payment != " . (int)$pay['id_payment'] . "
+    								 		 ORDER BY p.id_payment ASC
+    								 		 LIMIT 1"
+    								 	)->row_array();
+
+    								 	if (!empty($sameday_pay) && !empty($sameday_pay['installment'])) {
+    								 		$cycle_data = array(
+    								 			'due_date'    => $sameday_pay['due_date'],
+    								 			'due_date_to' => $sameday_pay['due_date_to'],
+    								 			'grace_date'  => $sameday_pay['grace_date'],
+    								 			'installment' => $sameday_pay['installment'],
+    								 		);
+    								 		$this->payment_modal->updData($cycle_data, 'id_payment', $pay['id_payment'], 'payment');
+    								 	}
     								 }
 
     								 // [FIX] Update paid installments count (matching onPayTranStream -> getPaidInsData)
