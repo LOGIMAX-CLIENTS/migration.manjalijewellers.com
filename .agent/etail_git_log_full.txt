@@ -1,0 +1,1186 @@
+﻿COMMIT:6b890e6bcc1c38fe496ed48f3bea65c094ec082c
+AUTHOR:karthikaikumaran
+DATE:2026-06-23 17:11:07 +0530
+MESSAGE:Merge QA and resolve conflicts for PR #3678
+---
+COMMIT:bc34dfe3e51f0e954e4ec4d8ba89cf6e12a3877f
+AUTHOR:karthikaikumaran
+DATE:2026-06-23 16:56:39 +0530
+MESSAGE:Add migration for branch.google_review_url
+---
+
+ .../20260623_000001_add_google_review_url_to_branch.sql           | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+COMMIT:54b5b130422f9aba37714e9f507c651595259704
+AUTHOR:karthikaikumaran
+DATE:2026-06-23 16:23:00 +0530
+MESSAGE:Branch and scheme group
+---
+
+ admin/application/controllers/admin_manage.php    |  2 +-
+ admin/application/models/admin_settings_model.php |  2 +-
+ admin/application/views/layout/footer.php         |  6 ++
+ admin/application/views/master/branch/list.php    |  2 +-
+ admin/assets/js/admin_settings.js                 | 67 +++++++++++++++--------
+ 5 files changed, 53 insertions(+), 26 deletions(-)
+COMMIT:73b7369604a6ec0711142ae234f799eee9706097
+AUTHOR:Kumaran
+DATE:2026-06-23 16:57:56 +0530
+MESSAGE:Merge pull request #3676 from Logimax-Technologies/bugfix/2985d183-e8ab-4797-b745-1a0fefae464d-In-the-crm-master-,-the-scheme-group-master-is-not-working-correctly-
+---
+COMMIT:f6f4e38130a7e1c475967073d48b68c00cb90c30
+AUTHOR:karthikaikumaran
+DATE:2026-06-23 16:56:39 +0530
+MESSAGE:Add migration for branch.google_review_url
+---
+
+ .../20260623_000001_add_google_review_url_to_branch.sql           | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+COMMIT:4124ed969f734a55320d0d7a5705e46b01c6c03a
+AUTHOR:Kumaran
+DATE:2026-06-23 16:47:51 +0530
+MESSAGE:Merge pull request #3671 from Logimax-Technologies/bugfix/2985d183-e8ab-4797-b745-1a0fefae464d-In-the-crm-master-,-the-scheme-group-master-is-not-working-correctly-
+---
+COMMIT:27de886ff253c4fd5392c0b5f0aa6ecd24ea2a64
+AUTHOR:karthikaikumaran
+DATE:2026-06-23 16:45:42 +0530
+MESSAGE:Merge branch 'Retail_1.1.1.0001' into bugfix and resolve conflicts
+---
+COMMIT:9a40e1ab17a16188da166fb7127c0c77f1eb198a
+AUTHOR:EsakkiJothika02
+DATE:2026-06-23 16:27:45 +0530
+MESSAGE:purchase module supplier bill entry issue
+---
+
+ admin/assets/js/ret_purchase_order.js | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+COMMIT:d69bb9b8a384192f32239bf6d8eb7868e3b0dc14
+AUTHOR:EsakkiJothika02
+DATE:2026-06-23 16:31:54 +0530
+MESSAGE:WIP on bugfix/bfb0bf21_billFormData: ee860b1f purchase module supplier bill entry issue
+---
+COMMIT:37fcc1a6f5cf6596f79263f7b0ca4525e5128a3c
+AUTHOR:EsakkiJothika02
+DATE:2026-06-23 16:31:54 +0530
+MESSAGE:index on bugfix/bfb0bf21_billFormData: ee860b1f purchase module supplier bill entry issue
+---
+COMMIT:a22906a23d1c3d0746a58797a955fa32e810b733
+AUTHOR:karthikaikumaran
+DATE:2026-06-23 16:27:51 +0530
+MESSAGE:Merge branch 'PRODUCTION' into bugfix/2985d183-e8ab-4797-b745-1a0fefae464d-In-the-crm-master-,-the-scheme-group-master-is-not-working-correctly-
+---
+COMMIT:ee860b1ff9c90275815db50cd4648094f1db15df
+AUTHOR:EsakkiJothika02
+DATE:2026-06-23 16:27:45 +0530
+MESSAGE:purchase module supplier bill entry issue
+---
+
+ admin/assets/js/ret_purchase_order.js | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+COMMIT:0a0879b40a637dc0b472cf0bf1c73864dddf238f
+AUTHOR:karthikaikumaran
+DATE:2026-06-23 16:23:00 +0530
+MESSAGE:Branch and scheme group
+---
+
+ admin/application/controllers/admin_manage.php    |  2 +-
+ admin/application/models/admin_settings_model.php |  2 +-
+ admin/application/views/layout/footer.php         |  6 ++
+ admin/application/views/master/branch/list.php    |  2 +-
+ admin/assets/js/admin_settings.js                 | 67 +++++++++++++++--------
+ 5 files changed, 53 insertions(+), 26 deletions(-)
+COMMIT:fcadb1dbb4295d05ef4637aa760a8626ebe58ecd
+AUTHOR:lmx-karthik
+DATE:2026-06-23 16:22:29 +0530
+MESSAGE:Merge pull request #3669 from Logimax-Technologies/Bugfix/retailcatalog-3595bd16-0e76-4e87-a543-fb735147329d
+---
+COMMIT:e3da6846cea334a596cbfa4813ea48c2728cfd81
+AUTHOR:lmx-karthik
+DATE:2026-06-23 16:20:32 +0530
+MESSAGE:Sync latest working files from bugfix branch - tax group validation, charges UI fixes (PR #3661)
+---
+
+ .../application/controllers/admin_ret_catalog.php  | 107 ++++++++++++++++++---
+ admin/application/views/master/charges/list.php    |  48 ++++-----
+ admin/assets/js/catalog_master.js                  |   8 ++
+ 3 files changed, 126 insertions(+), 37 deletions(-)
+COMMIT:809d861bd5028c791dc1724416515b1c36408b79
+AUTHOR:lmx-karthik
+DATE:2026-06-23 16:14:37 +0530
+MESSAGE:Enforce one tax rule per group and tweak charges UI
+---
+
+ .../application/controllers/admin_ret_catalog.php  | 14 +++++++
+ admin/application/views/master/charges/list.php    | 46 +++++++++++-----------
+ admin/assets/js/catalog_master.js                  |  8 ++++
+ 3 files changed, 45 insertions(+), 23 deletions(-)
+COMMIT:6483784703bacdc01c1743741143d4561fe99f95
+AUTHOR:lmx-karthik
+DATE:2026-06-23 15:28:30 +0530
+MESSAGE:Fix purity query, modal/select2 and section resets - sync from bugfix branch
+---
+
+ admin/application/models/ret_catalog_model.php     |  43 +--
+ admin/application/views/layout/footer.php          |  16 +-
+ .../application/views/master/ret_section/list.php  |  10 +-
+ admin/assets/js/catalog_master.js                  | 293 +++++++++++++--------
+ admin/assets/js/general.js                         |   4 +-
+ admin/assets/js/ret_general.js                     |   2 +-
+ 6 files changed, 231 insertions(+), 137 deletions(-)
+COMMIT:a4d4a0d5a33ae152f052a3aca9286a83bff2376c
+AUTHOR:lmx-karthik
+DATE:2026-06-23 15:00:02 +0530
+MESSAGE:Merge pull request #3668 from Logimax-Technologies/Bugfix/retailcatalog-3595bd16-0e76-4e87-a543-fb735147329d
+---
+COMMIT:47353001b5bf17ae80af0d38f4e734966322e686
+AUTHOR:lmx-karthik
+DATE:2026-06-23 14:57:12 +0530
+MESSAGE:Fix purity query, modal/select2 and section resets
+---
+
+ admin/application/models/ret_catalog_model.php     | 19 ++------
+ admin/application/views/layout/footer.php          | 12 +++++
+ .../application/views/master/ret_section/list.php  | 10 ++--
+ admin/assets/js/catalog_master.js                  | 55 +++++++++++++++++++++-
+ admin/assets/js/general.js                         |  2 +-
+ admin/assets/js/ret_general.js                     |  2 +-
+ 6 files changed, 77 insertions(+), 23 deletions(-)
+COMMIT:776772b0191d7b7ad12b97d6e2b6bf673fb6d6c3
+AUTHOR:raja4lmx
+DATE:2026-06-23 14:08:03 +0530
+MESSAGE:Merge pull request #3667 from Logimax-Technologies/hotfix/remove-sdlc-v2
+---
+COMMIT:fdb79da4f96850ce96939d73682bee3ca1a89e01
+AUTHOR:raja4lmx
+DATE:2026-06-23 14:06:57 +0530
+MESSAGE:chore(devtools): remove deprecated .sdlc-v2 ΓÇö superseded by .sdlc v4.3
+---
+
+ .sdlc-v2/.gitignore                                |    6 -
+ .sdlc-v2/ARCHITECTURE.md                           |  439 ---
+ .sdlc-v2/BRAIN_V2_COMPARISON.md                    |  235 --
+ .sdlc-v2/CHANGELOG.md                              |  252 --
+ .sdlc-v2/ECOSYSTEM_ANALYSIS.md                     |  142 -
+ .sdlc-v2/README.md                                 |   75 -
+ .sdlc-v2/SKILL.md                                  |   72 -
+ .sdlc-v2/archive/v2.6.0/SKILL.md                   |  225 --
+ .../v2.6.0/agent-workflows/fix-architecture-bug.md |  295 --
+ .../v2.6.0/agent-workflows/fix-business-bug.md     |  310 --
+ .../v2.6.0/agent-workflows/fix-single-bug.md       |  461 ---
+ .../v2.6.0/agent-workflows/review-changes.md       |  162 -
+ .../v2.6.0/agent-workflows/test-and-verify.md      |  672 ----
+ .sdlc-v2/archive/v2.6.0/bootstrap.md               |   98 -
+ .sdlc-v2/archive/v2.6.0/cli.py                     | 2253 -------------
+ .sdlc-v2/archive/v2.6.0/roles/CODING.md            |   75 -
+ .sdlc-v2/archive/v2.6.0/roles/COMMIT.md            |  182 -
+ .sdlc-v2/archive/v2.6.0/roles/DISCUSS.md           |   53 -
+ .sdlc-v2/archive/v2.6.0/roles/IDLE.md              |  116 -
+ .sdlc-v2/archive/v2.6.0/roles/PERF.md              |  146 -
+ .sdlc-v2/archive/v2.6.0/roles/PLANNING.md          |   94 -
+ .sdlc-v2/archive/v2.6.0/roles/REQUIREMENT.md       |  180 -
+ .sdlc-v2/archive/v2.6.0/roles/REVIEW.md            |   80 -
+ .sdlc-v2/archive/v2.6.0/roles/TEST_DESIGN.md       |  163 -
+ .sdlc-v2/archive/v2.6.0/roles/TEST_VERIFY.md       |   97 -
+ .sdlc-v2/archive/v2.6.0/steps.json                 |  636 ----
+ .sdlc-v2/archive/v2.6.0/templates/design.md        |   46 -
+ .../archive/v2.6.0/templates/discovery_results.md  |   24 -
+ .sdlc-v2/archive/v2.6.0/templates/perf/baseline.md |   54 -
+ .../archive/v2.6.0/templates/perf/hypothesis.md    |   57 -
+ .sdlc-v2/archive/v2.6.0/templates/perf/verify.md   |   82 -
+ .sdlc-v2/archive/v2.6.0/templates/requirement.md   |   53 -
+ .sdlc-v2/archive/v2.6.0/templates/review.md        |   60 -
+ .sdlc-v2/archive/v2.6.0/templates/tasks.md         |   33 -
+ .../v2.6.0/workflows/archive/commit-phase.md       |  240 --
+ .../v2.6.0/workflows/archive/planning-phase.md     |  138 -
+ .../v2.6.0/workflows/archive/requirement-phase.md  |  221 --
+ .sdlc-v2/archive/v2.6.0/workflows/bootstrap.md     |   98 -
+ .sdlc-v2/archive/v2.6.0/workflows/commit-phase.md  |  240 --
+ .../archive/v2.6.0/workflows/planning-phase.md     |  138 -
+ .../archive/v2.6.0/workflows/requirement-phase.md  |  221 --
+ .sdlc-v2/archive/v2.6.0/workflows/resume-task.md   |  132 -
+ .sdlc-v2/backlog.md                                |   15 -
+ .sdlc-v2/config.json                               |   81 -
+ .sdlc-v2/docs/FAQ.md                               |  262 --
+ .sdlc-v2/docs/INSTALLATION.md                      |  208 --
+ .sdlc-v2/docs/QUICK_START.md                       |  153 -
+ .sdlc-v2/docs/USER_MANUAL.md                       |  521 ---
+ .sdlc-v2/done/BIL-042/design.md                    |   27 -
+ .sdlc-v2/done/BIL-042/requirement.md               |   24 -
+ .sdlc-v2/done/BIL-042/review.md                    |   30 -
+ .sdlc-v2/done/BIL-042/tasks.md                     |   17 -
+ .sdlc-v2/engine/cli.py                             | 3542 --------------------
+ .sdlc-v2/engine/rag_server.py                      |  193 --
+ .sdlc-v2/engine/validate_write.py                  |  364 --
+ .sdlc-v2/quality/DRIFT_TRACKER.md                  |  126 -
+ .sdlc-v2/quality/STABILIZATION_TRACKER.md          |  224 --
+ .sdlc-v2/quality/drift-audits/DA-001_v1.0.md       |  106 -
+ .sdlc-v2/quality/drift-audits/DA-002_v3.0.0.md     |  116 -
+ .sdlc-v2/quality/drift-audits/DA-003_v3.0.1.md     |  103 -
+ .sdlc-v2/quality/drift-audits/DA-004_v3.0.2.md     |   99 -
+ .sdlc-v2/quality/drift-audits/DA-005_v3.0.2.md     |   77 -
+ .sdlc-v2/quality/drift-audits/DA-006_v3.0.3.md     |   74 -
+ .sdlc-v2/quality/drift-audits/DA-007_v3.0.4.md     |   85 -
+ .sdlc-v2/quality/drift-audits/DA-012_v3.6.0.md     |  167 -
+ .../drift-audits/pipeline_drift_analysis.md        |  354 --
+ .sdlc-v2/roles/CODING.md                           |   75 -
+ .sdlc-v2/roles/COMMIT.md                           |  221 --
+ .sdlc-v2/roles/DISCUSS.md                          |   53 -
+ .sdlc-v2/roles/IDLE.md                             |  116 -
+ .sdlc-v2/roles/PERF.md                             |  146 -
+ .sdlc-v2/roles/PLANNING.md                         |   94 -
+ .sdlc-v2/roles/REQUIREMENT.md                      |  180 -
+ .sdlc-v2/roles/REVIEW.md                           |   80 -
+ .sdlc-v2/roles/TEST_DESIGN.md                      |  163 -
+ .sdlc-v2/roles/TEST_VERIFY.md                      |   97 -
+ .sdlc-v2/steps.json                                |  241 --
+ .sdlc-v2/templates/design.md                       |   46 -
+ .sdlc-v2/templates/discovery_results.md            |   24 -
+ .sdlc-v2/templates/perf/baseline.md                |   54 -
+ .sdlc-v2/templates/perf/hypothesis.md              |   57 -
+ .sdlc-v2/templates/perf/verify.md                  |   82 -
+ .sdlc-v2/templates/requirement.md                  |   53 -
+ .sdlc-v2/templates/review.md                       |   60 -
+ .sdlc-v2/templates/tasks.md                        |   33 -
+ .sdlc-v2/workflows/archive/commit-phase.md         |  240 --
+ .sdlc-v2/workflows/archive/planning-phase.md       |  138 -
+ .sdlc-v2/workflows/archive/requirement-phase.md    |  221 --
+ .sdlc-v2/workflows/bootstrap.md                    |   28 -
+ 89 files changed, 18826 deletions(-)
+COMMIT:171191dc96aa58a70bd1b9d85275061d7e77cc15
+AUTHOR:raja4lmx
+DATE:2026-06-23 13:47:00 +0530
+MESSAGE:feat(devtools): SDLC v4.3 pipeline + LCA devtools + knowledge brain updates
+---
+
+ .sdlc-v2/.gitignore                                |    6 -
+ .sdlc-v2/ARCHITECTURE.md                           |  439 ---
+ .sdlc-v2/BRAIN_V2_COMPARISON.md                    |  235 --
+ .sdlc-v2/CHANGELOG.md                              |  252 --
+ .sdlc-v2/ECOSYSTEM_ANALYSIS.md                     |  142 -
+ .sdlc-v2/README.md                                 |   75 -
+ .sdlc-v2/SKILL.md                                  |   72 -
+ .sdlc-v2/archive/v2.6.0/SKILL.md                   |  225 --
+ .../v2.6.0/agent-workflows/fix-architecture-bug.md |  295 --
+ .../v2.6.0/agent-workflows/fix-business-bug.md     |  310 --
+ .../v2.6.0/agent-workflows/fix-single-bug.md       |  461 ---
+ .../v2.6.0/agent-workflows/review-changes.md       |  162 --
+ .../v2.6.0/agent-workflows/test-and-verify.md      |  672 -----
+ .sdlc-v2/archive/v2.6.0/bootstrap.md               |   98 -
+ .sdlc-v2/archive/v2.6.0/cli.py                     | 2253 ---------------
+ .sdlc-v2/archive/v2.6.0/roles/CODING.md            |   75 -
+ .sdlc-v2/archive/v2.6.0/roles/COMMIT.md            |  182 --
+ .sdlc-v2/archive/v2.6.0/roles/DISCUSS.md           |   53 -
+ .sdlc-v2/archive/v2.6.0/roles/IDLE.md              |  116 -
+ .sdlc-v2/archive/v2.6.0/roles/PERF.md              |  146 -
+ .sdlc-v2/archive/v2.6.0/roles/PLANNING.md          |   94 -
+ .sdlc-v2/archive/v2.6.0/roles/REQUIREMENT.md       |  180 --
+ .sdlc-v2/archive/v2.6.0/roles/REVIEW.md            |   80 -
+ .sdlc-v2/archive/v2.6.0/roles/TEST_DESIGN.md       |  163 --
+ .sdlc-v2/archive/v2.6.0/roles/TEST_VERIFY.md       |   97 -
+ .sdlc-v2/archive/v2.6.0/steps.json                 |  636 -----
+ .sdlc-v2/archive/v2.6.0/workflows/bootstrap.md     |   98 -
+ .sdlc-v2/archive/v2.6.0/workflows/commit-phase.md  |  240 --
+ .../archive/v2.6.0/workflows/planning-phase.md     |  138 -
+ .../archive/v2.6.0/workflows/requirement-phase.md  |  221 --
+ .sdlc-v2/archive/v2.6.0/workflows/resume-task.md   |  132 -
+ .sdlc-v2/backlog.md                                |   15 -
+ .sdlc-v2/done/BIL-042/design.md                    |   27 -
+ .sdlc-v2/done/BIL-042/requirement.md               |   24 -
+ .sdlc-v2/done/BIL-042/review.md                    |   30 -
+ .sdlc-v2/done/BIL-042/tasks.md                     |   17 -
+ .sdlc-v2/roles/CODING.md                           |   75 -
+ .sdlc-v2/roles/COMMIT.md                           |  221 --
+ .sdlc-v2/roles/DISCUSS.md                          |   53 -
+ .sdlc-v2/roles/IDLE.md                             |  116 -
+ .sdlc-v2/roles/PERF.md                             |  146 -
+ .sdlc-v2/roles/PLANNING.md                         |   94 -
+ .sdlc-v2/roles/REQUIREMENT.md                      |  180 --
+ .sdlc-v2/roles/REVIEW.md                           |   80 -
+ .sdlc-v2/roles/TEST_DESIGN.md                      |  163 --
+ .sdlc-v2/roles/TEST_VERIFY.md                      |   97 -
+ .sdlc-v2/steps.json                                |  241 --
+ .sdlc-v2/templates/design.md                       |   46 -
+ .sdlc-v2/templates/discovery_results.md            |   24 -
+ .sdlc-v2/templates/perf/baseline.md                |   54 -
+ .sdlc-v2/templates/perf/hypothesis.md              |   57 -
+ .sdlc-v2/templates/perf/verify.md                  |   82 -
+ .sdlc-v2/templates/requirement.md                  |   53 -
+ .sdlc-v2/templates/review.md                       |   60 -
+ .sdlc-v2/templates/tasks.md                        |   33 -
+ .sdlc-v2/workflows/archive/commit-phase.md         |  240 --
+ .sdlc-v2/workflows/archive/planning-phase.md       |  138 -
+ .sdlc-v2/workflows/archive/requirement-phase.md    |  221 --
+ .sdlc/SKILL.md                                     |  121 +
+ {.sdlc-v2 => .sdlc}/config.json                    |   28 +-
+ .sdlc/docs/DEPLOYMENT_CHECKLIST.md                 |  157 ++
+ .sdlc/docs/FAQ.html                                |  399 +++
+ {.sdlc-v2 => .sdlc}/docs/FAQ.md                    |   32 +-
+ .sdlc/docs/INSTALLATION.html                       |  411 +++
+ {.sdlc-v2 => .sdlc}/docs/INSTALLATION.md           |   32 +-
+ .sdlc/docs/MCP_SETUP.md                            |  118 +
+ .sdlc/docs/MONITORING_PLAN.html                    |  364 +++
+ .sdlc/docs/MONITORING_PLAN.md                      |  187 ++
+ .sdlc/docs/QUICK_START.html                        |  344 +++
+ {.sdlc-v2 => .sdlc}/docs/QUICK_START.md            |   22 +-
+ .sdlc/docs/USER_MANUAL.html                        |  752 +++++
+ {.sdlc-v2 => .sdlc}/docs/USER_MANUAL.md            |   72 +-
+ .sdlc/docs/index.html                              |  292 ++
+ .sdlc/engine/build_docs.py                         |  400 +++
+ {.sdlc-v2 => .sdlc}/engine/cli.py                  | 2946 ++++++++++++++++----
+ {.sdlc-v2 => .sdlc}/engine/rag_server.py           |    0
+ {.sdlc-v2 => .sdlc}/engine/validate_write.py       |   12 +-
+ .sdlc/install-package.bat                          |   31 +
+ .sdlc/install-package.py                           |  802 ++++++
+ .sdlc/intake_questions.json                        |  151 +
+ .sdlc/memory/pipeline_metrics.json                 |   55 +
+ .sdlc/memory/rejected_hypotheses.json              |   29 +
+ .sdlc/memory/tuning_insights.md                    |   12 +
+ .sdlc/package.bat                                  |   11 +
+ .sdlc/package.py                                   |  277 ++
+ .sdlc/prompts/code.md                              |  106 +
+ .sdlc/prompts/code_express.md                      |  106 +
+ .sdlc/prompts/investigate.md                       |  152 +
+ .sdlc/prompts/plan.md                              |   90 +
+ .sdlc/prompts/review.md                            |   96 +
+ .sdlc/prompts/test_design.md                       |   67 +
+ .sdlc/prompts/verify.md                            |  112 +
+ {.sdlc-v2 => .sdlc}/quality/DRIFT_TRACKER.md       |    4 +-
+ .../quality/STABILIZATION_TRACKER.md               |   20 +-
+ .../quality/drift-audits/DA-001_v1.0.md            |    6 +-
+ .../quality/drift-audits/DA-002_v3.0.0.md          |   10 +-
+ .../quality/drift-audits/DA-003_v3.0.1.md          |    2 +-
+ .../quality/drift-audits/DA-004_v3.0.2.md          |    4 +-
+ .../quality/drift-audits/DA-005_v3.0.2.md          |    2 +-
+ .../quality/drift-audits/DA-006_v3.0.3.md          |    2 +-
+ .../quality/drift-audits/DA-007_v3.0.4.md          |    0
+ .../quality/drift-audits/DA-012_v3.6.0.md          |    0
+ .../drift-audits/pipeline_drift_analysis.md        |    6 +-
+ .sdlc/requirements.txt                             |   16 +
+ .sdlc/setup.py                                     |  263 +-
+ .sdlc/setup.sh                                     |  146 +
+ .sdlc/steps.json                                   |  393 +++
+ .../archive/v2.6.0 => .sdlc}/templates/design.md   |    0
+ .../templates/discovery_results.md                 |    0
+ .sdlc/templates/gemini-rules.md                    |   33 +
+ .../v2.6.0 => .sdlc}/templates/perf/baseline.md    |    0
+ .../v2.6.0 => .sdlc}/templates/perf/hypothesis.md  |    0
+ .../v2.6.0 => .sdlc}/templates/perf/verify.md      |    0
+ .../v2.6.0 => .sdlc}/templates/requirement.md      |   27 +-
+ .../archive/v2.6.0 => .sdlc}/templates/review.md   |    2 +-
+ .../archive/v2.6.0 => .sdlc}/templates/tasks.md    |    0
+ .../workflows/archive/commit-phase.md              |    0
+ .../workflows/archive/planning-phase.md            |    0
+ .../workflows/archive/requirement-phase.md         |    0
+ {.sdlc-v2 => .sdlc}/workflows/bootstrap.md         |    4 +-
+ .../backend/lca_core/lca/storage/json_store.py     |   39 +-
+ .../docs/roadmap/00-cashbook-fix-analysis.md       |  170 ++
+ .../docs/roadmap/01-storage-strategy.md            |  259 ++
+ .../docs/roadmap/02-knowledge-strategy.md          |  176 ++
+ .../docs/roadmap/03-bi-extraction-strategy.md      |  246 ++
+ logimax-devtools/docs/roadmap/README.md            |   33 +
+ 126 files changed, 10023 insertions(+), 11561 deletions(-)
+COMMIT:4aa4b7787e5778288c9d77d582831ffd58cee26c
+AUTHOR:raja4lmx
+DATE:2026-06-23 14:03:43 +0530
+MESSAGE:Merge pull request #3664 from Logimax-Technologies/Bugfix/pr-3660-qa
+---
+COMMIT:fd4214b0d434711459b92fce7c112a5b54ec731e
+AUTHOR:raja4lmx
+DATE:2026-06-23 13:54:19 +0530
+MESSAGE:Merge pull request #3666 from Logimax-Technologies/hotfix/lca-sdlc-tooling-clean
+---
+COMMIT:7802ed5bdedb247d792057970cb7a9c06ed6287d
+AUTHOR:raja4lmx
+DATE:2026-06-23 13:47:00 +0530
+MESSAGE:feat(devtools): SDLC v4.3 pipeline + LCA devtools + knowledge brain updates
+---
+
+ .sdlc/SKILL.md                                     |  121 +
+ .sdlc/config.json                                  |   93 +
+ .sdlc/docs/DEPLOYMENT_CHECKLIST.md                 |  157 +
+ .sdlc/docs/FAQ.html                                |  399 ++
+ .sdlc/docs/FAQ.md                                  |  262 +
+ .sdlc/docs/INSTALLATION.html                       |  411 ++
+ .sdlc/docs/INSTALLATION.md                         |  208 +
+ .sdlc/docs/MCP_SETUP.md                            |  118 +
+ .sdlc/docs/MONITORING_PLAN.html                    |  364 ++
+ .sdlc/docs/MONITORING_PLAN.md                      |  187 +
+ .sdlc/docs/QUICK_START.html                        |  344 ++
+ .sdlc/docs/QUICK_START.md                          |  153 +
+ .sdlc/docs/USER_MANUAL.html                        |  752 +++
+ .sdlc/docs/USER_MANUAL.md                          |  521 ++
+ .sdlc/docs/index.html                              |  292 ++
+ .sdlc/engine/build_docs.py                         |  400 ++
+ .sdlc/engine/cli.py                                | 5516 ++++++++++++++++++++
+ .sdlc/engine/rag_server.py                         |  193 +
+ .sdlc/engine/validate_write.py                     |  364 ++
+ .sdlc/install-package.bat                          |   31 +
+ .sdlc/install-package.py                           |  802 +++
+ .sdlc/intake_questions.json                        |  151 +
+ .sdlc/memory/pipeline_metrics.json                 |   55 +
+ .sdlc/memory/rejected_hypotheses.json              |   29 +
+ .sdlc/memory/tuning_insights.md                    |   12 +
+ .sdlc/package.bat                                  |   11 +
+ .sdlc/package.py                                   |  277 +
+ .sdlc/prompts/code.md                              |  106 +
+ .sdlc/prompts/code_express.md                      |  106 +
+ .sdlc/prompts/investigate.md                       |  152 +
+ .sdlc/prompts/plan.md                              |   90 +
+ .sdlc/prompts/review.md                            |   96 +
+ .sdlc/prompts/test_design.md                       |   67 +
+ .sdlc/prompts/verify.md                            |  112 +
+ .sdlc/quality/DRIFT_TRACKER.md                     |  126 +
+ .sdlc/quality/STABILIZATION_TRACKER.md             |  224 +
+ .sdlc/quality/drift-audits/DA-001_v1.0.md          |  106 +
+ .sdlc/quality/drift-audits/DA-002_v3.0.0.md        |  116 +
+ .sdlc/quality/drift-audits/DA-003_v3.0.1.md        |  103 +
+ .sdlc/quality/drift-audits/DA-004_v3.0.2.md        |   99 +
+ .sdlc/quality/drift-audits/DA-005_v3.0.2.md        |   77 +
+ .sdlc/quality/drift-audits/DA-006_v3.0.3.md        |   74 +
+ .sdlc/quality/drift-audits/DA-007_v3.0.4.md        |   85 +
+ .sdlc/quality/drift-audits/DA-012_v3.6.0.md        |  167 +
+ .../drift-audits/pipeline_drift_analysis.md        |  354 ++
+ .sdlc/requirements.txt                             |   16 +
+ .sdlc/setup.py                                     |  263 +-
+ .sdlc/setup.sh                                     |  146 +
+ .sdlc/steps.json                                   |  393 ++
+ .sdlc/templates/design.md                          |   46 +
+ .sdlc/templates/discovery_results.md               |   24 +
+ .sdlc/templates/gemini-rules.md                    |   33 +
+ .sdlc/templates/perf/baseline.md                   |   54 +
+ .sdlc/templates/perf/hypothesis.md                 |   57 +
+ .sdlc/templates/perf/verify.md                     |   82 +
+ .sdlc/templates/requirement.md                     |   58 +
+ .sdlc/templates/review.md                          |   60 +
+ .sdlc/templates/tasks.md                           |   33 +
+ .sdlc/workflows/archive/commit-phase.md            |  240 +
+ .sdlc/workflows/archive/planning-phase.md          |  138 +
+ .sdlc/workflows/archive/requirement-phase.md       |  221 +
+ .sdlc/workflows/bootstrap.md                       |   28 +
+ .../backend/lca_core/lca/storage/json_store.py     |   39 +-
+ .../docs/roadmap/00-cashbook-fix-analysis.md       |  170 +
+ .../docs/roadmap/01-storage-strategy.md            |  259 +
+ .../docs/roadmap/02-knowledge-strategy.md          |  176 +
+ .../docs/roadmap/03-bi-extraction-strategy.md      |  246 +
+ logimax-devtools/docs/roadmap/README.md            |   33 +
+ 68 files changed, 17293 insertions(+), 5 deletions(-)
+COMMIT:3b203f1dd805d377d203650f65c6e1a0b090dd1f
+AUTHOR:raja4lmx
+DATE:2026-06-23 13:31:23 +0530
+MESSAGE:Revert "fix(opening_master): Cash opening master entries not reflecting in cashbook report"
+---
+
+ admin/application/models/ret_reports_model.php     |   2 +-
+ .../tests/test_opening_master_cashbook_opening.py  | 192 ---------------------
+ 2 files changed, 1 insertion(+), 193 deletions(-)
+COMMIT:24983248edf97f51a998944d37c0c0521db0bf7c
+AUTHOR:raja4lmx
+DATE:2026-06-23 13:31:17 +0530
+MESSAGE:Revert "test(ret_reports): add cashbook opening balance E2E tests Ref: RET-2606221541"
+---
+
+ tests/tests/test_ret_reports_cashbook_opening.py | 173 -----------------------
+ 1 file changed, 173 deletions(-)
+COMMIT:c9426df409386951d19d544c21a3fe52e075bfe0
+AUTHOR:raja4lmx
+DATE:2026-06-23 13:07:19 +0530
+MESSAGE:feat(sdlc): deployment readiness - PHP auto-detect, recursive dir copy, brain packaging
+---
+
+ .sdlc/SKILL.md                                     |  121 +
+ .sdlc/config.json                                  |   93 +
+ .sdlc/docs/DEPLOYMENT_CHECKLIST.md                 |  157 +
+ .sdlc/docs/FAQ.html                                |  399 ++
+ .sdlc/docs/FAQ.md                                  |  262 +
+ .sdlc/docs/INSTALLATION.html                       |  411 ++
+ .sdlc/docs/INSTALLATION.md                         |  208 +
+ .sdlc/docs/MCP_SETUP.md                            |  118 +
+ .sdlc/docs/MONITORING_PLAN.html                    |  364 ++
+ .sdlc/docs/MONITORING_PLAN.md                      |  187 +
+ .sdlc/docs/QUICK_START.html                        |  344 ++
+ .sdlc/docs/QUICK_START.md                          |  153 +
+ .sdlc/docs/USER_MANUAL.html                        |  752 +++
+ .sdlc/docs/USER_MANUAL.md                          |  521 ++
+ .sdlc/docs/index.html                              |  292 ++
+ .sdlc/engine/build_docs.py                         |  400 ++
+ .sdlc/engine/cli.py                                | 5516 ++++++++++++++++++++
+ .sdlc/engine/rag_server.py                         |  193 +
+ .sdlc/engine/validate_write.py                     |  364 ++
+ .sdlc/install-package.bat                          |   31 +
+ .sdlc/install-package.py                           |  802 +++
+ .sdlc/intake_questions.json                        |  151 +
+ .sdlc/memory/pipeline_metrics.json                 |   55 +
+ .sdlc/memory/rejected_hypotheses.json              |   29 +
+ .sdlc/memory/tuning_insights.md                    |   12 +
+ .sdlc/package.bat                                  |   11 +
+ .sdlc/package.py                                   |  277 +
+ .sdlc/prompts/code.md                              |  106 +
+ .sdlc/prompts/code_express.md                      |  106 +
+ .sdlc/prompts/investigate.md                       |  152 +
+ .sdlc/prompts/plan.md                              |   90 +
+ .sdlc/prompts/review.md                            |   96 +
+ .sdlc/prompts/test_design.md                       |   67 +
+ .sdlc/prompts/verify.md                            |  112 +
+ .sdlc/quality/DRIFT_TRACKER.md                     |  126 +
+ .sdlc/quality/STABILIZATION_TRACKER.md             |  224 +
+ .sdlc/quality/drift-audits/DA-001_v1.0.md          |  106 +
+ .sdlc/quality/drift-audits/DA-002_v3.0.0.md        |  116 +
+ .sdlc/quality/drift-audits/DA-003_v3.0.1.md        |  103 +
+ .sdlc/quality/drift-audits/DA-004_v3.0.2.md        |   99 +
+ .sdlc/quality/drift-audits/DA-005_v3.0.2.md        |   77 +
+ .sdlc/quality/drift-audits/DA-006_v3.0.3.md        |   74 +
+ .sdlc/quality/drift-audits/DA-007_v3.0.4.md        |   85 +
+ .sdlc/quality/drift-audits/DA-012_v3.6.0.md        |  167 +
+ .../drift-audits/pipeline_drift_analysis.md        |  354 ++
+ .sdlc/requirements.txt                             |   16 +
+ .sdlc/setup.py                                     |  263 +-
+ .sdlc/setup.sh                                     |  146 +
+ .sdlc/steps.json                                   |  393 ++
+ .sdlc/templates/design.md                          |   46 +
+ .sdlc/templates/discovery_results.md               |   24 +
+ .sdlc/templates/gemini-rules.md                    |   33 +
+ .sdlc/templates/perf/baseline.md                   |   54 +
+ .sdlc/templates/perf/hypothesis.md                 |   57 +
+ .sdlc/templates/perf/verify.md                     |   82 +
+ .sdlc/templates/requirement.md                     |   58 +
+ .sdlc/templates/review.md                          |   60 +
+ .sdlc/templates/tasks.md                           |   33 +
+ .sdlc/workflows/archive/commit-phase.md            |  240 +
+ .sdlc/workflows/archive/planning-phase.md          |  138 +
+ .sdlc/workflows/archive/requirement-phase.md       |  221 +
+ .sdlc/workflows/bootstrap.md                       |   28 +
+ .../backend/lca_core/lca/storage/json_store.py     |   39 +-
+ .../docs/roadmap/00-cashbook-fix-analysis.md       |  170 +
+ .../docs/roadmap/01-storage-strategy.md            |  259 +
+ .../docs/roadmap/02-knowledge-strategy.md          |  176 +
+ .../docs/roadmap/03-bi-extraction-strategy.md      |  246 +
+ logimax-devtools/docs/roadmap/README.md            |   33 +
+ 68 files changed, 17293 insertions(+), 5 deletions(-)
+COMMIT:87cee5c495fc373c7560b3189f3e66f3a243002e
+AUTHOR:viveklmx
+DATE:2026-06-23 11:57:51 +0530
+MESSAGE:Merge pull request #3660 from Logimax-Technologies/Bugfix/retailcatalog-3595bd16-0e76-4e87-a543-fb735147329d
+---
+COMMIT:84f373385bbdef0f664bcc88dd9064ac0622d574
+AUTHOR:lmx-karthik
+DATE:2026-06-23 10:59:14 +0530
+MESSAGE:Refine select2, input validation & guards
+---
+
+ .../application/controllers/admin_ret_catalog.php  |  6 +-
+ .../views/master/ret_sub_design/form.php           |  2 +-
+ admin/application/views/master/screw/list.php      |  1 -
+ admin/assets/js/catalog_master.js                  | 78 ++++++++++++++++------
+ 4 files changed, 62 insertions(+), 25 deletions(-)
+COMMIT:f3bb2ca94c4058122f715571f1c47bed6ae55b3b
+AUTHOR:lmx-karthik
+DATE:2026-06-23 10:59:14 +0530
+MESSAGE:Refine select2, input validation & guards
+---
+
+ .../application/controllers/admin_ret_catalog.php  |  6 +-
+ .../views/master/ret_sub_design/form.php           |  2 +-
+ admin/application/views/master/screw/list.php      |  1 -
+ admin/assets/js/catalog_master.js                  | 78 ++++++++++++++++------
+ 4 files changed, 62 insertions(+), 25 deletions(-)
+COMMIT:b20a8ff5f2abccadb1794cff7bcd1947b5df8a0c
+AUTHOR:lmx-karthik
+DATE:2026-06-23 10:59:14 +0530
+MESSAGE:Refine select2, input validation & guards
+---
+
+ .../application/controllers/admin_ret_catalog.php  |  6 +-
+ .../views/master/ret_sub_design/form.php           |  2 +-
+ admin/application/views/master/screw/list.php      |  1 -
+ admin/assets/js/catalog_master.js                  | 85 ++++++++++++++++------
+ 4 files changed, 69 insertions(+), 25 deletions(-)
+COMMIT:257fce5abd0cfd31751c5e8c606a11bb4bee3575
+AUTHOR:karthikaikumaran
+DATE:2026-06-23 11:02:03 +0530
+MESSAGE:Merge branch 'PRODUCTION' into bugfix/41a7a49e-fbb6-483d-aaac-86fdd03b7e74-closed-account-listing-report-from-aws
+---
+COMMIT:3b24cea5c64960117017dc7f2d1ef3cdfc2f3be7
+AUTHOR:lmx-karthik
+DATE:2026-06-23 10:59:14 +0530
+MESSAGE:Refine select2, input validation & guards
+---
+
+ .../application/controllers/admin_ret_catalog.php  |  6 +-
+ .../views/master/ret_sub_design/form.php           |  2 +-
+ admin/application/views/master/screw/list.php      |  1 -
+ admin/assets/js/catalog_master.js                  | 78 ++++++++++++++++------
+ 4 files changed, 62 insertions(+), 25 deletions(-)
+COMMIT:1093322adeb967703129473d0e029526e77ab284
+AUTHOR:ImmanuvelLmx
+DATE:2026-06-23 10:15:39 +0530
+MESSAGE:Merge pull request #3659 from Logimax-Technologies/feature/a79baeb1-allow-zero-mc-va-tag-split-estimation-form
+---
+COMMIT:d6cb0cd5f74fc2dbec2ce89f28f9c03d2bf26089
+AUTHOR:ImmanuvelLmx
+DATE:2026-06-23 10:15:12 +0530
+MESSAGE:Merge pull request #3658 from Logimax-Technologies/feature/a79baeb1-allow-zero-mc-va-tag-split-estimation-form
+---
+COMMIT:b22fad18fe1cad30c8a03cc5b67569033a1cf2da
+AUTHOR:ImmanuvelLmx
+DATE:2026-06-23 10:14:45 +0530
+MESSAGE:Merge pull request #3657 from Logimax-Technologies/feature/a79baeb1-allow-zero-mc-va-tag-split-estimation-form
+---
+COMMIT:31e3fa113428db90ec0b8eb5802645bf4ead9ff5
+AUTHOR:Devadharshini1312
+DATE:2026-06-23 10:04:39 +0530
+MESSAGE:Commit 4 - tap split will work even the bonus percentage is zero.
+---
+
+ admin/assets/js/ret_estimation.js | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+COMMIT:d91840898fc9dd7cfc9badf574f089e73e3b03b5
+AUTHOR:raja4lmx
+DATE:2026-06-22 19:31:13 +0530
+MESSAGE:test(ret_reports): add cashbook opening balance E2E tests Ref: RET-2606221541
+---
+
+ tests/tests/test_ret_reports_cashbook_opening.py | 173 +++++++++++++++++++++++
+ 1 file changed, 173 insertions(+)
+COMMIT:a40a0dd04b815624116a577c1311d34c7dd69e27
+AUTHOR:ImmanuvelLmx
+DATE:2026-06-22 17:08:38 +0530
+MESSAGE:Add conditional favicon to login page
+---
+
+ admin/application/views/authenticate/form.php | 1 +
+ 1 file changed, 1 insertion(+)
+COMMIT:ad139a32ffda2a9126333403d98991b6f3fbb2b0
+AUTHOR:Rudra
+DATE:2026-06-22 16:54:12 +0530
+MESSAGE:Merge pull request #3646 from Logimax-Technologies/bugfix/b9e7fffd0424-Repair-Order-Delivery-Bills-not-appear-in-Credit-Collection-Process
+---
+COMMIT:dace510aac8663070d77badaae2725abbc0b757c
+AUTHOR:Kumaran
+DATE:2026-06-22 16:54:02 +0530
+MESSAGE:Merge pull request #3654 from Logimax-Technologies/bugfix/41a7a49e-fbb6-483d-aaac-86fdd03b7e74-closed-account-listing-report-from-aws
+---
+COMMIT:45255a5e72a9057a29032d7cd6928ffdcc9299e6
+AUTHOR:Rudra
+DATE:2026-06-22 16:53:31 +0530
+MESSAGE:fix: Repair Order Delivery bills (type 11) missing from Credit Collection dropdown and search [b9e7fffd0424]
+---
+
+ admin/application/models/ret_billing_model.php | 16 +++++++++-------
+ 1 file changed, 9 insertions(+), 7 deletions(-)
+COMMIT:18ed4b4e0986722ffbdf0b4caddfceb018643e33
+AUTHOR:Rudra
+DATE:2026-06-22 16:50:04 +0530
+MESSAGE:Merge pull request #3653 from Logimax-Technologies/bugfix/b9e7fffd0424-Repair-Order-Delivery-Bills-not-appear-in-Credit-Collection-Process-support
+---
+COMMIT:285d3f4e21d8b9e51b3f7d7cd1766400504bfdc9
+AUTHOR:Rudra
+DATE:2026-06-22 16:49:59 +0530
+MESSAGE:Merge pull request #3652 from Logimax-Technologies/bugfix/b9e7fffd0424-Repair-Order-Delivery-Bills-not-appear-in-Credit-Collection-Process-QA
+---
+COMMIT:e81ba4ea832295fa5273539e5a8b9ef94443102d
+AUTHOR:karthikaikumaran
+DATE:2026-06-22 16:46:56 +0530
+MESSAGE:Updated a closed account listing
+---
+
+ admin/application/controllers/admin_manage.php | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+COMMIT:c661d684403de98f469849a40fc0a281fbe7dd0a
+AUTHOR:Rudra
+DATE:2026-06-22 16:39:40 +0530
+MESSAGE:fix: Repair Order Delivery bills (type 11) missing from Credit Collection dropdown and search [b9e7fffd0424]
+---
+
+ admin/application/models/ret_billing_model.php | 16 +++++++++-------
+ 1 file changed, 9 insertions(+), 7 deletions(-)
+COMMIT:7ae0ac182f0cc5231939fb0fea9e1644496780bb
+AUTHOR:Rudra
+DATE:2026-06-22 16:36:13 +0530
+MESSAGE:fix: Repair Order Delivery bills (type 11) missing from Credit Collection dropdown and search [b9e7fffd0424]
+---
+
+ admin/application/models/ret_billing_model.php | 16 +++++++++-------
+ 1 file changed, 9 insertions(+), 7 deletions(-)
+COMMIT:c8a9372049632573e78870e0075c5344e2a9153f
+AUTHOR:viveklmx
+DATE:2026-06-22 16:28:37 +0530
+MESSAGE:Merge pull request #3637 from Logimax-Technologies/propagate/catalog-validation-to-qa
+---
+COMMIT:0ec412bf45f873a27aedbae653b935eb90205267
+AUTHOR:ImmanuvelLmx
+DATE:2026-06-22 16:28:17 +0530
+MESSAGE:Merge pull request #3524 from Logimax-Technologies/feature/159f92cec80c/Bill-Copy-Feedback-Points
+---
+COMMIT:ee7413fa3c5d50e2bb134e1f3524a41fe5d5fca5
+AUTHOR:viveklmx
+DATE:2026-06-22 16:23:36 +0530
+MESSAGE:Merge pull request #3640 from Logimax-Technologies/Bugfix/retailcatalog-3595bd16-0e76-4e87-a543-fb735147329d
+---
+COMMIT:df24791e9bca321668e61281283fafffd5772a6a
+AUTHOR:ImmanuvelLmx
+DATE:2026-06-22 16:12:31 +0530
+MESSAGE:Merge pull request #3651 from Logimax-Technologies/propagate/feature/159f92cec80c-Bill-Copy-Feedback-Points-to-Retail
+---
+COMMIT:2e3a797b72911f59facf49b0fbaa590882cc57ea
+AUTHOR:ImmanuvelLmx
+DATE:2026-06-22 16:12:13 +0530
+MESSAGE:Merge pull request #3650 from Logimax-Technologies/propagate/feature/159f92cec80c-Bill-Copy-Feedback-Points-to-support-v2
+---
+COMMIT:bc0ea58a4c07efd07b6f1b0801ae9de72cc7aa35
+AUTHOR:ImmanuvelLmx
+DATE:2026-06-22 16:11:59 +0530
+MESSAGE:Merge pull request #3649 from Logimax-Technologies/propagate/feature/159f92cec80c-Bill-Copy-Feedback-Points-to-QA-v2
+---
+COMMIT:9c08e718577efdd1d2234ff62b8aa3c23f418e39
+AUTHOR:Kanagasundar
+DATE:2026-06-22 15:59:49 +0530
+MESSAGE:chore: onboard client Veda Silver (veda_silver)
+---
+
+ clients/veda_silver/assets/.gitkeep      |  0
+ clients/veda_silver/controllers/.gitkeep |  0
+ clients/veda_silver/helpers/.gitkeep     |  0
+ clients/veda_silver/models/.gitkeep      |  0
+ clients/veda_silver/views/.gitkeep       |  0
+ config/clients/veda_silver.json          | 16 ++++++++++++++++
+ 6 files changed, 16 insertions(+)
+COMMIT:5b7e3e740470d2276ce37f228a0ba429e1336b20
+AUTHOR:Kanagasundar
+DATE:2026-06-22 15:59:46 +0530
+MESSAGE:chore: scaffold client override helpers/ for Veda Silver
+---
+
+ clients/veda_silver/helpers/.gitkeep | 0
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+COMMIT:ff5abe4e81d21a821549d3b93ffc4e38e9859dc1
+AUTHOR:Kanagasundar
+DATE:2026-06-22 15:59:45 +0530
+MESSAGE:chore: scaffold client override controllers/ for Veda Silver
+---
+
+ clients/veda_silver/controllers/.gitkeep | 0
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+COMMIT:cd9a3ebaada749f36673343f63cde69c1e388b69
+AUTHOR:Kanagasundar
+DATE:2026-06-22 15:59:44 +0530
+MESSAGE:chore: scaffold client override models/ for Veda Silver
+---
+
+ clients/veda_silver/models/.gitkeep | 0
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+COMMIT:b5359b6f2ca210bde061c7bc1923fd140e259c24
+AUTHOR:Kanagasundar
+DATE:2026-06-22 15:59:43 +0530
+MESSAGE:chore: scaffold client override assets/ for Veda Silver
+---
+
+ clients/veda_silver/assets/.gitkeep | 0
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+COMMIT:39f4efee7e65f6ecfb1020a64457fe97a50673eb
+AUTHOR:Kanagasundar
+DATE:2026-06-22 15:59:42 +0530
+MESSAGE:chore: scaffold client override views/ for Veda Silver
+---
+
+ clients/veda_silver/views/.gitkeep | 0
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+COMMIT:e0cbe02e12b29227d28c9dc8230961a579e9f87b
+AUTHOR:Kanagasundar
+DATE:2026-06-22 15:59:41 +0530
+MESSAGE:chore: add config for Veda Silver (veda_silver)
+---
+
+ config/clients/veda_silver.json | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+COMMIT:f3809344697f370df6360e1d7f93096043d7f495
+AUTHOR:lmx-karthik
+DATE:2026-06-22 15:55:25 +0530
+MESSAGE:fix: apply surgical validation changes to tax group form - support branch base
+---
+
+ admin/application/views/master/tax/tax group/form.php | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+COMMIT:357ca32764172f57cb1f67251ee09addef80378b
+AUTHOR:lmx-karthik
+DATE:2026-06-22 15:50:23 +0530
+MESSAGE:fix: correct encoding (remove BOM) in view files - match QA branch exactly
+---
+
+ admin/application/views/master/charges/list.php       | 2 +-
+ admin/application/views/master/tax/tax group/form.php | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+COMMIT:1868d87b1225b09c65a40e3ec222b1079a0258f9
+AUTHOR:lmx-karthik
+DATE:2026-06-22 15:49:24 +0530
+MESSAGE:fix: add missing view validation changes to PR #3643 (support branch)
+---
+
+ admin/application/views/master/charges/list.php    |   6 +-
+ .../views/master/tax/tax group/form.php            | 113 ++++++++++++++++++++-
+ 2 files changed, 113 insertions(+), 6 deletions(-)
+COMMIT:f40841eedd2a612b774aa88fe12afa78657b74a0
+AUTHOR:ImmanuvelLmx
+DATE:2026-06-22 15:35:34 +0530
+MESSAGE:Include CHIT ADJ in payments; fix parsing; favicon fallback
+---
+
+ .../helpers/template_receipt_helper.php            | 35 ++++++++++++++++++++++
+ admin/application/models/print_template_model.php  | 11 +++++--
+ admin/application/views/layout/header 1.php        |  2 +-
+ admin/application/views/layout/header.php          |  2 +-
+ 4 files changed, 45 insertions(+), 5 deletions(-)
+COMMIT:cb02cb444f3c34139f2a89d1dbc51d447636861b
+AUTHOR:ImmanuvelLmx
+DATE:2026-06-22 15:35:34 +0530
+MESSAGE:Include CHIT ADJ in payments; fix parsing; favicon fallback
+---
+
+ .../helpers/template_receipt_helper.php            | 35 ++++++++++++++++++++++
+ admin/application/models/print_template_model.php  | 11 +++++--
+ admin/application/views/layout/header 1.php        |  2 +-
+ admin/application/views/layout/header.php          |  2 +-
+ 4 files changed, 45 insertions(+), 5 deletions(-)
+COMMIT:a075459b627aed1b29085fbacaf33466f94f0e48
+AUTHOR:ImmanuvelLmx
+DATE:2026-06-22 15:35:34 +0530
+MESSAGE:Include CHIT ADJ in payments; fix parsing; favicon fallback
+---
+
+ .../helpers/template_receipt_helper.php            | 35 ++++++++++++++++++++++
+ admin/application/models/print_template_model.php  | 11 +++++--
+ admin/application/views/layout/header 1.php        |  2 +-
+ admin/application/views/layout/header.php          |  2 +-
+ 4 files changed, 45 insertions(+), 5 deletions(-)
+COMMIT:6f084432fc72d290d2f6dc168fb8838ac0788593
+AUTHOR:ImmanuvelLmx
+DATE:2026-06-22 15:35:34 +0530
+MESSAGE:Include CHIT ADJ in payments; fix parsing; favicon fallback
+---
+
+ .../helpers/template_receipt_helper.php            | 35 ++++++++++++++++++++++
+ admin/application/models/print_template_model.php  | 11 +++++--
+ admin/application/views/layout/header 1.php        |  2 +-
+ admin/application/views/layout/header.php          |  2 +-
+ 4 files changed, 45 insertions(+), 5 deletions(-)
+COMMIT:e3fe3b0e96a9d2613ac7505c7ca14e308fa41c07
+AUTHOR:lmx-karthik
+DATE:2026-06-22 15:27:53 +0530
+MESSAGE:fix: add missing view validation changes for charges list and tax group form
+---
+
+ admin/application/views/master/charges/list.php    |   4 +-
+ .../views/master/tax/tax group/form.php            | 111 ++++++++++++++++++++-
+ 2 files changed, 111 insertions(+), 4 deletions(-)
+COMMIT:c824325a131409d3db3fc43fed1a658f2f857204
+AUTHOR:lmx-karthik
+DATE:2026-06-22 15:27:53 +0530
+MESSAGE:fix: add missing view validation changes for charges list and tax group form
+---
+
+ admin/application/views/master/charges/list.php    |   4 +-
+ .../views/master/tax/tax group/form.php            | 111 ++++++++++++++++++++-
+ 2 files changed, 111 insertions(+), 4 deletions(-)
+COMMIT:a2ed30ec031ac40db9468a97fa0f8cc88a1060ec
+AUTHOR:lmx-karthik
+DATE:2026-06-22 14:58:29 +0530
+MESSAGE:Merge PR #3640 files to support
+---
+
+ .../application/controllers/admin_ret_catalog.php  |  814 ++++----
+ .../helpers/customer_validation_helper.php         |  160 +-
+ admin/application/models/ret_catalog_model.php     |    6 +-
+ admin/assets/js/catalog_master.js                  | 2129 ++++++++------------
+ admin/assets/js/validation.js                      |   97 +-
+ 5 files changed, 1487 insertions(+), 1719 deletions(-)
+COMMIT:d5ba6d7c2b6e3303e4f95bd9dabd1de687eeac50
+AUTHOR:lmx-karthik
+DATE:2026-06-22 14:56:44 +0530
+MESSAGE:Merge PR #3640 files to QA
+---
+
+ .../application/controllers/admin_ret_catalog.php  | 1106 +++++-----
+ .../helpers/customer_validation_helper.php         |  160 +-
+ admin/application/models/ret_catalog_model.php     |    6 +-
+ admin/assets/js/catalog_master.js                  | 2129 ++++++++------------
+ admin/assets/js/validation.js                      |   97 +-
+ 5 files changed, 1673 insertions(+), 1825 deletions(-)
+COMMIT:d3ca815edd792342f460a02a2366f64a6fbea3bb
+AUTHOR:Haritha7217
+DATE:2026-06-22 14:46:08 +0530
+MESSAGE:Merge pull request #3588 from Logimax-Technologies/propogate/feature/0f1002f8-tag-split-include-additional-va-charges-final-price
+---
+COMMIT:1885ca2a10ca905fc375fdaad131800c2d51e0bb
+AUTHOR:Haritha7217
+DATE:2026-06-22 14:45:25 +0530
+MESSAGE:Merge pull request #3585 from Logimax-Technologies/feature/0f1002f8-tag-split-include-additional-va-charges-final-price
+---
+COMMIT:7c4b0051d07b2b66359cd482f9a0d70e8517a7cb
+AUTHOR:Haritha7217
+DATE:2026-06-22 14:44:43 +0530
+MESSAGE:Merge pull request #3584 from Logimax-Technologies/feature/0f1002f8-tag-split-include-additional-va-charges-final-price
+---
+COMMIT:9edabc5beb0d53f9b034f06c9f7ef044f34eeded
+AUTHOR:lmx-karthik
+DATE:2026-06-22 13:38:10 +0530
+MESSAGE:Add taxgroup validation, chargeCode rules, UI fixes
+---
+
+ .../application/controllers/admin_ret_catalog.php  |  93 ++++++--
+ .../helpers/customer_validation_helper.php         |  42 +++-
+ admin/application/models/ret_catalog_model.php     |  18 +-
+ admin/application/views/master/charges/list.php    |   4 +-
+ .../views/master/tax/tax group/form.php            | 110 +++++++++-
+ admin/assets/js/catalog_master.js                  | 238 ++++++++++++---------
+ admin/assets/js/validation.js                      |   5 +-
+ 7 files changed, 385 insertions(+), 125 deletions(-)
+COMMIT:4e71b751ade1ba849d052113279bf881ed6795d8
+AUTHOR:viveklmx
+DATE:2026-06-22 11:25:45 +0530
+MESSAGE:Merge pull request #3639 from Logimax-Technologies/propagate/catalog-validation-to-dev
+---
+COMMIT:d359180cecd5fa6bd9e1142323515631a4feda30
+AUTHOR:lmx-karthik
+DATE:2026-06-22 10:58:31 +0530
+MESSAGE:propagate: catalog validation, sanitization & ShortCode max 5 to Dev
+---
+
+ .../application/controllers/admin_ret_catalog.php  |   59 +-
+ .../controllers/admin_ret_metal_process.php        |   32 +-
+ .../controllers/admin_ret_supp_catalog.php         |   26 +-
+ .../helpers/customer_validation_helper.php         |  160 +-
+ .../views/master/discount/stone_list.php           |   10 +-
+ admin/application/views/master/hook/list.php       |   14 +-
+ .../views/master/metal_category/list.php           |    1 +
+ admin/application/views/master/metal_type/list.php |    4 +-
+ .../application/views/master/ret_category/list.php |    4 +-
+ .../application/views/master/ret_section/list.php  |   15 +-
+ admin/application/views/master/ret_stock/list.php  |    4 +-
+ admin/application/views/master/stone/list.php      |    4 +-
+ admin/application/views/master/theme/list.php      |    4 +-
+ .../views/order/supplier_catalog/form.php          |    8 +-
+ .../ret_metal_process/process_master/form.php      |    2 +-
+ admin/assets/js/catalog_master.js                  | 2129 ++++++++------------
+ admin/assets/js/validation.js                      |    8 +-
+ 17 files changed, 1124 insertions(+), 1360 deletions(-)
+COMMIT:7c651f46891ca52586c8e020d745f9514a4bb5fc
+AUTHOR:lmx-karthik
+DATE:2026-06-22 10:56:54 +0530
+MESSAGE:propagate: catalog validation, sanitization & ShortCode max 5 to support
+---
+
+ .../application/controllers/admin_ret_catalog.php  |  814 ++++----
+ .../controllers/admin_ret_metal_process.php        |   32 +-
+ .../controllers/admin_ret_supp_catalog.php         |   26 +-
+ .../helpers/customer_validation_helper.php         |  160 +-
+ .../views/master/discount/stone_list.php           |   10 +-
+ admin/application/views/master/hook/list.php       |   15 +-
+ .../views/master/metal_category/list.php           |   13 +-
+ admin/application/views/master/metal_type/list.php |   13 +-
+ .../application/views/master/ret_category/list.php |    4 +-
+ .../application/views/master/ret_section/list.php  |   15 +-
+ admin/application/views/master/ret_stock/list.php  |    4 +-
+ admin/application/views/master/stone/list.php      |   19 +-
+ admin/application/views/master/theme/list.php      |   39 +-
+ .../views/order/supplier_catalog/form.php          |    8 +-
+ .../ret_metal_process/process_master/form.php      |    2 +-
+ admin/assets/js/catalog_master.js                  | 2129 ++++++++------------
+ admin/assets/js/validation.js                      |   97 +-
+ 17 files changed, 1595 insertions(+), 1805 deletions(-)
+COMMIT:e31504c801dbf072688cfa4294cabaeeaa5faa26
+AUTHOR:lmx-karthik
+DATE:2026-06-22 10:55:05 +0530
+MESSAGE:propagate: catalog validation, sanitization & ShortCode max 5 to QA
+---
+
+ .../application/controllers/admin_ret_catalog.php  | 1106 +++++-----
+ .../controllers/admin_ret_metal_process.php        |   32 +-
+ .../controllers/admin_ret_supp_catalog.php         |   26 +-
+ .../helpers/customer_validation_helper.php         |  160 +-
+ .../views/master/discount/stone_list.php           |   10 +-
+ admin/application/views/master/hook/list.php       |   23 +-
+ .../views/master/metal_category/list.php           |   13 +-
+ admin/application/views/master/metal_type/list.php |   13 +-
+ .../application/views/master/ret_category/list.php |    4 +-
+ .../application/views/master/ret_section/list.php  |   15 +-
+ admin/application/views/master/ret_stock/list.php  |    4 +-
+ admin/application/views/master/stone/list.php      |   19 +-
+ admin/application/views/master/theme/list.php      |   39 +-
+ .../views/order/supplier_catalog/form.php          |    8 +-
+ .../ret_metal_process/process_master/form.php      |    2 +-
+ admin/assets/js/catalog_master.js                  | 2129 ++++++++------------
+ admin/assets/js/validation.js                      |   97 +-
+ 17 files changed, 1785 insertions(+), 1915 deletions(-)
+COMMIT:c1fa41bda7aa31e1b5292a7f3b46659d90371d4f
+AUTHOR:lmx-karthik
+DATE:2026-06-22 10:52:58 +0530
+MESSAGE:Revert: undo catalog validation merge on Dev (PR #3632)
+---
+COMMIT:046ebe83c796df0cad42ee9ce8e28baa78518bab
+AUTHOR:lmx-karthik
+DATE:2026-06-22 10:51:32 +0530
+MESSAGE:Revert "Merge PR #3632: Add validation, sanitize & adjust ShortCode max to 5"
+---
+
+ .../application/controllers/admin_ret_catalog.php  |   59 +-
+ .../controllers/admin_ret_metal_process.php        |   32 +-
+ .../controllers/admin_ret_supp_catalog.php         |   26 +-
+ .../helpers/customer_validation_helper.php         |  160 +-
+ .../views/master/discount/stone_list.php           |   10 +-
+ admin/application/views/master/hook/list.php       |   14 +-
+ .../views/master/metal_category/list.php           |    1 -
+ admin/application/views/master/metal_type/list.php |    4 +-
+ .../application/views/master/ret_category/list.php |    4 +-
+ .../application/views/master/ret_section/list.php  |   15 +-
+ admin/application/views/master/ret_stock/list.php  |    4 +-
+ admin/application/views/master/stone/list.php      |    4 +-
+ admin/application/views/master/theme/list.php      |    4 +-
+ .../views/order/supplier_catalog/form.php          |    8 +-
+ .../ret_metal_process/process_master/form.php      |    2 +-
+ admin/assets/js/catalog_master.js                  | 2129 ++++++++++++--------
+ admin/assets/js/validation.js                      |    8 +-
+ 17 files changed, 1360 insertions(+), 1124 deletions(-)
+COMMIT:1f9e5afb618298a2b272684a044d67a7d73dd973
+AUTHOR:lmx-karthik
+DATE:2026-06-22 10:50:25 +0530
+MESSAGE:Revert: undo catalog validation merge on support (PR #3566)
+---
+COMMIT:3f09a7ae0bcdb39a4577dc1675863978bfb95602
+AUTHOR:lmx-karthik
+DATE:2026-06-22 10:48:30 +0530
+MESSAGE:Revert "Merge PR #3566: propagate catalog validation & ShortCode max 5 to support"
+---
+
+ .../application/controllers/admin_ret_catalog.php  |  814 ++++----
+ .../controllers/admin_ret_metal_process.php        |   32 +-
+ .../controllers/admin_ret_supp_catalog.php         |   26 +-
+ .../helpers/customer_validation_helper.php         |  160 +-
+ .../views/master/discount/stone_list.php           |   10 +-
+ admin/application/views/master/hook/list.php       |   15 +-
+ .../views/master/metal_category/list.php           |   13 +-
+ admin/application/views/master/metal_type/list.php |   13 +-
+ .../application/views/master/ret_category/list.php |    4 +-
+ .../application/views/master/ret_section/list.php  |   15 +-
+ admin/application/views/master/ret_stock/list.php  |    4 +-
+ admin/application/views/master/stone/list.php      |   19 +-
+ admin/application/views/master/theme/list.php      |   39 +-
+ .../views/order/supplier_catalog/form.php          |    8 +-
+ .../ret_metal_process/process_master/form.php      |    2 +-
+ admin/assets/js/catalog_master.js                  | 2129 ++++++++++++--------
+ admin/assets/js/validation.js                      |   97 +-
+ 17 files changed, 1805 insertions(+), 1595 deletions(-)
+COMMIT:da368da3b21768f1439c08106f4b69b51d480137
+AUTHOR:lmx-karthik
+DATE:2026-06-22 10:48:16 +0530
+MESSAGE:Revert: undo catalog validation merge on QA (PR #3633)
+---
+COMMIT:1f499645bdbd56c3dec1dba8a0626115670e06ed
+AUTHOR:lmx-karthik
+DATE:2026-06-22 10:46:46 +0530
+MESSAGE:Revert "Merge PR #3633: propagate catalog validation & ShortCode max 5 to QA"
+---
+
+ .../application/controllers/admin_ret_catalog.php  | 1106 +++++-----
+ .../controllers/admin_ret_metal_process.php        |   32 +-
+ .../controllers/admin_ret_supp_catalog.php         |   26 +-
+ .../helpers/customer_validation_helper.php         |  160 +-
+ .../views/master/discount/stone_list.php           |   10 +-
+ admin/application/views/master/hook/list.php       |   23 +-
+ .../views/master/metal_category/list.php           |   13 +-
+ admin/application/views/master/metal_type/list.php |   13 +-
+ .../application/views/master/ret_category/list.php |    4 +-
+ .../application/views/master/ret_section/list.php  |   15 +-
+ admin/application/views/master/ret_stock/list.php  |    4 +-
+ admin/application/views/master/stone/list.php      |   19 +-
+ admin/application/views/master/theme/list.php      |   39 +-
+ .../views/order/supplier_catalog/form.php          |    8 +-
+ .../ret_metal_process/process_master/form.php      |    2 +-
+ admin/assets/js/catalog_master.js                  | 2129 ++++++++++++--------
+ admin/assets/js/validation.js                      |   97 +-
+ 17 files changed, 1915 insertions(+), 1785 deletions(-)
+COMMIT:b2593554ea2da238f046da1daa03a81253e375bb
+AUTHOR:lmx-karthik
+DATE:2026-06-22 10:41:49 +0530
+MESSAGE:Merge PR #3566: propagate catalog validation & ShortCode max 5 to support
+---
+COMMIT:02f9a24bcc1eb77696ebe4ff26c60de444673009
+AUTHOR:lmx-karthik
+DATE:2026-06-22 10:40:02 +0530
+MESSAGE:propagate: catalog validation, sanitization & ShortCode max 5 to support
+---
+
+ .../application/controllers/admin_ret_catalog.php  |  814 ++++----
+ .../controllers/admin_ret_metal_process.php        |   32 +-
+ .../controllers/admin_ret_supp_catalog.php         |   26 +-
+ .../helpers/customer_validation_helper.php         |  160 +-
+ .../views/master/discount/stone_list.php           |   10 +-
+ admin/application/views/master/hook/list.php       |   15 +-
+ .../views/master/metal_category/list.php           |   13 +-
+ admin/application/views/master/metal_type/list.php |   13 +-
+ .../application/views/master/ret_category/list.php |    4 +-
+ .../application/views/master/ret_section/list.php  |   15 +-
+ admin/application/views/master/ret_stock/list.php  |    4 +-
+ admin/application/views/master/stone/list.php      |   19 +-
+ admin/application/views/master/theme/list.php      |   39 +-
+ .../views/order/supplier_catalog/form.php          |    8 +-
+ .../ret_metal_process/process_master/form.php      |    2 +-
+ admin/assets/js/catalog_master.js                  | 2129 ++++++++------------
+ admin/assets/js/validation.js                      |   97 +-
+ 17 files changed, 1595 insertions(+), 1805 deletions(-)
+COMMIT:3cd34130522301465a455ec121be5f982efe6169
+AUTHOR:lmx-karthik
+DATE:2026-06-22 10:39:10 +0530
+MESSAGE:Merge PR #3633: propagate catalog validation & ShortCode max 5 to QA
+---
+COMMIT:8834e0ce557eebf31595004ce4a1af69b1f1263a
+AUTHOR:lmx-karthik
+DATE:2026-06-22 10:38:02 +0530
+MESSAGE:propagate: catalog validation, sanitization & ShortCode max 5 to QA
+---
+
+ .../application/controllers/admin_ret_catalog.php  | 1106 +++++-----
+ .../controllers/admin_ret_metal_process.php        |   32 +-
+ .../controllers/admin_ret_supp_catalog.php         |   26 +-
+ .../helpers/customer_validation_helper.php         |  160 +-
+ .../views/master/discount/stone_list.php           |   10 +-
+ admin/application/views/master/hook/list.php       |   23 +-
+ .../views/master/metal_category/list.php           |   13 +-
+ admin/application/views/master/metal_type/list.php |   13 +-
+ .../application/views/master/ret_category/list.php |    4 +-
+ .../application/views/master/ret_section/list.php  |   15 +-
+ admin/application/views/master/ret_stock/list.php  |    4 +-
+ admin/application/views/master/stone/list.php      |   19 +-
+ admin/application/views/master/theme/list.php      |   39 +-
+ .../views/order/supplier_catalog/form.php          |    8 +-
+ .../ret_metal_process/process_master/form.php      |    2 +-
+ admin/assets/js/catalog_master.js                  | 2129 ++++++++------------
+ admin/assets/js/validation.js                      |   97 +-
+ 17 files changed, 1785 insertions(+), 1915 deletions(-)
+COMMIT:b41122e2504a33b273e6771199b1977fa4cf2c06
+AUTHOR:lmx-karthik
+DATE:2026-06-22 10:34:28 +0530
+MESSAGE:Merge PR #3632: Add validation, sanitize & adjust ShortCode max to 5
+---
+COMMIT:f86b0024839bb8efda0075995389962b2ac3be57
+AUTHOR:lmx-karthik
+DATE:2026-06-22 10:20:32 +0530
+MESSAGE:Add validation & sanitize, adjust UI inputs
+---
+
+ .../application/controllers/admin_ret_catalog.php  |   59 +-
+ .../controllers/admin_ret_metal_process.php        |   32 +-
+ .../controllers/admin_ret_supp_catalog.php         |   26 +-
+ .../helpers/customer_validation_helper.php         |  160 +-
+ .../views/master/discount/stone_list.php           |   10 +-
+ admin/application/views/master/hook/list.php       |   14 +-
+ .../views/master/metal_category/list.php           |    1 +
+ admin/application/views/master/metal_type/list.php |    4 +-
+ .../application/views/master/ret_category/list.php |    4 +-
+ .../application/views/master/ret_section/list.php  |   15 +-
+ admin/application/views/master/ret_stock/list.php  |    4 +-
+ admin/application/views/master/stone/list.php      |    4 +-
+ admin/application/views/master/theme/list.php      |    4 +-
+ .../views/order/supplier_catalog/form.php          |    8 +-
+ .../ret_metal_process/process_master/form.php      |    2 +-
+ admin/assets/js/catalog_master.js                  | 2129 ++++++++------------
+ admin/assets/js/validation.js                      |    8 +-
+ 17 files changed, 1124 insertions(+), 1360 deletions(-)

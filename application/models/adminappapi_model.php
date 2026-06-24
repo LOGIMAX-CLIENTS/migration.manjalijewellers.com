@@ -1851,6 +1851,8 @@ pm.mode_name as payment_mode
 		cmp.tollfree1,
 		(SELECT if(SUM(py.metal_weight) > 0 , SUM(py.metal_weight) ,'-') as metal_weight FROM payment py WHERE py.payment_status=1 and py.id_scheme_account=pay.id_scheme_account) as acc_weight,
 		(SELECT if(SUM(py.payment_amount) > 0 , SUM(py.payment_amount) ,'-') as payment_amount FROM payment py WHERE py.payment_status=1 and py.id_scheme_account=pay.id_scheme_account) as tot_paid_amount,
+		IFNULL(pay.saved_benefits,'0.000') as saved_benefits,
+		IFNULL(pay.saved_benefit_amt,'0.00') as saved_benefit_amt,
 
 		sch.scheme_name
         FROM payment as pay 
