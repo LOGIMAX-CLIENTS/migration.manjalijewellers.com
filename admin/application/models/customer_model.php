@@ -1023,6 +1023,10 @@ class Customer_model extends CI_Model
     function get_acc_Data($id)
     {
         /* get necessary data of scheme account by id... */
+        // Guard: prevent broken SQL when $id is null/empty (e.g., orphaned payment records)
+        if (empty($id) && $id !== 0) {
+            return array('sch_AccNo' => 'Not Allocated', 'start_year' => '', 'branch_code' => '', 'code' => '', 'group_code' => '', 'oldscheme_code' => '', 'is_lucky_draw' => 0, 'scheme_code' => '', 'cmp_code' => '');
+        }
         $sql = "SELECT IFNULL(sa.scheme_acc_number,'Not Allocated') as sch_AccNo,IFNULL(sa.start_year,'') as start_year,b.short_name as branch_code,s.code,IFNULL(sa.group_code,'') as group_code,
 	                if(s.is_lucky_draw = 1, CONCAT(s.code,'(',ifnull(sa.group_code,''),')') ,s.code) as oldscheme_code,s.is_lucky_draw,s.code as scheme_code,c.short_code as cmp_code
                 FROM scheme_account sa
@@ -1035,6 +1039,10 @@ class Customer_model extends CI_Model
     function get_receipt_Data($id)
     {
         /* get necessary data of payment by id... */
+        // Guard: prevent broken SQL when $id is null/empty
+        if (empty($id) && $id !== 0) {
+            return array('receipt_no' => '-', 'receipt_year' => '', 'branch_code' => '', 'code' => '', 'group_code' => '', 'scheme_code' => '', 'cmp_code' => '');
+        }
         $sql = "SELECT IFNULL(p.receipt_no,'-') as receipt_no,IFNULL(p.receipt_year,'') as receipt_year,b.short_name as branch_code,s.code,IFNULL(sa.group_code,'') as group_code,
 	                if(s.is_lucky_draw = 1 && cs.group_wise_receipt = 1 , CONCAT(s.code,'(',ifnull(sa.group_code,''),')') ,s.code) as scheme_code,c.short_code as cmp_code
                 FROM payment p

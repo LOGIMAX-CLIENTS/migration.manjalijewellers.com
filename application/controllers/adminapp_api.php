@@ -1075,30 +1075,30 @@ class Adminapp_api extends REST_Controller
 
 		$paymentstring = "";
 		$paymentstring .= "\r\n";
-		$paymentstring .= "\t       ".$company['company_name']."\x1b\x45\x01\r\n";
-		$paymentstring .= "".$company['address1']."\x1b\x45\x01\r\n";
-		$paymentstring .= "".$company['city'].' - '.$company['pincode']."\x1b\x45\x01\r\n";
+		$paymentstring .= "\x1b\x45\x01   ".$company['company_name']."\x1b\x45\x01\r\n";
+		$paymentstring .= "\x1b\x45\x01   ".$company['address1']."\x1b\x45\x01\r\n";
+		$paymentstring .= "\x1b\x45\x01   ".$company['city'].' - '.$company['pincode']."\x1b\x45\x01\r\n";
 		if($payment['branch_settings'] == 1){
 		    $paymentstring .= "BRANCH : ".$payment['branch_name']."\x1b\x45\x01\r\n";
 		}
-		$paymentstring .= "Print Taken On : ".date('d-m-Y h:i:s A')."\x1b\x45\x01\r\n";
+		$paymentstring .= "\x1b\x45\x01 Print Taken On : ".date('d-m-Y h:i:s A')."\x1b\x45\x01\r\n";
 		$paymentstring .= "Emp Name : ".$payment['emp_data']."\x1b\x45\x01\r\n";
 		$paymentstring .= "\r\n";
-        $paymentstring .= "\t \x1b\x45\x01     ".$payment['scheme_name']." \x1b\x45\x01 \r\n";
+        $paymentstring .= "      \x1b\x45\x01 ".$payment['scheme_name']." \x1b\x45\x01 \r\n";
         $paymentstring .= self::HORIZONTAL_LINE['HR3_58MM']."\r\n";
-        $paymentstring .= "\t   A/C Name     ".($payment['account_name']). "\r\n";
-		$paymentstring .= "\t   A/C No       ".($payment['scheme_acc_number'])."\r\n";
-		$paymentstring .= "\t   RECEIPT NO   ". ($payment['receipt_no']). "\r\n";
-		$paymentstring .= "\t   PAID DUE     ". ($payment['paid_due']). "\r\n";
-		$paymentstring .= "\t   PAID MODE    ". ($payment['payment_mode']). "\r\n";
-		$paymentstring .= "\t   PAID WGT     ". ($payment['metal_weight']). " G \r\n";
-		$paymentstring .= "\t   BENEFIT WGT  ". (isset($payment['saved_benefits']) && $payment['saved_benefits'] > 0 ? $payment['saved_benefits'] : '0.000'). " G \r\n";
-		$paymentstring .= "\t   BENEFIT AMT  INR ". (isset($payment['saved_benefit_amt']) && $payment['saved_benefit_amt'] > 0 ? number_format($payment['saved_benefit_amt'],2,'.','') : '0.00'). " \r\n";
-		$paymentstring .= "\t   MOBILE       ". ($payment['mobile']). "\r\n";
-	    $paymentstring .= "\t   METAL RATE   INR ". number_format($payment['metal_rate'],2,'.',''). "\r\n";
-	    $paymentstring .= "\t   TOTAL PAID AMT INR    ". number_format($payment['tot_paid_amount'],2,'.','')." \r\n";
-		$paymentstring .= "\t   TOTAL WGT    ". ($payment['acc_weight']). " G \r\n";
-		$paymentstring .= "\t   PAID DATE    ". ($payment['date_payment']). "\r\n";
+        $paymentstring .= "\x1b\x45\x01A/C Name     ".($payment['account_name']). "\r\n";
+		$paymentstring .= "\x1b\x45\x01A/C No       ".($payment['scheme_acc_number'])."\r\n";
+		$paymentstring .= "\x1b\x45\x01RECEIPT NO   ". ($payment['receipt_no']). "\r\n";
+		$paymentstring .= "\x1b\x45\x01PAID DUE     ". ($payment['paid_due']). "\r\n";
+		$paymentstring .= "\x1b\x45\x01PAID MODE    ". ($payment['payment_mode']). "\r\n";
+		$paymentstring .= "\x1b\x45\x01PAID WGT     ". ($payment['metal_weight']). " G\r\n";
+		$paymentstring .= "\x1b\x45\x01BENEFIT WGT  ". (isset($payment['saved_benefits']) && $payment['saved_benefits'] > 0 ? $payment['saved_benefits'] : '0.000'). " G\r\n";
+		$paymentstring .= "\x1b\x45\x01BENEFIT AMT  ". (isset($payment['saved_benefit_amt']) && $payment['saved_benefit_amt'] > 0 ? number_format($payment['saved_benefit_amt'],2,'.','') : '0.00'). "\r\n";
+		$paymentstring .= "\x1b\x45\x01MOBILE       ". ($payment['mobile']). "\r\n";
+	    $paymentstring .= "\x1b\x45\x01METAL RATE   ". number_format($payment['metal_rate'],2,'.',''). "\r\n";
+	    $paymentstring .= "\x1b\x45\x01TOTAL AMT    ". number_format($payment['tot_paid_amount'],2,'.','')."\r\n";
+		$paymentstring .= "\x1b\x45\x01TOTAL WGT    ". ($payment['acc_weight']). " G\r\n";
+		$paymentstring .= "\x1b\x45\x01PAID DATE    ". substr($payment['date_payment'],0,10)."\r\n";
 		//$paymentstring .= "       AREA         :\t". ($payment['address1']). "\r\n";
 		$paymentstring .= self::HORIZONTAL_LINE['HR3_58MM']."\r\n";
 		$paymentstring .= "\x1b\x45\x01Received with thanks from\x1b\x45\x01\r\n";
@@ -1108,7 +1108,7 @@ class Adminapp_api extends REST_Controller
 		$paymentstring .= "\x1b\x45\x01".$amt_to_words."\x1b\x45\x01\r\n";
     	$paymentstring .= "For \x1b\x45\x01".$company['company_name']."\x1b\x45\x01\r\n";
     	$paymentstring .= "\x1b\x45\x01\r\n";
-    	$paymentstring .= "\t                      Signature\r\n";
+    	$paymentstring .= "                      Signature\r\n";
 	   return $paymentstring;
 	}
 	
