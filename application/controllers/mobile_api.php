@@ -1129,7 +1129,7 @@ class Mobile_api extends REST_Controller
             'id_customer' => $data['id_customer'],
             'id_scheme' => $data['id_scheme'],
             'start_date' => date('Y-m-d H:i:s'),
-            // 'maturity_date' => ($schDetail['maturity_days'] > 0 ? date('Y-m-d', strtotime(date('Y-m-d') . '+' . $schDetail['maturity_days'] . ' days')) : NULL),
+            'maturity_date' => ($schDetail['maturity_days'] > 0 ? date('Y-m-d', strtotime(date('Y-m-d') . '+' . $schDetail['maturity_days'] . ' days')) : ($schDetail['total_installments'] > 0 ? date('Y-m-d', strtotime(date('Y-m-d') . '+' . $schDetail['total_installments'] . ' months')) : NULL)),
             // 'group_code' => $data['group_code'],
             'group_code' => $schDetail['is_lucky_draw'] == 1 ? $data['group_code'] : '',
             'scheme_acc_number' => ($data['is_new'] == 'N' ? $data['scheme_acc_number'] : NULL),
