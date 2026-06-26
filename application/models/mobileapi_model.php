@@ -895,7 +895,7 @@ IF(s.scheme_type =1 and s.max_weight != s.min_weight,true,false) as is_flexible_
                 ifnull((PERIOD_DIFF(Date_Format(curdate(),'%Y%m'), Date_Format(sa.start_date,'%Y%m'))) - SUM(p.no_of_dues),if((PERIOD_DIFF(Date_Format(curdate(),'%Y%m'), Date_Format(sa.start_date,'%Y%m'))) > s.total_installments,s.total_installments,(PERIOD_DIFF(Date_Format(curdate(),'%Y%m'), Date_Format(sa.start_date,'%Y%m')))))) 
                 as missed_ins,sa.avg_payable,s.avg_calc_ins,p.payment_status,
                 PERIOD_DIFF(Date_Format(CURRENT_DATE(),'%Y%m'),Date_Format(sa.start_date,'%Y%m')) as current_pay_ins, 
-		    	PERIOD_DIFF(Date_Format(curdate(),'%Y%m'), Date_Format(sa.start_date,'%Y%m')) as paid_ins,sa.maturity_date as maturity_date,
+		    	PERIOD_DIFF(Date_Format(curdate(),'%Y%m'), Date_Format(sa.start_date,'%Y%m')) as paid_ins,date_format(IFNULL(sa.maturity_date,DATE_ADD(date(sa.start_date), INTERVAL s.maturity_days DAY)),'%d-%m%-%Y') as maturity_date,
 			    sg.group_code as scheme_group_code, UNIX_TIMESTAMP(Date_Format(sg.start_date,'%Y-%m-%d')) as group_start_date,  UNIX_TIMESTAMP(Date_Format(sg.end_date,'%Y-%m-%d')) as  group_end_date,  cs.has_lucky_draw,otp_price_fixing,fixed_rate_on,
                 s.allowSecondPay,s.free_payment,cs.firstPayamt_payable,sa.firstPayment_amt,sa.is_registered,
                 CONCAT(if(" . $showGCodeInAcNo . "=1,if(has_lucky_draw = 1,sg.group_code,s.code),'') ,' ',ifnull(sa.scheme_acc_number,'Not Allocated')) as chit_number,
@@ -905,7 +905,7 @@ IF(s.scheme_type =1 and s.max_weight != s.min_weight,true,false) as is_flexible_
 			    c.id_customer,s.min_amount,s.max_amount,s.pay_duration,s.discount_type,s.discount_installment,s.discount,sa.id_branch as sch_join_branch,cs.is_branchwise_rate,
 			    IFNULL(sa.account_name,if(c.lastname is null,c.firstname,concat(c.firstname,' ',c.lastname))) as account_name,
 			    c.mobile,
-			    s.scheme_type,s.maturity_days,sa.maturity_date,s.firstPayamt_as_payamt,s.flexible_sch_type,s.one_time_premium,s.is_enquiry,
+			    s.scheme_type,s.maturity_days,sa.maturity_date_old,s.firstPayamt_as_payamt,s.flexible_sch_type,s.one_time_premium,s.is_enquiry,
 			    s.fix_weight,sa.fixed_metal_rate,sa.fixed_wgt,
 			    s.code,
 			    IFNULL(s.min_chance,0) as min_chance,
