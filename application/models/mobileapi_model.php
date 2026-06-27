@@ -5474,7 +5474,9 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
 
 			$status =	$this->$model->insert_transaction($pay_data[0]); 
 
-			$runPayDirect = true;
+			if(($payID_data[0]['scheme_acc_number'] != null || $payID_data[0]['scheme_acc_number'] != '')){
+			    $runPayDirect = true;
+            }
 
 		} 
         /* elseif ($isTranExists['status'] && ($isTranExists['clientid'] == null || $isTranExists['clientid'] == '') && $chit_settings['gent_clientid'] == 1) {
