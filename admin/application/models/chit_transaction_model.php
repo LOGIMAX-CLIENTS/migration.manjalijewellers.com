@@ -1457,7 +1457,9 @@ class Chit_transaction_model extends CI_Model
 
 			$status =	$this->$model->insert_transaction($pay_data[0]); 
 
-			$runPayDirect = true;
+			if(($payID_data[0]['scheme_acc_number'] != null || $payID_data[0]['scheme_acc_number'] != '')){
+			    $runPayDirect = true;
+            }
 
 		} 
         /* elseif ($isTranExists['status'] && ($isTranExists['clientid'] == null || $isTranExists['clientid'] == '') && $chit_settings['gent_clientid'] == 1) {
