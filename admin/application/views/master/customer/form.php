@@ -393,10 +393,20 @@
                                 </div>
                                 <div class="row">
                                     <?php if ($this->session->userdata('branch_settings') == 1 && $this->session->userdata('is_branchwise_cus_reg') == 1) { ?>
+                                        <?php
+                                            // When both branchwise customer registration AND branchwise scheme are enabled,
+                                            // disable branch change during edit to prevent breaking scheme-branch associations.
+                                            $is_edit_mode = (isset($customer['id_customer']) && $customer['id_customer'] != NULL && $customer['id_customer'] > 0);
+                                            $branchwise_scheme = $this->session->userdata('branchwise_scheme');
+                                            $disable_branch = ($is_edit_mode && $branchwise_scheme == 1) ? true : false;
+                                        ?>
                                         <div class="col-sm-4">
                                             <div class="form-group">
                                                 <label>Filter By Branch <span class="error">* </label>
-                                                <select required id="branch_select" class="form-control"></select>
+                                                <select required id="branch_select" class="form-control" <?php if ($disable_branch) { echo 'disabled="disabled"'; } ?>></select>
+                                                <?php if ($disable_branch) { ?>
+                                                    <small class="text-muted">Branch cannot be changed after customer creation</small>
+                                                <?php } ?>
                                                 <input id="id_branch" name="customer[id_branch]" type="hidden"
                                                     value="<?php echo set_value('customer[id_branch]', $customer['id_branch']); ?>" />
                                             </div>
