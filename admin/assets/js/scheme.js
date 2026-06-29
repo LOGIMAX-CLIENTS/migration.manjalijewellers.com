@@ -1523,8 +1523,14 @@ function adv_benefit_chart_table() {
 	$("#save_blk").css("display", "block");
 }
 //tkv Chit GA ends
+// Toggle required on commodity selects based on chart section visibility
+function toggleChartCommodityRequired() {
+	var chartVisible = $("#interest_ins_block").is(':visible') && $("#isapply_benefit_by_chart").is(':checked');
+	$("select[name*='commodityIdForChart']").prop('required', chartVisible);
+}
 $("#isapply_benefit_by_chart").on("click", function () {    // show button based on the checkbox click//
 	$(".answer").toggle(this.checked);
+	toggleChartCommodityRequired();
 });
 $("#proced").on("click", function () {
 	createchart_table();
@@ -1826,6 +1832,7 @@ $("#interest_ins_block").hide();
 if ($("#isInterest").is(":checked")) {
 	$("#interest_ins_block").show();
 }
+toggleChartCommodityRequired();
 $("#isInterest").on("click", function () {    // show & Hide checkbox based on the checkbox click//
 	if ($(this).is(":checked")) {
 		$(".precloseblock_open").hide();
@@ -1834,6 +1841,7 @@ $("#isInterest").on("click", function () {    // show & Hide checkbox based on t
 		$(".precloseblock_open").show();
 		$("#interest_ins_block").hide();
 	}
+	toggleChartCommodityRequired();
 });
 // flexible scheme installment settings
 $("#add_sch").on("click", function () {
