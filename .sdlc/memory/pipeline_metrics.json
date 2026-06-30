@@ -1,0 +1,55 @@
+[
+  {
+    "task_id": "RET-2606221541",
+    "module": "ret_reports",
+    "type": "fix",
+    "track": "EXPRESS",
+    "cycle_time_minutes": 234.53549460000002,
+    "phase_durations": {
+      "REQUIREMENT": 234.53549460000002
+    },
+    "completed_at": "2026-06-22T19:36:22.629134",
+    "discovery_score": 80,
+    "discovery_max": 100,
+    "discovery_pct": 80,
+    "rag_hit": false,
+    "recipe_hit": true,
+    "call_tree_used": true,
+    "review_verdict": "UNKNOWN",
+    "verify_result": "PASS",
+    "files_changed": 0,
+    "keywords": [
+      "reflected",
+      "cashbook",
+      "opening",
+      "entries",
+      "ret_reports",
+      "report",
+      "master",
+      "saved",
+      "cash"
+    ]
+  },
+  {
+    "task_id": "RET-2606230850",
+    "module": "ret_reports",
+    "type": "fix",
+    "track": "EXPRESS",
+    "cycle_time_minutes": 0.32657236666666667,
+    "phase_durations": {
+      "REQUIREMENT": 0.32657236666666667
+    },
+    "completed_at": "2026-06-23T08:50:51.778226"
+  },
+  {
+    "task_id": "BIL-2606230851",
+    "module": "billing",
+    "type": "feature",
+    "track": "STANDARD",
+    "cycle_time_minutes": 0.22814718333333334,
+    "phase_durations": {
+      "REQUIREMENT": 0.22814718333333334
+    },
+    "completed_at": "2026-06-23T08:51:15.683189"
+  }
+]

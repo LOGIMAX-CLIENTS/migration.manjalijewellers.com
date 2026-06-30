@@ -335,7 +335,7 @@ class Cf_autodebit extends CI_Controller {
         $approval_type = $this->config->item('auto_pay_approval');
         $response = [];
     	if($id_sch_ac > 0){ 
-    	    if(!$this->session->userdata('username') && $type = 1)
+    	    if(!$this->session->userdata('username') && $type == 1)
     		{
     			redirect("/user/login");
     		}
@@ -364,27 +364,27 @@ class Cf_autodebit extends CI_Controller {
                         	}
                         }*/
                     	$updSubscription = array(
-    											"auth_status"		=>	$this->auth_status[$response->subStatus],
+    											"auth_status"		=>	$this->auth_status[$result->subStatus],
     											"last_update"		=>	date('Y-m-d H:i:s')
     											);
     					$upd = $this->scheme_modal->updateData($updSubscription,'id_auto_debit_subscription',$planDetail['id_auto_debit_subscription'],'auto_debit_subscription');
     					$updSchAc = array(
-    									"auto_debit_status"	=>	$this->auth_status[$response->subStatus],
+    									"auto_debit_status"	=>	$this->auth_status[$result->subStatus],
     									"date_upd"			=>	date('Y-m-d H:i:s')
     									);
     					$this->scheme_modal->updateData($updSchAc,'id_scheme_account',$id_sch_ac,'scheme_account');
     					
     					// Payment
-    				    $isPaymentAlreadyExist = $this->scheme_modal->isPaymentAlreadyExist($response->payment->paymentId);
+    				    $isPaymentAlreadyExist = $this->scheme_modal->isPaymentAlreadyExist($result->payment->paymentId);
     					if($isPaymentAlreadyExist){ // Check whether payment already added
-    						$response = array("status" => FALSE, "message" => "Payment_ref_number : ".$response->payment->paymentId." already exist", "time" => date('d-m-Y H:i:s')); 
+    						$response = array("status" => FALSE, "message" => "Payment_ref_number : ".$result->payment->paymentId." already exist", "time" => date('d-m-Y H:i:s')); 
     					}else{
     						$metal_rates = $this->payment_modal->getMetalRate($planDetail['id_branch']);
     						$rate_fields = $this->payment_modal->getRateFields($planDetail['id_metal']); 
     	                    $rate_field = sizeof($rate_fields) == 1 ? $rate_fields['rate_field'] : NULL;
     	                    $metal_rate   = (float) ( $rate_field == null ? null : $metal_rates[$rate_field] );
     	                    if($planDetail['scheme_type'] == 2 || ( $planDetail['scheme_type'] == 4 && ($planDetail['flexible_sch_type'] == 2 || $planDetail['flexible_sch_type'] == 3))){
-    							$weight = $response->payment->amount/$metal_rate;
+    							$weight = $result->payment->amount/$metal_rate;
     							// metal_wgt_decimal = 2 means only 2 decimals are allowed for metal wgt, hence bcdiv() is used to make the weight to 2 decimals and 0 is appended as last digit.
     			    			$decimal = $planDetail['metal_wgt_decimal'];   
     			                $round_off = $planDetail['metal_wgt_roundoff']; 
@@ -400,19 +400,19 @@ class Cf_autodebit extends CI_Controller {
     						$due_year   = $dueData['due_year'];
     						$insertData = array(
         									"id_scheme_account"	 => $planDetail['id_scheme_account'],
-        									"payment_amount" 	 => $response->payment->amount, 
+        									"payment_amount" 	 => $result->payment->amount, 
                                             "payment_type" 		 => "Cash Free",
                                             "payment_mode" 		 => "Subscription",
         									"gst" 	             => 0,
         									"gst_type" 	   		 => 0,
         									"gst_amount" 	   	 => NULL,
         									"no_of_dues" 	     => 1,
-        									"act_amount" 	     => $response->payment->amount,
-        									"actual_trans_amt"   => $response->payment->amount,
+        									"act_amount" 	     => $result->payment->amount,
+        									"actual_trans_amt"   => $result->payment->amount,
         									"date_payment"   	 => date('Y-m-d H:i:s'),
         									"metal_rate"         => $metal_rate == 0 ? NULL : $metal_rate,
         									"metal_weight"       => $metal_weight,	
-        									"payment_ref_number" => $response->payment->paymentId,
+        									"payment_ref_number" => $result->payment->paymentId,
         									"remark"             => "Payment done through cashfree subscription",
         									"added_by"			 => 4, // Cashfree Subscription
         									"add_charges"		 => 0,

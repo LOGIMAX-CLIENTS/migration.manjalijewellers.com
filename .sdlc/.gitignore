@@ -1,0 +1,15 @@
+# SDLC Pipeline — Local State (do NOT commit)
+# These are developer-specific working files.
+pipeline.json
+handoff.md
+tasks/
+history/
+
+# State files inside spec folders (machine state is ephemeral)
+**/state.json
+
+# Spec markdown files in active/ and done/ ARE committed for traceability.
+# Do NOT add active/ or done/ to this gitignore.
+
+# Dist/build artifacts
+dist/

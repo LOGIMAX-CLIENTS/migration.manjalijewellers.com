@@ -104,15 +104,15 @@ $sql = "SELECT e.firstname as emp_name, pay.id_scheme_account,
     cmp.company_name,
     if(pay.payment_status=1,'Success',if(pay.payment_status=2,'Awaiting',if(pay.payment_status=3,'Pending',if(pay.payment_status=4,'Cancelled',if(pay.payment_status=5,'Failed','-'))))) as payment_status,
     (select IFNULL(IF(sch_acc.is_opening=1,IFNULL(sch_acc.paid_installments,0)+ IFNULL(if(sch.scheme_type = 1 and sch.min_weight != sch.max_weight, COUNT(Date_Format(paym.date_payment,'%Y%m')), sum(paym.no_of_dues)),0), if(sch.scheme_type = 1 and sch.min_weight != sch.max_weight or sch.scheme_type=3, COUNT(Date_Format(paym.date_payment,'%Y%m')), sum(paym.no_of_dues))) ,0) from payment paym where paym.payment_status=1 and paym.id_scheme_account=pay.id_scheme_account group by paym.id_scheme_account) as paid_due,
-    if(pay.metal_weight=0,'-',concat(pay.metal_weight,'g')) as metal_weight,
+    IFNULL(pay.metal_weight, 0) as metal_weight,
     if(pay.receipt_no is null,'',pay.receipt_no) as receipt_no,
     if(cs.has_lucky_draw=1,concat(concat(ifnull(sch_acc.group_code,''),' ',ifnull(sch_acc.scheme_acc_number,'Not Allocated')),' - ',sch.code ),concat(sch.code,' ',ifnull(sch_acc.scheme_acc_number,'Not Allcoated')))as scheme_acc_number,
     cmp.tollfree1,
-    concat((SELECT SUM(py.metal_weight) as metal_weight FROM payment py WHERE py.payment_status=1 and py.id_scheme_account=pay.id_scheme_account),'g') as acc_weight,
+    IFNULL((SELECT SUM(py.metal_weight) FROM payment py WHERE py.payment_status=1 and py.id_scheme_account=pay.id_scheme_account), 0) as acc_weight,
     (SELECT SUM(py.payment_amount) FROM payment py WHERE py.payment_status=1 and py.id_scheme_account=pay.id_scheme_account) as tot_paid_amount,
     IFNULL(pay.saved_benefits,'0.000') as saved_benefits,
     IFNULL(pay.saved_benefit_amt,'0.00') as saved_benefit_amt,
-    sch.scheme_name
+    sch.scheme_name, sch.is_digi
     FROM payment as pay 
     LEFT JOIN scheme_account sch_acc ON sch_acc.id_scheme_account = pay.id_scheme_account 
     LEFT JOIN employee e on e.id_employee = pay.id_employee
@@ -188,9 +188,12 @@ $paymentstring .= "\x1b\x45\x01A/C No       " . ($payment['scheme_acc_number']) 
 $paymentstring .= "\x1b\x45\x01RECEIPT NO   " . ($payment['receipt_no']) . "\r\n";
 $paymentstring .= "\x1b\x45\x01PAID DUE     " . ($payment['paid_due']) . "\r\n";
 $paymentstring .= "\x1b\x45\x01PAID MODE    " . ($payment['payment_mode']) . "\r\n";
+$paymentstring .= "\x1b\x45\x01PAID AMT     " . ($payment['payment_amount']) . "\r\n";
 $paymentstring .= "\x1b\x45\x01PAID WGT     " . ($payment['metal_weight']) . " G\r\n";
-$paymentstring .= "\x1b\x45\x01BENEFIT WGT  " . ($payment['saved_benefits'] > 0 ? $payment['saved_benefits'] : '0.000') . " G\r\n";
-$paymentstring .= "\x1b\x45\x01BENEFIT AMT  " . ($payment['saved_benefit_amt'] > 0 ? number_format($payment['saved_benefit_amt'],2,'.','') : '0.00') . "\r\n";
+if ($payment['is_digi'] == 1) {
+    $paymentstring .= "\x1b\x45\x01BENEFIT WGT  " . ($payment['saved_benefits'] > 0 ? $payment['saved_benefits'] : '0.000') . " G\r\n";
+    $paymentstring .= "\x1b\x45\x01BENEFIT AMT  " . ($payment['saved_benefit_amt'] > 0 ? number_format($payment['saved_benefit_amt'],2,'.','') : '0.00') . "\r\n";
+}
 $paymentstring .= "\x1b\x45\x01MOBILE       " . ($payment['mobile']) . "\r\n";
 $paymentstring .= "\x1b\x45\x01METAL RATE   " . number_format($payment['metal_rate'], 2, '.', '') . "\r\n";
 $paymentstring .= "\x1b\x45\x01TOTAL AMT    " . number_format($payment['tot_paid_amount'] ?? 0, 2, '.', '') . "\r\n";

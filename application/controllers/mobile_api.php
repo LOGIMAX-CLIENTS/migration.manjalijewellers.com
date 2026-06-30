@@ -8034,10 +8034,10 @@ class Mobile_api extends REST_Controller
 				if (isset($res['cf_subscription_id'])) {
 					// Success — update local subscription record
 					$updSubscription = array(
-						'sub_reference_id' => isset($res['sub_reference_id']) ? $res['sub_reference_id'] : null,
+						'sub_reference_id' => isset($res['subscription_id']) ? $res['subscription_id'] : null,
 						'auth_status'      => 1, // INITIALIZED
-						'auth_link'        => isset($res['authorization_link']) ? $res['authorization_link'] : null,
-						'message'          => isset($res['status']) ? $res['status'] : 'INITIALIZED',
+						'auth_link'        => isset($res['subscription_session_id']) ? $res['subscription_session_id'] : null,
+						'message'          => isset($res['subscription_status']) ? $res['subscription_status'] : 'INITIALIZED',
 						'status'           => 1,
 						'last_update'      => date('Y-m-d H:i:s')
 					);
@@ -8063,8 +8063,8 @@ class Mobile_api extends REST_Controller
 					echo json_encode(array(
 						'status'    => true,
 						'msg'       => 'Subscription created successfully. Kindly do the authorization process.',
-						'auth_link' => isset($res['authorization_link']) ? $res['authorization_link'] : '',
-						'sub_status' => isset($res['status']) ? $res['status'] : 'INITIALIZED'
+						'auth_link' => isset($res['subscription_session_id']) ? $res['subscription_session_id'] : '',
+						'sub_status' => isset($res['subscription_status']) ? $res['subscription_status'] : 'INITIALIZED'
 					));
 				} else {
 					// API error

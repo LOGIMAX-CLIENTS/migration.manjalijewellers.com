@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Installation Guide — SDLC Pipeline Engine</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --accent2: #3fb950;
+            --code-bg: #1c2128;
+            --warn: #d29922;
+            --error: #f85149;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        h1 {
+            font-size: 2em;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+            margin-bottom: 24px;
+            color: var(--text);
+        }
+
+        h2 {
+            font-size: 1.5em;
+            margin-top: 40px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        h3 {
+            font-size: 1.25em;
+            margin-top: 28px;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+
+        h4 {
+            font-size: 1.1em;
+            margin-top: 20px;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+        }
+
+        p { margin-bottom: 16px; }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        a:hover { text-decoration: underline; }
+
+        code {
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.875em;
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+            margin: 16px 0;
+        }
+
+        pre code {
+            background: none;
+            border: none;
+            padding: 0;
+            font-size: 0.85em;
+            line-height: 1.5;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 0.9em;
+        }
+
+        th {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        td {
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            color: var(--text-muted);
+        }
+
+        tr:hover td {
+            background: var(--surface);
+            color: var(--text);
+        }
+
+        ul, ol {
+            margin: 8px 0 16px 24px;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 8px 16px;
+            margin: 16px 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        strong { color: var(--text); }
+
+        .nav {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 32px;
+        }
+
+        .nav a {
+            margin-right: 16px;
+            font-size: 0.9em;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .badge-ok { background: #1a3a1a; color: var(--accent2); }
+        .badge-warn { background: #3a2a0a; color: var(--warn); }
+        .badge-fail { background: #3a1a1a; color: var(--error); }
+
+        @media (max-width: 768px) {
+            body { padding: 16px; }
+            h1 { font-size: 1.5em; }
+            table { font-size: 0.8em; }
+        }
+
+        @media print {
+            body { background: white; color: #1a1a1a; max-width: none; }
+            pre { background: #f5f5f5; border-color: #ddd; }
+            code { background: #f0f0f0; border-color: #ddd; }
+            th { background: #f0f0f0; }
+            td { color: #333; }
+            a { color: #0066cc; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="INSTALLATION.html">Installation</a>
+        <a href="QUICK_START.html">Quick Start</a>
+        <a href="USER_MANUAL.html">User Manual</a>
+        <a href="FAQ.html">FAQ</a>
+    </nav>
+    <h1 id="installation-guide">Installation Guide</h1>
+<h2 id="prerequisites">Prerequisites</h2>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Version</th>
+<th>Check Command</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python</td>
+<td>3.10+</td>
+<td><code>python --version</code></td>
+</tr>
+<tr>
+<td>Git</td>
+<td>2.30+</td>
+<td><code>git --version</code></td>
+</tr>
+<tr>
+<td>pip</td>
+<td>Latest</td>
+<td><code>pip --version</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="step-1-install-lca-logimax-code-analyzer">Step 1: Install LCA (Logimax Code Analyzer)</h2>
+<p>LCA is the core analysis engine. It must be installed before using the pipeline.</p>
+<h3 id="windows-powershell">Windows (PowerShell)</h3>
+<pre><code class="language-powershell">cd logimax-devtools\backend\lca_core
+pip install -e .
+lca --version   # Should show version
+</code></pre>
+<h3 id="linux-bash">Linux (Bash)</h3>
+<pre><code class="language-bash">cd logimax-devtools/backend/lca_core
+pip install -e .
+lca --version
+</code></pre>
+<h3 id="verify-installation">Verify Installation</h3>
+<pre><code class="language-bash">lca --help
+# Should list commands: init, index, impact, search, etc.
+</code></pre>
+<h2 id="step-2-index-your-codebase">Step 2: Index Your Codebase</h2>
+<p>LCA needs to index your PHP/JS files before the pipeline can analyze them.</p>
+<h3 id="windows">Windows</h3>
+<pre><code class="language-powershell">cd C:\xampp\htdocs\{project}
+lca init .
+lca index .
+</code></pre>
+<h3 id="linux">Linux</h3>
+<pre><code class="language-bash">cd /var/www/{project}
+lca init .
+lca index .
+</code></pre>
+<p>This creates a <code>.lca/</code> directory with indexed function data. Takes 1-5 minutes depending on codebase size.</p>
+<h3 id="verify-index">Verify Index</h3>
+<pre><code class="language-bash">lca search . &quot;get_cash_book&quot;
+# Should return matching functions
+</code></pre>
+<h2 id="step-3-initialize-sdlc-pipeline">Step 3: Initialize SDLC Pipeline</h2>
+<p>If the project doesn't have <code>.sdlc/</code> yet:</p>
+<pre><code class="language-bash">python .sdlc/engine/cli.py init
+</code></pre>
+<p>If <code>.sdlc/</code> already exists (e.g., from a repo clone), no init needed — it's ready to use.</p>
+<h3 id="verify-pipeline">Verify Pipeline</h3>
+<pre><code class="language-bash">python .sdlc/engine/cli.py banner
+# Should show: SDLC.5 | Phase: IDLE | No active task
+</code></pre>
+<h2 id="step-4-configure-project-settings">Step 4: Configure Project Settings</h2>
+<p>Edit <code>.sdlc/config.json</code>:</p>
+<pre><code class="language-json">{
+  &quot;project_name&quot;: &quot;your_project_name&quot;,
+  &quot;repo&quot;: {
+    &quot;owner&quot;: &quot;Logimax-Technologies&quot;,
+    &quot;name&quot;: &quot;your_repo_name&quot;
+  },
+  &quot;modules&quot;: {
+    &quot;reports&quot;: {
+      &quot;controller&quot;: &quot;admin_ret_reports&quot;,
+      &quot;model&quot;: &quot;ret_reports_model&quot;,
+      &quot;js&quot;: &quot;ret_reports&quot;
+    }
+  }
+}
+</code></pre>
+<p>Key fields:
+- <code>project_name</code>: Used in file paths and discovery
+- <code>repo</code>: GitHub repo for PR creation
+- <code>modules</code>: Maps module names to their controller/model/JS files</p>
+<h2 id="step-5-optional-setup-rag-for-semantic-search">Step 5: (Optional) Setup RAG for Semantic Search</h2>
+<p>RAG enables semantic code search using AI embeddings. It's optional — the pipeline works without it, using LCA's deterministic analysis.</p>
+<h3 id="install-dependencies">Install Dependencies</h3>
+<pre><code class="language-bash">pip install chromadb sentence-transformers
+</code></pre>
+<h3 id="build-rag-store">Build RAG Store</h3>
+<pre><code class="language-bash"># This indexes your codebase for semantic search
+# Takes 5-20 minutes and requires ~2GB RAM
+lca init . --rag
+</code></pre>
+<h3 id="optional-start-rag-server-for-fast-queries">(Optional) Start RAG Server for Fast Queries</h3>
+<p>The RAG server keeps the embedding model warm in memory for ~200ms queries instead of 40-second cold starts:</p>
+<pre><code class="language-bash"># Start in a separate terminal
+python .sdlc/engine/rag_server.py
+
+# Verify
+curl http://localhost:9876/health
+</code></pre>
+<blockquote>
+<p><strong>Note</strong>: RAG requires ~680MB RAM for the BGE-M3 model. If your machine is memory-constrained, skip this — the pipeline will work fine with LCA-only analysis.</p>
+</blockquote>
+<h2 id="step-6-setup-knowledge-brain-optional">Step 6: Setup Knowledge Brain (Optional)</h2>
+<p>The Knowledge Brain stores documented business rules and module-specific knowledge that helps the AI make better decisions.</p>
+<pre><code>knowledge_brain/
+├── _SYSTEM/           # Cross-module system docs
+│   ├── SHARED_TABLES.md
+│   ├── MODULE_DEPENDENCIES.md
+│   └── ...
+├── Reports/           # Module-specific brain
+│   └── MODULE_BRAIN.md
+├── Billing/
+│   └── MODULE_BRAIN.md
+└── ...
+</code></pre>
+<p>If no brain exists, the pipeline works but scores lower on the Discovery Quality metric.</p>
+<h2 id="verification-checklist">Verification Checklist</h2>
+<p>Run these commands to verify everything is working:</p>
+<pre><code class="language-bash"># 1. LCA
+lca --version                    # ✅ Shows version
+lca search . &quot;get_cash_book&quot;     # ✅ Returns results
+
+# 2. Pipeline
+python .sdlc/engine/cli.py banner    # ✅ Shows status
+python .sdlc/engine/cli.py show      # ✅ Shows task state
+
+# 3. Discovery (full test)
+python .sdlc/engine/cli.py start -t fix -m reports -s &quot;Test discovery&quot;
+python .sdlc/engine/cli.py discover &quot;Test query&quot;
+# ✅ Creates discovery.md in .sdlc/active/{TASK_ID}/
+# Clean up: python .sdlc/engine/cli.py done
+</code></pre>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<table>
+<thead>
+<tr>
+<th>Issue</th>
+<th>Cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>lca: command not found</code></td>
+<td>LCA not installed</td>
+<td><code>pip install -e logimax-devtools/backend/lca_core</code></td>
+</tr>
+<tr>
+<td><code>ModuleNotFoundError: chromadb</code></td>
+<td>RAG dependencies missing</td>
+<td><code>pip install chromadb sentence-transformers</code> (optional)</td>
+</tr>
+<tr>
+<td><code>FileNotFoundError: .lca/</code></td>
+<td>Codebase not indexed</td>
+<td><code>lca init . &amp;&amp; lca index .</code></td>
+</tr>
+<tr>
+<td>Discovery shows <code>RAG: n/a</code></td>
+<td>No RAG store or model</td>
+<td>Normal — LCA works without RAG</td>
+</tr>
+<tr>
+<td><code>MemoryError</code> during discovery</td>
+<td>Not enough RAM for BGE-M3</td>
+<td>Close other apps or skip RAG</td>
+</tr>
+<tr>
+<td><code>python</code> not recognized</td>
+<td>Python not in PATH</td>
+<td>Windows: Install from python.org, check "Add to PATH"</td>
+</tr>
+</tbody>
+</table>
+<h2 id="platform-specific-notes">Platform-Specific Notes</h2>
+<h3 id="windows_1">Windows</h3>
+<ul>
+<li>Use PowerShell (not cmd.exe) — the pipeline uses PowerShell-compatible commands</li>
+<li>Python path: typically <code>C:\Python3xx\python.exe</code></li>
+<li>Project path: typically <code>C:\xampp\htdocs\{project}</code></li>
+<li>Line endings: Git handles CRLF conversion automatically</li>
+</ul>
+<h3 id="linux_1">Linux</h3>
+<ul>
+<li>Use bash or zsh</li>
+<li>Python path: typically <code>/usr/bin/python3</code></li>
+<li>Project path: typically <code>/var/www/{project}</code></li>
+<li>Permissions: ensure <code>.sdlc/engine/cli.py</code> is executable (<code>chmod +x</code>)</li>
+</ul>
+<h2 id="updating-the-pipeline">Updating the Pipeline</h2>
+<p>When a new version is released:</p>
+<pre><code class="language-bash"># Option A: Sync from source (preserves your task data)
+python .sdlc/engine/cli.py sync
+
+# Option B: Manual update from tagged release
+git fetch origin --tags
+git checkout sdlc-v3.8.1 -- .sdlc/engine/cli.py .sdlc/engine/rag_server.py .sdlc/CHANGELOG.md
+</code></pre>
+    <hr>
+    <p style="color: var(--text-muted); font-size: 0.85em; text-align: center;">
+        SDLC Pipeline Engine v3.8.1 &mdash; Logimax Technologies
+    </p>
+</body>
+</html>
