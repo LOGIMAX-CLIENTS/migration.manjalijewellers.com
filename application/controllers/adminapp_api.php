@@ -1091,9 +1091,12 @@ class Adminapp_api extends REST_Controller
 		$paymentstring .= "\x1b\x45\x01RECEIPT NO   ". ($payment['receipt_no']). "\r\n";
 		$paymentstring .= "\x1b\x45\x01PAID DUE     ". ($payment['paid_due']). "\r\n";
 		$paymentstring .= "\x1b\x45\x01PAID MODE    ". ($payment['payment_mode']). "\r\n";
+		$paymentstring .= "\x1b\x45\x01PAID AMT     ". ($payment['payment_amount']) . "\r\n";
 		$paymentstring .= "\x1b\x45\x01PAID WGT     ". ($payment['metal_weight']). " G\r\n";
-		$paymentstring .= "\x1b\x45\x01BENEFIT WGT  ". (isset($payment['saved_benefits']) && $payment['saved_benefits'] > 0 ? $payment['saved_benefits'] : '0.000'). " G\r\n";
-		$paymentstring .= "\x1b\x45\x01BENEFIT AMT  ". (isset($payment['saved_benefit_amt']) && $payment['saved_benefit_amt'] > 0 ? number_format($payment['saved_benefit_amt'],2,'.','') : '0.00'). "\r\n";
+		if (isset($payment['is_digi']) && $payment['is_digi'] == 1) {
+		    $paymentstring .= "\x1b\x45\x01BENEFIT WGT  ". (isset($payment['saved_benefits']) && $payment['saved_benefits'] > 0 ? $payment['saved_benefits'] : '0.000'). " G\r\n";
+		    $paymentstring .= "\x1b\x45\x01BENEFIT AMT  ". (isset($payment['saved_benefit_amt']) && $payment['saved_benefit_amt'] > 0 ? number_format($payment['saved_benefit_amt'],2,'.','') : '0.00'). "\r\n";
+		}
 		$paymentstring .= "\x1b\x45\x01MOBILE       ". ($payment['mobile']). "\r\n";
 	    $paymentstring .= "\x1b\x45\x01METAL RATE   ". number_format($payment['metal_rate'],2,'.',''). "\r\n";
 	    $paymentstring .= "\x1b\x45\x01TOTAL AMT    ". number_format($payment['tot_paid_amount'],2,'.','')."\r\n";
