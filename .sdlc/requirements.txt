@@ -1,0 +1,16 @@
+# SDLC Pipeline v2 — Python Dependencies
+# Install with: pip install -r .sdlc-v2/requirements.txt
+
+# Core (the SDLC CLI itself uses stdlib only — no pip packages needed)
+# These are for the intelligence layer (RAG + LCA):
+
+# LCA — codebase static analysis (install from local source)
+# pip install -e logimax-devtools/backend/lca_core[semantic]
+# This transitively installs: typer, networkx, tree-sitter, pydantic, rich, fastapi, uvicorn
+
+# RAG — semantic code search (required for sdlc discover)
+chromadb>=1.0.0
+sentence-transformers>=2.2.0,<5.0
+
+# The BGE-M3 model (~4.3GB) auto-downloads on first use.
+# For offline install, use: python .sdlc-v2/package.py (Full mode)

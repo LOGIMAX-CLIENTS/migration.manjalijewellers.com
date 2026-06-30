@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ — Frequently Asked Questions — SDLC Pipeline Engine</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --accent2: #3fb950;
+            --code-bg: #1c2128;
+            --warn: #d29922;
+            --error: #f85149;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        h1 {
+            font-size: 2em;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+            margin-bottom: 24px;
+            color: var(--text);
+        }
+
+        h2 {
+            font-size: 1.5em;
+            margin-top: 40px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        h3 {
+            font-size: 1.25em;
+            margin-top: 28px;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+
+        h4 {
+            font-size: 1.1em;
+            margin-top: 20px;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+        }
+
+        p { margin-bottom: 16px; }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        a:hover { text-decoration: underline; }
+
+        code {
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.875em;
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+            margin: 16px 0;
+        }
+
+        pre code {
+            background: none;
+            border: none;
+            padding: 0;
+            font-size: 0.85em;
+            line-height: 1.5;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 0.9em;
+        }
+
+        th {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        td {
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            color: var(--text-muted);
+        }
+
+        tr:hover td {
+            background: var(--surface);
+            color: var(--text);
+        }
+
+        ul, ol {
+            margin: 8px 0 16px 24px;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 8px 16px;
+            margin: 16px 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        strong { color: var(--text); }
+
+        .nav {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 32px;
+        }
+
+        .nav a {
+            margin-right: 16px;
+            font-size: 0.9em;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .badge-ok { background: #1a3a1a; color: var(--accent2); }
+        .badge-warn { background: #3a2a0a; color: var(--warn); }
+        .badge-fail { background: #3a1a1a; color: var(--error); }
+
+        @media (max-width: 768px) {
+            body { padding: 16px; }
+            h1 { font-size: 1.5em; }
+            table { font-size: 0.8em; }
+        }
+
+        @media print {
+            body { background: white; color: #1a1a1a; max-width: none; }
+            pre { background: #f5f5f5; border-color: #ddd; }
+            code { background: #f0f0f0; border-color: #ddd; }
+            th { background: #f0f0f0; }
+            td { color: #333; }
+            a { color: #0066cc; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="INSTALLATION.html">Installation</a>
+        <a href="QUICK_START.html">Quick Start</a>
+        <a href="USER_MANUAL.html">User Manual</a>
+        <a href="FAQ.html">FAQ</a>
+    </nav>
+    <h1 id="faq-frequently-asked-questions">FAQ — Frequently Asked Questions</h1>
+<h2 id="general">General</h2>
+<h3 id="what-is-the-sdlc-pipeline">What is the SDLC Pipeline?</h3>
+<p>It's a structured workflow engine that guides AI coding assistants through phases (discover → plan → code → test → review → commit) instead of letting them jump straight to coding. Think of it as "guardrails for AI developers."</p>
+<h3 id="do-i-need-to-learn-all-the-commands">Do I need to learn all the commands?</h3>
+<p>No. For daily use, you need 4 commands:</p>
+<pre><code class="language-bash">sdlc start -t fix -m {module} -s &quot;{summary}&quot;   # Start
+sdlc discover                                     # Analyze
+sdlc step-done                                    # Advance
+sdlc done                                         # Finish
+</code></pre>
+<h3 id="does-this-replace-manual-coding">Does this replace manual coding?</h3>
+<p>No. The pipeline guides the AI agent — a human developer still reviews and approves all changes. The pipeline just ensures the AI follows a structured process.</p>
+<h3 id="can-i-use-this-without-an-ai-agent">Can I use this without an AI agent?</h3>
+<p>Technically yes — you can use <code>discover</code> for codebase analysis and <code>step-done</code> for checklist tracking. But it's designed for AI-assisted workflows.</p>
+<hr />
+<h2 id="installation">Installation</h2>
+<h3 id="q-lca-command-not-found">Q: "lca: command not found"</h3>
+<p>LCA is not installed or not in PATH.</p>
+<pre><code class="language-bash">cd logimax-devtools/backend/lca_core
+pip install -e .
+# Verify:
+lca --version
+</code></pre>
+<h3 id="q-modulenotfounderror-no-module-named-chromadb">Q: "ModuleNotFoundError: No module named 'chromadb'"</h3>
+<p>RAG dependencies are missing. RAG is <strong>optional</strong> — you can skip it:</p>
+<pre><code class="language-bash"># To install (optional):
+pip install chromadb sentence-transformers
+</code></pre>
+<h3 id="q-filenotfounderror-lcareportsjson">Q: "FileNotFoundError: .lca/reports.json"</h3>
+<p>Your codebase isn't indexed yet:</p>
+<pre><code class="language-bash">lca init .
+lca index .
+</code></pre>
+<h3 id="q-python-version-issues">Q: Python version issues</h3>
+<p>The pipeline requires Python 3.10+. Check your version:</p>
+<pre><code class="language-bash">python --version
+# If you have multiple Pythons:
+python3 --version
+py -3 --version    # Windows
+</code></pre>
+<h3 id="q-can-i-use-this-on-linux">Q: Can I use this on Linux?</h3>
+<p>Yes. All commands work on both Windows (PowerShell) and Linux (bash). The only difference is file paths (<code>C:\xampp\htdocs\</code> vs <code>/var/www/</code>).</p>
+<hr />
+<h2 id="discovery">Discovery</h2>
+<h3 id="q-what-does-rag-na-mean-in-the-quality-score">Q: What does "RAG: n/a" mean in the quality score?</h3>
+<p>RAG (semantic search) is not configured on your machine. This is <strong>normal and not a problem</strong>. The pipeline works fine with LCA-only analysis. Your quality score is calculated proportionally — you won't be penalized.</p>
+<h3 id="q-discovery-quality-score-is-low-what-do-i-do">Q: Discovery quality score is LOW. What do I do?</h3>
+<p>Check which signals are missing:
+- <strong>LCA: 0</strong> → Run <code>lca index .</code> to rebuild the index
+- <strong>Brain: 0</strong> → Module brain doesn't exist yet (build with <code>/build-module-brain</code>)
+- <strong>Code snippets: 0</strong> → Controller/model file not found (check config.json modules section)
+- <strong>Tables: 0</strong> → LCA index might be outdated</p>
+<h3 id="q-discovery-takes-40-seconds">Q: Discovery takes 40+ seconds</h3>
+<p>If RAG is loading the BGE-M3 model from cold start:</p>
+<pre><code class="language-bash"># Option A: Start the RAG server (keeps model warm)
+python .sdlc/engine/rag_server.py
+# Subsequent discovers will be ~200ms
+
+# Option B: Just wait — first discover is slow, it's normal
+</code></pre>
+<h3 id="q-can-i-run-discover-without-starting-a-task-first">Q: Can I run discover without starting a task first?</h3>
+<p>No — <code>discover</code> writes results to the active task's directory. Start a task first:</p>
+<pre><code class="language-bash">sdlc start -t fix -m reports -s &quot;Quick investigation&quot;
+sdlc discover &quot;your query&quot;
+sdlc done    # Clean up if you just wanted the analysis
+</code></pre>
+<h3 id="q-discovery-found-irrelevant-results">Q: Discovery found irrelevant results</h3>
+<p>The RAG semantic search can return "weak" matches (similarity &gt;0.40). These are shown for completeness but are low-confidence. Focus on the <strong>LCA call chain</strong> results — those are deterministic and precise.</p>
+<hr />
+<h2 id="pipeline-flow">Pipeline Flow</h2>
+<h3 id="q-im-stuck-what-do-i-do">Q: I'm stuck — what do I do?</h3>
+<pre><code class="language-bash"># See your current step and what's expected
+sdlc what-next
+
+# See full task state
+sdlc show
+
+# See spec file status
+sdlc spec-status
+</code></pre>
+<h3 id="q-step-done-wont-advance-says-criteria-not-met">Q: "step-done" won't advance — says criteria not met</h3>
+<p>Each step has <code>done_when</code> criteria. Check what's missing:</p>
+<pre><code class="language-bash">sdlc what-next
+# Look at &quot;Done when:&quot; section — it tells you what file or condition is required
+</code></pre>
+<p>Common causes:
+- Spec file not created yet (e.g., <code>requirement.md</code> needed but not written)
+- Tasks.md has unchecked items
+- Review verdict is not PASS</p>
+<h3 id="q-i-need-to-skip-a-phase-the-bug-is-obvious">Q: I need to skip a phase — the bug is obvious</h3>
+<p>Use the EXPRESS track to reduce steps:</p>
+<pre><code class="language-bash">sdlc start -t fix -m reports -s &quot;Simple typo fix&quot; --track express
+# Only 4 steps instead of 8
+</code></pre>
+<p>Or escalate if already started:</p>
+<pre><code class="language-bash"># If current track is too restrictive, you can't de-escalate
+# But you can override with agent confirmation
+</code></pre>
+<h3 id="q-the-ai-went-off-track-and-is-doing-something-else">Q: The AI went off-track and is doing something else</h3>
+<p>Run <code>what-next</code> — it will show the AI exactly what it should be doing. The pipeline's anti-drift system resets the AI's focus.</p>
+<h3 id="q-can-i-work-on-multiple-tasks-simultaneously">Q: Can I work on multiple tasks simultaneously?</h3>
+<p>No — one active task at a time. But you can:</p>
+<pre><code class="language-bash"># Park current task in backlog
+sdlc start -t fix -m billing -s &quot;Urgent bug&quot; --force
+# This moves the current task to backlog and starts the new one
+
+# Later, pick the old task back
+sdlc done    # Finish urgent bug
+sdlc pick    # Shows backlog, pick the parked task
+</code></pre>
+<hr />
+<h2 id="git-pr">Git &amp; PR</h2>
+<h3 id="q-pr-shows-extra-files-i-didnt-change">Q: PR shows extra files I didn't change</h3>
+<p>Your branch has diverged from the target. Use the Clean Branch Guard:</p>
+<pre><code class="language-bash"># Create fresh branch off target
+git checkout -b hotfix/{TASK_ID}-clean origin/PRODUCTION
+
+# Cherry-pick only your files
+git checkout {working_branch} -- {your_files}
+
+# Commit and PR from clean branch
+git commit -m &quot;fix: ...&quot;
+git push -u origin hotfix/{TASK_ID}-clean
+</code></pre>
+<h3 id="q-which-branch-should-i-pr-to">Q: Which branch should I PR to?</h3>
+<p>Follow the promotion order:</p>
+<pre><code>Feature branch → Dev (Retail_1.1.1.0001) → QA → support → PRODUCTION
+</code></pre>
+<p><strong>Exception</strong>: <code>hotfix/*</code> branches can PR directly to PRODUCTION.</p>
+<h3 id="q-can-i-commit-directly-to-production">Q: Can I commit directly to PRODUCTION?</h3>
+<p>No. Never push directly to environment branches. Always create a PR.</p>
+<hr />
+<h2 id="configuration">Configuration</h2>
+<h3 id="q-how-do-i-add-a-new-module">Q: How do I add a new module?</h3>
+<p>Edit <code>.sdlc/config.json</code>:</p>
+<pre><code class="language-json">{
+  &quot;modules&quot;: {
+    &quot;new_module&quot;: {
+      &quot;controller&quot;: &quot;admin_new_module&quot;,
+      &quot;model&quot;: &quot;new_module_model&quot;,
+      &quot;js&quot;: &quot;new_module&quot;
+    }
+  }
+}
+</code></pre>
+<h3 id="q-how-do-i-update-the-pipeline-to-a-new-version">Q: How do I update the pipeline to a new version?</h3>
+<pre><code class="language-bash"># Option A: Sync command
+sdlc sync
+
+# Option B: Manual from tag
+git fetch origin --tags
+git checkout sdlc-v3.8.1 -- .sdlc/engine/cli.py .sdlc/engine/rag_server.py
+</code></pre>
+<h3 id="q-what-files-should-not-be-committed">Q: What files should NOT be committed?</h3>
+<pre><code>.sdlc/pipeline.json    # Task state (gitignored)
+.sdlc/active/           # In-progress specs (gitignored)
+.sdlc/backlog/           # Queued tasks (gitignored)
+</code></pre>
+<h3 id="q-what-files-should-be-committed">Q: What files SHOULD be committed?</h3>
+<pre><code>.sdlc/engine/           # Pipeline code
+.sdlc/roles/            # Phase instructions
+.sdlc/config.json       # Project settings
+.sdlc/steps.json        # Track definitions
+.sdlc/CHANGELOG.md      # Version history
+.sdlc/done/             # Completed task archive
+</code></pre>
+<hr />
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="q-no-active-task-error">Q: "No active task" error</h3>
+<p>Start a task first:</p>
+<pre><code class="language-bash">sdlc start -t fix -m reports -s &quot;Description&quot;
+</code></pre>
+<h3 id="q-memory-errors-during-discovery">Q: Memory errors during discovery</h3>
+<p>The BGE-M3 embedding model needs ~2GB RAM. Options:
+1. Close other applications
+2. Use the RAG server (loads model once): <code>python .sdlc/engine/rag_server.py</code>
+3. Skip RAG — discovery works without it (uses LCA only)</p>
+<h3 id="q-discovery-shows-0-results-for-everything">Q: Discovery shows "0 results" for everything</h3>
+<ol>
+<li>Check LCA index exists: <code>ls .lca/</code></li>
+<li>Rebuild if needed: <code>lca index .</code></li>
+<li>Check the module name matches config.json</li>
+<li>Try a different search query</li>
+</ol>
+<h3 id="q-permission-denied-on-linux">Q: "Permission denied" on Linux</h3>
+<pre><code class="language-bash">chmod +x .sdlc/engine/cli.py
+# Or run with python explicitly:
+python3 .sdlc/engine/cli.py banner
+</code></pre>
+<h3 id="q-pipelinejson-got-corrupted">Q: Pipeline.json got corrupted</h3>
+<p>Delete and restart:</p>
+<pre><code class="language-bash">rm .sdlc/pipeline.json
+sdlc banner    # Creates fresh state
+</code></pre>
+<p>No task data is lost — specs are in <code>active/</code> and <code>done/</code> directories.</p>
+    <hr>
+    <p style="color: var(--text-muted); font-size: 0.85em; text-align: center;">
+        SDLC Pipeline Engine v3.8.1 &mdash; Logimax Technologies
+    </p>
+</body>
+</html>

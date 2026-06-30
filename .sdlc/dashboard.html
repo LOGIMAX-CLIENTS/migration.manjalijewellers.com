@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDLC Pipeline Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f35;
+            --bg-card-hover: #222845;
+            --border: rgba(99, 102, 241, 0.15);
+            --border-glow: rgba(99, 102, 241, 0.4);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent: #6366f1;
+            --accent-light: #818cf8;
+            --success: #22c55e;
+            --success-glow: rgba(34, 197, 94, 0.3);
+            --warning: #f59e0b;
+            --warning-glow: rgba(245, 158, 11, 0.3);
+            --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.3);
+            --info: #3b82f6;
+            --phase-discuss: #a78bfa;
+            --phase-req: #f472b6;
+            --phase-plan: #60a5fa;
+            --phase-test: #34d399;
+            --phase-code: #fbbf24;
+            --phase-verify: #2dd4bf;
+            --phase-review: #fb923c;
+            --phase-commit: #a78bfa;
+            --phase-ship: #22c55e;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Background animation */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(168,85,247,0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 60% 80%, rgba(59,130,246,0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-left h1 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-light), #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        .header-left .subtitle {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-badge.healthy { background: rgba(34,197,94,0.15); color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
+        .status-badge.warning { background: rgba(245,158,11,0.15); color: var(--warning); border: 1px solid rgba(245,158,11,0.3); }
+        .status-badge.critical { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+
+        .refresh-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .refresh-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent-light);
+            background: var(--bg-card-hover);
+        }
+
+        /* Active Role Banner */
+        .role-banner {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .role-banner::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), #c084fc, var(--accent));
+            background-size: 200% 100%;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .role-icon {
+            font-size: 2.5rem;
+            width: 64px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+            background: rgba(99,102,241,0.1);
+            flex-shrink: 0;
+        }
+
+        .role-info h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .role-info .role-phase {
+            color: var(--accent-light);
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-top: 0.15rem;
+        }
+
+        .role-info .role-persona {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            line-height: 1.5;
+            max-width: 700px;
+        }
+
+        .role-task {
+            margin-left: auto;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .role-task .task-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--accent-light);
+        }
+
+        .role-task .task-summary {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+            max-width: 250px;
+        }
+
+        /* Pipeline Stages */
+        .pipeline-track {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .pipeline-track h3 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 1.5rem;
+        }
+
+        .stages {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            position: relative;
+        }
+
+        .stage {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .stage-node {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            border: 2px solid var(--border);
+            background: var(--bg-secondary);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .stage.completed .stage-node {
+            background: rgba(34,197,94,0.15);
+            border-color: var(--success);
+            box-shadow: 0 0 20px var(--success-glow);
+        }
+
+        .stage.active .stage-node {
+            background: rgba(99,102,241,0.2);
+            border-color: var(--accent);
+            box-shadow: 0 0 25px rgba(99,102,241,0.4);
+            animation: pulse-ring 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-ring {
+            0%, 100% { box-shadow: 0 0 15px rgba(99,102,241,0.3); }
+            50% { box-shadow: 0 0 30px rgba(99,102,241,0.5); }
+        }
+
+        .stage.pending .stage-node {
+            opacity: 0.4;
+        }
+
+        .stage-label {
+            margin-top: 0.75rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .stage.active .stage-label { color: var(--accent-light); }
+        .stage.completed .stage-label { color: var(--success); }
+
+        .stage-connector {
+            position: absolute;
+            top: 24px;
+            left: calc(50% + 24px);
+            right: calc(-50% + 24px);
+            height: 2px;
+            background: var(--border);
+            z-index: 1;
+        }
+
+        .stage.completed .stage-connector {
+            background: var(--success);
+            box-shadow: 0 0 8px var(--success-glow);
+        }
+
+        .stage.active .stage-connector {
+            background: linear-gradient(90deg, var(--accent), var(--border));
+        }
+
+        .stage:last-child .stage-connector { display: none; }
+
+        /* Grid Layout */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.2s;
+        }
+
+        .card:hover {
+            border-color: var(--border-glow);
+            background: var(--bg-card-hover);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* Sub-tasks */
+        .subtask-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .subtask-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border-radius: 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+
+        .subtask-item:hover {
+            border-color: var(--border-glow);
+        }
+
+        .subtask-status {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .subtask-status.pending { background: rgba(100,116,139,0.2); }
+        .subtask-status.in_progress { background: rgba(99,102,241,0.2); }
+        .subtask-status.completed { background: rgba(34,197,94,0.15); }
+
+        .subtask-info {
+            flex: 1;
+        }
+
+        .subtask-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent-light);
+            font-weight: 500;
+        }
+
+        .subtask-summary {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.15rem;
+        }
+
+        .subtask-conv {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        /* Progress Bar */
+        .progress-bar-container {
+            margin-top: 1rem;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-light));
+            transition: width 0.5s ease;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Timeline */
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .timeline-entry {
+            display: flex;
+            gap: 1rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(99,102,241,0.08);
+            position: relative;
+        }
+
+        .timeline-entry:last-child { border-bottom: none; }
+
+        .timeline-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent);
+            margin-top: 0.3rem;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .timeline-dot::after {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 4px;
+            width: 2px;
+            height: calc(100% + 14px);
+            background: var(--border);
+        }
+
+        .timeline-entry:last-child .timeline-dot::after { display: none; }
+
+        .timeline-content {
+            flex: 1;
+        }
+
+        .timeline-msg {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .timeline-time {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 0.2rem;
+        }
+
+        /* Context Health */
+        .context-meter {
+            margin-top: 1rem;
+        }
+
+        .meter-bar {
+            height: 12px;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .meter-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.5s ease;
+        }
+
+        .meter-fill.healthy { background: linear-gradient(90deg, #22c55e, #4ade80); }
+        .meter-fill.warning { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        .meter-fill.critical { background: linear-gradient(90deg, #ef4444, #f87171); }
+
+        .meter-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+        }
+
+        .meter-labels span {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Stat number */
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* File permissions */
+        .perm-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .perm-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .perm-item .allowed { color: var(--success); }
+        .perm-item .blocked { color: var(--danger); }
+
+        /* History */
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            background: var(--bg-secondary);
+            margin-bottom: 0.5rem;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .history-item:hover {
+            border-color: var(--border);
+        }
+
+        .history-type {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .history-type.fix { background: rgba(239,68,68,0.15); color: var(--danger); }
+        .history-type.feature { background: rgba(99,102,241,0.15); color: var(--accent-light); }
+        .history-type.refactor { background: rgba(245,158,11,0.15); color: var(--warning); }
+
+        .history-info { flex: 1; }
+        .history-id { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent-light); }
+        .history-summary { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.1rem; }
+        .history-date { font-size: 0.7rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state .emoji { font-size: 3rem; margin-bottom: 1rem; }
+        .empty-state p { font-size: 0.9rem; }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            .role-banner { flex-direction: column; text-align: center; }
+            .role-task { margin-left: 0; text-align: center; }
+            .stages { flex-wrap: wrap; gap: 0.5rem; }
+            .stage-connector { display: none !important; }
+        }
+
+        /* Auto-refresh indicator */
+        .auto-refresh {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .auto-refresh .dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Task Cards */
+        .task-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .task-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.25rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .task-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: var(--border);
+            transition: background 0.3s;
+        }
+
+        .task-card:hover {
+            border-color: var(--border-glow);
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99,102,241,0.1);
+        }
+
+        .task-card.selected {
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(99,102,241,0.2);
+        }
+
+        .task-card.selected::before {
+            background: linear-gradient(90deg, var(--accent), #c084fc);
+        }
+
+        .task-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .task-card-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--accent-light);
+        }
+
+        .task-card-phase {
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .task-card-summary {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            margin-bottom: 0.5rem;
+        }
+
+        .task-card-meta {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .task-cards-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .task-cards-header h3 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .task-count-badge {
+            background: rgba(99,102,241,0.15);
+            color: var(--accent-light);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <h1>⚡ Pipeline Dashboard</h1>
+                <div class="subtitle">SDLC Pipeline State &mdash; <span id="project-name">etail_v3</span></div>
+            </div>
+            <div class="header-right">
+                <div class="auto-refresh">
+                    <span class="dot"></span>
+                    Auto-refresh 10s
+                </div>
+                <span id="context-badge" class="status-badge healthy">🟢 Context: Healthy</span>
+                <button class="refresh-btn" onclick="loadData()">⟳ Refresh</button>
+            </div>
+        </div>
+
+        <!-- Role Banner -->
+        <div id="role-banner" class="role-banner">
+            <div class="loading"><div class="spinner"></div></div>
+        </div>
+
+        <!-- Task Cards (multi-task mode) -->
+        <div id="task-cards-section" style="display:none">
+            <div class="task-cards-header">
+                <h3>Active Tasks</h3>
+                <span id="task-count" class="task-count-badge">0 tasks</span>
+            </div>
+            <div id="task-cards" class="task-cards"></div>
+        </div>
+
+        <!-- Pipeline Track -->
+        <div class="pipeline-track">
+            <h3>Pipeline Progress</h3>
+            <div id="stages" class="stages">
+                <!-- Rendered by JS -->
+            </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="grid-3" id="stats-row">
+            <!-- Rendered by JS -->
+        </div>
+
+        <!-- Main Content -->
+        <div class="grid-2">
+            <!-- Sub-tasks -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">📦 Sub-tasks</span>
+                    <span id="subtask-progress-label" style="font-size:0.8rem;color:var(--text-muted)"></span>
+                </div>
+                <div id="subtask-list" class="subtask-list">
+                    <div class="empty-state">
+                        <div class="emoji">📭</div>
+                        <p>No sub-tasks yet</p>
+                    </div>
+                </div>
+                <div id="subtask-progress" class="progress-bar-container" style="display:none">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="subtask-fill" style="width:0%"></div>
+                    </div>
+                    <div class="progress-label">
+                        <span id="subtask-done">0 done</span>
+                        <span id="subtask-total">0 total</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">📜 Timeline</span>
+                </div>
+                <div id="timeline" class="timeline">
+                    <div class="empty-state">
+                        <div class="emoji">🕐</div>
+                        <p>No activity yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <!-- File Permissions -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">🔒 Current Permissions</span>
+                </div>
+                <div id="permissions" class="perm-list"></div>
+            </div>
+
+            <!-- History -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">📁 Task History</span>
+                </div>
+                <div id="history"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '.sdlc/api.php';
+        // Handle both direct file access and localhost
+        const BASE_URL = (() => {
+            const path = window.location.pathname;
+            // Extract project path up to project root
+            const match = path.match(/(.*?\/etail_v3\/)/);
+            if (match) return match[1] + '.sdlc/api.php';
+            return '.sdlc/api.php';
+        })();
+
+        const PHASE_CONFIG = {
+            'IDLE':             { icon: '⬜', label: 'Idle',    color: '#64748b' },
+            'DISCUSS':          { icon: '🗣️', label: 'Discuss', color: '#a78bfa' },
+            'REQUIREMENT':      { icon: '📋', label: 'Require', color: '#f472b6' },
+            'PLANNING':         { icon: '📐', label: 'Plan',    color: '#60a5fa' },
+            'TEST_DESIGN':      { icon: '🧪', label: 'Test',    color: '#34d399' },
+            'CODING':           { icon: '💻', label: 'Code',    color: '#fbbf24' },
+            'TEST_EXECUTION':   { icon: '✅', label: 'Verify',  color: '#2dd4bf' },
+            'REVIEW':           { icon: '🔍', label: 'Review',  color: '#fb923c' },
+            'READY_TO_COMMIT':  { icon: '📦', label: 'Commit',  color: '#a78bfa' },
+            'PR_OPEN':          { icon: '🔀', label: 'Ship',    color: '#22c55e' },
+            'MERGED':           { icon: '🎉', label: 'Done',    color: '#22c55e' },
+        };
+
+        const PHASE_ORDER = [
+            'DISCUSS', 'REQUIREMENT', 'PLANNING', 'TEST_DESIGN',
+            'CODING', 'TEST_EXECUTION', 'REVIEW', 'READY_TO_COMMIT', 'PR_OPEN'
+        ];
+
+        let currentData = null;
+
+        async function loadData() {
+            try {
+                const apiUrl = window.location.origin + 
+                    window.location.pathname.replace(/[^/]*$/, '') + 'api.php?action=all';
+                const resp = await fetch(apiUrl);
+                if (!resp.ok) throw new Error('API error');
+                currentData = await resp.json();
+                render(currentData);
+            } catch (err) {
+                console.error('Failed to load:', err);
+                // Try alternate path
+                try {
+                    const resp2 = await fetch('api.php?action=all');
+                    if (resp2.ok) {
+                        currentData = await resp2.json();
+                        render(currentData);
+                    }
+                } catch (e) {
+                    document.getElementById('role-banner').innerHTML = `
+                        <div class="empty-state">
+                            <div class="emoji">⚠️</div>
+                            <p>Cannot connect to API. Make sure XAMPP is running.<br>
+                            <code style="font-size:0.75rem;color:var(--text-muted)">${err.message}</code></p>
+                        </div>`;
+                }
+            }
+        }
+
+        function render(data) {
+            const registry = data.registry || {};
+            const activeTasks = registry.active_tasks || [];
+            const taskStates = data.task_states || {};
+            const state = data.state || {};
+            const phase = state.phase?.current || 'IDLE';
+            const task = state.task || {};
+            const roles = data.roles || {};
+            const role = roles[phase] || {};
+
+            // Multi-task card rendering
+            renderTaskCards(activeTasks, taskStates);
+
+            renderRoleBanner(phase, role, task);
+            renderStages(phase);
+            renderStats(state, data);
+            renderSubtasks(data.subtasks || [], data.progress || {});
+            renderTimeline(state.timeline || []);
+            renderPermissions(phase, data.file_permissions || {});
+            renderHistory(data.history || []);
+        }
+
+        let selectedTaskId = null;
+
+        function renderTaskCards(activeTasks, taskStates) {
+            const section = document.getElementById('task-cards-section');
+            const cardsEl = document.getElementById('task-cards');
+            const countEl = document.getElementById('task-count');
+
+            if (activeTasks.length <= 1) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+            countEl.textContent = `${activeTasks.length} tasks`;
+
+            cardsEl.innerHTML = activeTasks.map(t => {
+                const tid = t.id;
+                const phase = t.phase || 'IDLE';
+                const config = PHASE_CONFIG[phase] || PHASE_CONFIG['IDLE'];
+                const isSelected = tid === selectedTaskId;
+                const phaseStyle = `background:${config.color}20;color:${config.color};border:1px solid ${config.color}40`;
+
+                return `
+                    <div class="task-card ${isSelected ? 'selected' : ''}" onclick="selectTask('${tid}')">
+                        <div class="task-card-header">
+                            <span class="task-card-id">${tid}</span>
+                            <span class="task-card-phase" style="${phaseStyle}">${config.icon} ${config.label}</span>
+                        </div>
+                        <div class="task-card-summary">${t.type || ''}(${t.module || ''}): ${(t.summary || '').substring(0, 60)}</div>
+                        <div class="task-card-meta">${t.module || '?'} &bull; started ${t.started_at ? new Date(t.started_at).toLocaleDateString() : '?'}</div>
+                    </div>`;
+            }).join('');
+        }
+
+        async function selectTask(taskId) {
+            selectedTaskId = taskId;
+            try {
+                const apiUrl = window.location.origin +
+                    window.location.pathname.replace(/[^/]*$/, '') + `api.php?action=all&task=${taskId}`;
+                const resp = await fetch(apiUrl);
+                if (resp.ok) {
+                    const data = await resp.json();
+                    // Re-render with this task selected
+                    const state = data.state || {};
+                    const phase = state.phase?.current || 'IDLE';
+                    const task = state.task || {};
+                    const roles = data.roles || {};
+                    const role = roles[phase] || {};
+
+                    // Highlight selected card
+                    document.querySelectorAll('.task-card').forEach(c => c.classList.remove('selected'));
+                    document.querySelector(`[onclick="selectTask('${taskId}')"]`)?.classList.add('selected');
+
+                    renderRoleBanner(phase, role, task);
+                    renderStages(phase);
+                    renderStats(state, data);
+                    renderSubtasks(data.subtasks || [], data.progress || {});
+                    renderTimeline(state.timeline || []);
+                    renderPermissions(phase, data.file_permissions || {});
+                }
+            } catch (err) {
+                console.error('Failed to load task:', err);
+            }
+        }
+
+        function renderRoleBanner(phase, role, task) {
+            const config = PHASE_CONFIG[phase] || PHASE_CONFIG['IDLE'];
+            const el = document.getElementById('role-banner');
+
+            if (phase === 'IDLE' && !task.id) {
+                el.innerHTML = `
+                    <div class="role-icon">${config.icon}</div>
+                    <div class="role-info">
+                        <h2>No Active Task</h2>
+                        <div class="role-phase">Phase: IDLE</div>
+                        <div class="role-persona">Start a task with <code>python .sdlc/pipeline_state.py start-task</code> or use a workflow like <code>/get-requirement</code></div>
+                    </div>`;
+                return;
+            }
+
+            const persona = (role.persona || '').substring(0, 200);
+            el.innerHTML = `
+                <div class="role-icon" style="background:${config.color}20">${config.icon}</div>
+                <div class="role-info">
+                    <h2>${role.title || phase}</h2>
+                    <div class="role-phase">Phase: ${phase}</div>
+                    <div class="role-persona">${persona}</div>
+                </div>
+                ${task.id ? `
+                <div class="role-task">
+                    <div class="task-id">${task.id}</div>
+                    <div class="task-summary">${task.type || ''}(${task.module || ''}): ${(task.summary || '').substring(0, 40)}</div>
+                    ${task.priority ? `<div style="margin-top:0.25rem;font-size:0.7rem;color:var(--warning)">${task.priority}</div>` : ''}
+                </div>` : ''}`;
+        }
+
+        function renderStages(currentPhase) {
+            const el = document.getElementById('stages');
+            const currentIdx = PHASE_ORDER.indexOf(currentPhase);
+
+            el.innerHTML = PHASE_ORDER.map((phase, i) => {
+                const config = PHASE_CONFIG[phase];
+                let stateClass = 'pending';
+                if (i < currentIdx) stateClass = 'completed';
+                else if (i === currentIdx) stateClass = 'active';
+
+                return `
+                    <div class="stage ${stateClass}">
+                        <div class="stage-node" style="${stateClass === 'active' ? `border-color:${config.color}` : ''}">${
+                            stateClass === 'completed' ? '✓' : config.icon
+                        }</div>
+                        <div class="stage-label">${config.label}</div>
+                        <div class="stage-connector"></div>
+                    </div>`;
+            }).join('');
+        }
+
+        function renderStats(state, data) {
+            const el = document.getElementById('stats-row');
+            const testDesign = state.test_design || {};
+            const coding = state.coding || {};
+            const testExec = state.test_execution || {};
+
+            el.innerHTML = `
+                <div class="card">
+                    <div class="card-title">Tests Written</div>
+                    <div class="stat-number">${testDesign.total_tests || 0}</div>
+                    <div class="stat-label">${(testDesign.categories_covered || []).length} categories covered</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Tests Passing</div>
+                    <div class="stat-number" style="color:${coding.tests_passing > 0 ? 'var(--success)' : 'var(--text-primary)'}">
+                        ${coding.tests_passing || 0}<span style="font-size:1rem;color:var(--text-muted)"> / ${coding.tests_total || 0}</span>
+                    </div>
+                    <div class="stat-label">${testExec.regression_passed ? '✅ Regression passed' : 'Pending verification'}</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Sub-task Progress</div>
+                    <div class="stat-number">${(data.progress || {}).percent || 0}%</div>
+                    <div class="stat-label">${(data.progress || {}).completed || 0} of ${(data.progress || {}).total || 0} complete</div>
+                </div>`;
+        }
+
+        function renderSubtasks(subtasks, progress) {
+            const listEl = document.getElementById('subtask-list');
+            const progEl = document.getElementById('subtask-progress');
+            const labelEl = document.getElementById('subtask-progress-label');
+
+            if (!subtasks.length) {
+                listEl.innerHTML = '<div class="empty-state"><div class="emoji">📭</div><p>No sub-tasks</p></div>';
+                progEl.style.display = 'none';
+                return;
+            }
+
+            const statusIcons = { pending: '⬜', in_progress: '🔄', completed: '✅' };
+
+            listEl.innerHTML = subtasks.map(st => `
+                <div class="subtask-item">
+                    <div class="subtask-status ${st.status}">${statusIcons[st.status] || '❓'}</div>
+                    <div class="subtask-info">
+                        <div class="subtask-id">${st.id}</div>
+                        <div class="subtask-summary">${st.summary || ''}</div>
+                        ${st.conversation_id ? `<div class="subtask-conv">conv: ${st.conversation_id.substring(0, 12)}...</div>` : ''}
+                    </div>
+                </div>`).join('');
+
+            progEl.style.display = 'block';
+            document.getElementById('subtask-fill').style.width = `${progress.percent || 0}%`;
+            document.getElementById('subtask-done').textContent = `${progress.completed || 0} done`;
+            document.getElementById('subtask-total').textContent = `${progress.total || 0} total`;
+            labelEl.textContent = `${progress.percent || 0}%`;
+        }
+
+        function renderTimeline(timeline) {
+            const el = document.getElementById('timeline');
+            if (!timeline.length) {
+                el.innerHTML = '<div class="empty-state"><div class="emoji">🕐</div><p>No activity</p></div>';
+                return;
+            }
+
+            const recent = timeline.slice(-10).reverse();
+            el.innerHTML = recent.map(entry => {
+                const time = entry.at ? new Date(entry.at).toLocaleString() : '';
+                return `
+                    <div class="timeline-entry">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-msg">${entry.message || ''}</div>
+                            <div class="timeline-time">${time} ${entry.by ? `• ${entry.by}` : ''}</div>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        function renderPermissions(phase, perms) {
+            const el = document.getElementById('permissions');
+            const phasePerms = perms[phase];
+
+            if (!phasePerms) {
+                el.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem">No permissions defined for this phase</div>';
+                return;
+            }
+
+            const allowed = phasePerms.allowed_patterns || [];
+            el.innerHTML = `
+                ${allowed.map(p => `<div class="perm-item"><span class="allowed">✓</span> ${p}</div>`).join('')}
+                <div style="margin-top:0.75rem;padding:0.75rem;background:rgba(239,68,68,0.08);border-radius:8px;border:1px solid rgba(239,68,68,0.2)">
+                    <div class="perm-item"><span class="blocked">✕</span> <strong>${phasePerms.blocked_reason || 'Everything else blocked'}</strong></div>
+                </div>`;
+        }
+
+        function renderHistory(history) {
+            const el = document.getElementById('history');
+            if (!history.length) {
+                el.innerHTML = '<div class="empty-state"><div class="emoji">📁</div><p>No completed tasks</p></div>';
+                return;
+            }
+
+            el.innerHTML = history.slice(0, 8).map(h => {
+                const typeClass = (h.type || 'fix').toLowerCase();
+                const date = h.updated_at ? new Date(h.updated_at).toLocaleDateString() : '';
+                return `
+                    <div class="history-item">
+                        <span class="history-type ${typeClass}">${h.type || '?'}</span>
+                        <div class="history-info">
+                            <div class="history-id">${h.task_id}</div>
+                            <div class="history-summary">${(h.summary || '').substring(0, 50)}</div>
+                        </div>
+                        <div class="history-date">${date}</div>
+                    </div>`;
+            }).join('');
+        }
+
+        // Auto-refresh every 10 seconds
+        loadData();
+        setInterval(loadData, 10000);
+    </script>
+</body>
+</html>

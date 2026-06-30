@@ -952,7 +952,7 @@ IF(s.scheme_type =1 and s.max_weight!=s.min_weight,true,false) as is_flexible_wg
 				if(s.allow_advance=1,s.advance_months,0) as advance_months,
 				if(s.allow_preclose=1,preclose_months,0) as allow_preclose_months,
 				sa.disable_payment,s.charge,s.charge_type,s.charge_head,
-				IFNULL(sa.auto_debit_status, 0) as auto_debit_status,
+				IFNULL(sa.auto_debit_status, 0) as auto_debit_status,ad.auth_link,
 				cs.currency_name,
 				cs.currency_symbol,s.firstPayamt_maxpayable,s.get_amt_in_schjoin,s.id_metal,s.id_purity,s.max_chance,cs.curr_symb_html,cls.classification_name,s.scheme_name,
 				if(s.display_payable = 0, 'Days', if(s.display_payable = 1 , 'Weeks', if(s.display_payable = 2 , 'Months',if(s.display_payable = 3 , 'Month','-' ) ))) as ins_word,
@@ -1005,6 +1005,7 @@ IF(s.scheme_type =1 and s.max_weight!=s.min_weight,true,false) as is_flexible_wg
 					Where  (p.payment_status=2 or p.payment_status=1) and  Date_Format(Current_Date(),'%d%m')=Date_Format(p.date_add,'%d%m') {$where}
 					Group By sa.id_scheme_account)sp on(sa.id_scheme_account=sp.id_scheme_account)
 			 Left Join postdate_payment pp On (sa.id_scheme_account=pp.id_scheme_account and (pp.payment_status=2 or pp.payment_status=7) and (Date_Format(pp.date_payment,'%Y%m')=Date_Format(curdate(),'%Y%m')))
+			 LEFT JOIN auto_debit_subscription ad on ad.id_scheme_account = sa.id_scheme_account and ad.status=1
 				JOIN chit_settings cs 
 		Where   sa.active=1 and sa.is_closed = 0  and s.is_digi = 0 and c.id_customer='$id_customer' and s.is_enquiry=0
 		" . (!empty($id_sch_acc_string) ? "and sa.id_scheme_account in ({$id_sch_acc_string})" : '') . "
@@ -1981,7 +1982,8 @@ IF(s.scheme_type =1 and s.max_weight!=s.min_weight,true,false) as is_flexible_wg
                     'payable_word' => $record->payable_word,
                     'show_ins_type'                     => $record->show_ins_type,
                     'id_metal'                     => $record->id_metal,
-                    'auto_debit_status'            => (int) $record->auto_debit_status
+                    'auto_debit_status'            => (int) $record->auto_debit_status,
+                    'auth_link'                    => $record->auth_link
                 );
             }
             return array('chits' => $schemeAcc, 'over_all_amount' => $overall_amt);

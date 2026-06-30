@@ -1,0 +1,151 @@
+{
+  "version": "1.0.0",
+  "description": "Structured intake questions by task type. Agent asks only questions where the answer is missing AND not auto-answerable.",
+
+  "questions": {
+    "fix": [
+      {
+        "id": "Q1", "priority": "must",
+        "question": "What is the exact screen/URL where the bug occurs?",
+        "maps_to": "url", "skip_if_flag": "--url"
+      },
+      {
+        "id": "Q2", "priority": "must",
+        "question": "What SHOULD happen (expected behavior)?",
+        "maps_to": "expected", "skip_if_flag": "--expected"
+      },
+      {
+        "id": "Q3", "priority": "must",
+        "question": "What ACTUALLY happens (current behavior)?",
+        "maps_to": "actual", "skip_if_flag": "--actual"
+      },
+      {
+        "id": "Q4", "priority": "must",
+        "question": "Steps to reproduce the bug?",
+        "maps_to": "steps_to_reproduce", "skip_if_flag": "--steps"
+      },
+      {
+        "id": "Q5", "priority": "must",
+        "question": "Does this happen for ALL records/branches, or only specific ones? If specific — which branch ID, date range, or record ID?",
+        "maps_to": "scope",
+        "hint": "The #1 diagnostic question. A branch-specific bug points to data-level issues, not code-level."
+      },
+      {
+        "id": "Q6", "priority": "should",
+        "question": "When did this start happening? Was it working before? Any recent deployments?",
+        "maps_to": "recency",
+        "hint": "If it broke recently, git log on affected files will pinpoint the breaking change."
+      },
+      {
+        "id": "Q7", "priority": "should",
+        "question": "Is this a DATA issue (wrong values stored in DB) or a DISPLAY issue (data exists but not shown correctly)?",
+        "maps_to": "bug_category",
+        "hint": "Data issue = model/query fix. Display issue = JS/view fix."
+      },
+      {
+        "id": "Q8", "priority": "nice",
+        "question": "Is there a related screen that DOES work correctly for comparison?",
+        "maps_to": "working_reference",
+        "hint": "A working reference lets us diff queries between broken and working cases."
+      }
+    ],
+
+    "feature": [
+      {
+        "id": "F1", "priority": "must",
+        "question": "Who requested this feature? (client name or internal)"
+      },
+      {
+        "id": "F2", "priority": "must",
+        "question": "User story: As a [role], I want [action], so that [benefit]."
+      },
+      {
+        "id": "F3", "priority": "must",
+        "question": "Acceptance criteria — list each as: 'When [action], then [expected result]'. Minimum 3.",
+        "hint": "Each must be testable by running the app or checking DB."
+      },
+      {
+        "id": "F4", "priority": "should",
+        "question": "Is there an existing similar feature in the system? Which screen?",
+        "auto_answerable": true,
+        "auto_hint": "Search knowledge brain for similar screens."
+      },
+      {
+        "id": "F5", "priority": "should",
+        "question": "Does this need new database tables or columns? Describe the data."
+      },
+      {
+        "id": "F6", "priority": "should",
+        "question": "Does this feature interact with other modules? (billing, estimation, stock, etc.)",
+        "hint": "Cross-module = STANDARD track."
+      },
+      {
+        "id": "F7", "priority": "nice",
+        "question": "Is there a UI mockup or wireframe?"
+      }
+    ],
+
+    "cr": [
+      {
+        "id": "C1", "priority": "must",
+        "question": "What is the current behavior that needs to change?"
+      },
+      {
+        "id": "C2", "priority": "must",
+        "question": "What should the new behavior be after the change?"
+      },
+      {
+        "id": "C3", "priority": "must",
+        "question": "Why is this change needed? (business rule change, client request, compliance)"
+      },
+      {
+        "id": "C4", "priority": "should",
+        "question": "Which screens/URLs are affected?",
+        "auto_answerable": true,
+        "auto_hint": "Grep for the function/table being changed."
+      },
+      {
+        "id": "C5", "priority": "should",
+        "question": "Should existing data be migrated, or only new records affected?"
+      }
+    ],
+
+    "hotfix": [
+      {
+        "id": "H1", "priority": "must",
+        "question": "Which client and branch is affected?"
+      },
+      {
+        "id": "H2", "priority": "must",
+        "question": "What is the immediate impact? (blocked operations, wrong financials, data corruption)"
+      },
+      {
+        "id": "H3", "priority": "must",
+        "question": "Is there a temporary workaround the client can use?"
+      }
+    ],
+
+    "refactor": [
+      {
+        "id": "R1", "priority": "must",
+        "question": "What code smell or issue are we fixing? (duplication, performance, readability)"
+      },
+      {
+        "id": "R2", "priority": "must",
+        "question": "Which files/functions need refactoring?"
+      },
+      {
+        "id": "R3", "priority": "should",
+        "question": "What is the definition of done? How do we verify the refactor didn't break anything?"
+      }
+    ]
+  },
+
+  "ask_rules": {
+    "batch_size": 4,
+    "ask_must_first": true,
+    "skip_auto_answerable": true,
+    "skip_if_flag_provided": true,
+    "auto_advance_fields": ["url", "expected", "actual", "steps_to_reproduce", "scope"]
+  }
+}

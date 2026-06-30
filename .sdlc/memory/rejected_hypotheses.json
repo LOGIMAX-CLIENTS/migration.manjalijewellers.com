@@ -1,0 +1,29 @@
+{
+  "rejected": [
+    {
+      "task_id": "OPE-2606201605",
+      "module": "opening_master",
+      "type": "fix",
+      "hypothesis": "The bug is caused by `ret_reports_model.php::get_cash_book_details` completely missing a query to fetch `opening_master` entries as line items in the cashbook report, and `cash_flow_model.php::get_cash_in_hand` unconditionally adding the opening amount to the balance regardless of the report date, which would cause double-counting if the entries were correctly displayed.",
+      "rejection_reason": "Existing JS at ret_reports.js line 60868 already has a dedicated opening balance row. Adding opening_master entries as data rows will double-count the amount.",
+      "keywords": [
+        "cash",
+        "cash_flow_model",
+        "rows",
+        "opening",
+        "cashbook",
+        "date",
+        "count",
+        "opening_master",
+        "master",
+        "query",
+        "cause",
+        "reflecting",
+        "fetch",
+        "existing",
+        "completely"
+      ],
+      "date": "2026-06-20 17:37"
+    }
+  ]
+}

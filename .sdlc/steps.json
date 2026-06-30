@@ -1,0 +1,393 @@
+{
+  "version": "4.3.0",
+  "tracks": {
+    "MICRO": {
+      "description": "Fastest track for trivial fixes: you already know the file and the change. No discovery, no subagents, no review. Just fix, verify, commit.",
+      "steps": [
+        {
+          "id": 1,
+          "name": "intake",
+          "delegate": false,
+          "checklist": [
+            "Confirm the bug and expected fix with user in 1-2 sentences",
+            "Create requirement.md with a one-liner description",
+            "Run: `python .sdlc/engine/cli.py step-done`"
+          ],
+          "forbidden": [],
+          "adaptive": "Skip all questions if the user's start command already has enough context. Just confirm and proceed.",
+          "deliverable": {
+            "file": "requirement.md",
+            "check": "file_exists"
+          }
+        },
+        {
+          "id": 2,
+          "name": "code",
+          "delegate": false,
+          "checklist": [
+            "Read the relevant file(s) — use grep + view_file directly (no subagent)",
+            "Make the fix",
+            "Write a brief context.md with ## Hypothesis and ## Fix sections",
+            "Run: `python .sdlc/engine/cli.py step-done`"
+          ],
+          "forbidden": [],
+          "deliverable": {
+            "file": "context.md",
+            "check": "file_exists"
+          }
+        },
+        {
+          "id": 3,
+          "name": "commit",
+          "delegate": false,
+          "checklist": [
+            "Stage changed files: `git add {files}`",
+            "Commit: `git commit -m \"fix({module}): {summary} Ref: {TASK_ID}\"`",
+            "Run: `python .sdlc/engine/cli.py done --force`"
+          ],
+          "forbidden": [],
+          "deliverable": {
+            "file": null,
+            "check": "git_committed"
+          }
+        }
+      ]
+    },
+    "EXPRESS": {
+      "description": "Fast track for simple bugs: recipe found, single module, obvious fix.",
+      "steps": [
+        {
+          "id": 1,
+          "name": "intake",
+          "delegate": false,
+          "checklist": [
+            "Review what the user already provided (URL, expected, actual, steps) in requirement.md",
+            "For MISSING fields only — ask the user. Skip questions already answered.",
+            "Bug fix questions: Which screen/URL? What is the expected value vs actual value? Steps to reproduce? Specific record ID or date range to test with? Does this bug happen for all records or just specific ones?",
+            "Feature/CR questions: Who requested? User story? Acceptance criteria? Existing similar feature? New DB tables needed?",
+            "Update requirement.md with answers — fill in ## Description, ## Current Behavior, ## Expected Behavior",
+            "If ALL context is already clear from start command flags: just confirm with user and proceed",
+            "Run: `python .sdlc/engine/cli.py step-done`"
+          ],
+          "forbidden": [
+            "Do NOT read source code — no grep, no view_file on controllers/models",
+            "Do NOT query the database",
+            "Do NOT investigate the bug — just gather context"
+          ],
+          "adaptive": "If --url, --expected, --actual, --steps were all provided at start, summarize what you have and ask: 'Anything else to add, or shall I proceed?' — don't interrogate.",
+          "deliverable": {
+            "file": "requirement.md",
+            "check": "file_exists"
+          }
+        },
+        {
+          "id": 2,
+          "name": "discover",
+          "delegate": false,
+          "checklist": [
+            "Run: `python .sdlc/engine/cli.py discover`",
+            "Wait for completion (do NOT run other commands in parallel)",
+            "Confirm: discovery.md was created (check console output)",
+            "Run: `python .sdlc/engine/cli.py step-done`"
+          ],
+          "forbidden": [
+            "Do NOT read brain docs manually — discover does this",
+            "Do NOT grep source code — discover does this",
+            "Do NOT kill the discover command — it handles timeouts internally"
+          ],
+          "on_failure": "STOP. Report what failed to user. Ask: 'Approve manual investigation?' Wait for response.",
+          "deliverable": {
+            "file": "discovery.md",
+            "check": "file_exists"
+          }
+        },
+        {
+          "id": 3,
+          "name": "code",
+          "delegate": false,
+          "checklist": [
+            "Read discovery.md — note the call tree, code excerpts, and file paths with line numbers",
+            "Read the specific source files at the line ranges identified by discovery (do NOT read entire files)",
+            "Identify root cause — which line(s) are wrong and why",
+            "Make the minimum fix. Run `php -l {file}` to syntax check each changed file",
+            "Write context.md with ## Hypothesis and ## Fix sections",
+            "Write test_cases.md with minimum 3 test cases (fix verification, edge case, regression)",
+            "Run: `python .sdlc/engine/cli.py step-done`"
+          ],
+          "forbidden": [],
+          "deliverable": {
+            "file": "test_cases.md",
+            "check": "file_exists"
+          }
+        },
+        {
+          "id": 4,
+          "name": "verify",
+          "delegate": true,
+          "agent_type": "self",
+          "agent_prompt_file": "prompts/verify.md",
+          "agent_role": "QA Verification Engineer",
+          "checklist": [
+            "Run: `python .sdlc/engine/cli.py get-prompt` to get the subagent prompt",
+            "Spawn a subagent with the prompt (agent_type: self)",
+            "Wait for subagent to complete",
+            "Validate: context.md has ## Verification section",
+            "Validate: Overall Verdict is PASS",
+            "If FAIL: report to user, ask for next action",
+            "Run: `python .sdlc/engine/cli.py step-done`"
+          ],
+          "forbidden": [],
+          "deliverable": {
+            "file": "context.md",
+            "check": "contains_section",
+            "section": "## Verification"
+          }
+        },
+        {
+          "id": 5,
+          "name": "commit",
+          "delegate": false,
+          "checklist": [
+            "Stage changed files: `git add {files}`",
+            "Generate rollback plan in context.md ## Rollback section: `git revert {commit_hash}`, affected files list, test to verify rollback",
+            "Commit: `git commit -m \"fix({module}): {summary} Ref: {TASK_ID}\"`",
+            "Run: `python .sdlc/engine/cli.py enrich`",
+            "Run: `python .sdlc/engine/cli.py done`"
+          ],
+          "forbidden": [],
+          "deliverable": {
+            "file": null,
+            "check": "git_committed"
+          }
+        }
+      ]
+    },
+    "STANDARD": {
+      "description": "Default track for all tasks. 9 steps with orchestrator delegation.",
+      "steps": [
+        {
+          "id": 1,
+          "name": "intake",
+          "delegate": false,
+          "checklist": [
+            "Review what the user already provided (URL, expected, actual, steps) in requirement.md",
+            "For MISSING fields only — ask the user. Skip questions already answered.",
+            "Bug fix questions: Which screen/URL? What is the expected value vs actual value? Steps to reproduce? Specific record ID or date range to test with? Does this bug happen for all records or just specific ones?",
+            "Feature/CR questions: Who requested? User story? Acceptance criteria? Existing similar feature? New DB tables needed?",
+            "Update requirement.md with answers — fill in ## Description, ## Current Behavior, ## Expected Behavior",
+            "If ALL context is already clear from start command flags: just confirm with user and proceed",
+            "Run: `python .sdlc/engine/cli.py step-done`"
+          ],
+          "forbidden": [
+            "Do NOT read source code — no grep, no view_file on controllers/models",
+            "Do NOT query the database",
+            "Do NOT investigate the bug — just gather context"
+          ],
+          "adaptive": "If --url, --expected, --actual, --steps were all provided at start, summarize what you have and ask: 'Anything else to add, or shall I proceed?' — don't interrogate.",
+          "deliverable": {
+            "file": "requirement.md",
+            "check": "file_exists"
+          }
+        },
+        {
+          "id": 2,
+          "name": "discover",
+          "delegate": false,
+          "checklist": [
+            "Run: `python .sdlc/engine/cli.py discover`",
+            "Wait for completion (do NOT run other commands in parallel)",
+            "Confirm: discovery.md was created (check console output)",
+            "Run: `python .sdlc/engine/cli.py step-done`"
+          ],
+          "forbidden": [
+            "Do NOT read brain docs manually — discover does this",
+            "Do NOT search recipes manually — discover does this",
+            "Do NOT grep source code — discover does this",
+            "Do NOT kill the discover command — it handles timeouts internally"
+          ],
+          "on_failure": "STOP. Report what failed to user. Ask: 'Approve manual investigation?' Wait for response.",
+          "deliverable": {
+            "file": "discovery.md",
+            "check": "file_exists"
+          }
+        },
+        {
+          "id": 3,
+          "name": "investigate",
+          "delegate": true,
+          "agent_type": "research",
+          "agent_prompt_file": "prompts/investigate.md",
+          "agent_role": "Bug Investigator",
+          "checklist": [
+            "Run: `python .sdlc/engine/cli.py get-prompt` to get the subagent prompt",
+            "Spawn a RESEARCH subagent with the prompt",
+            "Wait for subagent to complete",
+            "Validate: context.md exists in task directory with ## Hypothesis section",
+            "If insufficient: send follow-up message to subagent with specific questions",
+            "Run: `python .sdlc/engine/cli.py step-done`"
+          ],
+          "forbidden": [
+            "Do NOT read source code yourself — delegate to subagent",
+            "Do NOT investigate the bug yourself",
+            "Do NOT query the database"
+          ],
+          "fallback": "If subagent fails completely: kill it, report to user, ask 'Approve manual investigation?'",
+          "deliverable": {
+            "file": "context.md",
+            "check": "contains_section",
+            "section": "## Hypothesis"
+          }
+        },
+        {
+          "id": 4,
+          "name": "test_design",
+          "delegate": true,
+          "agent_type": "research",
+          "agent_prompt_file": "prompts/test_design.md",
+          "agent_role": "QA Test Designer",
+          "checklist": [
+            "Run: `python .sdlc/engine/cli.py get-prompt` to get the subagent prompt",
+            "Spawn a RESEARCH subagent with the prompt",
+            "Wait for subagent to complete",
+            "Validate: test_cases.md exists with minimum 3 test cases",
+            "Run: `python .sdlc/engine/cli.py step-done`"
+          ],
+          "forbidden": [],
+          "deliverable": {
+            "file": "test_cases.md",
+            "check": "file_exists"
+          }
+        },
+        {
+          "id": 5,
+          "name": "plan",
+          "delegate": true,
+          "agent_type": "self",
+          "agent_prompt_file": "prompts/plan.md",
+          "agent_role": "Fix Planner",
+          "checklist": [
+            "Run: `python .sdlc/engine/cli.py get-prompt` to get the subagent prompt",
+            "Spawn a SELF subagent with the prompt",
+            "Wait for subagent to complete",
+            "Validate: requirement_review.md artifact was created",
+            "Run: `python .sdlc/engine/cli.py step-done`"
+          ],
+          "forbidden": [],
+          "deliverable": {
+            "file": "requirement_review.md",
+            "check": "artifact_exists"
+          }
+        },
+        {
+          "id": 6,
+          "name": "review",
+          "delegate": true,
+          "agent_type": "research",
+          "agent_prompt_file": "prompts/review.md",
+          "agent_role": "Devil's Advocate Reviewer",
+          "checklist": [
+            "Run: `python .sdlc/engine/cli.py get-prompt` to get the subagent prompt",
+            "Spawn a RESEARCH subagent with the prompt",
+            "Wait for subagent to complete",
+            "Read review.md in the task directory",
+            "If verdict is REJECT: send review feedback back to a NEW plan subagent (re-run step 5 logic), then re-run this review step",
+            "If verdict is CONCERNS: append the concerns to the requirement_review.md artifact before presenting to user",
+            "If verdict is PASS: proceed to approval",
+            "Run: `python .sdlc/engine/cli.py step-done`"
+          ],
+          "forbidden": [
+            "Do NOT skip the review even if the plan looks good",
+            "Do NOT present the plan to the user before review completes"
+          ],
+          "on_reject": "Re-run plan step with review feedback. Max 2 revision cycles before escalating to user.",
+          "deliverable": {
+            "file": "review.md",
+            "check": "file_exists"
+          }
+        },
+        {
+          "id": 7,
+          "name": "approval",
+          "delegate": false,
+          "checklist": [
+            "Present the fix plan (requirement_review.md) to user — include review verdict and any concerns",
+            "WAIT for user to approve the plan",
+            "When user approves: copy approved plan to .sdlc/active/{TASK_ID}/requirement.md",
+            "Run: `python .sdlc/engine/cli.py step-done`"
+          ],
+          "forbidden": [],
+          "human_checkpoint": true,
+          "deliverable": {
+            "file": "requirement.md",
+            "check": "file_exists"
+          }
+        },
+        {
+          "id": 8,
+          "name": "code",
+          "delegate": true,
+          "agent_type": "self",
+          "agent_prompt_file": "prompts/code.md",
+          "agent_role": "CI3 Developer",
+          "checklist": [
+            "Run: `python .sdlc/engine/cli.py get-prompt` to get the subagent prompt",
+            "Spawn a SELF subagent with the prompt",
+            "Wait for subagent to complete",
+            "Validate: git has uncommitted changes (the fix)",
+            "Validate: test file exists in tests/tests/",
+            "Validate: test_cases.md has ## Generated Tests section",
+            "Run: `python .sdlc/engine/cli.py step-done`"
+          ],
+          "forbidden": [
+            "Do NOT write code yourself — delegate to subagent"
+          ],
+          "deliverable": {
+            "file": null,
+            "check": "git_has_changes"
+          }
+        },
+        {
+          "id": 9,
+          "name": "verify",
+          "delegate": true,
+          "agent_type": "self",
+          "agent_prompt_file": "prompts/verify.md",
+          "agent_role": "QA Verification Engineer",
+          "checklist": [
+            "Run: `python .sdlc/engine/cli.py get-prompt` to get the subagent prompt",
+            "Spawn a SELF subagent with the prompt",
+            "Wait for subagent to complete",
+            "Validate: context.md has ## Verification section with Overall Verdict",
+            "If Overall Verdict is FAIL: report to user, ask for next action — do NOT proceed",
+            "If Overall Verdict is PASS: proceed",
+            "Run: `python .sdlc/engine/cli.py step-done`"
+          ],
+          "forbidden": [],
+          "deliverable": {
+            "file": "context.md",
+            "check": "contains_section",
+            "section": "## Verification"
+          }
+        },
+        {
+          "id": 10,
+          "name": "commit",
+          "delegate": false,
+          "checklist": [
+            "Stage changed files: `git add {files}`",
+            "Generate rollback plan in context.md ## Rollback section: `git revert {commit_hash}`, affected files list, test to verify rollback",
+            "Commit: `git commit -m \"fix({module}): {summary} Ref: {TASK_ID}\"`",
+            "Run: `python .sdlc/engine/cli.py enrich` — generates recipe from all task artifacts",
+            "Push recipe to central repo: read the generated recipe .md file, then call GitHub MCP create_or_update_file (owner: LOGIMAX-CLIENTS, repo: bug-recipes, path: recipes/{module}/{recipe_id}.md)",
+            "Run: `python .sdlc/engine/cli.py done`"
+          ],
+          "forbidden": [],
+          "deliverable": {
+            "file": null,
+            "check": "git_committed"
+          }
+        }
+      ]
+    }
+  }
+}

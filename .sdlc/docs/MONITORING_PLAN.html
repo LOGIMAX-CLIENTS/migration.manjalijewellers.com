@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pipeline Monitoring & Learning System — SDLC Pipeline Engine</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --accent2: #3fb950;
+            --code-bg: #1c2128;
+            --warn: #d29922;
+            --error: #f85149;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        h1 {
+            font-size: 2em;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+            margin-bottom: 24px;
+            color: var(--text);
+        }
+
+        h2 {
+            font-size: 1.5em;
+            margin-top: 40px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        h3 {
+            font-size: 1.25em;
+            margin-top: 28px;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+
+        h4 {
+            font-size: 1.1em;
+            margin-top: 20px;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+        }
+
+        p { margin-bottom: 16px; }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        a:hover { text-decoration: underline; }
+
+        code {
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.875em;
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+            margin: 16px 0;
+        }
+
+        pre code {
+            background: none;
+            border: none;
+            padding: 0;
+            font-size: 0.85em;
+            line-height: 1.5;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 0.9em;
+        }
+
+        th {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        td {
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            color: var(--text-muted);
+        }
+
+        tr:hover td {
+            background: var(--surface);
+            color: var(--text);
+        }
+
+        ul, ol {
+            margin: 8px 0 16px 24px;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 8px 16px;
+            margin: 16px 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        strong { color: var(--text); }
+
+        .nav {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 32px;
+        }
+
+        .nav a {
+            margin-right: 16px;
+            font-size: 0.9em;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .badge-ok { background: #1a3a1a; color: var(--accent2); }
+        .badge-warn { background: #3a2a0a; color: var(--warn); }
+        .badge-fail { background: #3a1a1a; color: var(--error); }
+
+        @media (max-width: 768px) {
+            body { padding: 16px; }
+            h1 { font-size: 1.5em; }
+            table { font-size: 0.8em; }
+        }
+
+        @media print {
+            body { background: white; color: #1a1a1a; max-width: none; }
+            pre { background: #f5f5f5; border-color: #ddd; }
+            code { background: #f0f0f0; border-color: #ddd; }
+            th { background: #f0f0f0; }
+            td { color: #333; }
+            a { color: #0066cc; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="INSTALLATION.html">Installation</a>
+        <a href="QUICK_START.html">Quick Start</a>
+        <a href="USER_MANUAL.html">User Manual</a>
+        <a href="FAQ.html">FAQ</a>
+    </nav>
+    <h1 id="pipeline-monitoring-learning-system">Pipeline Monitoring &amp; Learning System</h1>
+<blockquote>
+<p><strong>Status</strong>: PLANNED — Not yet implemented. Created 2026-06-18.
+<strong>Priority</strong>: Implement before multi-developer rollout.</p>
+</blockquote>
+<h2 id="problem">Problem</h2>
+<p>When multiple developers use the SDLC pipeline, there's <strong>no way to know</strong>:
+- Is the discover step actually helping, or are developers ignoring it?
+- Which types of bugs does the pipeline struggle with?
+- Are fixes correct first-time, or do they get reverted?
+- How much time does each phase actually take?
+- What patterns should become recipes?</p>
+<p>Today, learning only happens through <strong>manual audit</strong> (DA-002 through DA-014) which costs ~1 hour each and doesn't scale.</p>
+<h2 id="proposed-solution-3-tier-monitoring">Proposed Solution: 3-Tier Monitoring</h2>
+<h3 id="tier-1-passive-metrics-zero-effort">Tier 1: Passive Metrics (Zero Effort)</h3>
+<p>Automatically log key metrics into <code>metrics.jsonl</code> per task — no developer input needed.</p>
+<h3 id="tier-2-post-task-survey-5-seconds">Tier 2: Post-Task Survey (5 Seconds)</h3>
+<p>After <code>done</code>, ask the developer 3 quick questions about fix quality.</p>
+<h3 id="tier-3-analytics-dashboard-sdlc-report">Tier 3: Analytics Dashboard (<code>sdlc report</code>)</h3>
+<p>Aggregate metrics across all tasks to show trends and actionable insights.</p>
+<hr />
+<h2 id="tier-1-passive-metrics-collection">Tier 1: Passive Metrics Collection</h2>
+<h3 id="what-to-log-automatically-on-every-phase-transition">What to log (automatically, on every phase transition)</h3>
+<p><strong>Discover phase example:</strong></p>
+<pre><code class="language-jsonl">{
+  &quot;task_id&quot;: &quot;CAS-2606180657&quot;,
+  &quot;event&quot;: &quot;phase_complete&quot;,
+  &quot;phase&quot;: &quot;DISCOVER&quot;,
+  &quot;timestamp&quot;: &quot;2026-06-18T12:30:00Z&quot;,
+  &quot;duration_sec&quot;: 45,
+  &quot;developer&quot;: &quot;admin&quot;,
+  &quot;module&quot;: &quot;opening_master&quot;,
+  &quot;task_type&quot;: &quot;fix&quot;,
+  &quot;discover&quot;: {
+    &quot;quality_score&quot;: 75,
+    &quot;rag_hits&quot;: 8,
+    &quot;rag_strong&quot;: 2,
+    &quot;lca_modules&quot;: 2,
+    &quot;recipe_found&quot;: false,
+    &quot;code_snippets&quot;: true,
+    &quot;call_tree_depth&quot;: 3,
+    &quot;tables_found&quot;: 12,
+    &quot;brain_chunks_matched&quot;: 4,
+    &quot;track&quot;: &quot;code-first&quot;
+  }
+}
+</code></pre>
+<p><strong>Commit phase example:</strong></p>
+<pre><code class="language-jsonl">{
+  &quot;task_id&quot;: &quot;CAS-2606180657&quot;,
+  &quot;event&quot;: &quot;phase_complete&quot;,
+  &quot;phase&quot;: &quot;COMMIT&quot;,
+  &quot;timestamp&quot;: &quot;2026-06-18T14:00:00Z&quot;,
+  &quot;duration_sec&quot;: 5400,
+  &quot;files_changed&quot;: 3,
+  &quot;lines_added&quot;: 45,
+  &quot;lines_removed&quot;: 12,
+  &quot;total_phases_duration_sec&quot;: 7200
+}
+</code></pre>
+<h3 id="where-to-hook-in-clipy">Where to hook in cli.py</h3>
+<ul>
+<li><code>cmd_discover()</code> — log discover quality metrics after writing discovery.md</li>
+<li><code>cmd_done()</code> / phase transitions — log phase completion with timing</li>
+<li><code>_save_state()</code> — timestamp every state change</li>
+</ul>
+<h3 id="storage">Storage</h3>
+<p><code>.sdlc/metrics/metrics.jsonl</code> (append-only, one JSON per line, <strong>gitignored</strong>)</p>
+<hr />
+<h2 id="tier-2-post-task-quality-survey">Tier 2: Post-Task Quality Survey</h2>
+<p>After task completes via <code>sdlc done</code>, print 3 quick survey questions:</p>
+<pre><code>✅ Task CAS-2606180657 moved to done/
+
+Quick quality check (press Enter to skip):
+  1. Fix correct first try? [Y/n]: Y
+  2. Discovery useful? [1-5, 5=very]: 4  
+  3. What would have helped? (optional): _
+</code></pre>
+<p>Logged to same <code>metrics.jsonl</code>:</p>
+<pre><code class="language-jsonl">{
+  &quot;task_id&quot;: &quot;CAS-2606180657&quot;,
+  &quot;event&quot;: &quot;quality_survey&quot;,
+  &quot;fix_correct_first_try&quot;: true,
+  &quot;discovery_usefulness&quot;: 4,
+  &quot;feedback&quot;: &quot;&quot;
+}
+</code></pre>
+<blockquote>
+<p><strong>Rule</strong>: Survey must be <strong>optional</strong> (Enter to skip all). Developers will stop using the tool if it nags them.</p>
+</blockquote>
+<hr />
+<h2 id="tier-3-analytics-dashboard">Tier 3: Analytics Dashboard</h2>
+<h3 id="sdlc-report-command"><code>sdlc report</code> command</h3>
+<pre><code class="language-bash">sdlc report                    # Last 7 days summary
+sdlc report --since 2026-06-01 # Custom range
+sdlc report --developer ravi   # Per-developer
+sdlc report --module billing   # Per-module
+sdlc report --json             # Machine-readable
+</code></pre>
+<h3 id="output-example">Output example</h3>
+<pre><code>📊 SDLC Pipeline Report (Jun 11 - Jun 18, 2026)
+═══════════════════════════════════════════════
+
+Tasks:     12 completed, 3 in progress
+Avg time:  2.1 hours per fix (down from 3.4h last week)
+Fix rate:  83% correct first try
+
+Discovery Quality:
+  Avg score: 72/100
+  RAG useful: 8/12 tasks (67%)
+  Recipes applied: 2/12 tasks (17%)
+  Call tree helped: 10/12 tasks (83%)
+
+Module Hotspots:
+  billing:     5 fixes (41%)  ← most fixes
+  reports:     3 fixes (25%)
+  estimation:  2 fixes (17%)
+
+Improvement Opportunities:
+  ⚠ 3 tasks had discovery score &lt; 50 — review for pattern gaps
+  ⚠ billing module: 0% recipe hit rate — consider building recipes
+  ⚠ Avg 6 post-discover greps in reports module — brain may be stale
+</code></pre>
+<hr />
+<h2 id="tier-3b-learning-loop-auto-improvements">Tier 3b: Learning Loop (Auto-Improvements)</h2>
+<h3 id="sdlc-learn-command"><code>sdlc learn</code> command</h3>
+<p>Analyzes completed tasks to identify:</p>
+<ol>
+<li><strong>Missed recipes</strong>: Tasks where the fix pattern appeared 3+ times → auto-suggest recipe creation</li>
+<li><strong>Stale brains</strong>: Modules where discovery score is consistently low → flag for brain rebuild</li>
+<li><strong>RAG gaps</strong>: Queries that returned 0 hits → suggest what to add to ChromaDB</li>
+<li><strong>Common mistakes</strong>: Fixes that got reverted → analyze root cause patterns</li>
+</ol>
+<pre><code class="language-bash">sdlc learn                     # Analyze all completed tasks
+sdlc learn --auto-recipe       # Auto-generate recipe suggestions
+</code></pre>
+<hr />
+<h2 id="open-design-questions">Open Design Questions</h2>
+<ol>
+<li><strong>Metrics storage for multi-developer teams</strong>:</li>
+<li>Option A: Local <code>metrics.jsonl</code> per developer (simple, gitignored)</li>
+<li>Option B: Shared git-tracked file (merge conflicts risk)</li>
+<li>Option C: Central endpoint/webhook (most scalable, needs server)</li>
+<li>
+<p><em>Recommended</em>: <strong>A</strong> for now, with <code>sdlc report --export</code> to share</p>
+</li>
+<li>
+<p><strong>Survey format</strong>:</p>
+</li>
+<li>Interactive terminal prompt (quick, won't work in CI)</li>
+<li>File-based <code>review.md</code> template</li>
+<li>
+<p><em>Recommended</em>: Interactive with file fallback</p>
+</li>
+<li>
+<p><strong>Implementation priority</strong>:</p>
+</li>
+<li>Tier 1 first (passive metrics) → zero effort, most value</li>
+<li>Then Tier 3 (dashboard) → visibility</li>
+<li>Then Tier 2 (survey) → depends on developer discipline</li>
+</ol>
+    <hr>
+    <p style="color: var(--text-muted); font-size: 0.85em; text-align: center;">
+        SDLC Pipeline Engine v3.8.1 &mdash; Logimax Technologies
+    </p>
+</body>
+</html>

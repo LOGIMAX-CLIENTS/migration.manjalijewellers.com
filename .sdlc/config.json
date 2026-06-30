@@ -1,0 +1,93 @@
+{
+  "project_name": "etail_v3",
+  "framework": "codeigniter3",
+  "paths": {
+    "controllers": "admin/application/controllers/",
+    "models": "admin/application/models/",
+    "views": "admin/application/views/",
+    "js": "admin/assets/js/",
+    "css": "admin/assets/css/",
+    "helpers": "admin/application/helpers/",
+    "config": "admin/application/config/"
+  },
+  "environment": {
+    "php_path": "C:/xampp/php/php.exe",
+    "pytest_cmd": "python -m pytest",
+    "playwright_installed": true
+  },
+  "test_paths": {
+    "e2e": "admin/tests/e2e/",
+    "unit": "admin/tests/",
+    "playwright_config": "admin/tests/e2e/playwright.config.js"
+  },
+  "file_permissions": {
+    "REQUIREMENT": [
+      ".sdlc/active/**",
+      "knowledge_brain/**"
+    ],
+    "TEST_DESIGN": [
+      "admin/tests/**/*.spec.js",
+      "admin/tests/**/*.js",
+      "admin/tests/**/*.php",
+      "admin/tests/e2e/helpers/*.js",
+      "admin/tests/config/*.json",
+      "tests/**",
+      ".sdlc/active/**"
+    ],
+    "PLANNING": [
+      ".sdlc/active/**",
+      "knowledge_brain/**"
+    ],
+    "CODING": [
+      "admin/application/**/*.php",
+      "admin/assets/**/*.js",
+      "admin/assets/**/*.css",
+      "admin/application/views/**/*.php",
+      ".sdlc/active/**"
+    ],
+    "TEST_VERIFY": [
+      "admin/tests/**/*.spec.js",
+      "admin/tests/**/*.php",
+      "admin/tests/config/*.json",
+      "tests/**",
+      ".sdlc/active/**"
+    ],
+    "REVIEW": [
+      ".sdlc/active/**",
+      ".changes/**"
+    ],
+    "COMMIT": [
+      ".sdlc/active/**",
+      ".sdlc/done/**",
+      ".changes/**",
+      "knowledge_brain/**",
+      "bug_report_AI/**"
+    ],
+    "PERF_OPTIMIZE": [
+      "admin/application/models/**/*.php",
+      "admin/assets/**/*.js",
+      "admin/assets/**/*.css",
+      "database/migrations/*.sql"
+    ]
+  },
+  "base_url": "http://localhost/etail_v3/admin/index.php",
+  "git": {
+    "base_branch": "PRODUCTION",
+    "dev_branch": "Retail_1.1.1.0001",
+    "branch_prefix": "bugfix/",
+    "remote": "origin"
+  },
+  "repo": {
+    "owner": "Logimax-Technologies",
+    "name": "etail_development_src",
+    "recipes_owner": "LOGIMAX-CLIENTS",
+    "recipes_repo": "bug-recipes"
+  },
+  "discovery_sources": {
+    "lca": false,
+    "rag": false,
+    "recipes": true,
+    "call_tree": true,
+    "knowledge_brain": true
+  }
+}

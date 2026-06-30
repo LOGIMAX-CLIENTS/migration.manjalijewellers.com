@@ -1,0 +1,115 @@
+{
+  "_version": "1.0",
+  "_description": "SDLC Pipeline State — Single source of truth. All workflows read from and write to this file.",
+  "_updated_at": null,
+  "_updated_by": null,
+
+  "task": {
+    "id": null,
+    "type": null,
+    "module": null,
+    "summary": null,
+    "ticket": null,
+    "priority": null,
+    "track": null,
+    "description": null,
+    "requested_by": null,
+    "created_at": null
+  },
+
+  "phase": {
+    "current": "IDLE",
+    "previous": null,
+    "started_at": null,
+    "history": []
+  },
+
+  "requirement": {
+    "status": "pending",
+    "completed_at": null,
+    "category": null,
+    "user_story": null,
+    "acceptance_criteria": [],
+    "impacts": []
+  },
+
+  "plan": {
+    "status": "pending",
+    "completed_at": null,
+    "approved_at": null,
+    "approved_by": null,
+    "complexity": null,
+    "risk_level": null,
+    "files_planned": [],
+    "decisions": []
+  },
+
+  "coding": {
+    "status": "pending",
+    "started_at": null,
+    "completed_at": null,
+    "files_modified": [],
+    "files_added": [],
+    "files_deleted": [],
+    "checklist": [],
+    "blockers": [],
+    "notes": []
+  },
+
+  "review": {
+    "status": "pending",
+    "completed_at": null,
+    "verdict": null,
+    "critical_count": 0,
+    "warning_count": 0,
+    "advisory_count": 0,
+    "findings": [],
+    "business_rules_checked": []
+  },
+
+  "commit": {
+    "status": "pending",
+    "completed_at": null,
+    "hash": null,
+    "hash_short": null,
+    "message": null,
+    "branch": null,
+    "pre_commit_passed": null,
+    "files_committed": []
+  },
+
+  "pr": {
+    "status": "pending",
+    "number": null,
+    "url": null,
+    "target_branch": null,
+    "quality_gate": null,
+    "created_at": null,
+    "merged_at": null
+  },
+
+  "changeset": {
+    "type": null,
+    "module": null,
+    "summary": null,
+    "details": [],
+    "files": [],
+    "ticket": null,
+    "impact": null,
+    "testing": null,
+    "breaking": false
+  },
+
+  "context": {
+    "module_brain_available": null,
+    "system_brain_available": null,
+    "pattern_match": null,
+    "recipe_match": null,
+    "danger_zone": false,
+    "cross_module": false,
+    "pause_point": null,
+    "resume_instructions": null
+  },
+
+  "timeline": []
+}

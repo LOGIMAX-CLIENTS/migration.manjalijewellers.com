@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDLC Pipeline Engine v3.8 — SDLC Pipeline Engine</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --accent2: #3fb950;
+            --code-bg: #1c2128;
+            --warn: #d29922;
+            --error: #f85149;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        h1 {
+            font-size: 2em;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+            margin-bottom: 24px;
+            color: var(--text);
+        }
+
+        h2 {
+            font-size: 1.5em;
+            margin-top: 40px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        h3 {
+            font-size: 1.25em;
+            margin-top: 28px;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+
+        h4 {
+            font-size: 1.1em;
+            margin-top: 20px;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+        }
+
+        p { margin-bottom: 16px; }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        a:hover { text-decoration: underline; }
+
+        code {
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.875em;
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+            margin: 16px 0;
+        }
+
+        pre code {
+            background: none;
+            border: none;
+            padding: 0;
+            font-size: 0.85em;
+            line-height: 1.5;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 0.9em;
+        }
+
+        th {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        td {
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            color: var(--text-muted);
+        }
+
+        tr:hover td {
+            background: var(--surface);
+            color: var(--text);
+        }
+
+        ul, ol {
+            margin: 8px 0 16px 24px;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 8px 16px;
+            margin: 16px 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        strong { color: var(--text); }
+
+        .nav {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 32px;
+        }
+
+        .nav a {
+            margin-right: 16px;
+            font-size: 0.9em;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .badge-ok { background: #1a3a1a; color: var(--accent2); }
+        .badge-warn { background: #3a2a0a; color: var(--warn); }
+        .badge-fail { background: #3a1a1a; color: var(--error); }
+
+        @media (max-width: 768px) {
+            body { padding: 16px; }
+            h1 { font-size: 1.5em; }
+            table { font-size: 0.8em; }
+        }
+
+        @media print {
+            body { background: white; color: #1a1a1a; max-width: none; }
+            pre { background: #f5f5f5; border-color: #ddd; }
+            code { background: #f0f0f0; border-color: #ddd; }
+            th { background: #f0f0f0; }
+            td { color: #333; }
+            a { color: #0066cc; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="INSTALLATION.html">Installation</a>
+        <a href="QUICK_START.html">Quick Start</a>
+        <a href="USER_MANUAL.html">User Manual</a>
+        <a href="FAQ.html">FAQ</a>
+    </nav>
+    <h1 id="sdlc-pipeline-engine-v38">SDLC Pipeline Engine v3.8</h1>
+<blockquote>
+<p>AI-powered task management for CodeIgniter 3 projects.<br />
+Guides agents through structured phases: discover → plan → code → test → review → commit.</p>
+</blockquote>
+<h2 id="what-it-does">What It Does</h2>
+<ul>
+<li><strong>Discovery</strong>: One command scans your codebase (LCA + RAG + Brain) and generates a complete analysis</li>
+<li><strong>Phase Enforcement</strong>: Prevents agents from coding before planning, or committing before review</li>
+<li><strong>Anti-Drift</strong>: Keeps AI focused — no tangents, no skipping steps</li>
+<li><strong>Knowledge Reuse</strong>: Searches bug recipe library before re-investigating known issues</li>
+<li><strong>Quality Scoring</strong>: Auto-grades discovery completeness (0-100%)</li>
+</ul>
+<h2 id="quick-start">Quick Start</h2>
+<pre><code class="language-bash"># 1. Start a task
+python .sdlc/engine/cli.py start -t fix -m reports -s &quot;Cashbook not showing opening balance&quot;
+
+# 2. Run discovery (auto-analyzes codebase)
+python .sdlc/engine/cli.py discover
+
+# 3. Follow the pipeline — AI reads phase instructions automatically
+python .sdlc/engine/cli.py what-next
+python .sdlc/engine/cli.py step-done
+</code></pre>
+<h2 id="documentation">Documentation</h2>
+<table>
+<thead>
+<tr>
+<th>Document</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="docs/INSTALLATION.md">INSTALLATION.md</a></td>
+<td>Setup for Windows &amp; Linux</td>
+</tr>
+<tr>
+<td><a href="docs/QUICK_START.md">QUICK_START.md</a></td>
+<td>First task in 5 minutes</td>
+</tr>
+<tr>
+<td><a href="docs/USER_MANUAL.md">USER_MANUAL.md</a></td>
+<td>Complete command reference</td>
+</tr>
+<tr>
+<td><a href="docs/FAQ.md">FAQ.md</a></td>
+<td>Troubleshooting &amp; common questions</td>
+</tr>
+<tr>
+<td><a href="CHANGELOG.md">CHANGELOG.md</a></td>
+<td>Version history</td>
+</tr>
+</tbody>
+</table>
+<h2 id="requirements">Requirements</h2>
+<ul>
+<li>Python 3.10+</li>
+<li>Git</li>
+<li>LCA (Logimax Code Analyzer) — <code>pip install -e logimax-devtools/backend/lca_core</code></li>
+<li>Optional: ChromaDB + sentence-transformers (for RAG semantic search)</li>
+</ul>
+<h2 id="project-structure">Project Structure</h2>
+<pre><code>.sdlc/
+├── engine/
+│   ├── cli.py              # Main pipeline engine
+│   ├── rag_server.py        # Optional RAG embedding server
+│   └── validate_write.py    # File permission guard
+├── roles/                   # Phase-specific AI instructions
+│   ├── IDLE.md
+│   ├── REQUIREMENT.md
+│   ├── PLANNING.md
+│   ├── CODING.md
+│   ├── TEST_DESIGN.md
+│   ├── REVIEW.md
+│   ├── COMMIT.md
+│   └── PERF.md
+├── templates/               # Spec file templates
+├── workflows/               # Phase transition workflows
+├── quality/                 # Drift audits &amp; stabilization tracking
+├── active/                  # Current task specs (gitignored)
+├── backlog/                 # Queued tasks
+├── done/                    # Archived completed tasks
+├── config.json              # Project-specific settings
+├── steps.json               # Track definitions (EXPRESS/STANDARD/COMPLEX)
+└── CHANGELOG.md             # Version history
+</code></pre>
+<h2 id="license">License</h2>
+<p>Internal — Logimax Technologies</p>
+    <hr>
+    <p style="color: var(--text-muted); font-size: 0.85em; text-align: center;">
+        SDLC Pipeline Engine v3.8.1 &mdash; Logimax Technologies
+    </p>
+</body>
+</html>

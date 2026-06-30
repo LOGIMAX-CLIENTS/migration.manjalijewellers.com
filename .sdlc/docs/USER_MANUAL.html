@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Manual — SDLC Pipeline Engine v3.8 — SDLC Pipeline Engine</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --accent2: #3fb950;
+            --code-bg: #1c2128;
+            --warn: #d29922;
+            --error: #f85149;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        h1 {
+            font-size: 2em;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+            margin-bottom: 24px;
+            color: var(--text);
+        }
+
+        h2 {
+            font-size: 1.5em;
+            margin-top: 40px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        h3 {
+            font-size: 1.25em;
+            margin-top: 28px;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+
+        h4 {
+            font-size: 1.1em;
+            margin-top: 20px;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+        }
+
+        p { margin-bottom: 16px; }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        a:hover { text-decoration: underline; }
+
+        code {
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.875em;
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+            margin: 16px 0;
+        }
+
+        pre code {
+            background: none;
+            border: none;
+            padding: 0;
+            font-size: 0.85em;
+            line-height: 1.5;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 0.9em;
+        }
+
+        th {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        td {
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            color: var(--text-muted);
+        }
+
+        tr:hover td {
+            background: var(--surface);
+            color: var(--text);
+        }
+
+        ul, ol {
+            margin: 8px 0 16px 24px;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 8px 16px;
+            margin: 16px 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        strong { color: var(--text); }
+
+        .nav {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 32px;
+        }
+
+        .nav a {
+            margin-right: 16px;
+            font-size: 0.9em;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .badge-ok { background: #1a3a1a; color: var(--accent2); }
+        .badge-warn { background: #3a2a0a; color: var(--warn); }
+        .badge-fail { background: #3a1a1a; color: var(--error); }
+
+        @media (max-width: 768px) {
+            body { padding: 16px; }
+            h1 { font-size: 1.5em; }
+            table { font-size: 0.8em; }
+        }
+
+        @media print {
+            body { background: white; color: #1a1a1a; max-width: none; }
+            pre { background: #f5f5f5; border-color: #ddd; }
+            code { background: #f0f0f0; border-color: #ddd; }
+            th { background: #f0f0f0; }
+            td { color: #333; }
+            a { color: #0066cc; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="INSTALLATION.html">Installation</a>
+        <a href="QUICK_START.html">Quick Start</a>
+        <a href="USER_MANUAL.html">User Manual</a>
+        <a href="FAQ.html">FAQ</a>
+    </nav>
+    <h1 id="user-manual-sdlc-pipeline-engine-v38">User Manual — SDLC Pipeline Engine v3.8</h1>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#concepts">Concepts</a></li>
+<li><a href="#command-reference">Command Reference</a></li>
+<li><a href="#discovery-engine">Discovery Engine</a></li>
+<li><a href="#phase-system">Phase System</a></li>
+<li><a href="#track-system">Track System</a></li>
+<li><a href="#spec-files">Spec Files</a></li>
+<li><a href="#configuration">Configuration</a></li>
+<li><a href="#integration-with-ai-agents">Integration with AI Agents</a></li>
+<li><a href="#advanced-usage">Advanced Usage</a></li>
+</ol>
+<hr />
+<h2 id="overview">Overview</h2>
+<p>The SDLC Pipeline Engine enforces a structured workflow for AI-assisted development. Instead of letting the AI jump straight to coding, it guides through phases:</p>
+<pre><code>IDLE → REQUIREMENT → PLANNING → CODING → TEST_VERIFY → REVIEW → COMMIT
+</code></pre>
+<p>Each phase has:
+- <strong>Role file</strong> — instructions the AI reads to know what to do
+- <strong>Spec file</strong> — output artifact the AI creates (e.g., requirement.md, design.md)
+- <strong>Gate check</strong> — conditions that must be met before advancing</p>
+<hr />
+<h2 id="concepts">Concepts</h2>
+<h3 id="tasks">Tasks</h3>
+<p>A task is a unit of work — a bug fix, feature, change request, or refactor. Each task gets:
+- A unique ID (e.g., <code>REP-2606181045</code>)
+- A directory under <code>.sdlc/active/{TASK_ID}/</code>
+- Spec files created during each phase</p>
+<h3 id="phases">Phases</h3>
+<p>Phases are sequential stages a task goes through. The pipeline prevents phase skipping — you can't code before planning.</p>
+<h3 id="tracks">Tracks</h3>
+<p>Tracks determine how many steps a task requires:</p>
+<table>
+<thead>
+<tr>
+<th>Track</th>
+<th>Steps</th>
+<th>When Used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>EXPRESS</td>
+<td>4 steps</td>
+<td>Simple, isolated bugs with clear fix</td>
+</tr>
+<tr>
+<td>STANDARD</td>
+<td>8 steps</td>
+<td>Most bugs and CRs</td>
+</tr>
+<tr>
+<td>COMPLEX</td>
+<td>12 steps</td>
+<td>Multi-module, architectural changes</td>
+</tr>
+</tbody>
+</table>
+<p>Track is auto-detected by the <code>discover</code> command based on bug complexity.</p>
+<h3 id="specs">Specs</h3>
+<p>Spec files are markdown documents created during each phase:
+- <code>discovery.md</code> — Auto-generated codebase analysis
+- <code>requirement.md</code> — What needs to change and why
+- <code>design.md</code> — How to implement the change
+- <code>tasks.md</code> — Implementation checklist
+- <code>review.md</code> — Auto-generated code review</p>
+<hr />
+<h2 id="command-reference">Command Reference</h2>
+<h3 id="task-management">Task Management</h3>
+<h4 id="start-start-a-new-task"><code>start</code> — Start a new task</h4>
+<pre><code class="language-bash">python .sdlc/engine/cli.py start \
+  -t fix \           # Type: fix|feature|hotfix|cr|refactor|perf
+  -m reports \       # Module name
+  -s &quot;Summary&quot; \     # One-line description
+  --url &quot;ctrl/method&quot; \  # Optional: page URL
+  --ticket BIL-042 \    # Optional: tracker ID
+  -p high \             # Optional: priority
+  --track standard \    # Optional: override auto-detection
+  --auto \              # Optional: AI auto-generates all specs
+  --force               # Optional: move active task to backlog
+</code></pre>
+<h4 id="queue-add-task-to-backlog"><code>queue</code> — Add task to backlog</h4>
+<pre><code class="language-bash">python .sdlc/engine/cli.py queue \
+  -t fix -m billing -s &quot;Invoice mismatch&quot; --ticket BIL-042
+</code></pre>
+<h4 id="pick-activate-a-backlog-task"><code>pick</code> — Activate a backlog task</h4>
+<pre><code class="language-bash">python .sdlc/engine/cli.py pick
+# Shows numbered list of backlog tasks, select one
+</code></pre>
+<h4 id="show-show-current-task-status"><code>show</code> — Show current task status</h4>
+<pre><code class="language-bash">python .sdlc/engine/cli.py show
+# Output: Task ID, type, module, summary, current phase, spec status
+</code></pre>
+<h4 id="done-complete-and-archive-task"><code>done</code> — Complete and archive task</h4>
+<pre><code class="language-bash">python .sdlc/engine/cli.py done
+# Moves active/{TASK_ID}/ → done/{TASK_ID}/
+</code></pre>
+<h4 id="history-show-completed-tasks"><code>history</code> — Show completed tasks</h4>
+<pre><code class="language-bash">python .sdlc/engine/cli.py history
+</code></pre>
+<h3 id="pipeline-navigation">Pipeline Navigation</h3>
+<h4 id="what-next-show-current-step-instruction"><code>what-next</code> — Show current step instruction</h4>
+<pre><code class="language-bash">python .sdlc/engine/cli.py what-next
+# Shows: step number, instruction, allowed actions, done-when criteria
+</code></pre>
+<p>This is the <strong>core anti-drift command</strong>. When the AI is confused or going off-track, <code>what-next</code> brings it back.</p>
+<h4 id="step-done-mark-current-step-complete"><code>step-done</code> — Mark current step complete</h4>
+<pre><code class="language-bash">python .sdlc/engine/cli.py step-done
+python .sdlc/engine/cli.py step-done --note &quot;Created requirement from discovery&quot;
+</code></pre>
+<p>Validates the step's <code>done_when</code> criteria before advancing. Fails if criteria not met.</p>
+<h4 id="phase-show-current-phase"><code>phase</code> — Show current phase</h4>
+<pre><code class="language-bash">python .sdlc/engine/cli.py phase
+</code></pre>
+<h4 id="transition-move-to-next-phase-with-gate-check"><code>transition</code> — Move to next phase (with gate check)</h4>
+<pre><code class="language-bash">python .sdlc/engine/cli.py transition
+</code></pre>
+<h4 id="banner-show-role-banner"><code>banner</code> — Show role banner</h4>
+<pre><code class="language-bash">python .sdlc/engine/cli.py banner
+# Output: Phase badge + task summary (shown at start of AI responses)
+</code></pre>
+<h4 id="escalate-upgrade-express-standard-track"><code>escalate</code> — Upgrade EXPRESS → STANDARD track</h4>
+<pre><code class="language-bash">python .sdlc/engine/cli.py escalate
+# Use when an &quot;easy&quot; bug turns out to be complex
+</code></pre>
+<h3 id="discovery-analysis">Discovery &amp; Analysis</h3>
+<h4 id="discover-one-command-codebase-analysis"><code>discover</code> — One-command codebase analysis</h4>
+<pre><code class="language-bash">python .sdlc/engine/cli.py discover
+python .sdlc/engine/cli.py discover &quot;custom search query&quot;
+</code></pre>
+<p>Generates <code>discovery.md</code> with:
+- URL resolution (controller → model mapping)
+- RAG semantic search (if available)
+- LCA impact analysis (call chains, related functions)
+- Bug recipe check (known fix patterns)
+- Knowledge Brain context (business rules)
+- Inline code snippets (L1 → L2 → L3 depth)
+- Tables in call chain
+- Discovery quality score</p>
+<h4 id="search-semantic-search-only"><code>search</code> — Semantic search only</h4>
+<pre><code class="language-bash">python .sdlc/engine/cli.py search &quot;opening balance calculation&quot;
+</code></pre>
+<h4 id="context-generate-context-summary"><code>context</code> — Generate context summary</h4>
+<pre><code class="language-bash">python .sdlc/engine/cli.py context
+</code></pre>
+<h3 id="review-quality">Review &amp; Quality</h3>
+<h4 id="review-auto-generate-code-review"><code>review</code> — Auto-generate code review</h4>
+<pre><code class="language-bash">python .sdlc/engine/cli.py review
+# Compares git diff against requirement.md, generates review.md
+</code></pre>
+<h4 id="metrics-show-pipeline-metrics"><code>metrics</code> — Show pipeline metrics</h4>
+<pre><code class="language-bash">python .sdlc/engine/cli.py metrics
+# Shows: tasks completed, average phase times, discovery scores
+</code></pre>
+<h3 id="recipes">Recipes</h3>
+<h4 id="enrich-auto-generate-bug-recipe-from-completed-task"><code>enrich</code> — Auto-generate bug recipe from completed task</h4>
+<pre><code class="language-bash">python .sdlc/engine/cli.py enrich
+# Creates recipe from task artifacts, pushes to bug-recipes repo
+</code></pre>
+<h3 id="administration">Administration</h3>
+<h4 id="init-initialize-pipeline-in-new-project"><code>init</code> — Initialize pipeline in new project</h4>
+<pre><code class="language-bash">python .sdlc/engine/cli.py init
+</code></pre>
+<h4 id="sync-update-framework-from-source"><code>sync</code> — Update framework from source</h4>
+<pre><code class="language-bash">python .sdlc/engine/cli.py sync
+</code></pre>
+<hr />
+<h2 id="discovery-engine">Discovery Engine</h2>
+<p>The <code>discover</code> command is the pipeline's intelligence layer. It answers: <em>"What code is involved in this bug?"</em></p>
+<h3 id="how-it-works">How It Works</h3>
+<pre><code>Input: Bug description + optional URL
+  ↓
+Step 1: URL Resolution
+  &quot;admin_ret_reports/cash_book_details&quot;
+  → Controller: admin_ret_reports.php
+  → Method: cash_book_details()
+  ↓
+Step 2: RAG Semantic Search (if available)
+  → Finds files/functions semantically related to the description
+  → Results scored: strong (&lt;0.30), good (0.30-0.40), weak (&gt;0.40)
+  ↓
+Step 3: LCA Analysis
+  → Function search (keyword matching)
+  → Impact analysis (call chain from entry point)
+  → Related function search
+  ↓
+Step 4: Code Extraction
+  → L1: Direct model methods from call chain (full code)
+  → L2: Cross-module methods called by L1 (full code)
+  → L3: Sub-calls within L2 matching keywords (full code)
+  → Smart excerpting for functions &gt;100 lines
+  ↓
+Step 5: Context Enrichment
+  → Brain context (business rules from Knowledge Brain)
+  → Tables in call chain (with keyword highlighting)
+  → JS AJAX stub extraction
+  → Class constants and properties
+  ↓
+Step 6: Quality Score
+  → 8 signals scored out of available maximum
+  → Grade: HIGH (≥80%), MEDIUM (≥50%), LOW (&lt;50%)
+</code></pre>
+<h3 id="discovery-quality-score">Discovery Quality Score</h3>
+<table>
+<thead>
+<tr>
+<th>Signal</th>
+<th>Max Points</th>
+<th>What It Measures</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RAG results</td>
+<td>20</td>
+<td>Semantic search quality (only if RAG available)</td>
+</tr>
+<tr>
+<td>LCA analysis</td>
+<td>15</td>
+<td>Call chain and impact depth</td>
+</tr>
+<tr>
+<td>Code snippets</td>
+<td>20</td>
+<td>Inline code extracted</td>
+</tr>
+<tr>
+<td>L2 methods</td>
+<td>10</td>
+<td>Cross-module resolution</td>
+</tr>
+<tr>
+<td>L3 depth</td>
+<td>10</td>
+<td>Sub-call tracing</td>
+</tr>
+<tr>
+<td>Brain context</td>
+<td>10</td>
+<td>Knowledge Brain matches</td>
+</tr>
+<tr>
+<td>Tables</td>
+<td>5</td>
+<td>DB tables identified</td>
+</tr>
+<tr>
+<td>Recipe</td>
+<td>10</td>
+<td>Known fix pattern found (only if recipes repo exists)</td>
+</tr>
+</tbody>
+</table>
+<p>Score is proportional to available infrastructure — clients without RAG or recipes aren't penalized.</p>
+<hr />
+<h2 id="phase-system">Phase System</h2>
+<h3 id="phase-details">Phase Details</h3>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Role File</th>
+<th>Creates</th>
+<th>Gate Check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>IDLE</td>
+<td>IDLE.md</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>REQUIREMENT</td>
+<td>REQUIREMENT.md</td>
+<td>requirement.md</td>
+<td>Requirement spec exists</td>
+</tr>
+<tr>
+<td>PLANNING</td>
+<td>PLANNING.md</td>
+<td>design.md, tasks.md</td>
+<td>Design spec exists</td>
+</tr>
+<tr>
+<td>CODING</td>
+<td>CODING.md</td>
+<td>Source code changes</td>
+<td>All tasks.md items checked</td>
+</tr>
+<tr>
+<td>TEST_VERIFY</td>
+<td>TEST_DESIGN.md</td>
+<td>Test results</td>
+<td>Tests pass</td>
+</tr>
+<tr>
+<td>REVIEW</td>
+<td>REVIEW.md</td>
+<td>review.md</td>
+<td>Review verdict: PASS</td>
+</tr>
+<tr>
+<td>COMMIT</td>
+<td>COMMIT.md</td>
+<td>Git commit + PR</td>
+<td>PR created</td>
+</tr>
+</tbody>
+</table>
+<h3 id="phase-enforcement">Phase Enforcement</h3>
+<p>The pipeline prevents out-of-phase actions:</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Allowed In</th>
+<th>Blocked In</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Create source files</td>
+<td>CODING</td>
+<td>REQUIREMENT, PLANNING</td>
+</tr>
+<tr>
+<td>Run tests</td>
+<td>TEST_VERIFY</td>
+<td>REQUIREMENT</td>
+</tr>
+<tr>
+<td>Create PR</td>
+<td>COMMIT</td>
+<td>All others</td>
+</tr>
+<tr>
+<td>Read source files</td>
+<td>All phases</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Create spec files</td>
+<td>Matching phase</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="track-system">Track System</h2>
+<h3 id="express-track-4-steps">EXPRESS Track (4 steps)</h3>
+<p>For simple, isolated bugs with obvious fixes.</p>
+<pre><code>1. Read discovery.md
+2. Create requirement.md
+3. Code the fix
+4. Review + commit
+</code></pre>
+<h3 id="standard-track-8-steps">STANDARD Track (8 steps)</h3>
+<p>For typical bugs and change requests.</p>
+<pre><code>1. Run discovery
+2. Analyze discovery results
+3. Create requirement.md
+4. Create design.md + tasks.md
+5. Code the fix
+6. Test the fix
+7. Review code
+8. Commit + PR
+</code></pre>
+<h3 id="complex-track-12-steps">COMPLEX Track (12 steps)</h3>
+<p>For multi-module, architectural changes.</p>
+<pre><code>1-2.  Discovery + deep analysis
+3-4.  Requirement + impact assessment
+5-6.  Design + architecture review
+7-8.  Code implementation
+9-10. Testing + regression
+11-12. Review + staged commit
+</code></pre>
+<h3 id="track-auto-detection">Track Auto-Detection</h3>
+<p>The <code>discover</code> command auto-selects track based on:
+- Number of modules affected
+- Call chain depth
+- Presence of cross-module dependencies
+- Complexity of the bug description</p>
+<p>Override with <code>--track express|standard|complex</code>.</p>
+<hr />
+<h2 id="spec-files">Spec Files</h2>
+<p>All spec files live in <code>.sdlc/active/{TASK_ID}/</code>:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Created By</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>metadata.txt</code></td>
+<td><code>start</code> command</td>
+<td>Task metadata</td>
+</tr>
+<tr>
+<td><code>discovery.md</code></td>
+<td><code>discover</code> command</td>
+<td>Codebase analysis</td>
+</tr>
+<tr>
+<td><code>requirement.md</code></td>
+<td>AI (REQUIREMENT phase)</td>
+<td>What to fix and why</td>
+</tr>
+<tr>
+<td><code>design.md</code></td>
+<td>AI (PLANNING phase)</td>
+<td>How to fix it</td>
+</tr>
+<tr>
+<td><code>tasks.md</code></td>
+<td>AI (PLANNING phase)</td>
+<td>Implementation checklist</td>
+</tr>
+<tr>
+<td><code>review.md</code></td>
+<td><code>review</code> command</td>
+<td>Code review results</td>
+</tr>
+</tbody>
+</table>
+<h3 id="check-spec-status">Check Spec Status</h3>
+<pre><code class="language-bash">python .sdlc/engine/cli.py spec-status
+</code></pre>
+<h3 id="create-spec-manually">Create Spec Manually</h3>
+<pre><code class="language-bash">python .sdlc/engine/cli.py create-spec requirement
+</code></pre>
+<hr />
+<h2 id="configuration">Configuration</h2>
+<h3 id="configjson">config.json</h3>
+<p>Located at <code>.sdlc/config.json</code>:</p>
+<pre><code class="language-json">{
+  &quot;project_name&quot;: &quot;etail_v3&quot;,
+  &quot;repo&quot;: {
+    &quot;owner&quot;: &quot;Logimax-Technologies&quot;,
+    &quot;name&quot;: &quot;etail_development_src&quot;
+  },
+  &quot;lca&quot;: {
+    &quot;devtools_path&quot;: &quot;logimax-devtools&quot;,
+    &quot;rag_store_path&quot;: &quot;.rag_store&quot;
+  },
+  &quot;brain_path&quot;: &quot;knowledge_brain&quot;,
+  &quot;recipe_repo&quot;: &quot;LOGIMAX-CLIENTS/bug-recipes&quot;,
+  &quot;modules&quot;: {
+    &quot;reports&quot;: {
+      &quot;controller&quot;: &quot;admin_ret_reports&quot;,
+      &quot;model&quot;: &quot;ret_reports_model&quot;,
+      &quot;js&quot;: &quot;ret_reports&quot;
+    }
+  }
+}
+</code></pre>
+<h3 id="stepsjson">steps.json</h3>
+<p>Defines the step sequences for each track (EXPRESS/STANDARD/COMPLEX). Typically not edited by users.</p>
+<h3 id="gitignore">.gitignore</h3>
+<p>Pipeline state files that should NOT be committed:</p>
+<pre><code>pipeline.json       # Task state (changes every step-done)
+active/             # In-progress task specs
+backlog/            # Queued tasks  
+</code></pre>
+<p>Files that SHOULD be committed:</p>
+<pre><code>engine/             # Pipeline code
+roles/              # Phase instructions
+config.json         # Project settings
+CHANGELOG.md        # Version history
+</code></pre>
+<hr />
+<h2 id="integration-with-ai-agents">Integration with AI Agents</h2>
+<h3 id="how-the-ai-uses-the-pipeline">How the AI Uses the Pipeline</h3>
+<ol>
+<li><strong>Bootstrap</strong>: At conversation start, AI reads <code>SKILL.md</code> → runs <code>banner</code></li>
+<li><strong>Phase routing</strong>: AI reads the role file for the current phase</li>
+<li><strong>Anti-drift</strong>: If AI goes off-track, <code>what-next</code> refocuses it</li>
+<li><strong>Spec creation</strong>: AI creates spec files during each phase</li>
+<li><strong>Advancement</strong>: AI calls <code>step-done</code> when criteria met</li>
+</ol>
+<h3 id="what-the-ai-sees">What the AI Sees</h3>
+<pre><code>╔══════════════════════════════════════════════════════╗
+║  SDLC.5 │ 🔧 CODING │ Task: REP-2606181045     ║
+║  Fix: Cashbook not showing opening balance           ║
+║  Step 5/8: Implement the fix per design.md           ║
+╚══════════════════════════════════════════════════════╝
+</code></pre>
+<h3 id="override-protocol">Override Protocol</h3>
+<p>If you need the AI to do something outside its current phase:
+1. AI will state the conflict
+2. AI asks: "Override phase lock?"
+3. You confirm → AI proceeds
+4. Returns to pipeline after override</p>
+<hr />
+<h2 id="advanced-usage">Advanced Usage</h2>
+<h3 id="rag-server-optional">RAG Server (Optional)</h3>
+<p>For fast semantic search, run the RAG embedding server:</p>
+<pre><code class="language-bash"># Terminal 1: Start server (keeps model warm)
+python .sdlc/engine/rag_server.py
+
+# Terminal 2: Discovery now uses server (~200ms vs 40s)
+python .sdlc/engine/cli.py discover &quot;query&quot;
+</code></pre>
+<p>Server endpoints:
+- <code>POST /query</code> — Full RAG search
+- <code>POST /embed</code> — Embedding only
+- <code>GET /health</code> — Status check</p>
+<h3 id="backlog-management">Backlog Management</h3>
+<pre><code class="language-bash"># Add multiple tasks
+sdlc queue -t fix -m billing -s &quot;Bug 1&quot; -p high
+sdlc queue -t fix -m reports -s &quot;Bug 2&quot; -p medium
+sdlc queue -t cr  -m estimation -s &quot;Change 3&quot; -p low
+
+# View backlog
+cat .sdlc/backlog.md
+
+# Pick highest priority
+sdlc pick
+</code></pre>
+<h3 id="clean-branch-guard">Clean Branch Guard</h3>
+<p>Before creating a PR, the COMMIT phase checks if your branch has accumulated drift:</p>
+<pre><code class="language-bash">git diff --stat origin/PRODUCTION..HEAD
+</code></pre>
+<p>If extra files appear (not from your task), the pipeline instructs you to create a clean branch:</p>
+<pre><code class="language-bash">git checkout -b hotfix/{TASK_ID}-clean origin/PRODUCTION
+git checkout {working_branch} -- {your_files_only}
+git commit &amp;&amp; git push
+</code></pre>
+<h3 id="multi-project-deployment">Multi-Project Deployment</h3>
+<p>To deploy the pipeline to a new project:</p>
+<pre><code class="language-bash"># Copy framework files
+cp -r .sdlc/engine/ /path/to/new-project/.sdlc/engine/
+cp -r .sdlc/roles/ /path/to/new-project/.sdlc/roles/
+cp .sdlc/steps.json /path/to/new-project/.sdlc/
+
+# Initialize
+cd /path/to/new-project
+python .sdlc/engine/cli.py init
+
+# Configure
+# Edit .sdlc/config.json for the new project
+</code></pre>
+    <hr>
+    <p style="color: var(--text-muted); font-size: 0.85em; text-align: center;">
+        SDLC Pipeline Engine v3.8.1 &mdash; Logimax Technologies
+    </p>
+</body>
+</html>
