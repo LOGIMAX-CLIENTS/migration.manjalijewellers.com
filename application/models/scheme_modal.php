@@ -857,7 +857,7 @@ class Scheme_modal extends CI_Model
 	{
 		$showGCodeInAcNo = $this->config->item('showGCodeInAcNo');
 		$accounts = $this->db->query("Select
-	    			sa.auto_debit_status,s.auto_debit_plan_type,ad.auth_link,
+	    			sa.auto_debit_status,s.auto_debit_plan_type,ad.auth_link,g_sub.api_url,
 					maturity_installment,sa.id_scheme_account,sg.group_code as scheme_group_code, UNIX_TIMESTAMP(Date_Format(sg.start_date,'%Y-%m-%d')) as group_start_date,  UNIX_TIMESTAMP(Date_Format(sg.end_date,'%Y-%m-%d')) as  group_end_date,  cs.has_lucky_draw,Date_Format(sa.fixed_rate_on,'%d-%m-%Y') as fixed_rate_on,IF(sa.fixed_rate_on is NULL,'NO','YES') as is_rate_fixed, 
                     s.id_scheme, IF(rate_fixed_in = 1, 'Web App', IF(rate_fixed_in = 2, 'Mobile App', IF(rate_fixed_in = 3, 'Offline', '-'))) as rate_fixed_in,s.is_lucky_draw as is_lucky_draw,
 					c.id_customer,s.flexible_sch_type,s.one_time_premium,s.is_enquiry,IFNULL(sa.fixed_wgt,'-')fixed_wgt,s.id_metal,m.metal,cs.is_multi_commodity,
@@ -907,6 +907,7 @@ IFNULL(IF(sa.is_opening=1,IFNULL(balance_weight,0)+IFNULL(SUM(p.metal_weight),0)
 									Left Join branch br On (sa.id_branch=br.id_branch)
 									Left Join payment p On (sa.id_scheme_account=p.id_scheme_account and (p.payment_status=1 or p.payment_status = 2 or p.payment_status = 8))
 									LEFT JOIN auto_debit_subscription ad on ad.id_scheme_account = sa.id_scheme_account and ad.status=1
+									LEFT JOIN gateway g_sub on g_sub.id_branch = sa.id_branch and g_sub.is_default=1 and g_sub.pg_code=4
 	    							Left Join customer c On (sa.id_customer=c.id_customer and c.active=1)
 									join chit_settings cs
 										Left Join
@@ -937,7 +938,7 @@ IFNULL(IF(sa.is_opening=1,IFNULL(balance_weight,0)+IFNULL(SUM(p.metal_weight),0)
 	function get_account_details($id_scheme_account)
 	{
 		$showGCodeInAcNo = $this->config->item('showGCodeInAcNo');
-		$sql = "SELECT c.id_customer, sa.auto_debit_status,ad.auth_link,s.auto_debit_plan_type,s.total_installments,DATE_FORMAT(ad.expires_on,'%d-%m-%Y') as sub_expires_on,
+		$sql = "SELECT c.id_customer, sa.auto_debit_status,ad.auth_link,s.auto_debit_plan_type,s.total_installments,DATE_FORMAT(ad.expires_on,'%d-%m-%Y') as sub_expires_on,g_sub.api_url,
 		IF(rate_fixed_in = 1, 'Web App', IF(rate_fixed_in = 2, 'Mobile App', IF(rate_fixed_in = 3, 'Offline', '-'))) as rate_fixed_in,s.has_gift,s.has_prize,s.id_metal,m.metal,cs.is_multi_commodity,
 		c.cus_img, sa.account_name,IFNULL(sa.scheme_acc_number,'') as scheme_acc_number,sa.id_branch,sa.id_scheme_account,s.is_lucky_draw as is_lucky_draw,
 		CONCAT(if(" . $showGCodeInAcNo . "=1,if(has_lucky_draw = 1 && is_lucky_draw = 1,sg.group_code,s.code),'') ,' ',ifnull(sa.scheme_acc_number,'Not Allocated')) as scheme_ac,sa.firstPayment_amt,sa.fixed_wgt,sa.fixed_metal_rate,sa.fixed_rate_on,sa.id_branch,
@@ -961,6 +962,7 @@ IFNULL(IF(sa.is_opening=1,IFNULL(balance_weight,0)+IFNULL(SUM(p.metal_weight),0)
 				 left join city ct on (a.id_city=ct.id_city)
 				  left join branch b on (b.id_branch=sa.id_branch)
 				  LEFT JOIN auto_debit_subscription ad on ad.id_scheme_account = sa.id_scheme_account and ad.status=1
+				  LEFT JOIN gateway g_sub on g_sub.id_branch = sa.id_branch and g_sub.is_default=1 and g_sub.pg_code=4
 				 left join ( select 
 				 		   sch.id_scheme_account ,
 						   IFNULL(IF(sch.is_opening=1,IFNULL(sch.paid_installments,0)+ IFNULL(if(sc.scheme_type = 1 and sc.min_weight != sc.max_weight , COUNT(Distinct Date_Format(pay.date_payment,'%Y%m')), sum(pay.no_of_dues)),0), if(sc.scheme_type = 1 and sc.min_weight != sc.max_weight , COUNT(Distinct Date_Format(pay.date_payment,'%Y%m')), sum(pay.no_of_dues))) ,0)
