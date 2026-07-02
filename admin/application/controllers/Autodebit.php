@@ -15,8 +15,8 @@ if (!defined('BASEPATH')) exit('No direct script access allowed');
  * Status mapping (auto_debit_subscription.status):
  *   INITIALIZED, BANK_APPROVAL_PENDING, ACTIVE, ON_HOLD, CANCELLED, COMPLETED
  * 
- * auto_debit_status (scheme_account column):
- *   0=None, 1=Pending, 2=Active, 3=Paused, 4=Cancelled, 5=Completed
+ * auto_debit_status (scheme_account column) — matches old cf_autodebit.php:
+ *   0=None, 1=INITIALIZED, 2=BANK_PENDING, 3=ACTIVE, 4=ON_HOLD, 5=CANCELLED, 6=COMPLETED
  */
 class Autodebit extends CI_Controller
 {
@@ -156,14 +156,31 @@ class Autodebit extends CI_Controller
             'payload'           => $cf_payload
         ));
 
-        // Call Cashfree API — use gateway.api_url for sandbox/production switching
-        $api_url  = rtrim($gateway['api_url'], '/') . '/subscriptions';
+        // Call Cashfree API — parse base domain from gateway.api_url to construct correct path
+        $parsed_gw = parse_url(rtrim($gateway['api_url'], '/'));
+        $base_domain = $parsed_gw['scheme'] . '://' . $parsed_gw['host'];
+        $api_url  = $base_domain . '/pg/subscriptions';
         $response = $this->_cashfreeApiCall($api_url, $cf_payload, $clientId, $secretKey, 'POST');
 
         // Log response
         $this->_logToFile('cf_subscription', 'create_response', $response);
 
         if (isset($response['cf_subscription_id'])) {
+            // Build proper authorization URL from subscription_session_id
+            // The new API (v2025-01-01) returns subscription_session_id (a token),
+            // NOT a direct URL like the old API's authLink.
+            // Check for authorization_link first (backward compat), then construct from session ID.
+            $auth_link_url = null;
+            if (isset($response['authorization_link']) && !empty($response['authorization_link'])) {
+                $auth_link_url = $response['authorization_link'];
+            } elseif (isset($response['subscription_session_id']) && !empty($response['subscription_session_id'])) {
+                $base_domain = rtrim($gateway['api_url'], '/');
+                // Strip any trailing path segments (e.g. /pg/orders/) to get clean base
+                $parsed = parse_url($base_domain);
+                $clean_base = $parsed['scheme'] . '://' . $parsed['host'];
+                $auth_link_url = $clean_base . '/pg/subscriptions/pay/' . $response['subscription_session_id'];
+            }
+
             // Success — save subscription record
             $sub_data = array(
                 'id_scheme_account' => $id_scheme_account,
@@ -175,7 +192,7 @@ class Autodebit extends CI_Controller
                 'plan_type'         => $plan_type,
                 'plan_max_cycles'   => intval($planDetail['total_installments']),
                 'first_charge_date' => $first_charge_date,
-                'auth_link'         => isset($response['authorization_link']) ? $response['authorization_link'] : null,
+                'auth_link'         => $auth_link_url,
                 'cf_response'       => json_encode($response),
                 'created_at'        => date('Y-m-d H:i:s'),
                 'updated_at'        => date('Y-m-d H:i:s')
@@ -191,7 +208,7 @@ class Autodebit extends CI_Controller
                 'msg'    => 'Subscription created successfully',
                 'data'   => array(
                     'subscription_id'   => $subscription_id,
-                    'auth_link'         => isset($response['authorization_link']) ? $response['authorization_link'] : '',
+                    'auth_link'         => $auth_link_url ? $auth_link_url : '',
                     'cf_subscription_id' => $response['cf_subscription_id'],
                     'sub_status'        => isset($response['status']) ? $response['status'] : 'INITIALIZED'
                 )
@@ -357,8 +374,10 @@ class Autodebit extends CI_Controller
         $clientId  = $gateway['param_3'];
         $secretKey = $gateway['param_1'];
 
-        // Call Cashfree cancel API — use gateway.api_url for sandbox/production switching
-        $api_url = rtrim($gateway['api_url'], '/') . '/subscriptions/' . $sub['subscription_id'] . '/cancel';
+        // Call Cashfree cancel API — parse base domain for correct path
+        $parsed_gw = parse_url(rtrim($gateway['api_url'], '/'));
+        $base_domain = $parsed_gw['scheme'] . '://' . $parsed_gw['host'];
+        $api_url = $base_domain . '/pg/subscriptions/' . $sub['subscription_id'] . '/cancel';
 
         $response = $this->_cashfreeApiCall($api_url, array(), $clientId, $secretKey, 'POST');
 
@@ -368,19 +387,30 @@ class Autodebit extends CI_Controller
             'response'          => $response
         ));
 
-        // Update subscription status regardless of API response
-        $this->autodebit_model->updateSubscriptionById($sub['id_subscription'], array(
-            'status'     => 'CANCELLED',
-            'updated_at' => date('Y-m-d H:i:s')
-        ));
+        // Only mark cancelled if API call succeeds — matching old chitscheme.php behavior.
+        // Don't desync local status if Cashfree API fails.
+        if (isset($response['subscription_id']) || (isset($response['subscription_status']) && strtoupper($response['subscription_status']) == 'CANCELLED')) {
+            // Update subscription status
+            $this->autodebit_model->updateSubscriptionById($sub['id_subscription'], array(
+                'status'     => 'CANCELLED',
+                'updated_at' => date('Y-m-d H:i:s')
+            ));
 
-        // Update scheme_account.auto_debit_status = 4 (Cancelled)
-        $this->autodebit_model->updateSchemeAccountAutoDebitStatus($id_scheme_account, 4);
+            // Update scheme_account.auto_debit_status = 5 (CANCELLED — matches old cf_autodebit.php status map)
+            $this->autodebit_model->updateSchemeAccountAutoDebitStatus($id_scheme_account, 5);
 
-        echo json_encode(array(
-            'status' => true,
-            'msg'    => 'Subscription cancelled successfully'
-        ));
+            echo json_encode(array(
+                'status' => true,
+                'msg'    => 'Subscription cancelled successfully'
+            ));
+        } else {
+            $error_msg = isset($response['message']) ? $response['message'] : 'Failed to cancel subscription on Cashfree';
+            echo json_encode(array(
+                'status' => false,
+                'msg'    => $error_msg,
+                'data'   => $response
+            ));
+        }
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -410,8 +440,10 @@ class Autodebit extends CI_Controller
         $clientId  = $gateway['param_3'];
         $secretKey = $gateway['param_1'];
 
-        // Call Cashfree charge API to retry — use gateway.api_url for sandbox/production switching
-        $api_url = rtrim($gateway['api_url'], '/') . '/subscriptions/' . $sub['subscription_id'] . '/charge';
+        // Call Cashfree charge API to retry — parse base domain for correct path
+        $parsed_gw = parse_url(rtrim($gateway['api_url'], '/'));
+        $base_domain = $parsed_gw['scheme'] . '://' . $parsed_gw['host'];
+        $api_url = $base_domain . '/pg/subscriptions/' . $sub['subscription_id'] . '/charge';
 
         $charge_payload = array(
             'subscription_id' => $sub['subscription_id'],
@@ -728,18 +760,20 @@ class Autodebit extends CI_Controller
 
     /**
      * Map Cashfree subscription status to scheme_account.auto_debit_status integer.
-     * 0=None, 1=Pending, 2=Active, 3=Paused, 4=Cancelled, 5=Completed
+     * MUST match old cf_autodebit.php status codes used by views (my_schemes.php, scheme_acc_details.php):
+     *   0=None, 1=INITIALIZED, 2=BANK_APPROVAL_PENDING, 3=ACTIVE, 4=ON_HOLD, 5=CANCELLED, 6=COMPLETED
      */
     private function _mapStatusToAccountStatus($cf_status)
     {
         $map = array(
             'INITIALIZED'           => 1,
-            'BANK_APPROVAL_PENDING' => 1,
-            'ACTIVE'                => 2,
-            'ON_HOLD'               => 3,
-            'PAUSED'                => 3,
-            'CANCELLED'             => 4,
-            'COMPLETED'             => 5
+            'BANK_APPROVAL_PENDING' => 2,
+            'PENDING'               => 2,
+            'ACTIVE'                => 3,
+            'ON_HOLD'               => 4,
+            'PAUSED'                => 4,
+            'CANCELLED'             => 5,
+            'COMPLETED'             => 6
         );
 
         return isset($map[$cf_status]) ? $map[$cf_status] : 0;
