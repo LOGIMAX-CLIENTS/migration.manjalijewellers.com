@@ -1983,7 +1983,7 @@ IF(s.scheme_type =1 and s.max_weight!=s.min_weight,true,false) as is_flexible_wg
                     'show_ins_type'                     => $record->show_ins_type,
                     'id_metal'                     => $record->id_metal,
                     'auto_debit_status'            => (int) $record->auto_debit_status,
-                    'auth_link'                    => $record->auth_link
+                    'auth_link'                    => ($record->auto_debit_status == 1 && !empty($record->auth_link)) ? base_url().'index.php/cf_autodebit/authorize/'.$record->id_scheme_account : $record->auth_link
                 );
             }
             return array('chits' => $schemeAcc, 'over_all_amount' => $overall_amt);

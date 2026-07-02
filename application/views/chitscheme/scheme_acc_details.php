@@ -37,7 +37,7 @@
 									echo '<a href="#confirm-subscribe" data-href="'.base_url().'index.php/chitscheme/cf_subscription/1/'.$account['customer']['id_scheme_account'].'" class="btn btn-xs btn-success open-modal cf_ab_subscribe pull-right" data-toggle="modal">Subscribe</a>';
 								} 
 								else if($account['customer']['auto_debit_status'] == 1 && $account['customer']['auth_link'] != NULL){
-									echo 'Subscription has been created and is ready to be authorized.<a class="btn btn-success pull-right" href="'.$account['customer']['auth_link'].'">Click to authorize</a>';
+									echo 'Subscription has been created and is ready to be authorized.<a class="btn btn-success pull-right" href="'.base_url().'index.php/cf_autodebit/authorize/'.$account['customer']['id_scheme_account'].'">Click to authorize</a>';
 								}
 								else if($account['customer']['auto_debit_status'] == 3){
 									echo "<i class='fa fa-check-square bg-green'></i> Cashfree Auto-Debit Subscribed for this plan.Subscription expires on ".$account['customer']['sub_expires_on'];

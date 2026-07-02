@@ -1869,7 +1869,7 @@ ifnull(p.add_charges,0.00) as add_charges,
 	function get_subsDetail($field, $id)
 	{
 		$sql = $this->db->query("SELECT 
-									sub_reference_id, id_auto_debit_subscription, sa.id_scheme_account, auth_status,
+									sub_reference_id, id_auto_debit_subscription, sa.id_scheme_account, auth_status, ad.auth_link,
 									sa.id_branch, sa.scheme_acc_number,sa.firstPayment_amt,
 									s.id_metal, s.scheme_type, s.flexible_sch_type, s.id_scheme, s.max_members, s.sync_scheme_code, s.code, s.firstPayamt_maxpayable, s.firstPayamt_as_payamt,
 									cs.metal_wgt_decimal, cs.metal_wgt_roundoff, cs.allow_referral, cs.receipt_no_set, cs.scheme_wise_receipt, cs.schemeacc_no_set, s.is_lucky_draw, cs.gent_clientid,

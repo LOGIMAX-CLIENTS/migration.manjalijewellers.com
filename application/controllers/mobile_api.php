@@ -8033,15 +8033,20 @@ class Mobile_api extends REST_Controller
 
 				if (isset($res['cf_subscription_id'])) {
 					// The new API (v2025-01-01) returns subscription_session_id (a token).
-					// This token is used by the Cashfree JS SDK (cashfree.subscriptionsCheckout())
-					// on the frontend — it is NOT a direct URL.
+					// This token must be used by the Cashfree JS SDK — it is NOT a direct URL.
+					// We store the raw token in auth_link and build a server-hosted authorize URL
+					// that the mobile app opens in a WebView (replaces old cfre.in URL).
 					$session_id = isset($res['subscription_session_id']) ? $res['subscription_session_id'] : null;
+					
+					// Build the authorize URL — mobile app opens this in WebView
+					// This page loads the Cashfree JS SDK and auto-triggers subscriptionsCheckout()
+					$auth_url = base_url() . 'index.php/cf_autodebit/authorize/' . $id_sch_ac;
 
 					// Success — update local subscription record
 					$updSubscription = array(
 						'sub_reference_id' => isset($res['subscription_id']) ? $res['subscription_id'] : null,
 						'auth_status'      => 1, // INITIALIZED
-						'auth_link'        => $session_id, // Store raw session token for JS SDK
+						'auth_link'        => $session_id, // Raw session token for SDK
 						'message'          => isset($res['subscription_status']) ? $res['subscription_status'] : 'INITIALIZED',
 						'status'           => 1,
 						'last_update'      => date('Y-m-d H:i:s')
@@ -8071,7 +8076,8 @@ class Mobile_api extends REST_Controller
 					echo json_encode(array(
 						'status'                  => true,
 						'msg'                     => 'Subscription created successfully. Kindly do the authorization process.',
-						'subscription_session_id' => $session_id ? $session_id : '',
+						'auth_link'               => $auth_url, // URL for WebView (replaces old cfre.in)
+						'subscription_session_id' => $session_id ? $session_id : '', // Raw token for native SDK
 						'cf_environment'          => $cf_env,
 						'sub_status'              => isset($res['subscription_status']) ? $res['subscription_status'] : 'INITIALIZED'
 					));
