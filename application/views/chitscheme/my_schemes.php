@@ -99,7 +99,7 @@
 																echo '<a href="#confirm-subscribe" data-href="'.base_url().'index.php/chitscheme/cf_subscription/1/'.$ac['id_scheme_account'].'" class="btn btn-xs btn-success open-modal cf_ab_subscribe pull-right" title="Cashfree Subscription automates your monthly payments after the initial checkout is completed." rel="tooltip" data-toggle="modal">Subscribe</a>';
 															}
 															else if($ac['auto_debit_status'] == 1){
-																echo '<a class="btn btn-xs btn-success pull-right" href="'.$ac['auth_link'].'" title="Subscription has been created and is ready to be authorized.Click Authorize to complete subscription." rel="tooltip">Authorize</a>';
+																echo '<a class="btn btn-xs btn-success pull-right" href="'.base_url().'index.php/cf_autodebit/authorize/'.$ac['id_scheme_account'].'" title="Subscription has been created and is ready to be authorized.Click Authorize to complete subscription." rel="tooltip">Authorize</a>';
 															}
 															else if($ac['auto_debit_status'] == 3){
 																echo '<a href="#confirm-unsubscribe" data-href="'.base_url().'index.php/chitscheme/cf_subscription/2/'.$ac['id_scheme_account'].'" class="btn btn-xs btn-danger open-modal cf_ab_unsubscribe pull-right" title="You can cancel Auto-Debit, by clicking Unsubscribe." rel="tooltip" data-toggle="modal">Unsubscribe</a>';

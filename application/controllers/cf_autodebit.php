@@ -135,6 +135,46 @@ class Cf_autodebit extends CI_Controller {
 		}
 	}
 	
+	/**
+	 * Subscription Authorization Page
+	 * 
+	 * Replaces the old cfre.in direct URL flow.
+	 * The mobile app opens this URL in a WebView.
+	 * This page loads the Cashfree JS SDK and auto-initiates subscriptionsCheckout().
+	 * 
+	 * URL: /cf_autodebit/authorize/{id_scheme_account}
+	 */
+	function authorize($id_scheme_account)
+	{
+		// Get the subscription session_id from DB
+		$sub = $this->scheme_modal->get_subsDetail('sa.id_scheme_account', $id_scheme_account);
+		
+		if(empty($sub) || empty($sub['auth_link'])) {
+			echo "<h5 style='margin-top:150px;font-size:24px;text-align:center;color:red;'>Authorization session not found or expired. Please create a new subscription.</h5>";
+			return;
+		}
+		
+		// Determine CF environment from gateway api_url
+		$gateway = $this->db->select('api_url')
+			->from('gateway')
+			->where('id_branch', $sub['id_branch'])
+			->where('pg_code', 4)
+			->where('is_default', 1)
+			->limit(1)
+			->get()->row_array();
+		
+		$cf_mode = 'production'; // default to production
+		if(!empty($gateway['api_url'])) {
+			if(strpos($gateway['api_url'], 'sandbox') !== false || strpos($gateway['api_url'], 'test') !== false) {
+				$cf_mode = 'sandbox';
+			}
+		}
+		
+		$data['session_id'] = $sub['auth_link'];
+		$data['cf_mode'] = $cf_mode;
+		$this->load->view('cashsfree/cf_authorize', $data);
+	}
+	
 	function cf_authRedirect($status){  
 		echo "<h5 style='margin-top:150px;font-size :50px;text-align : center;'>Please wait  </h5>";
 	}
