@@ -8032,20 +8032,16 @@ class Mobile_api extends REST_Controller
 				));
 
 				if (isset($res['cf_subscription_id'])) {
-					// Build proper authorization URL from subscription_session_id
-					// The new API (v2025-01-01) returns subscription_session_id (a token),
-					// NOT a direct URL like the old API's authLink.
-					// Construct: {base_domain}/pg/subscriptions/pay/{subscription_session_id}
-					$auth_link_url = null;
-					if (isset($res['subscription_session_id']) && !empty($res['subscription_session_id'])) {
-						$auth_link_url = $base_domain . '/pg/subscriptions/pay/' . $res['subscription_session_id'];
-					}
+					// The new API (v2025-01-01) returns subscription_session_id (a token).
+					// This token is used by the Cashfree JS SDK (cashfree.subscriptionsCheckout())
+					// on the frontend — it is NOT a direct URL.
+					$session_id = isset($res['subscription_session_id']) ? $res['subscription_session_id'] : null;
 
 					// Success — update local subscription record
 					$updSubscription = array(
 						'sub_reference_id' => isset($res['subscription_id']) ? $res['subscription_id'] : null,
 						'auth_status'      => 1, // INITIALIZED
-						'auth_link'        => $auth_link_url,
+						'auth_link'        => $session_id, // Store raw session token for JS SDK
 						'message'          => isset($res['subscription_status']) ? $res['subscription_status'] : 'INITIALIZED',
 						'status'           => 1,
 						'last_update'      => date('Y-m-d H:i:s')
@@ -8069,11 +8065,15 @@ class Mobile_api extends REST_Controller
 						'scheme_account'
 					);
 
+					// Determine CF environment from api_url for mobile SDK
+					$cf_env = (strpos($planDetail['api_url'], 'sandbox') !== false || strpos($planDetail['api_url'], 'test') !== false) ? 'sandbox' : 'production';
+
 					echo json_encode(array(
-						'status'    => true,
-						'msg'       => 'Subscription created successfully. Kindly do the authorization process.',
-						'auth_link' => $auth_link_url ? $auth_link_url : '',
-						'sub_status' => isset($res['subscription_status']) ? $res['subscription_status'] : 'INITIALIZED'
+						'status'                  => true,
+						'msg'                     => 'Subscription created successfully. Kindly do the authorization process.',
+						'subscription_session_id' => $session_id ? $session_id : '',
+						'cf_environment'          => $cf_env,
+						'sub_status'              => isset($res['subscription_status']) ? $res['subscription_status'] : 'INITIALIZED'
 					));
 				} else {
 					// API error
