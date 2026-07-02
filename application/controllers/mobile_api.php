@@ -8032,11 +8032,20 @@ class Mobile_api extends REST_Controller
 				));
 
 				if (isset($res['cf_subscription_id'])) {
+					// Build proper authorization URL from subscription_session_id
+					// The new API (v2025-01-01) returns subscription_session_id (a token),
+					// NOT a direct URL like the old API's authLink.
+					// Construct: {base_domain}/pg/subscriptions/pay/{subscription_session_id}
+					$auth_link_url = null;
+					if (isset($res['subscription_session_id']) && !empty($res['subscription_session_id'])) {
+						$auth_link_url = $base_domain . '/pg/subscriptions/pay/' . $res['subscription_session_id'];
+					}
+
 					// Success — update local subscription record
 					$updSubscription = array(
 						'sub_reference_id' => isset($res['subscription_id']) ? $res['subscription_id'] : null,
 						'auth_status'      => 1, // INITIALIZED
-						'auth_link'        => isset($res['subscription_session_id']) ? $res['subscription_session_id'] : null,
+						'auth_link'        => $auth_link_url,
 						'message'          => isset($res['subscription_status']) ? $res['subscription_status'] : 'INITIALIZED',
 						'status'           => 1,
 						'last_update'      => date('Y-m-d H:i:s')
@@ -8063,7 +8072,7 @@ class Mobile_api extends REST_Controller
 					echo json_encode(array(
 						'status'    => true,
 						'msg'       => 'Subscription created successfully. Kindly do the authorization process.',
-						'auth_link' => isset($res['subscription_session_id']) ? $res['subscription_session_id'] : '',
+						'auth_link' => $auth_link_url ? $auth_link_url : '',
 						'sub_status' => isset($res['subscription_status']) ? $res['subscription_status'] : 'INITIALIZED'
 					));
 				} else {
@@ -8109,36 +8118,46 @@ class Mobile_api extends REST_Controller
 					'response'  => $res
 				));
 
-				// Mark cancelled regardless of API response (matching Autodebit.php pattern)
-				$updSubscription = array(
-					'auth_status' => 5,  // CANCELLED
-					'status'      => 0,
-					'message'     => isset($res['status']) ? $res['status'] : 'CANCELLED',
-					'last_update' => date('Y-m-d H:i:s')
-				);
-				$this->scheme_modal->updateData(
-					$updSubscription,
-					'id_auto_debit_subscription',
-					$planDetail['id_auto_debit_subscription'],
-					'auto_debit_subscription'
-				);
+				// Only mark cancelled if API call succeeds — matching old chitscheme.php behavior.
+				// If API fails, subscription is still ACTIVE on Cashfree's side, so don't desync local status.
+				if (isset($res['subscription_id']) || (isset($res['subscription_status']) && strtoupper($res['subscription_status']) == 'CANCELLED')) {
+					$updSubscription = array(
+						'auth_status' => 5,  // CANCELLED (matches old cf_autodebit.php status map)
+						'status'      => 0,
+						'message'     => isset($res['subscription_status']) ? $res['subscription_status'] : 'CANCELLED',
+						'last_update' => date('Y-m-d H:i:s')
+					);
+					$this->scheme_modal->updateData(
+						$updSubscription,
+						'id_auto_debit_subscription',
+						$planDetail['id_auto_debit_subscription'],
+						'auto_debit_subscription'
+					);
 
-				// Update scheme_account status
-				$updSchAc = array(
-					'auto_debit_status' => 5,  // CANCELLED
-					'date_upd'          => date('Y-m-d H:i:s')
-				);
-				$this->scheme_modal->updateData(
-					$updSchAc,
-					'id_scheme_account',
-					$id_sch_ac,
-					'scheme_account'
-				);
+					// Update scheme_account status
+					$updSchAc = array(
+						'auto_debit_status' => 5,  // CANCELLED
+						'date_upd'          => date('Y-m-d H:i:s')
+					);
+					$this->scheme_modal->updateData(
+						$updSchAc,
+						'id_scheme_account',
+						$id_sch_ac,
+						'scheme_account'
+					);
 
-				echo json_encode(array(
-					'status' => true,
-					'msg'    => 'You are successfully unsubscribed from cashfree auto-debit process.'
-				));
+					echo json_encode(array(
+						'status' => true,
+						'msg'    => 'You are successfully unsubscribed from cashfree auto-debit process.'
+					));
+				} else {
+					// API call failed — don't update local status
+					$error_msg = isset($res['message']) ? $res['message'] : 'Failed to cancel subscription on Cashfree';
+					echo json_encode(array(
+						'status' => false,
+						'msg'    => $error_msg
+					));
+				}
 				break;
 
 			default:
