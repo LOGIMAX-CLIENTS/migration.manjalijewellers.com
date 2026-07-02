@@ -98,12 +98,12 @@ class Cf_autodebit extends CI_Controller {
 			 }
 			 if($this->isMobile()){ // Mobile browser || Inapp Browser
 			 	if($_POST['cf_status'] == 'ACTIVE'){
-					$url = base_url()."index.php/cf_authRedirect/cf_authRURL/success";
+					$url = base_url()."index.php/cf_autodebit/cf_authRedirect/success";
 					$color = "green";
 				}
 				else if($_POST['cf_status']){
 					$status_flag = ($_POST['cf_status'] == "INITIALIZED" ? 1 : ($_POST['cf_status'] == "BANK_APPROVAL_PENDING" ? 2 : 2));
-					$url = base_url()."index.php/cf_authRedirect/cf_authRURL/pending/".$status_flag;
+					$url = base_url()."index.php/cf_autodebit/cf_authRedirect/pending/".$status_flag;
 					$color = "red";
 				}				
 				echo "<h5 style='margin-top:150px;font-size :50px;text-align : center;color:".$color."'>".$_POST['cf_message']."</h5>";  
