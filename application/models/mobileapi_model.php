@@ -5413,6 +5413,7 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
 				),
 				'joining' => array(
 					'clientid'     => $reg[0]['clientid'],
+                    'schemeCode'   => $reg[0]['sync_scheme_code'],
 					'schemeid'     => (int) $reg_1[0]['id_scheme'],
 					'schemerefid'  => (int) $id_scheme_account,
 					'schemeamount' => (int) $pay_data[0]['amount'],
@@ -5477,7 +5478,7 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
 
 			$status =	$this->$model->insert_transaction($pay_data[0]); 
 
-			if(($payID_data[0]['scheme_acc_number'] != null || $payID_data[0]['scheme_acc_number'] != '')){
+			if(!empty($payID_data[0]['scheme_acc_number'])){
 			    $runPayDirect = true;
             }
 
@@ -5490,7 +5491,7 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
 
 			$runPayDirect = true;
 		}  */
-        else if ($isTranExists['status'] && $isTranExists['is_transferred'] == 'N' && ($payID_data[0]['scheme_acc_number'] != null || $payID_data[0]['scheme_acc_number'] != '')) {
+        else if ($isTranExists['status'] && $isTranExists['is_transferred'] == 'N' && !empty($payID_data[0]['scheme_acc_number'])) {
 
 			$runPayDirect = true;
 
