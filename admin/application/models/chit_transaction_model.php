@@ -1326,10 +1326,7 @@ class Chit_transaction_model extends CI_Model
 
             // Skip clientid if gent_clientid is disabled
             $chit_settings = $this->db->query("SELECT gent_clientid FROM chit_settings LIMIT 1")->row_array();
-            if(empty($chit_settings['gent_clientid']) || $chit_settings['gent_clientid'] == 0){
-                $reg[0]['clientid'] = '';
-                $pay_data[0]['client_id'] = '';
-            }
+            
 			//insert customer registration detail
 			$status = $this->$model->insert_CustomerReg($reg[0]);
 
@@ -1373,6 +1370,10 @@ class Chit_transaction_model extends CI_Model
                     $maturitydate = date('Y-m-d', strtotime("+" .$reg_1[0]['closing_maturity_days'] . " days", strtotime($reg[0]['reg_date'])));
                 } 
             }
+
+            if(empty($chit_settings['gent_clientid']) || $chit_settings['gent_clientid'] == 0){
+                $reg[0]['clientid'] = '';
+            }
 		
 			$account = array(
 				'customer' => array(
@@ -1393,6 +1394,7 @@ class Chit_transaction_model extends CI_Model
 				),
 				'joining' => array(
 					'clientid'     => $reg[0]['clientid'],
+                    'schemeCode'   => $reg[0]['sync_scheme_code'],
 					'schemeid'     => (int) $reg_1[0]['id_scheme'],
 					'schemerefid'  => (int) $id_scheme_account,
 					'schemeamount' => (int) $pay_data[0]['amount'],
@@ -1457,7 +1459,7 @@ class Chit_transaction_model extends CI_Model
 
 			$status =	$this->$model->insert_transaction($pay_data[0]); 
 
-			if(($payID_data[0]['scheme_acc_number'] != null || $payID_data[0]['scheme_acc_number'] != '')){
+			if(!empty($payID_data[0]['scheme_acc_number'])){
 			    $runPayDirect = true;
             }
 
@@ -1470,7 +1472,7 @@ class Chit_transaction_model extends CI_Model
 
 			$runPayDirect = true;
 		}  */
-        else if ($isTranExists['status'] && $isTranExists['is_transferred'] == 'N' && ($payID_data[0]['scheme_acc_number'] != null || $payID_data[0]['scheme_acc_number'] != '')) {
+        else if ($isTranExists['status'] && $isTranExists['is_transferred'] == 'N' && !empty($payID_data[0]['scheme_acc_number'])) {
 
 			$runPayDirect = true;
 
