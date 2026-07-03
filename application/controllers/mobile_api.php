@@ -8264,6 +8264,8 @@ class Mobile_api extends REST_Controller
 		$log_path = $log_dir . '/' . date('Y-m-d') . '.txt';
 		$log_entry = date('Y-m-d H:i:s') . ' | ' . json_encode($data) . "\n";
 		file_put_contents($log_path, $log_entry, FILE_APPEND);
+	}
+
 	/**
 	 * POST mobile_api/cf_subscription_status
 	 * Verifies subscription status with Cashfree and updates DB
