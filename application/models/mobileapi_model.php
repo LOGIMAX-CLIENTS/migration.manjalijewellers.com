@@ -5346,10 +5346,7 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
 
             // Skip clientid if gent_clientid is disabled
             $chit_settings = $this->db->query("SELECT gent_clientid FROM chit_settings LIMIT 1")->row_array();
-            if(empty($chit_settings['gent_clientid']) || $chit_settings['gent_clientid'] == 0){
-                $reg[0]['clientid'] = '';
-                $pay_data[0]['client_id'] = '';
-            }
+            
 			//insert customer registration detail
 			$status = $this->$model->insert_CustomerReg($reg[0]);
 
@@ -5392,6 +5389,10 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
                 else{
                     $maturitydate = date('Y-m-d', strtotime("+" .$reg_1[0]['closing_maturity_days'] . " days", strtotime($reg[0]['reg_date'])));
                 } 
+            }
+
+            if(empty($chit_settings['gent_clientid']) || $chit_settings['gent_clientid'] == 0){
+                $reg[0]['clientid'] = '';
             }
 		
 			$account = array(
