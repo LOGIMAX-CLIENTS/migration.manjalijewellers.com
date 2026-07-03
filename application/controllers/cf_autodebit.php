@@ -67,7 +67,16 @@ class Cf_autodebit extends CI_Controller {
 		return false;
 	}
 	
-     public function autoDebitRURL($id_sch_ac){
+     public function autoDebitRURL($param1 = '', $param2 = ''){
+		// Handle different URL patterns: 
+		// 1. /autoDebitRURL/ID (Web)
+		// 2. /autoDebitRURL/M/ID (Mobile)
+		if (is_numeric($param1)) {
+			$id_sch_ac = $param1;
+		} else {
+			$id_sch_ac = $param2;
+		}
+
     	if (!is_dir('log/cf_subscription')) {
             mkdir('log/cf_subscription', 0777, true);
         }
@@ -106,8 +115,8 @@ class Cf_autodebit extends CI_Controller {
 					$url = base_url()."index.php/cf_autodebit/cf_authRedirect/pending/".$status_flag;
 					$color = "red";
 				}				
-				echo "<h5 style='margin-top:150px;font-size :50px;text-align : center;color:".$color."'>".$_POST['cf_message']."</h5>";  
-				echo "<h5 align='center'><a class='btn btn-info' style='text-decoration: none;background: #5bc0de;text-align: center; border: 1px solid #46b8da;padding: 12px;color: #fff;font-size:18px;' href='".$url."'>Back To App</a></h5>";
+				// Proper UI: Redirect automatically for mobile
+				redirect($url);
 			 }
 			 else{ // Web app
 				if($this->session->set_userdata('CF_subscriptionId') == $_POST['cf_subscriptionId'] || $this->session->userdata('username')){
@@ -175,8 +184,79 @@ class Cf_autodebit extends CI_Controller {
 		$this->load->view('cashsfree/cf_authorize', $data);
 	}
 	
-	function cf_authRedirect($status){  
-		echo "<h5 style='margin-top:150px;font-size :50px;text-align : center;'>Please wait  </h5>";
+	function cf_authRedirect($status, $flag = ''){ 
+		$app_url = $this->config->item('app_url') . "autodebit?status=" . $status;
+		
+		echo "<!DOCTYPE html>
+		<html>
+		<head>
+			<meta charset='utf-8'>
+			<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+			<title>Authorization Complete</title>
+			<style>
+				body { 
+					font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+					display: flex; 
+					justify-content: center; 
+					align-items: center; 
+					height: 100vh; 
+					margin: 0; 
+					background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+					color: #2c3e50;
+					text-align: center;
+				}
+				.card {
+					background: white;
+					padding: 40px;
+					border-radius: 20px;
+					box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+					max-width: 90%;
+					width: 400px;
+				}
+				.loader {
+					border: 5px solid #f3f3f3;
+					border-top: 5px solid #3498db;
+					border-radius: 50%;
+					width: 50px;
+					height: 50px;
+					animation: spin 1s linear infinite;
+					margin: 0 auto 20px;
+				}
+				@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+				.status-icon {
+					font-size: 60px;
+					margin-bottom: 20px;
+				}
+				h2 { margin: 0 0 10px; font-weight: 600; }
+				p { color: #7f8c8d; margin-bottom: 25px; }
+				.btn {
+					display: inline-block;
+					padding: 12px 25px;
+					background-color: #3498db;
+					color: white;
+					text-decoration: none;
+					border-radius: 30px;
+					font-weight: 600;
+					transition: transform 0.2s;
+				}
+				.btn:active { transform: scale(0.95); }
+			</style>
+		</head>
+		<body>
+			<div class='card'>
+				<div class='loader'></div>
+				<h2>Processing...</h2>
+				<p>Returning you to the application</p>
+				<a href='" . $app_url . "' class='btn'>Click to Return</a>
+			</div>
+			<script type='text/javascript'>
+				// Fast redirect to app
+				setTimeout(function() {
+					window.location.href = '" . $app_url . "';
+				}, 500);
+			</script>
+		</body>
+		</html>";
 	}
 	
 	
