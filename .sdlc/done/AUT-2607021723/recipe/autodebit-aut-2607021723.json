@@ -1,0 +1,31 @@
+{
+  "id": "autodebit-aut-2607021723",
+  "module": "autodebit",
+  "type": "feature",
+  "symptom": "Document complete autodebit flow - subscription creation, authorization, webhook handling, payment processing, retry, and admin reporting",
+  "hypothesis": "This is a documentation-only task. The autodebit (Cashfree Subscription) feature is **already fully implemented** across frontend controllers, models, and views. The documentation will be produced by analyzing the existing codebase, mapping all touchpoints end-to-end, and consolidating them into a single comprehensive flow document.",
+  "keywords": [
+    "consolidating",
+    "implemented",
+    "mapping",
+    "comprehensive",
+    "fully",
+    "frontend",
+    "document",
+    "into",
+    "reporting",
+    "models",
+    "across",
+    "existing"
+  ],
+  "files_changed": [
+    "admin/application/controllers/admin_reports.php",
+    "admin/application/controllers/admin_scheme.php",
+    "admin/application/controllers/admin_settings.php",
+    "admin/application/views/reports/autodebit_subscription_report.php",
+    "admin/application/views/master/scheme/form.php",
+    "admin/application/views/settings/general/form.php"
+  ],
+  "task_id": "AUT-2607021723",
+  "created": "2026-07-03"
+}

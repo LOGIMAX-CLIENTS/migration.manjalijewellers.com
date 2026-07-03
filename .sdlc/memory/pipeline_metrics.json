@@ -51,5 +51,39 @@
       "REQUIREMENT": 0.22814718333333334
     },
     "completed_at": "2026-06-23T08:51:15.683189"
+  },
+  {
+    "task_id": "AUT-2607021723",
+    "module": "autodebit",
+    "type": "feature",
+    "track": "STANDARD",
+    "cycle_time_minutes": 1439.89995165,
+    "phase_durations": {
+      "REQUIREMENT": 1439.89995165
+    },
+    "completed_at": "2026-07-03T17:23:04.628640",
+    "discovery_score": 25,
+    "discovery_max": 80,
+    "discovery_pct": 31,
+    "rag_hit": false,
+    "recipe_hit": true,
+    "call_tree_used": false,
+    "review_verdict": "CONCERNS",
+    "verify_result": "PASS",
+    "files_changed": 6,
+    "keywords": [
+      "consolidating",
+      "implemented",
+      "mapping",
+      "comprehensive",
+      "fully",
+      "frontend",
+      "document",
+      "into",
+      "reporting",
+      "models",
+      "across",
+      "existing"
+    ]
   }
 ]

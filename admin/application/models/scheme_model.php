@@ -640,6 +640,7 @@ return $id_branch; */
         $this->db->where('active', '1');
         $classifications = $this->db->get('branch');
         /*$data[]=array('id'=>0,'name'=>"-- Select --");*/
+        $data = array();
         foreach ($classifications->result() as $classification) {
             $data[] = array(
                 'id_branch' => $classification->id_branch,
