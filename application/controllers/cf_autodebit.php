@@ -67,7 +67,16 @@ class Cf_autodebit extends CI_Controller {
 		return false;
 	}
 	
-     public function autoDebitRURL($id_sch_ac){
+     public function autoDebitRURL($param1 = '', $param2 = ''){
+		// Handle different URL patterns: 
+		// 1. /autoDebitRURL/ID (Web)
+		// 2. /autoDebitRURL/M/ID (Mobile)
+		if (is_numeric($param1)) {
+			$id_sch_ac = $param1;
+		} else {
+			$id_sch_ac = $param2;
+		}
+
     	if (!is_dir('log/cf_subscription')) {
             mkdir('log/cf_subscription', 0777, true);
         }
@@ -101,16 +110,12 @@ class Cf_autodebit extends CI_Controller {
 					$url = base_url()."index.php/cf_autodebit/cf_authRedirect/success";
 					$color = "green";
 				}
-				else if($_POST['cf_status'] == 'CANCELLED' || $_POST['cf_status'] == 'ON_HOLD'){
-					$url = base_url()."index.php/cf_autodebit/cf_authRedirect/failed";
-					$color = "red";
-				}
 				else if($_POST['cf_status']){
 					$status_flag = ($_POST['cf_status'] == "INITIALIZED" ? 1 : ($_POST['cf_status'] == "BANK_APPROVAL_PENDING" ? 2 : 2));
 					$url = base_url()."index.php/cf_autodebit/cf_authRedirect/pending/".$status_flag;
-					$color = "orange";
+					$color = "red";
 				}				
-				// Redirect automatically for mobile
+				// Proper UI: Redirect automatically for mobile
 				redirect($url);
 			 }
 			 else{ // Web app
@@ -180,65 +185,75 @@ class Cf_autodebit extends CI_Controller {
 	}
 	
 	function cf_authRedirect($status, $flag = ''){ 
-		$appID = $this->config->item('app_url');
-		$app_url = $appID."autodebit?status=" . $status;
+		$app_url = $this->config->item('app_url') . "autodebit?status=" . $status;
 		
 		echo "<!DOCTYPE html>
 		<html>
 		<head>
 			<meta charset='utf-8'>
 			<meta name='viewport' content='width=device-width, initial-scale=1.0'>
-			<title>Redirecting...</title>
+			<title>Authorization Complete</title>
 			<style>
 				body { 
-					font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+					font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
 					display: flex; 
 					justify-content: center; 
 					align-items: center; 
 					height: 100vh; 
 					margin: 0; 
-					background-color: #f8f9fa;
-					color: #333;
+					background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+					color: #2c3e50;
 					text-align: center;
 				}
-				.container { padding: 20px; }
+				.card {
+					background: white;
+					padding: 40px;
+					border-radius: 20px;
+					box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+					max-width: 90%;
+					width: 400px;
+				}
 				.loader {
-					border: 4px solid #f3f3f3;
-					border-top: 4px solid #5bc0de;
+					border: 5px solid #f3f3f3;
+					border-top: 5px solid #3498db;
 					border-radius: 50%;
-					width: 40px;
-					height: 40px;
+					width: 50px;
+					height: 50px;
 					animation: spin 1s linear infinite;
 					margin: 0 auto 20px;
 				}
 				@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+				.status-icon {
+					font-size: 60px;
+					margin-bottom: 20px;
+				}
+				h2 { margin: 0 0 10px; font-weight: 600; }
+				p { color: #7f8c8d; margin-bottom: 25px; }
 				.btn {
 					display: inline-block;
-					margin-top: 20px;
-					padding: 10px 20px;
-					background-color: #5bc0de;
+					padding: 12px 25px;
+					background-color: #3498db;
 					color: white;
 					text-decoration: none;
-					border-radius: 5px;
-					font-weight: bold;
+					border-radius: 30px;
+					font-weight: 600;
+					transition: transform 0.2s;
 				}
+				.btn:active { transform: scale(0.95); }
 			</style>
 		</head>
 		<body>
-			<div class='container'>
+			<div class='card'>
 				<div class='loader'></div>
-				<h2>Authorization Complete</h2>
-				<p>Redirecting you back to the app...</p>
-				<a href='" . $app_url . "' class='btn'>Back to App</a>
+				<h2>Processing...</h2>
+				<p>Returning you to the application</p>
+				<a href='" . $app_url . "' class='btn'>Click to Return</a>
 			</div>
 			<script type='text/javascript'>
-				// Try to redirect immediately
-				window.location.href = '" . $app_url . "';
-				
-				// Fallback timeout
+				// Fast redirect to app
 				setTimeout(function() {
 					window.location.href = '" . $app_url . "';
-				}, 1000);
+				}, 500);
 			</script>
 		</body>
 		</html>";

@@ -67,6 +67,13 @@ class Mobile_api extends REST_Controller
         if (!is_dir($this->log_dir)) {
             mkdir($this->log_dir, 0777, TRUE);
         }
+        $this->auth_status = array(
+            'INITIALIZED'           => 1,
+            'BANK_APPROVAL_PENDING' => 2,
+            'ACTIVE'                => 3,
+            'CANCELLED'             => 4,
+            'PENDING'               => 5
+        );
     }
     public function payment_gateway($id_branch, $id_pg)
     {
@@ -8077,8 +8084,10 @@ class Mobile_api extends REST_Controller
 						'status'                  => true,
 						'msg'                     => 'Subscription created successfully. Kindly do the authorization process.',
 						'auth_link'               => $auth_url, // URL for WebView (replaces old cfre.in)
+						'subscription_id'         => isset($res['subscription_id']) ? $res['subscription_id'] : null,
 						'subscription_session_id' => $session_id ? $session_id : '', // Raw token for native SDK
 						'cf_environment'          => $cf_env,
+						'environment'             => strtoupper($cf_env), // For consistency with plan
 						'sub_status'              => isset($res['subscription_status']) ? $res['subscription_status'] : 'INITIALIZED'
 					));
 				} else {
@@ -8165,6 +8174,23 @@ class Mobile_api extends REST_Controller
 					));
 				}
 				break;
+			
+			case '3': // ─── Get Session IDs (for SDK) ──────────────────
+				$planDetail = $this->scheme_modal->get_subsDetail('sa.id_scheme_account', $id_sch_ac);
+				if (empty($planDetail)) {
+					echo json_encode(array('status' => false, 'msg' => 'Subscription not found'));
+					return;
+				}
+
+				$cf_env = (strpos($planDetail['api_url'], 'sandbox') !== false || strpos($planDetail['api_url'], 'test') !== false) ? 'SANDBOX' : 'PRODUCTION';
+
+				echo json_encode(array(
+					'status'                  => true,
+					'subscription_id'         => $planDetail['sub_reference_id'],
+					'subscription_session_id' => $planDetail['auth_link'],
+					'environment'             => $cf_env
+				));
+				break;
 
 			default:
 				echo json_encode(array(
@@ -8238,6 +8264,61 @@ class Mobile_api extends REST_Controller
 		$log_path = $log_dir . '/' . date('Y-m-d') . '.txt';
 		$log_entry = date('Y-m-d H:i:s') . ' | ' . json_encode($data) . "\n";
 		file_put_contents($log_path, $log_entry, FILE_APPEND);
+	/**
+	 * POST mobile_api/cf_subscription_status
+	 * Verifies subscription status with Cashfree and updates DB
+	 */
+	function cf_subscription_status_post()
+	{
+		$post_data = $this->get_values();
+		$order_id  = isset($post_data['orderID']) ? $post_data['orderID'] : ''; // SDK returns sub_id as orderID
+		
+		if (empty($order_id)) {
+			echo json_encode(array('status' => false, 'msg' => 'Missing subscription ID'));
+			return;
+		}
+
+		// 1. Fetch subscription and gateway details
+		$planDetail = $this->scheme_modal->get_subsDetail('sub_reference_id', "'".$order_id."'");
+		
+		if (empty($planDetail)) {
+			echo json_encode(array('status' => false, 'msg' => 'Subscription not found'));
+			return;
+		}
+
+		// 2. Call Cashfree to get latest status
+		$parsed_url = parse_url($planDetail['api_url']);
+		$base_domain = $parsed_url['scheme'] . '://' . $parsed_url['host'];
+		$api_url = $base_domain . '/pg/subscriptions/' . $order_id;
+		
+		$res = $this->_cf_api_call($api_url, array(), $planDetail['param_3'], $planDetail['param_1'], 'GET');
+
+		if (isset($res['subscription_status'])) {
+			$status_code = isset($this->auth_status[$res['subscription_status']]) ? $this->auth_status[$res['subscription_status']] : 1;
+			
+			// 3. Update DB
+			$updSubscription = array(
+				'auth_status' => $status_code,
+				'message'     => $res['subscription_status'],
+				'last_update' => date('Y-m-d H:i:s')
+			);
+			$this->scheme_modal->updateData($updSubscription, 'sub_reference_id', $order_id, 'auto_debit_subscription');
+
+			$updSchAc = array(
+				'auto_debit_status' => $status_code,
+				'date_upd'          => date('Y-m-d H:i:s')
+			);
+			$this->scheme_modal->updateData($updSchAc, 'id_scheme_account', $planDetail['id_scheme_account'], 'scheme_account');
+
+			echo json_encode(array(
+				'status'            => true,
+				'title'             => 'Auto Debit',
+				'msg'               => 'Subscription status: ' . $res['subscription_status'],
+				'auto_debit_status' => $status_code
+			));
+		} else {
+			echo json_encode(array('status' => false, 'msg' => 'Failed to fetch status from Cashfree'));
+		}
 	}
 }
 
