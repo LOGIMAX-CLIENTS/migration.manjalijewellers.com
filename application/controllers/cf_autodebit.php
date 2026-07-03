@@ -101,17 +101,13 @@ class Cf_autodebit extends CI_Controller {
 					$url = base_url()."index.php/cf_autodebit/cf_authRedirect/success";
 					$color = "green";
 				}
-				else if($_POST['cf_status'] == 'CANCELLED' || $_POST['cf_status'] == 'ON_HOLD'){
-					$url = base_url()."index.php/cf_autodebit/cf_authRedirect/failed";
-					$color = "red";
-				}
 				else if($_POST['cf_status']){
 					$status_flag = ($_POST['cf_status'] == "INITIALIZED" ? 1 : ($_POST['cf_status'] == "BANK_APPROVAL_PENDING" ? 2 : 2));
 					$url = base_url()."index.php/cf_autodebit/cf_authRedirect/pending/".$status_flag;
-					$color = "orange";
+					$color = "red";
 				}				
-				// Redirect automatically for mobile
-				redirect($url);
+				echo "<h5 style='margin-top:150px;font-size :50px;text-align : center;color:".$color."'>".$_POST['cf_message']."</h5>";  
+				echo "<h5 align='center'><a class='btn btn-info' style='text-decoration: none;background: #5bc0de;text-align: center; border: 1px solid #46b8da;padding: 12px;color: #fff;font-size:18px;' href='".$url."'>Back To App</a></h5>";
 			 }
 			 else{ // Web app
 				if($this->session->set_userdata('CF_subscriptionId') == $_POST['cf_subscriptionId'] || $this->session->userdata('username')){
@@ -179,69 +175,8 @@ class Cf_autodebit extends CI_Controller {
 		$this->load->view('cashsfree/cf_authorize', $data);
 	}
 	
-	function cf_authRedirect($status, $flag = ''){ 
-		$appID = $this->config->item('app_url');
-		$app_url = $appID."autodebit?status=" . $status;
-		
-		echo "<!DOCTYPE html>
-		<html>
-		<head>
-			<meta charset='utf-8'>
-			<meta name='viewport' content='width=device-width, initial-scale=1.0'>
-			<title>Redirecting...</title>
-			<style>
-				body { 
-					font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-					display: flex; 
-					justify-content: center; 
-					align-items: center; 
-					height: 100vh; 
-					margin: 0; 
-					background-color: #f8f9fa;
-					color: #333;
-					text-align: center;
-				}
-				.container { padding: 20px; }
-				.loader {
-					border: 4px solid #f3f3f3;
-					border-top: 4px solid #5bc0de;
-					border-radius: 50%;
-					width: 40px;
-					height: 40px;
-					animation: spin 1s linear infinite;
-					margin: 0 auto 20px;
-				}
-				@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-				.btn {
-					display: inline-block;
-					margin-top: 20px;
-					padding: 10px 20px;
-					background-color: #5bc0de;
-					color: white;
-					text-decoration: none;
-					border-radius: 5px;
-					font-weight: bold;
-				}
-			</style>
-		</head>
-		<body>
-			<div class='container'>
-				<div class='loader'></div>
-				<h2>Authorization Complete</h2>
-				<p>Redirecting you back to the app...</p>
-				<a href='" . $app_url . "' class='btn'>Back to App</a>
-			</div>
-			<script type='text/javascript'>
-				// Try to redirect immediately
-				window.location.href = '" . $app_url . "';
-				
-				// Fallback timeout
-				setTimeout(function() {
-					window.location.href = '" . $app_url . "';
-				}, 1000);
-			</script>
-		</body>
-		</html>";
+	function cf_authRedirect($status){  
+		echo "<h5 style='margin-top:150px;font-size :50px;text-align : center;'>Please wait  </h5>";
 	}
 	
 	
