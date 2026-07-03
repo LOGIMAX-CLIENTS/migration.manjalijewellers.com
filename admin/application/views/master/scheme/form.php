@@ -192,7 +192,7 @@
 											<div class="col-sm-6">
 												<div class="form-group">
 													<label for="Branch" class=""> <a data-toggle="tooltip" title="Select scheme applicable branches"> Branch</a></label>
-													<select class="form-control select2 cls" id='branches' name='branch_data[id_branch]"' multiple="multiple" data-placeholder="Select Your Baranch"
+													<select class="form-control select2 cls" id='branches' name='branch_data[id_branch][]' multiple="multiple" data-placeholder="Select Your Baranch"
 														style="width: 100%;">
 													</select>
 													<input type="hidden" id="id_branch" class="id_branch" name='branch_data[id_branch]' value="" />
