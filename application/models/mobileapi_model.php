@@ -946,7 +946,7 @@ IF(s.scheme_type =1 and s.max_weight!=s.min_weight,true,false) as is_flexible_wg
 				IF(Date_Format(Current_Date(),'%Y%m')=Date_Format(sa.last_paid_date,'%Y%m'),false,true),
 				true) AS previous_amount_eligible,
 				count(pp.id_scheme_account) as cur_month_pdc,
-				s.allow_unpaid,ifnull(sa.auto_debit_plan_type,0) as auto_debit_plan_type,
+				s.allow_unpaid,ifnull(s.auto_debit_plan_type,0) as auto_debit_plan_type,
 				if(s.allow_unpaid=1,s.unpaid_months,0) as allow_unpaid_months,
 				s.allow_advance,
 				if(s.allow_advance=1,s.advance_months,0) as advance_months,
@@ -1982,6 +1982,7 @@ IF(s.scheme_type =1 and s.max_weight!=s.min_weight,true,false) as is_flexible_wg
                     'payable_word' => $record->payable_word,
                     'show_ins_type'                     => $record->show_ins_type,
                     'id_metal'                     => $record->id_metal,
+                    'auto_debit_plan_type'         => $record->auto_debit_plan_type,
                     'auto_debit_status'            => (int) $record->auto_debit_status,
                     'auth_link'                    => ($record->auto_debit_status == 1 && !empty($record->auth_link)) ? base_url().'index.php/cf_autodebit/authorize/'.$record->id_scheme_account : $record->auth_link
                 );
