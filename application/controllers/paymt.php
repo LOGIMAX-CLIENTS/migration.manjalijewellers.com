@@ -2716,7 +2716,10 @@ class Paymt extends CI_Controller {
 				}
 
 						// [FIX] Update start_date on first payment (matching onPayTranStream -> upd_firstPayDateAsStartDate)
-						if (empty($pay['scheme_acc_number'])) {
+						$existing_success = $this->db->query(
+							"SELECT COUNT(*) as cnt FROM payment WHERE payment_status = 1 AND id_scheme_account = " . (int)$pay['id_scheme_account'] . " AND id_payment != " . (int)$pay['id_payment']
+						)->row_array();
+						if (empty($pay['scheme_acc_number']) && $existing_success['cnt'] == 0) {
 							$start_date_data = array('start_date' => $pay['date_payment']);
 							if (!empty($pay['start_year'])) {
 								$start_date_data['start_year'] = $pay['start_year'];
@@ -3093,7 +3096,10 @@ class Paymt extends CI_Controller {
     								 }
 
     								 // [FIX] Update start_date on first payment (matching onPayTranStream -> upd_firstPayDateAsStartDate)
-    								 if (empty($pay['scheme_acc_number'])) {
+    								 $existing_success = $this->db->query(
+    								 	"SELECT COUNT(*) as cnt FROM payment WHERE payment_status = 1 AND id_scheme_account = " . (int)$pay['id_scheme_account'] . " AND id_payment != " . (int)$pay['id_payment']
+    								 )->row_array();
+    								 if (empty($pay['scheme_acc_number']) && $existing_success['cnt'] == 0) {
     								 	$start_date_data = array('start_date' => $pay['date_payment']);
     								 	if (!empty($pay['start_year'])) {
     								 		$start_date_data['start_year'] = $pay['start_year'];

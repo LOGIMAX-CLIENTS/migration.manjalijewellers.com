@@ -585,10 +585,16 @@ class Chit_transaction_model extends CI_Model
 
         if (empty($payment['scheme_acc_number'])) {
 
-            $joinDateUpd = $this->upd_firstPayDateAsStartDate($payment);
+            // Only update start_date and maturity on first successful payment
+            $existing_success = $this->db->query(
+                "SELECT COUNT(*) as cnt FROM payment WHERE payment_status = 1 AND id_scheme_account = " . (int)$payment['id_scheme_account'] . " AND id_payment != " . (int)$payment['id_payment']
+            )->row_array();
+            if ($existing_success['cnt'] == 0) {
+                $joinDateUpd = $this->upd_firstPayDateAsStartDate($payment);
 
-            $payment = $this->get_payment_details($payment['id_payment']);
-            $matDateUpd = $this->upd_maturityDate($payment);
+                $payment = $this->get_payment_details($payment['id_payment']);
+                $matDateUpd = $this->upd_maturityDate($payment);
+            }
 
             //Account no generate
             if ($this->chit['schemeacc_no_set'] == 0) {
