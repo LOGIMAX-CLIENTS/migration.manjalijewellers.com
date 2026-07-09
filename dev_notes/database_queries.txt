@@ -1243,11 +1243,6 @@ ALTER TABLE kyc_settings ADD COLUMN kyc_customer_rule_logic TINYINT(1) NOT NULL 
 
 ALTER TABLE `kyc_rules` ADD `logic` TINYINT(1) NOT NULL DEFAULT '0' COMMENT '0: All Required, 1: At Least One' AFTER `amount`;
 
--- [2026-05-05] Fix KYC image URLs: Windows path separators leaked into stored URLs
--- The bug was in kyc_model.php _process_save_kyc() where FCPATH (backslashes on Windows)
--- was compared with DOCUMENT_ROOT (forward slashes), causing str_replace to fail.
--- Run these on any environment where KYC images were uploaded from Windows:
-UPDATE kyc SET img_url = CONCAT('http://localhost/etail_development_src/admin/', SUBSTRING(img_url, LOCATE('assets/kyc/', img_url))) WHERE img_url IS NOT NULL AND LOCATE('assets/kyc/', img_url) > 0 AND LOCATE('D:', img_url) > 0;
-UPDATE kyc SET back_img_url = CONCAT('http://localhost/etail_development_src/admin/', SUBSTRING(back_img_url, LOCATE('assets/kyc/', back_img_url))) WHERE back_img_url IS NOT NULL AND LOCATE('assets/kyc/', back_img_url) > 0 AND LOCATE('D:', back_img_url) > 0;
-UPDATE kyc SET document_url = CONCAT('http://localhost/etail_development_src/admin/', SUBSTRING(document_url, LOCATE('assets/kyc/', document_url))) WHERE document_url IS NOT NULL AND LOCATE('assets/kyc/', document_url) > 0 AND LOCATE('D:', document_url) > 0;
--- NOTE: Replace 'http://localhost/etail_development_src/admin/' with the correct base URL for production.
+ALTER TABLE `payment` CHANGE `receipt_no` `receipt_no` VARCHAR(45) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL COMMENT 'receipt_no';
+ALTER TABLE `scheme_account` CHANGE `scheme_acc_number` `scheme_acc_number` VARCHAR(20) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL;
+ALTER TABLE `customer_reg` CHANGE `scheme_ac_no` `scheme_ac_no` VARCHAR(21) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL;

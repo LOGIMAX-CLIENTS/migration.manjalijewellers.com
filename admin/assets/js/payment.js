@@ -1298,7 +1298,18 @@ function set_payment_list(data) {
                                 return row.receipt_no;
                             }
                     }},  */
-            { "mDataProp": "receipt_no" },
+            {
+                "mDataProp": function(row, type, val, meta){
+                    if(row.receipt_no_set == '2'
+                        && (row.receipt_no == null || row.receipt_no == '' || row.receipt_no == '-')
+                        && (row.id_status == '1' || (row.payment_status && row.payment_status.toLowerCase() === 'success'))){
+                        return '<button class="btn btn-primary btn-xs" onclick="resync_receipt('
+                            + row.id_payment + ',' + row.id_scheme_account + ')">Resync</button>';
+                    } else {
+                        return row.receipt_no;
+                    }
+                }
+            },
             {
                 "mDataProp": function (row, type, val, meta) {
                     var remark = "'" + row.remark + "'";
@@ -1491,7 +1502,12 @@ function set_payment_list(data) {
             //commented and replaced by Durga 22.05.2023
             {
                 "mDataProp": function (row, type, val, meta) {
-                    if (row.scheme_acc_number != 'Not Allocated' && (row.receipt_no_set == '0' && (row.receipt_no == null || row.receipt_no == '') && row.id_status == '1')) {
+                    if (row.receipt_no_set == '2'
+                        && (row.receipt_no == null || row.receipt_no == '' || row.receipt_no == '-')
+                        && (row.id_status == '1' || (row.payment_status && row.payment_status.toLowerCase() === 'success'))) {
+                        return '<button class="btn btn-primary btn-xs" onclick="resync_receipt('
+                            + row.id_payment + ',' + row.id_scheme_account + ')">Resync</button>';
+                    } else if (row.scheme_acc_number != 'Not Allocated' && (row.receipt_no_set == '0' && (row.receipt_no == null || row.receipt_no == '') && row.id_status == '1')) {
                         return '<input  type="text"  id="receipt_no" class="receiptno"  disabled="true" value="">';
                     } else {
                         return row.receipt_no;
@@ -6740,4 +6756,17 @@ function get_emp_branchwise(login_branches) {
       $(".overlay").css("display", "none");
     }
   });
+}
+
+function resync_receipt(id_payment, id_scheme_account) {
+    $.ajax({
+        url: base_url + 'index.php/chit_transaction/resync_receipt',
+        dataType: "json",
+        method: "POST",
+        data: { 'id_payment': id_payment, 'id_scheme_account': id_scheme_account },
+        success: function (data) {
+            console.log("Resync : ", data);
+            window.location.href = base_url + 'index.php/payment/list';
+        }
+    });
 }

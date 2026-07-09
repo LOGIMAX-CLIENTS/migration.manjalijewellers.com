@@ -1298,6 +1298,17 @@ class Syncapi_model extends CI_Model
             throw new Exception("Database Error occured.".$err_message); 
         }
     }
+
+	function check_receipt($id_payment, $id_scheme_account){
+		$sql = "SELECT cus.id_customer_reg, sch.scheme_acc_number,
+					   t.id_transaction, t.receipt_no
+				FROM scheme_account sch
+				JOIN customer_reg cus ON cus.id_scheme_account = sch.id_scheme_account
+				JOIN transaction t ON t.id_scheme_account = sch.id_scheme_account
+				WHERE sch.id_scheme_account = '" . $id_scheme_account . "'
+				  AND t.ref_no = '" . $id_payment . "'";
+		return $this->db->query($sql)->row_array();
+	}
     
 }
 ?>
