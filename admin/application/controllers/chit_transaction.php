@@ -1383,5 +1383,103 @@ class Chit_transaction extends CI_Controller
 		}
 	}
 
+	function resync_by_date_range()
+	{
+		$from_date = $this->input->post('from_date');
+		$to_date = $this->input->post('to_date');
+
+		// Fetch all eligible online payments in the date range that need resync
+		$sql = "SELECT id_payment, id_scheme_account
+				FROM payment
+				WHERE DATE(date_payment) BETWEEN ? AND ?
+				  AND payment_status = 1
+				  AND (receipt_no IS NULL OR receipt_no = '' OR receipt_no = '-')
+				  AND (is_offline = 0 OR is_offline IS NULL)";
+		$query = $this->db->query($sql, array($from_date, $to_date));
+		$payments = $query->result_array();
+
+		if (empty($payments)) {
+			$this->session->set_flashdata('chit_alert', array(
+				'message' => 'No pending resync payments found in the selected date range.',
+				'class' => 'warning',
+				'title' => 'Bulk Resync'
+			));
+			echo json_encode([
+				'status' => true,
+				'success_count' => 0,
+				'fail_count' => 0
+			]);
+			return;
+		}
+
+		$success_count = 0;
+		$fail_count = 0;
+		$model = self::SYN_MODEL;
+
+		foreach ($payments as $pay) {
+			$id_payment = $pay['id_payment'];
+			$id_scheme_account = $pay['id_scheme_account'];
+
+			$this->db->trans_begin();
+
+			// Step 1: Get current state of customer_reg + transaction for this payment
+			$cus_reg = $this->$model->check_receipt($id_payment, $id_scheme_account);
+
+			// Step 2: If scheme_acc_number is still empty, reset customer_reg transfer flag
+			if(!empty($cus_reg) && empty($cus_reg['scheme_acc_number'])){
+				$cus_reg_upd = array(
+					'is_transferred' => 'N',
+					'date_update' => date("Y-m-d H:i:s")
+				);
+				$this->$model->update_CustomerReg($cus_reg_upd, $cus_reg['id_customer_reg']);
+			}
+
+			// Step 3: Reset transaction transfer flag
+			if(!empty($cus_reg)){
+				$pay_data = array(
+					'is_transferred' => 'N',
+					'date_upd' => date("Y-m-d H:i:s")
+				);
+				$this->$model->update_transaction($pay_data, $cus_reg['id_transaction']);
+			}
+
+			// Step 4: Re-trigger the full Direct API push
+			$this->insert_common_data($id_payment);
+
+			// Step 5: Check if the receipt number and scheme account number were successfully updated
+			$updated_cus_reg = $this->$model->check_receipt($id_payment, $id_scheme_account);
+			$receipt_generated = !empty($updated_cus_reg['receipt_no']) && $updated_cus_reg['receipt_no'] != '-';
+			$account_generated = !empty($updated_cus_reg['scheme_acc_number']) && $updated_cus_reg['scheme_acc_number'] != '-';
+
+			if ($this->db->trans_status() === TRUE && $receipt_generated && $account_generated) {
+				$this->db->trans_commit();
+				$success_count++;
+			} else {
+				$this->db->trans_rollback();
+				$fail_count++;
+			}
+		}
+
+		if ($fail_count == 0) {
+			$this->session->set_flashdata('chit_alert', array(
+				'message' => "Successfully resynced all {$success_count} payments in the selected date range.",
+				'class' => 'success',
+				'title' => 'Bulk Resync'
+			));
+		} else {
+			$this->session->set_flashdata('chit_alert', array(
+				'message' => "Resync completed: {$success_count} payments succeeded, {$fail_count} failed.",
+				'class' => 'warning',
+				'title' => 'Bulk Resync'
+			));
+		}
+
+		echo json_encode([
+			'status' => true,
+			'success_count' => $success_count,
+			'fail_count' => $fail_count
+		]);
+	}
+
 }
 ?>

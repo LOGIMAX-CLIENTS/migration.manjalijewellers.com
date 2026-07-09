@@ -6770,3 +6770,42 @@ function resync_receipt(id_payment, id_scheme_account) {
         }
     });
 }
+
+function resync_by_date_range() {
+    var from_date = $('#payment_list1').text();
+    var to_date = $('#payment_list2').text();
+    
+    if (!from_date || !to_date) {
+        alert("Please select a valid date range first.");
+        return;
+    }
+    
+    // Set date range text inside the modal body
+    $('#resync_date_text').html("Selected Date Range: <strong>" + from_date + "</strong> to <strong>" + to_date + "</strong>");
+    
+    // Show the confirmation modal
+    $('#confirm-resync').modal('show');
+    
+    // Bind click event to the confirmation button
+    $('#btn-confirm-resync').off('click').on('click', function() {
+        // Hide modal and show page spinner overlay
+        $('#confirm-resync').modal('hide');
+        $(".overlay").css("display", "block");
+        
+        $.ajax({
+            url: base_url + 'index.php/chit_transaction/resync_by_date_range',
+            dataType: "json",
+            method: "POST",
+            data: { 'from_date': from_date, 'to_date': to_date },
+            success: function (data) {
+                console.log("Bulk Resync Response: ", data);
+                window.location.href = base_url + 'index.php/payment/list';
+            },
+            error: function(xhr, status, error) {
+                $(".overlay").css("display", "none");
+                console.error("Resync failed: ", error);
+                alert("An error occurred while performing bulk resync. Please try again.");
+            }
+        });
+    });
+}

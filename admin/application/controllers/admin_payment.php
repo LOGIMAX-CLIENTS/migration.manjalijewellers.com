@@ -818,6 +818,7 @@ class Admin_payment extends CI_Controller
                 break;
             case 'List':
                 //$data['payment']=$this->$model->menuDB('get',($id!=NULL?$id:''));
+                $data['settings'] = $this->$model->get_settings();
                 $data['main_content'] = self::PAY_VIEW . "list";
                 $this->load->view('layout/template', $data);
                 break;
