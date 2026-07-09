@@ -6,6 +6,112 @@
 	.f_amt {
 		font-size: 26px;
 	}
+
+	/* Premium Modern Modal Styling */
+	.modern-modal .modal-content {
+		border-radius: 16px;
+		border: none;
+		box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+		overflow: hidden;
+		background: #ffffff;
+	}
+	.modern-modal .modal-header {
+		border: none;
+		padding: 24px 24px 10px 24px;
+		background: #ffffff;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+	.modern-modal .modal-title {
+		font-weight: 700;
+		color: #181c32;
+		font-size: 20px;
+		font-family: 'Poppins', sans-serif;
+	}
+	.modern-modal .close {
+		font-size: 24px;
+		margin: 0;
+		padding: 0;
+		line-height: 1;
+		color: #a1a5b7;
+		opacity: 0.8;
+		transition: all 0.2s ease;
+		background: transparent;
+		border: none;
+		outline: none;
+	}
+	.modern-modal .close:hover {
+		color: #5e6278;
+		opacity: 1;
+	}
+	.modern-modal .modal-body {
+		padding: 20px 24px 30px 24px;
+	}
+	.modern-modal .icon-container {
+		width: 72px;
+		height: 72px;
+		background: #e8f0fe;
+		border-radius: 50%;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		margin-bottom: 20px;
+		color: #3c8dbc;
+		animation: spinSlow 12s linear infinite;
+	}
+	@keyframes spinSlow {
+		100% { transform: rotate(360deg); }
+	}
+	.modern-modal .icon-container i {
+		font-size: 32px;
+	}
+	.modern-modal .modal-body strong {
+		font-size: 18px;
+		color: #181c32;
+		display: block;
+		margin-bottom: 8px;
+		font-family: 'Poppins', sans-serif;
+	}
+	.modern-modal .modal-body .text-muted {
+		color: #7e8299 !important;
+		font-size: 14px;
+	}
+	.modern-modal .modal-footer {
+		border: none;
+		background: #f9f9f9;
+		padding: 16px 24px;
+		text-align: right;
+	}
+	.modern-modal .btn {
+		font-weight: 600;
+		padding: 10px 22px;
+		border-radius: 6px;
+		transition: all 0.2s ease;
+		font-size: 14px;
+		display: inline-block;
+		outline: none;
+		border: none;
+	}
+	.modern-modal #btn-confirm-resync {
+		background: #3c8dbc;
+		color: #ffffff;
+		box-shadow: 0 4px 12px rgba(60, 141, 188, 0.25);
+	}
+	.modern-modal #btn-confirm-resync:hover {
+		background: #286090;
+		transform: translateY(-1px);
+		box-shadow: 0 6px 16px rgba(60, 141, 188, 0.35);
+	}
+	.modern-modal .btn-default {
+		background: #eef2f5;
+		color: #5e6278;
+	}
+	.modern-modal .btn-default:hover {
+		background: #e4e8ec;
+		color: #3f4254;
+		transform: translateY(-1px);
+	}
 </style>
 <!-- Content Wrapper. Contains page content -->
 <div class="content-wrapper">
@@ -79,16 +185,30 @@
 								<?php } else { ?>
 									<input id="id_type" name="scheme[id_type]" type="hidden" value="" />
 								<?php } ?>
-								<div class="col-md-2">
+								<?php 
+								$is_resync_visible = ($settings['receipt_no_set'] == 2);
+								$date_col_class = $is_resync_visible ? 'col-md-4' : 'col-md-2';
+								$btn_width_class = $is_resync_visible ? 'col-xs-6' : 'col-xs-12';
+								?>
+								<div class="<?php echo $date_col_class; ?>">
 									<div class="form-group">
 										<!-- esakki -->
-										<label><span id="payment_date_range"></span></label>
-										<button class="btn btn-default btn_date_range" id="payment-dt-btn">
-											<span style="display:none;" id="payment_list1"></span>
-											<span style="display:none;" id="payment_list2"></span>
-											<i class="fa fa-calendar"></i> Date range picker
-											<i class="fa fa-caret-down"></i>
-										</button>
+										<label><?php echo $is_resync_visible ? "Payment Date : " : ""; ?><span id="payment_date_range" style="font-weight: Bold; color: #3c8dbc;"></span></label>
+										<div class="row">
+											<div class="<?php echo $btn_width_class; ?>" style="<?php echo $is_resync_visible ? 'padding-right: 5px;' : ''; ?>">
+												<button class="btn btn-default btn-block btn_date_range" id="payment-dt-btn">
+													<span style="display:none;" id="payment_list1"></span>
+													<span style="display:none;" id="payment_list2"></span>
+													<i class="fa fa-calendar"></i> Date range picker
+													<i class="fa fa-caret-down"></i>
+												</button>
+											</div>
+											<?php if($is_resync_visible){?>
+											<div class="col-xs-6" style="padding-left: 5px;">
+												<button type="button" class="btn btn-info btn-block" style="border-radius: 10px;" id="btn_resync_date_range" onclick="resync_by_date_range()"><i class="fa fa-refresh"></i> Resync Bulk Data</button>
+											</div>
+											<?php } ?>
+										</div>
 									</div>
 								</div>
 								<div class="col-md-2">
@@ -265,6 +385,28 @@
 			<div class="modal-footer">
 				<a href="#" class="btn btn-danger btn-confirm">Delete</a>
 				<button type="button" class="btn btn-warning btn-cancel" data-dismiss="modal">Close</button>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- confirm resync modal -->
+<div class="modal fade modern-modal" id="confirm-resync" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title" id="myModalLabel">Resync Online Payments</h4>
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+			</div>
+			<div class="modal-body text-center">
+				<div class="icon-container">
+					<i class="fa fa-refresh"></i>
+				</div>
+				<strong>Are you sure you want to resync all online payments?</strong>
+				<p class="text-muted" id="resync_date_text"></p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<button type="button" class="btn" id="btn-confirm-resync">Resync Data</button>
 			</div>
 		</div>
 	</div>
