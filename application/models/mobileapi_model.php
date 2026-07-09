@@ -5340,7 +5340,10 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
 		$reg[0]['is_registered_online']= 2 ;  // 2 - online record
 
 		$reg[0]['ref_no']		= $ref_no;
-		$grp_name = '';
+		
+        if(empty($chit_settings['gent_clientid']) || $chit_settings['gent_clientid'] == 0){
+            $reg[0]['clientid'] = '';
+        }
 		
 		if(!$isCusRegExists['status']) {
 
@@ -5389,10 +5392,6 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
                 else{
                     $maturitydate = date('Y-m-d', strtotime("+" .$reg_1[0]['closing_maturity_days'] . " days", strtotime($reg[0]['reg_date'])));
                 } 
-            }
-
-            if(empty($chit_settings['gent_clientid']) || $chit_settings['gent_clientid'] == 0){
-                $reg[0]['clientid'] = '';
             }
 		
 			$account = array(
