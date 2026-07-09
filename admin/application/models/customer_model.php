@@ -1003,7 +1003,7 @@ class Customer_model extends CI_Model
                     }
                 }
             } else {
-                if ($rcpt['receipt_no'] != '' && $rcpt['receipt_no'] != null && $rcpt['receipt_no'] != 0 && $rcpt['receipt_no'] != '-') {
+                if ($rcpt['receipt_no'] != '' && $rcpt['receipt_no'] != null && $rcpt['receipt_no'] !== 0 && $rcpt['receipt_no'] != '-') {
                     $rcptFrmt = $rcpt['receipt_no'];
                 } else {
                     $rcptFrmt = '-';

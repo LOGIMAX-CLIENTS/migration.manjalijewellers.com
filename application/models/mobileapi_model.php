@@ -5340,15 +5340,15 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
 		$reg[0]['is_registered_online']= 2 ;  // 2 - online record
 
 		$reg[0]['ref_no']		= $ref_no;
+
+        // Skip clientid if gent_clientid is disabled
+        $chit_settings = $this->db->query("SELECT gent_clientid FROM chit_settings LIMIT 1")->row_array();
 		
         if(empty($chit_settings['gent_clientid']) || $chit_settings['gent_clientid'] == 0){
             $reg[0]['clientid'] = '';
         }
 		
 		if(!$isCusRegExists['status']) {
-
-            // Skip clientid if gent_clientid is disabled
-            $chit_settings = $this->db->query("SELECT gent_clientid FROM chit_settings LIMIT 1")->row_array();
             
 			//insert customer registration detail
 			$status = $this->$model->insert_CustomerReg($reg[0]);

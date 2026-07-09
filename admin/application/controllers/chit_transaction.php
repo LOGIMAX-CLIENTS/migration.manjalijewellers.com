@@ -1050,14 +1050,15 @@ class Chit_transaction extends CI_Controller
 
 		$reg[0]['ref_no']		= $ref_no;
 		
+		// Skip clientid if gent_clientid is disabled
+        $chit_settings = $this->db->query("SELECT gent_clientid FROM chit_settings LIMIT 1")->row_array();
+			
 		if(empty($chit_settings['gent_clientid']) || $chit_settings['gent_clientid'] == 0){
-                $reg[0]['clientid'] = '';
-            }
+            $reg[0]['clientid'] = '';
+        }
 		
 		if(!$isCusRegExists['status']) {
 
-            // Skip clientid if gent_clientid is disabled
-            $chit_settings = $this->db->query("SELECT gent_clientid FROM chit_settings LIMIT 1")->row_array();
             
 			//insert customer registration detail
 			$status = $this->$model->insert_CustomerReg($reg[0]);
@@ -1323,6 +1324,63 @@ class Chit_transaction extends CI_Controller
 			return json_decode($response);
 		}
 
+	}
+
+	function resync_receipt()
+	{
+		$model = self::SYN_MODEL;
+		$id_payment = $this->input->post('id_payment');
+		$id_scheme_account = $this->input->post('id_scheme_account');
+
+		$this->db->trans_begin();
+
+		// Step 1: Get current state of customer_reg + transaction for this payment
+		$cus_reg = $this->$model->check_receipt($id_payment, $id_scheme_account);
+
+		// Step 2: If scheme_acc_number is still empty, reset customer_reg transfer flag
+		// so the Direct API will re-push the customer registration
+		if(!empty($cus_reg) && empty($cus_reg['scheme_acc_number'])){
+			$cus_reg_upd = array(
+				'is_transferred' => 'N',
+				'date_update' => date("Y-m-d H:i:s")
+			);
+			$this->$model->update_CustomerReg($cus_reg_upd, $cus_reg['id_customer_reg']);
+		}
+
+		// Step 3: Reset transaction transfer flag so the Direct API will re-push the payment
+		if(!empty($cus_reg)){
+			$pay_data = array(
+				'is_transferred' => 'N',
+				'date_upd' => date("Y-m-d H:i:s")
+			);
+			$this->$model->update_transaction($pay_data, $cus_reg['id_transaction']);
+		}
+
+		// Step 4: Re-trigger the full Direct API push (customer + payment)
+		$this->insert_common_data($id_payment);
+
+		// Step 5: Check if the receipt number and scheme account number were successfully updated/generated
+		$updated_cus_reg = $this->$model->check_receipt($id_payment, $id_scheme_account);
+		$receipt_generated = !empty($updated_cus_reg['receipt_no']) && $updated_cus_reg['receipt_no'] != '-';
+		$account_generated = !empty($updated_cus_reg['scheme_acc_number']) && $updated_cus_reg['scheme_acc_number'] != '-';
+
+		if ($this->db->trans_status() === TRUE && $receipt_generated && $account_generated) {
+			$this->db->trans_commit();
+			$this->session->set_flashdata('chit_alert', array(
+				'message' => 'Receipt number generated successfully for the payment id ' . $id_payment,
+				'class' => 'success',
+				'title' => 'Scheme Payment'
+			));
+			echo json_encode(['status' => true]);
+		} else {
+			$this->db->trans_rollback();
+			$this->session->set_flashdata('chit_alert', array(
+				'message' => 'Receipt number not generated',
+				'class' => 'danger',
+				'title' => 'Scheme Payment'
+			));
+			echo json_encode(['status' => false]);
+		}
 	}
 
 }

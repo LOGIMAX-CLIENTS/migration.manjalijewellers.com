@@ -573,7 +573,10 @@ class Admin_manage extends CI_Controller
                     $this->db->trans_begin();
                     $insert_status = $this->$model->insert_account($account);
                     // Client id Generation
-                    if ($insert_status['insertID'] > 0) {
+                    // Skip clientid if gent_clientid is disabled
+                    $chit_settings = $this->db->query("SELECT gent_clientid FROM chit_settings LIMIT 1")->row_array();
+                    
+                    if ($insert_status['insertID'] > 0 && !empty($chit_settings['gent_clientid']) && $chit_settings['gent_clientid'] > 0) {
                         $cusData = $this->$model->get_customer_acc($insert_status['insertID']);
                         $updateData['ref_no'] = $this->config->item('cliIDcode') . "/" . $cusData['code'] . "/" . $insert_status['insertID'];
                         $this->$model->update_account($updateData, $insert_status['insertID']);
