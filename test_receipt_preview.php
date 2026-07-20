@@ -54,7 +54,7 @@ if ($pay_id <= 0) {
         LEFT JOIN scheme_account sa ON sa.id_scheme_account = p.id_scheme_account
         LEFT JOIN customer c ON c.id_customer = sa.id_customer
         LEFT JOIN scheme s ON s.id_scheme = sa.id_scheme
-        WHERE p.payment_status = 1 
+        WHERE p.payment_status = 1 and p.added_by = 3
         ORDER BY p.id_payment DESC LIMIT 20");
     
     echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Select Payment to Preview</title>';
@@ -112,7 +112,7 @@ $sql = "SELECT e.firstname as emp_name, pay.id_scheme_account,
     (SELECT SUM(py.payment_amount) FROM payment py WHERE py.payment_status=1 and py.id_scheme_account=pay.id_scheme_account) as tot_paid_amount,
     IFNULL(pay.saved_benefits,'0.000') as saved_benefits,
     IFNULL(pay.saved_benefit_amt,'0.00') as saved_benefit_amt,
-    sch.scheme_name, sch.is_digi
+    sch.scheme_name, sch.is_digi, IF(sch_acc.maturity_date IS NULL OR sch_acc.maturity_date = '0000-00-00', '-', DATE_FORMAT(sch_acc.maturity_date, '%d-%m-%Y')) as maturity_date
     FROM payment as pay 
     LEFT JOIN scheme_account sch_acc ON sch_acc.id_scheme_account = pay.id_scheme_account 
     LEFT JOIN employee e on e.id_employee = pay.id_employee
@@ -192,13 +192,14 @@ $paymentstring .= "\x1b\x45\x01PAID AMT     " . ($payment['payment_amount']) . "
 $paymentstring .= "\x1b\x45\x01PAID WGT     " . ($payment['metal_weight']) . " G\r\n";
 if ($payment['is_digi'] == 1) {
     $paymentstring .= "\x1b\x45\x01BENEFIT WGT  " . ($payment['saved_benefits'] > 0 ? $payment['saved_benefits'] : '0.000') . " G\r\n";
-    $paymentstring .= "\x1b\x45\x01BENEFIT AMT  " . ($payment['saved_benefit_amt'] > 0 ? number_format($payment['saved_benefit_amt'],2,'.','') : '0.00') . "\r\n";
+    // $paymentstring .= "\x1b\x45\x01BENEFIT AMT  " . ($payment['saved_benefit_amt'] > 0 ? number_format($payment['saved_benefit_amt'],2,'.','') : '0.00') . "\r\n";
 }
 $paymentstring .= "\x1b\x45\x01MOBILE       " . ($payment['mobile']) . "\r\n";
 $paymentstring .= "\x1b\x45\x01METAL RATE   " . number_format($payment['metal_rate'], 2, '.', '') . "\r\n";
 $paymentstring .= "\x1b\x45\x01TOTAL AMT    " . number_format($payment['tot_paid_amount'] ?? 0, 2, '.', '') . "\r\n";
 $paymentstring .= "\x1b\x45\x01TOTAL WGT    " . ($payment['acc_weight']) . " G\r\n";
 $paymentstring .= "\x1b\x45\x01PAID DATE    " . substr($payment['date_payment'],0,10) . "\r\n";
+$paymentstring .= "\x1b\x45\x01MATURITY DATE " . (isset($payment['maturity_date']) && $payment['maturity_date'] != '' ? $payment['maturity_date'] : '-') . "\r\n";
 $paymentstring .= $HR . "\r\n";
 $paymentstring .= "\x1b\x45\x01Received with thanks from\x1b\x45\x01\r\n";
 $paymentstring .= "\x1b\x45\x01" . $payment['firstname'] . "\x1b\x45\x01\r\n";

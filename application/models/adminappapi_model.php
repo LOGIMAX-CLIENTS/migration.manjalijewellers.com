@@ -1854,7 +1854,7 @@ pm.mode_name as payment_mode
 		IFNULL(pay.saved_benefits,'0.000') as saved_benefits,
 		IFNULL(pay.saved_benefit_amt,'0.00') as saved_benefit_amt,
 
-		sch.scheme_name, sch.is_digi
+		sch.scheme_name, sch.is_digi, IF(sch_acc.maturity_date IS NULL OR sch_acc.maturity_date = '0000-00-00', '-', DATE_FORMAT(sch_acc.maturity_date, '%d-%m-%Y')) as maturity_date
         FROM payment as pay 
         LEFT JOIN scheme_account sch_acc ON sch_acc.id_scheme_account = pay.id_scheme_account 
         LEFT JOIN employee e on e.id_employee = pay.id_employee
