@@ -410,12 +410,12 @@ class sync_api extends REST_Controller
                     				"gst" 			 => $transaction->gst,
                     				"gst_type" 		 => $transaction->gst_type,
                     				"receipt_no"     => $transaction->receipt_no,
-                    				"days"              => $transaction->days,
-                    				"saved_benefits_wgt" => $transaction->saved_benefits,
-                    				"saved_benefit_amt" => $transaction->saved_benefit_amt,
-                    				"benefit_value"     => $transaction->benefit_value,
-                    				"benefit_type"      => $transaction->benefit_type,
-                    				"is_digi"           => $transaction->is_digi,
+                    				"days"              => (isset($transaction->days) ? $transaction->days : NULL),
+                    				"saved_benefits_wgt" => (isset($transaction->saved_benefits) ? $transaction->saved_benefits : NULL),
+                    				"saved_benefit_amt" => (isset($transaction->saved_benefit_amt) ? $transaction->saved_benefit_amt : NULL),
+                    				"benefit_value"     => (isset($transaction->benefit_value) ? $transaction->benefit_value : NULL),
+                    				"benefit_type"      => (isset($transaction->benefit_type) ? $transaction->benefit_type : NULL),
+                    				"is_digi"           => (isset($transaction->is_digi) ? $transaction->is_digi : 0),
                     				"new_customer" 	 => 'N'					
                     			);
 					if($this->config->item('no_branch') == 1){
@@ -829,10 +829,10 @@ class sync_api extends REST_Controller
                                     "additional_benefits"=> $cus->additional_benefits,
                                     "remark_close"      => $cus->remark_close,
                                     "ref_no"            => $cus->ref_no,
-                                    "is_digi"           => $cus->is_digi,
-                                    "maturity_date"     => $cus->maturity_date,
+                                    "is_digi"           => (isset($cus->is_digi) ? $cus->is_digi:0),
+                                    "maturity_date"     => (isset($cus->maturity_date) ? $cus->maturity_date:NULL),
                                     "id_branch" 	    => ($branch == 0 ? NULL:$branch),
-                                    "branch_code"       => $cus->branch_code,
+                                    "branch_code"       => (isset($cus->branch_code) ? $cus->branch_code:NULL),
                     			);
 					
 					    $check = array( 'ref_no' 	   => $data['ref_no'],

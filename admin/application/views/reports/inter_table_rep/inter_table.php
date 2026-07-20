@@ -54,7 +54,7 @@
 					     
 					       
 				 <div class="row">
-                <div class="col-sm-4">	
+                <div class="col-sm-2">	
                       <div class="form-group">
                           <label><a></a>Select Table</a></label>
                           <select id="Table_Select" class="form-control" style="width:150px;">
