@@ -48,63 +48,174 @@
 	                  
 	            <?php } ?> 
 			
+				<div id="alert_msg"></div>
 					       
-<!-- table wise Filter & change  option for cus reg, trans hh -->				       
-					       
-					     
-					       
-				 <div class="row">
-                <div class="col-sm-2">	
-                      <div class="form-group">
-                          <label><a></a>Select Table</a></label>
-                          <select id="Table_Select" class="form-control" style="width:150px;">
-                              <option>Table</option>
-                              <option value=1>Customer Reg</option>
-                              <option value=2>Transactions</option>
-                          </select>
-                          <input id="id_cus" name="customer_reg[id_cus]" type="hidden" value=""/>
-                      </div>
-                </div>
-                <div class="col-sm-8">
-                  <div class="pull-right">
-                        <div class="form-group">
-                          <div class="btn-group" data-toggle="buttons">
-                              <label class="btn btn-success" id="update">
-                              <input type="radio" name="upd_mob_btn" value="1"><i class="icon fa fa-check"></i> Update
-                              </label>
-                          </div>
-                        </div>
-                    </div>
-                  </div>
-					  </div>
-					       
-					       
-					       
-				       </br><div class="row">
-				         
-              <div class="col-md-12" id="table" style="display: none;">
-                 <div class="pull-left">
-                 <div class="form-group" style="    margin-left: 40px;">
-                      <label>Search By: &nbsp;&nbsp;</label>
-                       <label id="mob">Mobile No </label>
-                      <input type="text" name="" id="mobilenumber" >
-                       <label>ClientId</label>
-                        <input type="text" name="" id="clientid" >
-                        <label>Ref No</label>
-                        <input type="text" name="" id="ref_no" >
-                        <label id="mob1">Group Code</label>
-                        <input type="text" name="" id="group_code" >
-                       <!-- <label>Sch A/c No</label>
-                        <input type="text" name="" id="scheme_ac_no" >-->
-                      <button type="submit" id="mob_submit" name="mob_submit" class="btn btn-primary">Submit</button>
-												
-                      
-                    </div>
+<style>
+.sync-toolbar {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+}
+.sync-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #475569;
+    margin-bottom: 6px;
+    display: block;
+}
+.sync-date-wrapper {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    padding: 3px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.sync-date-wrapper input {
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    width: 105px;
+    text-align: center;
+    box-shadow: none !important;
+    height: 30px;
+}
+.sync-date-wrapper input:focus {
+    outline: none;
+}
+.sync-date-wrapper .sep {
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: bold;
+}
+.btn-sync-action {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #ffffff !important;
+    border: none;
+    border-radius: 5px;
+    padding: 0 20px;
+    font-weight: 600;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    height: 38px;
+}
+.btn-sync-action:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.35);
+}
+.btn-update-action {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    color: #ffffff !important;
+    border: none;
+    border-radius: 5px;
+    padding: 0 20px;
+    font-weight: 600;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.25);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    height: 38px;
+    line-height: 38px;
+}
+.btn-update-action:hover {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%);
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.35);
+}
+</style>
 
-                 </div>
-            </div> 
-            
-          </div></br> 
+<div class="sync-toolbar">
+    <div class="row" style="display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap;">
+        
+        <!-- Table Select -->
+        <div class="col-md-3 col-sm-4">
+            <label class="sync-label"><i class="fa fa-table"></i> Select Table</label>
+            <select id="Table_Select" class="form-control" style="width: 100%; border-radius: 5px; height: 38px;">
+                <option value="">Table</option>
+                <option value="1">Customer Reg</option>
+                <option value="2">Transactions</option>
+            </select>
+            <input id="id_cus" name="customer_reg[id_cus]" type="hidden" value=""/>
+        </div>
+
+        <!-- Date Range Filter -->
+        <div class="col-md-6 col-sm-8" style="padding-left: 40px;">
+            <label class="sync-label"><i class="fa fa-calendar"></i> Sync Transfer Date Range</label>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="sync-date-wrapper">
+                    <i class="fa fa-calendar-o" style="color: #64748b;"></i>
+                    <input type="text" class="datepicker" id="sync_from_date" value="<?php echo date('Y-m-d'); ?>" placeholder="From Date" autocomplete="off" />
+                    <span class="sep">TO</span>
+                    <input type="text" class="datepicker" id="sync_to_date" value="<?php echo date('Y-m-d'); ?>" placeholder="To Date" autocomplete="off" />
+                </div>
+                <button type="button" id="sync_data" class="btn-sync-action">
+                    <i class="fa fa-refresh"></i> Sync Data
+                </button>
+            </div>
+        </div>
+
+        <!-- Update Action Button -->
+        <div class="col-md-3 col-sm-12 text-right">
+            <div class="btn-group" data-toggle="buttons">
+                <label class="btn btn-update-action" id="update">
+                    <input type="radio" name="upd_mob_btn" value="1"><i class="icon fa fa-check"></i> Update Selected
+                </label>
+            </div>
+        </div>
+
+    </div>
+</div>
+					       
+					       
+					       
+				<div class="row">
+					<div class="col-md-12" id="table" style="display: none; margin-bottom: 15px;">
+						<div class="search-filter-card">
+							<div class="form-inline" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+								<span class="sync-label" style="margin-bottom: 0; margin-right: 5px;"><i class="fa fa-search"></i> Search Filter:</span>
+								
+								<span id="mob_wrap">
+									<label id="mob" style="font-size: 12px; margin-right: 4px;">Mobile No</label>
+									<input type="text" id="mobilenumber" class="form-control input-sm" style="width: 130px; border-radius: 4px;" placeholder="Mobile No" />
+								</span>
+
+								<span>
+									<label style="font-size: 12px; margin-right: 4px;">ClientId</label>
+									<input type="text" id="clientid" class="form-control input-sm" style="width: 130px; border-radius: 4px;" placeholder="Client ID" />
+								</span>
+
+								<span>
+									<label style="font-size: 12px; margin-right: 4px;">Ref No</label>
+									<input type="text" id="ref_no" class="form-control input-sm" style="width: 130px; border-radius: 4px;" placeholder="Ref No" />
+								</span>
+
+								<span id="group_wrap">
+									<label id="mob1" style="font-size: 12px; margin-right: 4px;">Group Code</label>
+									<input type="text" id="group_code" class="form-control input-sm" style="width: 130px; border-radius: 4px;" placeholder="Group Code" />
+								</span>
+
+								<button type="button" id="mob_submit" name="mob_submit" class="btn btn-primary btn-sm" style="border-radius: 4px; padding: 5px 15px; font-weight: 600;">
+									<i class="fa fa-search"></i> Search
+								</button>
+							</div>
+						</div>
+					</div> 
+				</div>
 		<!-- table wise Filter & change  option for cus reg, trans hh -->	
 				
 				<!-- Alert -->

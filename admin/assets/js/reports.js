@@ -7007,11 +7007,12 @@ $('#Table_Select').select2().on("change", function (e) {
     $("#table1").css("display", "block");
     $("#table2").css("display", "none");
     $("#table").css("display", "block");
-    //$('#mobile').val(''); 
     $("#mob").show();
     $("#mobilenumber").show();
+    $("#mob_wrap").show();
     $("#mob1").show();
     $("#group_code").show();
+    $("#group_wrap").show();
     var mobile = $('#mobilenumber').text();
     var clientid = $('#clientid').text();
     var ref_no = $('#ref_no').text();
@@ -7026,8 +7027,10 @@ $('#Table_Select').select2().on("change", function (e) {
     $("#table").css("display", "block");
     $("#mob").hide();
     $("#mobilenumber").hide();
+    $("#mob_wrap").hide();
     $("#mob1").hide();
     $("#group_code").hide();
+    $("#group_wrap").hide();
     var client_id = $('#client_id').text();
     var ref_no = $('#ref_no').text();
     //var group_code  = $('#group_code').text();
@@ -7243,6 +7246,50 @@ function get_intertable_transdata(client_id, ref_no, cus = "") {
     }
   });
 }
+
+// Sync Data click handler for inter-table un-updated records
+$(document).on('click', '#sync_data', function() {
+    var from_date = $('#sync_from_date').val();
+    var to_date = $('#sync_to_date').val();
+    var today = new Date().toISOString().slice(0, 10);
+    if (!from_date) { from_date = today; }
+    if (!to_date) { to_date = from_date; }
+
+    $("div.overlay").css("display", "block");
+    $.ajax({
+        type: "GET",
+        url: base_url + "index.php/admin_services/update_client",
+        data: { 
+            "from_date": from_date,
+            "to_date": to_date
+        },
+        dataType: "json",
+        success: function(res) {
+            $("div.overlay").css("display", "none");
+            var alertClass = res.class || 'info';
+            var alertTitle = res.title || 'Update Client Details';
+            var alertMsg = res.message || 'Sync operation completed.';
+            var msg = '<div class="alert alert-' + alertClass + ' alert-dismissible" style="border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">' +
+                      '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                      '<h4><i class="icon fa fa-info"></i> ' + alertTitle + '</h4>' +
+                      alertMsg + '</div>';
+            $("#alert_msg").html(msg).css("display", "block");
+
+            if ($("#Table_Select").val() == 1 || $("#Table_Select").val() == 2) {
+                $('#mob_submit').trigger('click');
+            }
+        },
+        error: function() {
+            $("div.overlay").css("display", "none");
+            var msg = '<div class="alert alert-danger alert-dismissible" style="border-radius: 6px;">' +
+                      '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
+                      '<h4><i class="icon fa fa-ban"></i> Sync Failed!</h4>' +
+                      'Failed to synchronize inter-table data. Please try again.</div>';
+            $("#alert_msg").html(msg).css("display", "block");
+        }
+    });
+});
+
 //mob no,ref no,clientid,sch A/c no wise filter & change options in inter table Data's // 
 // Customer Reg& transaction records  // HH	    
 // MSG 91 log listing
