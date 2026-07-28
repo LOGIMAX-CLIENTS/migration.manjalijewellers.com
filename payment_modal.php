@@ -3079,7 +3079,6 @@ Left Join customer c on (c.id_customer=sa.id_customer)
                 s.firstPayment_as_wgt,
                 s.flexible_sch_type,
                 s.scheme_type,
-                sa.id_scheme_account,
                 s.gst,
                 s.gst_type,
                 /* scheme_account state */
