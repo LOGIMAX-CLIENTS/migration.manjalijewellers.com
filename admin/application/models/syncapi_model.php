@@ -199,8 +199,7 @@ class Syncapi_model extends CI_Model
 			WHERE t.record_to = ?
 			AND t.is_transferred = ?
 			AND (
-					t.is_modified = 1
-					AND EXISTS (
+					 EXISTS (
 						SELECT 1
 						FROM customer_reg cr
 						WHERE cr.clientid = t.client_id
@@ -224,7 +223,7 @@ class Syncapi_model extends CI_Model
 		}
 
 		$sql .= " ORDER BY t.id_transaction LIMIT 1000";
-
+		
 		return $this->db->query($sql, $params)->result_array();
 	}
 
@@ -316,23 +315,50 @@ class Syncapi_model extends CI_Model
 	{
 		$data['is_offline'] = 1;
 		$pay_ref_no = $data['payment_ref_number'];
-		$sql = $this->db->query("select * from payment where payment_ref_number='$pay_ref_no'");
+		
+		// Scoped check for offline duplicate prevention
+		$sql = $this->db->query("SELECT id_payment FROM payment WHERE is_offline=1 AND payment_ref_number='$pay_ref_no'");
 			
-		if($sql->num_rows() > 0){
-			return FALSE;
-		}
-		else{
-			$status = $this->db->insert('payment',$data);
+		if ($sql->num_rows() > 0) {
+			$trans = array(
+				'is_transferred' => 'Y',
+				"date_upd"		 => date('Y-m-d'),
+				'transfer_date'	 => date('Y-m-d')
+			);
+    		$this->db->where('ref_no', $data['payment_ref_number']);
+    		$this->db->where('record_to', 2);
+        	$this->db->update('transaction', $trans);
+			return array(
+				'status' => FALSE,
+				'remark' => 'ALREADY_SYNCED',
+				'msg'    => 'Payment already exists in payment table for ref: ' . $pay_ref_no,
+				'id'     => $sql->row()->id_payment,
+			);
+		} else {
+			$status = $this->db->insert('payment', $data);
 			$insert_id = $this->db->insert_id();
-			if($status){	
-			    $trans = array( 'is_transferred' => 'Y',
-			                    //'is_modified'    => 'N',
-            					"date_upd"		 => date('Y-m-d'),
-            					'transfer_date'	 => date('Y-m-d'));
-    		    $this->db->where('ref_no',$data['payment_ref_number']);
-        		$status = $this->db->update('transaction',$trans);
+			if ($status) {	
+			    $trans = array(
+			    	'is_transferred' => 'Y',
+					"date_upd"		 => date('Y-m-d'),
+					'transfer_date'	 => date('Y-m-d')
+				);
+    		    $this->db->where('ref_no', $data['payment_ref_number']);
+    		    $this->db->where('record_to', 2);
+        		$status = $this->db->update('transaction', $trans);
+				return array(
+					'status' => TRUE,
+					'remark' => 'INSERTED',
+					'msg'    => 'New offline payment inserted',
+					'id'     => $insert_id,
+				);
 			}
-			return $insert_id;
+			return array(
+				'status' => FALSE,
+				'remark' => 'INSERT_FAILED',
+				'msg'    => 'DB insert failed: ' . $this->db->_error_message(),
+				'id'     => 0,
+			);
 		}		
 	}
 	function updatePayment($data,$payType,$id_sch_ac,$payDt) 

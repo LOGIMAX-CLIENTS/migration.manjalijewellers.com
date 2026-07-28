@@ -1787,7 +1787,7 @@ IF(s.scheme_type =1 and s.max_weight!=s.min_weight,true,false) as is_flexible_wg
                     $maturity_date = $record->maturity_date;
                 } else {
                     if ($record->maturity_type == 2) {
-                        $maturity_date = date('d-m-Y', strtotime("+" . $record->maturity_days + $record->closing_maturity_days . " days", strtotime($record->start_date)));
+                        $maturity_date = date('d-m-Y', strtotime("+" . ($record->maturity_days + $record->closing_maturity_days) . " days", strtotime($record->start_date)));
                     } else {
                         $maturity_date = date('d-m-Y', strtotime("+" . $record->closing_maturity_days . " days", strtotime($record->start_date)));
                     }
@@ -2192,7 +2192,7 @@ IFNULL(IF(sa.is_opening=1,IFNULL(balance_weight,0)+IFNULL(SUM(p.metal_weight),0)
                 $maturitydate = $record['maturity_date'];
             } else {
                 if ($record['maturity_type'] == 2) {
-                    $matmaturitydateurity_date = date('d-m-Y', strtotime("+" . $record['maturity_days'] + $record['closing_maturity_days'] . " days", strtotime($record['start_date'])));
+                    $maturitydate = date('d-m-Y', strtotime("+" . ($record['maturity_days'] + $record['closing_maturity_days']) . " days", strtotime($record['start_date'])));
                 } else {
                     $maturitydate = date('d-m-Y', strtotime("+" . $record['closing_maturity_days'] . " days", strtotime($record['start_date'])));
                 }

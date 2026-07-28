@@ -718,102 +718,35 @@ function upload_img__($field,$img_path,$filename)
 		return $data->row()->short_name;			
 	}
 	
-	function updateExisAcByMobile($data)
-	{
-		if (isset($data['branch_code']) && $data['branch_code'] > 0 && $data['branch_code'] != NULL && $data['branch_code'] != "") { // Only for SCM and TKTM
-			$resultset = $this->db->query("SELECT * FROM customer_reg WHERE record_to=2 AND is_modified=1 AND branch_code='" . $data['branch_code'] . "' AND mobile=" . $data['mobile']);
-		} else if (isset($data['id_branch']) && $data['id_branch'] > 0 && ($data['id_branch'] != '' || $data['id_branch'] != NULL)) {
-			$resultset = $this->db->query("SELECT * FROM customer_reg WHERE record_to=2 AND is_modified=1 AND id_branch='" . $data['id_branch'] . "' AND mobile=" . $data['mobile']);
-		} else {
-			$resultset = $this->db->query("SELECT * FROM customer_reg WHERE record_to=2 AND is_modified=1 AND mobile=" . $data['mobile']);
-		}
-
-		if ($resultset->num_rows() > 0) {
-			foreach ($resultset->result() as $row) {
-				if (!empty($row->clientid)) {
-					$sql = $this->db->query("SELECT id_scheme_account FROM scheme_account WHERE ref_no='" . $row->clientid . "'");
-					if ($sql->num_rows() > 0) {
-						$id_sch_ac = $sql->row()->id_scheme_account;
-						if ($row->is_closed == 1) {
-							$acc_data = array(
-								'closed_by'           => $row->closed_by,
-								'closing_date'        => $row->closing_date,
-								'closing_amount'      => $row->closing_amount,
-								'closing_weight'      => $row->closing_weight,
-								'closing_add_chgs'    => $row->closing_add_chgs,
-								'additional_benefits' => $row->additional_benefits,
-								'remark_close'        => $row->remark_close,
-								'is_closed'           => $row->is_closed,
-								'active'              => ($row->is_closed == 1 ? 0 : 1),
-								'date_upd'            => date("Y-m-d H:i:s")
-							);
-							$this->db->where('ref_no', $row->clientid);
-							$acc_status = $this->db->update('scheme_account', $acc_data);
-						} else {
-							$acc_data = array(
-								'group_code'        => $row->group_code,
-								'scheme_acc_number' => $row->scheme_ac_no,
-								'ref_no'            => $row->clientid,
-								'date_upd'          => date("Y-m-d H:i:s")
-							);
-							$this->db->where('id_scheme_account', $id_sch_ac);
-							$acc_status = $this->db->update('scheme_account', $acc_data);
-						}
-						if ($acc_status) {
-							$inter_data = array('is_transferred' => 'Y', 'is_modified' => 'N', 'transfer_date' => date('Y-m-d H:i:s'));
-							$this->db->where('id_customer_reg', $row->id_customer_reg);
-							$this->db->update('customer_reg', $inter_data);
-						}
-					}
-				}
-			}
-		}
-	}
-
 	function insExisAcByMobile($data) 
 	{
-	   // Update existing modified/closed scheme accounts first
-	   $this->updateExisAcByMobile($data);
-
 	   $result = array();
 	   if($data['branch_code'] > 0 && $data['branch_code'] != NULL && $data['branch_code'] != ""){ // Only for SCM and TKTM
-	       $resultset = $this->db->query("select * from customer_reg where record_to=2 and is_closed=0 and branch_code='".$data['branch_code']."' and mobile=".$data['mobile']);
+	       $resultset = $this->db->query("select * from customer_reg where record_to=2 and is_registered_online=0 and is_closed=0 and branch_code='".$data['branch_code']."' and mobile=".$data['mobile']);
 	   }
 	   else if($data['id_branch'] > 0 && ($data['id_branch'] != '' || $data['id_branch'] != NULL)){
-	       $resultset = $this->db->query("select * from customer_reg where record_to=2 and is_closed=0 and id_branch='".$data['id_branch']."' and mobile=".$data['mobile']);
+	       $resultset = $this->db->query("select * from customer_reg where record_to=2 and is_registered_online=0 and is_closed=0 and id_branch='".$data['id_branch']."' and mobile=".$data['mobile']);
 	   }
 	   else{
-	       $resultset = $this->db->query("select * from customer_reg where record_to=2 and is_closed=0 and mobile=".$data['mobile']);
+	         $resultset = $this->db->query("select * from customer_reg where record_to=2 and is_registered_online=0 and is_closed=0 and mobile=".$data['mobile']);
 	   } 
-
-	   $processed_client_ids = array();
-
 		if($resultset->num_rows() > 0 ){
+			$records = array();
 			foreach($resultset->result() as $row)
 			{
-			    $curr_data = $data;
-			    $curr_data['sync_scheme_code'] = $row->sync_scheme_code;
-			    $curr_data['client_id'] = $row->clientid;
-			    $curr_data['firstname']  =$row->firstname;
-			    
-			    $id_scheme = $this->getschId($curr_data);
+			    $data['sync_scheme_code'] = $row->sync_scheme_code;
+			    $data['client_id'] = $row->clientid;
+			    $data['firstname']  =$row->firstname;
+			    //print_r($data['firstname']);exit;
+			    $id_scheme = $this->getschId($data);
 			    $sql =$this->db->query("SELECT id_scheme_account FROM scheme_account WHERE ref_no='".$row->clientid."'");
 			    $existing_sch = $sql->row_array();
-
 			    if($sql->num_rows() > 0 ){
-				    $id_sch_ac = $existing_sch['id_scheme_account'];
-				    
-				    // Check if there are unsynced transactions OR if customer_reg is not yet registered online
-				    $has_pending_trans = $this->db->query("SELECT 1 FROM transaction WHERE is_transferred='N' AND record_to=2 AND client_id='".$row->clientid."' LIMIT 1")->num_rows();
-				    
-				    if($row->is_registered_online == 0 || $has_pending_trans > 0){
-				        if($id_scheme > 0){
-				           $curr_data['id_scheme'] = $id_scheme; 
-				        }
-					    $curr_data['id_sch_ac'] = $id_sch_ac;
-	    				$result[] =  $curr_data;
-				    }
-				    $processed_client_ids[] = $row->clientid;
+					if($id_scheme > 0){
+			           $data['id_scheme'] = $id_scheme; 
+			        }
+				    $data['id_sch_ac'] = $existing_sch['id_scheme_account'];
+    				$result[] =  $data;
 			    }else{
     			    if($id_scheme > 0){
 					    // Digi Gold duplicate prevention - skip if customer already has an active digi scheme
@@ -852,39 +785,21 @@ function upload_img__($field,$img_path,$filename)
     									'added_by' 			=> isset($data['added_by']) ? $data['added_by'] : 0
     								); 
     					$status = $this->db->insert('scheme_account',$records);	
+    					//echo '$updateCus-true';exit; 
     					if($status){
+    					    
     						$_sch_id = $this->db->insert_id();
     						if(empty($_sch_id) || $_sch_id == 0){
     							$_sch_id = $this->db->query('SELECT LAST_INSERT_ID() as last_id')->row()->last_id;
     						}
-    						$curr_data['id_sch_ac'] = $_sch_id;
-							$curr_data['id_scheme'] = $id_scheme;
-    						$result[] =  $curr_data;
-    						$processed_client_ids[] = $row->clientid;
+    						$data['id_sch_ac'] = $_sch_id;
+							$data['id_scheme'] = $id_scheme;
+    						$result[] =  $data;
     					}
     				}
     			} 
 			} 
 		}
-
-		// Also check existing active scheme_accounts belonging to this customer that have pending transactions
-		// if(!empty($data['id_customer']) && $data['id_customer'] > 0) {
-		// 	$existing_accs = $this->db->query("SELECT sa.id_scheme_account, sa.ref_no, sa.id_scheme FROM scheme_account sa WHERE sa.id_customer = ". (int)$data['id_customer'] ." AND sa.ref_no IS NOT NULL AND sa.ref_no != '' AND sa.active = 1 AND sa.is_closed = 0")->result_array();
-		// 	foreach($existing_accs as $acc) {
-		// 		if(!in_array($acc['ref_no'], $processed_client_ids)) {
-		// 			$has_pending_trans = $this->db->query("SELECT 1 FROM transaction WHERE is_transferred='N' AND record_to=2 AND client_id='".$acc['ref_no']."' LIMIT 1")->num_rows();
-		// 			if($has_pending_trans > 0) {
-		// 				$curr_data = $data;
-		// 				$curr_data['client_id'] = $acc['ref_no'];
-		// 				$curr_data['id_sch_ac'] = $acc['id_scheme_account'];
-		// 				$curr_data['id_scheme'] = $acc['id_scheme'];
-		// 				$result[] = $curr_data;
-		// 				$processed_client_ids[] = $acc['ref_no'];
-		// 			}
-		// 		}
-		// 	}
-		// }
-
 		return $result; 
 	} 
 	
@@ -1058,7 +973,7 @@ function upload_img__($field,$img_path,$filename)
                             }
 
                             // 2. First-payment: set start_date and calculate maturity date
-                            if ($paid_count <= 1 && !empty($sch_data['maturity_type']) && $sch_data['maturity_type'] != 4) {
+                            if ($paid_count == 0 && !empty($sch_data['maturity_type']) && $sch_data['maturity_type'] != 4) {
                                 $this->payment_modal->updData(
                                     array('start_date' => $date_payment),
                                     'id_scheme_account', $data['id_sch_ac'], 'scheme_account'
@@ -1192,7 +1107,7 @@ function upload_img__($field,$img_path,$filename)
         	                                    'due_month'         =>$row->due_month,
         	                                    'due_year'          =>$row->due_year,
         	                                    'added_by' 			=> isset($data['added_by']) ? $data['added_by'] : 0,
-        	                                    'installment'       => NULL,
+        	                                    'installment'       => $row->installment_no,
         	                                    'gst'               => 0.00,
         	                                    'gst_type'          => 0,
         	                                    'add_charges'       => 0.00,
@@ -1227,102 +1142,29 @@ function upload_img__($field,$img_path,$filename)
                             $logData = "\n".date('d-m-Y H:i:s')."\n API : mobile_api \n Response : ".json_encode($TESTRes,true);
                             file_put_contents($log_path,$logData,FILE_APPEND | LOCK_EX);
                                
-                               // Calculate Dynamic Due Date and Installment Number based on Scheme Cycle
+                               //update due_date,installment
                                $dt_pay = date('Y-m-d H:i:s',strtotime(str_replace("/","-",$row->payment_date)));
-                               $pay_date_only = date('Y-m-d', strtotime($dt_pay));
-                               $pay_month_only = date('Y-m', strtotime($dt_pay));
+                            $actual_due_type = (!empty($row->due_type) && $row->due_type != '') ? $row->due_type : 'service';
+                            $ins_cycle = $this->payment_modal->get_due_date($actual_due_type, $dt_pay,$data['id_sch_ac']);  
+                                                
 
-                               // Fetch scheme settings & cycle rules
-                               $sch_info = $this->get_scheme_sync_info($data['id_sch_ac']);
-                               $is_multi_chance = false;
-                               if (!empty($sch_info)) {
-                                   if ($sch_info['is_digi'] == 1 || $sch_info['max_chance'] > 1 || $sch_info['payment_chances'] == 1 || $sch_info['scheme_type'] == 3 || $sch_info['scheme_type'] == 2 || $sch_info['flexible_sch_type'] > 0) {
-                                       $is_multi_chance = true;
-                                   }
-                               }
-
-                               $samecycle_pay = null;
-
-                               if (!empty($sch_info) && $sch_info['installment_cycle'] == 1) {
-                                   // 1. Daily Cycle: Check for earlier payment on the SAME DAY
-                                   $samecycle_pay = $this->db->query(
-                                       "SELECT p.installment, p.due_date, p.due_date_to, p.grace_date, p.due_type, p.is_limit_exceed
-                                        FROM payment p
-                                        WHERE p.id_scheme_account = " . (int)$data['id_sch_ac'] . "
-                                          AND p.payment_status = 1
-                                          AND p.installment IS NOT NULL
-                                          AND p.installment > 0
-                                          AND (DATE(p.date_payment) = '" . $this->db->escape_str($pay_date_only) . "' OR DATE(p.due_date) = '" . $this->db->escape_str($pay_date_only) . "')
-                                          AND p.id_payment != " . (int)$id_payment . "
-                                        ORDER BY p.id_payment ASC
-                                        LIMIT 1"
-                                   )->row_array();
-                               } else if ($is_multi_chance && (!empty($sch_info) && $sch_info['installment_cycle'] == 0)) {
-                                   // 2. Monthly Cycle with Multiple Payment Chance (Digi Gold / flexible): Check for earlier payment in the SAME MONTH
-                                   $samecycle_pay = $this->db->query(
-                                       "SELECT p.installment, p.due_date, p.due_date_to, p.grace_date, p.due_type, p.is_limit_exceed
-                                        FROM payment p
-                                        WHERE p.id_scheme_account = " . (int)$data['id_sch_ac'] . "
-                                          AND p.payment_status = 1
-                                          AND p.installment IS NOT NULL
-                                          AND p.installment > 0
-                                          AND (DATE_FORMAT(p.date_payment, '%Y-%m') = '" . $this->db->escape_str($pay_month_only) . "' OR DATE_FORMAT(p.due_date, '%Y-%m') = '" . $this->db->escape_str($pay_month_only) . "')
-                                          AND p.id_payment != " . (int)$id_payment . "
-                                        ORDER BY p.id_payment ASC
-                                        LIMIT 1"
-                                   )->row_array();
-                               } else {
-                                   // 3. Fallback: Check for same exact payment date
-                                   $samecycle_pay = $this->db->query(
-                                       "SELECT p.installment, p.due_date, p.due_date_to, p.grace_date, p.due_type, p.is_limit_exceed
-                                        FROM payment p
-                                        WHERE p.id_scheme_account = " . (int)$data['id_sch_ac'] . "
-                                          AND p.payment_status = 1
-                                          AND p.installment IS NOT NULL
-                                          AND p.installment > 0
-                                          AND DATE(p.date_payment) = '" . $this->db->escape_str($pay_date_only) . "'
-                                          AND p.id_payment != " . (int)$id_payment . "
-                                        ORDER BY p.id_payment ASC
-                                        LIMIT 1"
-                                   )->row_array();
-                               }
-
-                               if (!empty($samecycle_pay) && !empty($samecycle_pay['installment'])) {
-                                   // Reuse existing cycle installment and due dates
-                                   $cycle_data = array(
-                                       'due_date'        => $samecycle_pay['due_date'],
-                                       'due_date_to'      => $samecycle_pay['due_date_to'],
-                                       'grace_date'       => $samecycle_pay['grace_date'],
-                                       'installment'      => $samecycle_pay['installment'],
-                                       'due_type'         => $samecycle_pay['due_type'],
-                                       'is_limit_exceed'  => (isset($samecycle_pay['is_limit_exceed']) ? $samecycle_pay['is_limit_exceed'] : 0),
-                                   );
-                                   $this->payment_modal->updData($cycle_data, 'id_payment', $id_payment, 'payment');
-                               } else {
-                                   // First payment for this cycle: calculate due type and due date range
-                                   $actual_due_type = (!empty($row->due_type) && $row->due_type != '') ? $row->due_type : $this->get_sync_due_type($data['id_sch_ac'], $dt_pay);
-                                   $ins_cycle = $this->payment_modal->get_due_date($actual_due_type, $dt_pay, $data['id_sch_ac']);
-
-                                   if (!empty($ins_cycle) && isset($ins_cycle[0]) && sizeof($ins_cycle[0]) > 0) {
-                                       $cycle_data = array(
-                                           'due_date'        => (isset($ins_cycle[0]['due_date_from']) ? $ins_cycle[0]['due_date_from'] : NULL),
-                                           'due_date_to'      => (isset($ins_cycle[0]['due_date_to']) ? $ins_cycle[0]['due_date_to'] : NULL),
-                                           'grace_date'       => (isset($ins_cycle[0]['grace_date']) ? $ins_cycle[0]['grace_date'] : NULL),
-                                           'installment'      => (isset($ins_cycle[0]['installment']) ? $ins_cycle[0]['installment'] : NULL),
-                                           'is_limit_exceed'  => (isset($ins_cycle[0]['is_limit_exceed']) ? $ins_cycle[0]['is_limit_exceed'] : 0),
-                                           'due_type'         => (isset($actual_due_type) ? $actual_due_type : NULL),
-                                       );
-
-                                       $this->payment_modal->updData($cycle_data, 'id_payment', $id_payment, 'payment');
-                                   } else {
-                                       // Log empty get_due_date result for debugging
-                                       $due_log_path = 'log/' . date("Y-m-d") . '/existing/due_date_fail_' . date("Y-m-d") . '.txt';
-                                       $due_log_data = "\n" . date('d-m-Y H:i:s') . " EMPTY get_due_date for id_payment=" . $id_payment
-                                           . " id_sch_ac=" . $data['id_sch_ac'] . " due_type=" . $actual_due_type
-                                           . " dt_pay=" . $dt_pay . " client_id=" . $data['client_id'];
-                                       file_put_contents($due_log_path, $due_log_data, FILE_APPEND | LOCK_EX);
-                                   }
-                               }
+                            if(!empty($ins_cycle) && isset($ins_cycle[0]) && sizeof($ins_cycle[0]) > 0){
+                                $cycle_data = array('due_date'           =>  (isset($ins_cycle[0]['due_date_from'])?$ins_cycle[0]['due_date_from']: NULL),
+                                                    'due_date_to'           =>  (isset($ins_cycle[0]['due_date_to'])?$ins_cycle[0]['due_date_to']: NULL),
+                                                    'grace_date'           =>  (isset($ins_cycle[0]['grace_date'])?$ins_cycle[0]['grace_date']: NULL),
+                                                    'installment'           =>  (isset($ins_cycle[0]['installment'])?$ins_cycle[0]['installment']: NULL),
+                                                    'is_limit_exceed'           =>  (isset($ins_cycle[0]['is_limit_exceed'])?$ins_cycle[0]['is_limit_exceed']: 0), );
+                                                
+                                $this->payment_modal->updData($cycle_data, 'id_payment', $id_payment, 'payment'); // FIX: use $id_payment (captured via LAST_INSERT_ID fallback), not insert_id() which now points to payment_mode_details insert
+                                                                
+                            } else {
+                                // Log empty get_due_date result for debugging
+                                $due_log_path = 'log/'.date("Y-m-d").'/existing/due_date_fail_'.date("Y-m-d").'.txt';
+                                $due_log_data = "\n".date('d-m-Y H:i:s')." EMPTY get_due_date for id_payment=".$id_payment
+                                    ." id_sch_ac=".$data['id_sch_ac']." due_type=".$actual_due_type
+                                    ." dt_pay=".$dt_pay." client_id=".$data['client_id'];
+                                file_put_contents($due_log_path, $due_log_data, FILE_APPEND | LOCK_EX);
+                            }
 
                             // ── POST-PAYMENT PROCESSING (ported from admin_payment saveall) ──────────
                             // getSyncSchemeData fetches scheme flags + paid_installments inline
@@ -1333,6 +1175,7 @@ function upload_img__($field,$img_path,$filename)
                             $metal_wgt      = (!empty($row->weight) ? $row->weight : 0);
                             $gold_rate      = (!empty($row->rate)   ? $row->rate   : 0);
                             $date_payment   = date('Y-m-d', strtotime(str_replace('/', '-', $row->payment_date)));
+
 
                             // 1. Rate fix for one-time premium schemes (first payment only)
                             if (!empty($sch_data['one_time_premium']) && $sch_data['one_time_premium'] == 1
@@ -1352,9 +1195,9 @@ function upload_img__($field,$img_path,$filename)
                                     $this->payment_modal->updData($rateUpdData, 'id_scheme_account', $data['id_sch_ac'], 'scheme_account');
                                 }
                             }
-                            
+
                             // 2. First-payment: set start_date and calculate maturity date
-                            if ($paid_count <= 1 && !empty($sch_data['maturity_type']) && $sch_data['maturity_type'] != 4) {
+                            if ($paid_count == 0 && !empty($sch_data['maturity_type']) && $sch_data['maturity_type'] != 4) {
                                 $this->payment_modal->updData(
                                     array('start_date' => $date_payment),
                                     'id_scheme_account', $data['id_sch_ac'], 'scheme_account'
@@ -1635,10 +1478,6 @@ function upload_img__($field,$img_path,$filename)
 				sa.id_scheme_account,
 				s.installment_cycle,
 				IFNULL(s.max_chance, 0) as max_chance,
-				IFNULL(s.scheme_type, 0) as scheme_type,
-				IFNULL(s.is_digi, 0) as is_digi,
-				IFNULL(s.payment_chances, 0) as payment_chances,
-				IFNULL(s.flexible_sch_type, 0) as flexible_sch_type,
 				s.allow_advance_in,
 				s.allow_unpaid_in,
 				s.allow_advance,
