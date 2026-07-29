@@ -38,7 +38,7 @@ class Syncapi_model extends CI_Model
 		return $this->db->query($sql)->result_array();
     }*/
     
-    function getcustomerByStatus($trans_status,$id_branch,$record_to,$tran_date=""){	
+    function getcustomerByStatus($trans_status,$id_branch,$record_to,$tran_date="",$from_date="",$to_date=""){	
         if($id_branch == ''){
 	        $sql = "SELECT * FROM customer_reg WHERE id_branch is null and record_to='$record_to' and is_transferred='$trans_status'";
 	    }elseif($id_branch == -1){ // No branch filter
@@ -46,10 +46,12 @@ class Syncapi_model extends CI_Model
 	    }else{
 	       	$sql = "SELECT * FROM customer_reg WHERE id_branch='$id_branch' and record_to='$record_to' and is_transferred='$trans_status'"; 
 	    }
-	    if($tran_date != ""){
-			$sql = $sql." and transfer_date='".$tran_date."' limit 1000";
+	    if(!empty($from_date) && !empty($to_date)){
+			$sql .= " and (DATE(transfer_date) BETWEEN '".$this->db->escape_str($from_date)."' AND '".$this->db->escape_str($to_date)."')";
+		}elseif($tran_date != ""){
+			$sql .= " and transfer_date='".$this->db->escape_str($tran_date)."'";
 		}
-	    //echo $sql;exit;
+		$sql .= " limit 1000";
 		return $this->db->query($sql)->result_array();
     } 
     
@@ -189,7 +191,7 @@ class Syncapi_model extends CI_Model
 		return $this->db->query($sql)->result_array();
 	} */
 
-	function getRegisteredAccTransactions($trans_status, $id_branch, $record_to, $tran_date = "")
+	function getRegisteredAccTransactions($trans_status, $id_branch, $record_to, $tran_date = "", $from_date = "", $to_date = "")
 	{
 		$sql = "SELECT t.id_transaction, t.client_id, t.receipt_no, t.mobile,t.id_branch, t.warehouse, t.record_to, t.payment_date,t.due_month, t.due_year, t.custom_entry_date,t.amount, t.weight, t.rate, t.metal,t.payment_mode, t.bank_name, t.branch_name,t.card_no, t.ref_no, t.pay_trans_id,t.payment_ref_number, t.paid_through,t.is_transferred,t.saved_benefits_wgt,t.saved_benefit_amt,t.benefit_value,t.benefit_type, t.is_modified, t.transfer_date,t.new_customer,cr.id_scheme_account, t.discountAmt,t.payment_status, t.payment_type, t.due_type,t.date_add, t.date_upd, t.installment_no,t.remarks, t.gst, t.gst_type, t.emp_code,t.id_drawee,d.branch AS drawee_ac_branch,d.account_name AS drawee_ac_name,d.account_no AS drawee_ac_no,d.ifsc_code AS drawee_ifsc,b.bank_name AS drawee_bank
 			FROM transaction t
@@ -217,12 +219,16 @@ class Syncapi_model extends CI_Model
 			$params[] = $id_branch;
 		}
 
-		if ($tran_date != "") {
+		if (!empty($from_date) && !empty($to_date)) {
+			$sql .= " AND DATE(t.transfer_date) BETWEEN ? AND ? ";
+			$params[] = $from_date;
+			$params[] = $to_date;
+		} elseif ($tran_date != "") {
 			$sql .= " AND t.transfer_date = ? ";
 			$params[] = $tran_date;
 		}
 
-		$sql .= " ORDER BY t.id_transaction LIMIT 1000";
+		$sql .= " ORDER BY t.id_transaction DESC LIMIT 1000";
 		
 		return $this->db->query($sql, $params)->result_array();
 	}

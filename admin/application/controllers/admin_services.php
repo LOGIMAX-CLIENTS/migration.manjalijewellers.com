@@ -3143,13 +3143,24 @@ class Admin_services extends CI_Controller
 	 * Synchronizes staged customer registrations & payments from inter-tables
 	 * into scheme_account and payment with accurate dynamic installment due calculations.
 	 */
-	function update_client()
+	function update_client($from_date = "", $to_date = "")
 	{
+		if (empty($from_date)) {
+			$from_date = $this->input->get('from_date') ? $this->input->get('from_date') : $this->input->post('from_date');
+		}
+		if (empty($to_date)) {
+			$to_date = $this->input->get('to_date') ? $this->input->get('to_date') : $this->input->post('to_date');
+		}
+		if (empty($from_date)) {
+			$from_date = isset($_GET['sync_trans_date']) ? $_GET['sync_trans_date'] : date('Y-m-d');
+		}
+		if (empty($to_date)) {
+			$to_date = $from_date;
+		}
+
 		$api_model = self::SYN_MODEL;
 		$acc_model = self::ACC_MODEL;
 		$record_to = 2; // 2 - Online 
-
-		$trans_date = (isset($_GET['sync_trans_date']) ? $_GET['sync_trans_date'] : date('Y-m-d'));
 
 		$acc_id = "";
 		$acc_rec = 0;
@@ -3158,8 +3169,7 @@ class Admin_services extends CI_Controller
 		$pay_id = "";
 
 		// Phase 1: Sync Customer Registrations to Scheme Accounts
-		$cus_reg_data = $this->$api_model->getcustomerByStatus('N', '-1', $record_to, $trans_date);
-
+		$cus_reg_data = $this->$api_model->getcustomerByStatus('N', '-1', $record_to, '', $from_date, $to_date);
 		if ($cus_reg_data) {
 			$records += count($cus_reg_data);
 			foreach ($cus_reg_data as $client) {
@@ -3201,7 +3211,7 @@ class Admin_services extends CI_Controller
 		}
 
 		// Phase 2: Sync Transactions to Payment Table
-		$trans_data = $this->$api_model->getRegisteredAccTransactions('N', '-1', $record_to, $trans_date);
+		$trans_data = $this->$api_model->getRegisteredAccTransactions('N', '-1', $record_to, '', $from_date, $to_date);
 
 		if ($trans_data) {
 			$records += count($trans_data);

@@ -76,6 +76,7 @@
     align-items: center;
     gap: 8px;
     box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    cursor: pointer;
 }
 .sync-date-wrapper input {
     border: none;
@@ -87,6 +88,7 @@
     text-align: center;
     box-shadow: none !important;
     height: 30px;
+    cursor: pointer;
 }
 .sync-date-wrapper input:focus {
     outline: none;
@@ -137,6 +139,79 @@
     background: linear-gradient(135deg, #047857 0%, #059669 100%);
     box-shadow: 0 4px 8px rgba(16, 185, 129, 0.35);
 }
+
+/* Search Filter Card Styles */
+.search-filter-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 16px 24px;
+    margin-bottom: 15px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+.search-filter-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    flex-wrap: nowrap;
+    width: 100%;
+    overflow-x: auto;
+}
+.search-filter-card .search-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #334155;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    margin-right: 2px;
+    flex-shrink: 0;
+}
+.filter-field-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.filter-field-item label {
+    font-size: 13px !important;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0;
+    white-space: nowrap;
+}
+.filter-field-item input.form-control {
+    height: 38px !important;
+    font-size: 13px !important;
+    border-radius: 5px !important;
+    border: 1px solid #cbd5e1 !important;
+    padding: 6px 10px !important;
+    color: #1e293b;
+    width: 130px !important;
+    box-shadow: none !important;
+    background-color: #ffffff;
+    flex-shrink: 0;
+}
+.filter-field-item input.form-control:focus {
+    border-color: #2563eb !important;
+    outline: none !important;
+}
+.search-filter-card .btn-search {
+    height: 38px;
+    padding: 0 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
 </style>
 
 <div class="sync-toolbar">
@@ -157,12 +232,14 @@
         <div class="col-md-6 col-sm-8" style="padding-left: 40px;">
             <label class="sync-label"><i class="fa fa-calendar"></i> Sync Transfer Date Range</label>
             <div style="display: flex; align-items: center; gap: 12px;">
-                <div class="sync-date-wrapper">
-                    <i class="fa fa-calendar-o" style="color: #64748b;"></i>
-                    <input type="text" class="datepicker" id="sync_from_date" value="<?php echo date('Y-m-d'); ?>" placeholder="From Date" autocomplete="off" />
-                    <span class="sep">TO</span>
-                    <input type="text" class="datepicker" id="sync_to_date" value="<?php echo date('Y-m-d'); ?>" placeholder="To Date" autocomplete="off" />
-                </div>
+                <button type="button" class="btn btn-default btn_date_range" id="sync_daterange_btn" style="height: 38px; border-radius: 5px; border: 1px solid #cbd5e1; background: #ffffff; font-weight: 600; font-size: 13px; color: #1e293b; padding: 0 15px; display: inline-flex; align-items: center; gap: 8px;">
+                    <i class="fa fa-calendar" style="color: #64748b;"></i>
+                    <span id="sync_daterange_text"><?php echo date('Y-m-d').' To '.date('Y-m-d'); ?></span>
+                    <i class="fa fa-caret-down" style="color: #64748b; margin-left: 4px;"></i>
+                </button>
+                <input type="hidden" id="sync_from_date" value="<?php echo date('Y-m-d'); ?>" />
+                <input type="hidden" id="sync_to_date" value="<?php echo date('Y-m-d'); ?>" />
+
                 <button type="button" id="sync_data" class="btn-sync-action">
                     <i class="fa fa-refresh"></i> Sync Data
                 </button>
@@ -186,30 +263,30 @@
 				<div class="row">
 					<div class="col-md-12" id="table" style="display: none; margin-bottom: 15px;">
 						<div class="search-filter-card">
-							<div class="form-inline" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-								<span class="sync-label" style="margin-bottom: 0; margin-right: 5px;"><i class="fa fa-search"></i> Search Filter:</span>
+							<div class="search-filter-wrapper">
+								<span class="search-title"><i class="fa fa-search"></i> SEARCH FILTER:</span>
 								
-								<span id="mob_wrap">
-									<label id="mob" style="font-size: 12px; margin-right: 4px;">Mobile No</label>
-									<input type="text" id="mobilenumber" class="form-control input-sm" style="width: 130px; border-radius: 4px;" placeholder="Mobile No" />
+								<span id="mob_wrap" class="filter-field-item">
+									<label id="mob">Mobile No</label>
+									<input type="text" id="mobilenumber" class="form-control" placeholder="Mobile No" autocomplete="off" />
 								</span>
 
-								<span>
-									<label style="font-size: 12px; margin-right: 4px;">ClientId</label>
-									<input type="text" id="clientid" class="form-control input-sm" style="width: 130px; border-radius: 4px;" placeholder="Client ID" />
+								<span class="filter-field-item">
+									<label>ClientId</label>
+									<input type="text" id="clientid" class="form-control" placeholder="Client ID" autocomplete="off" />
 								</span>
 
-								<span>
-									<label style="font-size: 12px; margin-right: 4px;">Ref No</label>
-									<input type="text" id="ref_no" class="form-control input-sm" style="width: 130px; border-radius: 4px;" placeholder="Ref No" />
+								<span class="filter-field-item">
+									<label>Ref No</label>
+									<input type="text" id="ref_no" class="form-control" placeholder="Ref No" autocomplete="off" />
 								</span>
 
-								<span id="group_wrap">
-									<label id="mob1" style="font-size: 12px; margin-right: 4px;">Group Code</label>
-									<input type="text" id="group_code" class="form-control input-sm" style="width: 130px; border-radius: 4px;" placeholder="Group Code" />
+								<span id="group_wrap" class="filter-field-item">
+									<label id="mob1">Group Code</label>
+									<input type="text" id="group_code" class="form-control" placeholder="Group Code" autocomplete="off" />
 								</span>
 
-								<button type="button" id="mob_submit" name="mob_submit" class="btn btn-primary btn-sm" style="border-radius: 4px; padding: 5px 15px; font-weight: 600;">
+								<button type="button" id="mob_submit" name="mob_submit" class="btn btn-primary btn-search">
 									<i class="fa fa-search"></i> Search
 								</button>
 							</div>
@@ -310,3 +387,51 @@
           </div><!-- /.row -->
         </section><!-- /.content -->
       </div><!-- /.content-wrapper -->
+
+<script type="text/javascript">
+$(document).ready(function() {
+    function bindSyncDaterangepicker() {
+        if (typeof $.fn.daterangepicker === 'undefined' || typeof moment === 'undefined') {
+            setTimeout(bindSyncDaterangepicker, 100);
+            return;
+        }
+
+        var start = moment();
+        var end = moment();
+
+        function setSyncDates(start, end) {
+            var fromStr = start.format('YYYY-MM-DD');
+            var toStr = end.format('YYYY-MM-DD');
+            $('#sync_from_date').val(fromStr);
+            $('#sync_to_date').val(toStr);
+            $('#sync_daterange_text').html(fromStr + ' To ' + toStr);
+        }
+
+        $('#sync_daterange_btn').daterangepicker({
+            startDate: start,
+            endDate: end,
+            ranges: {
+               'Today': [moment(), moment()],
+               'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+               'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+               'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+               'This Month': [moment().startOf('month'), moment().endOf('month')],
+               'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+            },
+            locale: {
+                format: 'YYYY-MM-DD'
+            }
+        }, function(start, end) {
+            setSyncDates(start, end);
+        });
+
+        $('#sync_daterange_btn').on('apply.daterangepicker', function(ev, picker) {
+            setSyncDates(picker.startDate, picker.endDate);
+        });
+
+        setSyncDates(start, end);
+    }
+
+    bindSyncDaterangepicker();
+});
+</script>
