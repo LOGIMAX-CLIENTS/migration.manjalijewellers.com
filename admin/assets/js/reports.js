@@ -7247,6 +7247,46 @@ function get_intertable_transdata(client_id, ref_no, cus = "") {
   });
 }
 
+// Inter-table Date Range Picker initialization
+$(document).ready(function() {
+    if ($('#sync_daterange_btn').length > 0 && $.fn.daterangepicker) {
+        var startSyncDate = moment();
+        var endSyncDate = moment();
+
+        function setSyncDateRange(start, end) {
+            var fromStr = start.format('YYYY-MM-DD');
+            var toStr = end.format('YYYY-MM-DD');
+            $('#sync_from_date').val(fromStr);
+            $('#sync_to_date').val(toStr);
+            $('#sync_daterange_text').html(fromStr + ' To ' + toStr);
+        }
+
+        $('#sync_daterange_btn').daterangepicker({
+            startDate: startSyncDate,
+            endDate: endSyncDate,
+            ranges: {
+               'Today': [moment(), moment()],
+               'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+               'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+               'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+               'This Month': [moment().startOf('month'), moment().endOf('month')],
+               'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+            },
+            locale: {
+                format: 'YYYY-MM-DD'
+            }
+        }, function(start, end) {
+            setSyncDateRange(start, end);
+        });
+
+        $('#sync_daterange_btn').on('apply.daterangepicker', function(ev, picker) {
+            setSyncDateRange(picker.startDate, picker.endDate);
+        });
+
+        setSyncDateRange(startSyncDate, endSyncDate);
+    }
+});
+
 // Sync Data click handler for inter-table un-updated records
 $(document).on('click', '#sync_data', function() {
     var from_date = $('#sync_from_date').val();
