@@ -680,7 +680,7 @@ class sync_api extends REST_Controller
 				  $valid = array();
 			      if($updType == 'R'){
 			          /* To update customer data as read */
-			          $trans = array( 	'ref_no'	 	 => $tran->refPaymentNo,
+			          $trans = array( 	'clientid'	        => $tran->clientid,
                     					'is_transferred' => $tran->is_transferred,
                     					"date_update"		 => $tran->transfer_date,
                     					'transfer_date'	 => $tran->transfer_date);
@@ -705,7 +705,7 @@ class sync_api extends REST_Controller
                     					'additional_benefits'=> $tran->additional_benefits,
                     					'remark_close'      => $tran->remark_close,
                     					'transfer_date'	    => $tran->transfer_date);
-                       $chkdata = array( 	'ref_no'	 	    => $tran->refPaymentNo,
+                       $chkdata = array( 
                     					'is_transferred'    => 'N',
                     					'is_modified'	    => 1,
                     					'clientid'	        => $tran->clientid,
@@ -727,7 +727,7 @@ class sync_api extends REST_Controller
 								$status = $this->$model->updateRegData($trans,$branch,'customer_reg');
 								 if($status ===FALSE)
 								{
-									$r[] = array('refPaymentNo' 	=> $trans['ref_no'],
+									$r[] = array('clientid' 	=> $trans['clientid'],
 												 'isSucceeded' 		=> FALSE,
 												 "responseData" => 1,  // for sync reference
 												 'result' 			=> 'Unable to proceed the requested operation');
@@ -736,7 +736,7 @@ class sync_api extends REST_Controller
 								}         
 								else
 								{
-									$r[] = array('refPaymentNo'   => $trans['ref_no'],
+									$r[] = array('clientid'   => $trans['clientid'],
 												 'isSucceeded'    => TRUE,
 												 "responseData" => 1,  // for sync reference
 												 'result' 		  => 'Updated Successfully');								
@@ -745,7 +745,7 @@ class sync_api extends REST_Controller
 						}
 						else
 						{
-							$r[] = array(	'refPaymentNo'   => $tran->refPaymentNo,
+							$r[] = array(	'clientid'   => $tran->clientid,
 											'isSucceeded' 	 => FALSE,
 											"responseData" => 1,  // for sync reference
 											"result" 		 =>$valid['error']);
