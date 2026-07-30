@@ -370,8 +370,9 @@
 				"secure" : "Secure Investment",
 				"growth" : "Long-term Growth",
 				"saveGold" : "Save Gold with Digi Gold",
-				"saveSilver" : "Save Gold with Digi Silver"
-
+				"saveSilver" : "Save Gold with Digi Silver",
+				"whysave" : "டிஜிகோல்டில் ஏன் சேமிக்க வேண்டும்?",
+				"savedigigold" : "டிஜி கோல்ட் மூலம் சேமிப்பது என்பது, தங்கத்தை நேரில் வாங்கிப் பாதுகாத்து வைக்கும் சிரமங்கள் ஏதுமின்றி அதில் முதலீடு செய்வதற்கான ஒரு புத்திசாலித்தனமான மற்றும் நவீன வழியாகும்."
 
 },
 			"eng" :  {
@@ -746,7 +747,9 @@
 				"secure" : "Secure Investment",
 				"growth" : "Long-term Growth",
 				"saveGold" : "Save Gold with Digi Gold",
-				"saveSilver" : "Save Gold with Digi Silver"
+				"saveSilver" : "Save Gold with Digi Silver",
+				"whysave" : "Why Save in Digigold?",
+				"savedigigold" : "Saving in DigiGold is a smart and modern way to invest in gold without the hassle of buying and storing it physically."
 				
 		   }
 }
