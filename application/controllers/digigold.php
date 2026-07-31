@@ -30,6 +30,26 @@ class Digigold extends REST_Controller
 	function digidata_post()
 	{
 		$data = $this->get_values();
+		$mobile = (!empty($data['mobile']) ? $data['mobile'] : '');
+		$id_customer = (!empty($data['id_customer']) ? $data['id_customer'] : '');
+		$id_employee = (!empty($data['id_employee']) ? $data['id_employee'] : '');
+		$id_branch = (!empty($data['id_branch']) ? $data['id_branch'] : '');
+
+		if (empty($mobile) && !empty($id_customer)) {
+			$cus_row = $this->db->query("SELECT mobile, id_branch FROM customer WHERE id_customer = " . (int)$id_customer)->row();
+			if (!empty($cus_row)) {
+				$mobile = $cus_row->mobile;
+				if (empty($id_branch)) {
+					$id_branch = $cus_row->id_branch;
+				}
+			}
+		}	
+
+		if (!empty($mobile) && !empty($id_customer) && !empty($id_employee)) {
+			$this->load->model('registration_model');
+			$this->registration_model->sync_existing_data($mobile, $id_customer, $id_branch);
+		}
+
 		$chit = $this->digigold_modal->getCusDigiData(array('mobile' => $data['mobile'], 'id_customer' => $data['id_customer'],'id_scheme' => $data['id_scheme'] , 'id_metal' => $data['id_metal']));
 		$this->response($chit,200);	
 	}
