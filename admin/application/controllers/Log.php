@@ -12,8 +12,27 @@ class Log extends CI_Controller {
         
         // Ensure user is logged in
         if (!$this->session->userdata('is_logged')) {
+            if ($this->input->is_ajax_request() || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')) {
+                header('Content-Type: application/json');
+                echo json_encode(['status' => false, 'message' => 'Session expired. Please refresh and log in again.']);
+                exit;
+            }
             redirect('admin/login');
         }
+    }
+
+    /**
+     * Get root log directory (parent of FCPATH)
+     */
+    private function get_root_log_dir() {
+        return dirname(rtrim(FCPATH, '/\\')) . DIRECTORY_SEPARATOR . 'log';
+    }
+
+    /**
+     * Get admin log directory (FCPATH/log)
+     */
+    private function get_admin_log_dir() {
+        return rtrim(FCPATH, '/\\') . DIRECTORY_SEPARATOR . 'log';
     }
 
     /**
@@ -31,18 +50,26 @@ class Log extends CI_Controller {
     public function ajax_get_logs_by_date() {
         $date = $this->input->post('date');
         if (empty($date)) {
+            header('Content-Type: application/json');
             echo json_encode(['status' => false, 'message' => 'Date is required.']);
             return;
         }
 
-        // Validate date format YYYY-MM-DD
-        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+        // Validate date format YYYY-MM-DD or DD-MM-YYYY
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) && !preg_match('/^\d{2}-\d{2}-\d{4}$/', $date)) {
+            header('Content-Type: application/json');
             echo json_encode(['status' => false, 'message' => 'Invalid date format.']);
             return;
         }
 
-        $result = $this->get_logs_for_date($date);
-        echo json_encode(array_merge(['status' => true], $result));
+        try {
+            $result = $this->get_logs_for_date($date);
+            header('Content-Type: application/json');
+            echo json_encode(array_merge(['status' => true], $result));
+        } catch (Exception $e) {
+            header('Content-Type: application/json');
+            echo json_encode(['status' => false, 'message' => 'Server error: ' . $e->getMessage()]);
+        }
     }
 
     /**
@@ -51,12 +78,14 @@ class Log extends CI_Controller {
     public function ajax_get_file_content() {
         $key = $this->input->post('key');
         if (empty($key)) {
+            header('Content-Type: application/json');
             echo json_encode(['status' => false, 'message' => 'File key is missing.']);
             return;
         }
 
         $decoded = base64_decode($key);
         if ($decoded === FALSE || strpos($decoded, ':') === false) {
+            header('Content-Type: application/json');
             echo json_encode(['status' => false, 'message' => 'Invalid file key.']);
             return;
         }
@@ -65,10 +94,11 @@ class Log extends CI_Controller {
 
         // Resolve base path
         if ($source === 'Root') {
-            $base_dir = dirname(FCPATH) . DIRECTORY_SEPARATOR . 'log';
+            $base_dir = $this->get_root_log_dir();
         } elseif ($source === 'Admin') {
-            $base_dir = FCPATH . 'log';
+            $base_dir = $this->get_admin_log_dir();
         } else {
+            header('Content-Type: application/json');
             echo json_encode(['status' => false, 'message' => 'Invalid source.']);
             return;
         }
@@ -76,11 +106,15 @@ class Log extends CI_Controller {
         $file_path = realpath($base_dir . DIRECTORY_SEPARATOR . $relative_path);
 
         if ($file_path === FALSE || !$this->is_valid_log_path($file_path)) {
+            header('Content-Type: application/json');
             echo json_encode(['status' => false, 'message' => 'Access denied or file not found.']);
             return;
         }
 
-        $size = filesize($file_path);
+        $size = @filesize($file_path);
+        if ($size === FALSE) {
+            $size = 0;
+        }
         $content = '';
         $truncated = false;
 
@@ -89,7 +123,10 @@ class Log extends CI_Controller {
             $content = $this->read_file_tail($file_path, 2000);
             $truncated = true;
         } else {
-            $content = file_get_contents($file_path);
+            $content = @file_get_contents($file_path);
+            if ($content === FALSE) {
+                $content = '';
+            }
         }
 
         // UTF-8 encoding convert if needed
@@ -97,6 +134,7 @@ class Log extends CI_Controller {
             $content = mb_convert_encoding($content, 'UTF-8', 'ISO-8859-1');
         }
 
+        header('Content-Type: application/json');
         echo json_encode([
             'status' => true,
             'filename' => basename($file_path),
@@ -123,9 +161,9 @@ class Log extends CI_Controller {
         list($source, $relative_path) = explode(':', $decoded, 2);
 
         if ($source === 'Root') {
-            $base_dir = dirname(FCPATH) . DIRECTORY_SEPARATOR . 'log';
+            $base_dir = $this->get_root_log_dir();
         } elseif ($source === 'Admin') {
-            $base_dir = FCPATH . 'log';
+            $base_dir = $this->get_admin_log_dir();
         } else {
             show_error('Invalid source.', 400);
         }
@@ -149,8 +187,8 @@ class Log extends CI_Controller {
             return FALSE;
         }
 
-        $root_log = realpath(dirname(FCPATH) . DIRECTORY_SEPARATOR . 'log');
-        $admin_log = realpath(FCPATH . 'log');
+        $root_log = realpath($this->get_root_log_dir());
+        $admin_log = realpath($this->get_admin_log_dir());
 
         if (($root_log !== FALSE && strpos($real_path, $root_log) === 0) ||
             ($admin_log !== FALSE && strpos($real_path, $admin_log) === 0)) {
@@ -166,8 +204,8 @@ class Log extends CI_Controller {
         $parts = [];
         $files_by_part = [];
 
-        $root_base = dirname(FCPATH) . DIRECTORY_SEPARATOR . 'log' . DIRECTORY_SEPARATOR . $date;
-        $admin_base = FCPATH . 'log' . DIRECTORY_SEPARATOR . $date;
+        $root_base = $this->get_root_log_dir() . DIRECTORY_SEPARATOR . $date;
+        $admin_base = $this->get_admin_log_dir() . DIRECTORY_SEPARATOR . $date;
 
         if (is_dir($root_base)) {
             $this->scan_date_subfolders($root_base, 'Root', $date, $parts, $files_by_part);
@@ -181,7 +219,7 @@ class Log extends CI_Controller {
         sort($parts);
 
         return [
-            'parts' => $parts,
+            'parts' => array_values($parts),
             'files' => $files_by_part
         ];
     }
@@ -190,14 +228,21 @@ class Log extends CI_Controller {
      * Scans subdirectories (log parts) under a date directory
      */
     private function scan_date_subfolders($dir, $source, $date, &$parts, &$files_by_part) {
-        $items = scandir($dir);
-        
+        if (!is_dir($dir) || !is_readable($dir)) {
+            return;
+        }
+
+        $items = @scandir($dir);
+        if ($items === FALSE) {
+            return;
+        }
+
         // 1. Check for log files directly in the date folder (e.g. log/2026-07-29/some_file.txt)
         $has_direct_files = false;
         foreach ($items as $item) {
             if ($item === '.' || $item === '..') continue;
             $item_path = $dir . DIRECTORY_SEPARATOR . $item;
-            if (is_file($item_path)) {
+            if (@is_file($item_path)) {
                 $has_direct_files = true;
                 break;
             }
@@ -213,18 +258,21 @@ class Log extends CI_Controller {
             foreach ($items as $item) {
                 if ($item === '.' || $item === '..') continue;
                 $item_path = $dir . DIRECTORY_SEPARATOR . $item;
-                if (is_file($item_path)) {
+                if (@is_file($item_path)) {
                     $ext = strtolower(pathinfo($item, PATHINFO_EXTENSION));
                     if (in_array($ext, ['txt', 'log', 'json'])) {
                         $relative_path = $date . '/' . $item;
+                        $size = @filesize($item_path);
+                        $mtime = @filemtime($item_path);
+
                         $files_by_part['general'][] = [
                             'name' => $item,
                             'relative_path' => $relative_path,
                             'key' => base64_encode($source . ':' . $relative_path),
                             'source' => $source,
-                            'size' => $this->format_size(filesize($item_path)),
-                            'modified_time' => date('Y-m-d H:i:s', filemtime($item_path)),
-                            'modified_time_raw' => filemtime($item_path),
+                            'size' => $this->format_size($size !== FALSE ? $size : 0),
+                            'modified_time' => date('Y-m-d H:i:s', $mtime !== FALSE ? $mtime : time()),
+                            'modified_time_raw' => $mtime !== FALSE ? $mtime : 0,
                         ];
                     }
                 }
@@ -236,7 +284,7 @@ class Log extends CI_Controller {
             if ($item === '.' || $item === '..') continue;
 
             $item_path = $dir . DIRECTORY_SEPARATOR . $item;
-            if (is_dir($item_path)) {
+            if (@is_dir($item_path)) {
                 if (!in_array($item, $parts)) {
                     $parts[] = $item;
                 }
@@ -244,33 +292,39 @@ class Log extends CI_Controller {
                     $files_by_part[$item] = [];
                 }
 
-                $subfiles = scandir($item_path);
+                $subfiles = @scandir($item_path);
+                if ($subfiles === FALSE) continue;
+
                 foreach ($subfiles as $file) {
                     if ($file === '.' || $file === '..') continue;
 
                     $file_path = $item_path . DIRECTORY_SEPARATOR . $file;
-                    if (is_file($file_path)) {
+                    if (@is_file($file_path)) {
                         $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
                         if (in_array($ext, ['txt', 'log', 'json'])) {
                             $relative_path = $date . '/' . $item . '/' . $file;
+                            $size = @filesize($file_path);
+                            $mtime = @filemtime($file_path);
 
                             $files_by_part[$item][] = [
                                 'name' => $file,
                                 'relative_path' => $relative_path,
                                 'key' => base64_encode($source . ':' . $relative_path),
                                 'source' => $source,
-                                'size' => $this->format_size(filesize($file_path)),
-                                'modified_time' => date('Y-m-d H:i:s', filemtime($file_path)),
-                                'modified_time_raw' => filemtime($file_path),
+                                'size' => $this->format_size($size !== FALSE ? $size : 0),
+                                'modified_time' => date('Y-m-d H:i:s', $mtime !== FALSE ? $mtime : time()),
+                                'modified_time_raw' => $mtime !== FALSE ? $mtime : 0,
                             ];
                         }
                     }
                 }
 
                 // Sort files in this part by modified time DESC
-                usort($files_by_part[$item], function($a, $b) {
-                    return $b['modified_time_raw'] - $a['modified_time_raw'];
-                });
+                if (!empty($files_by_part[$item])) {
+                    usort($files_by_part[$item], function($a, $b) {
+                        return $b['modified_time_raw'] - $a['modified_time_raw'];
+                    });
+                }
             }
         }
 
@@ -285,7 +339,7 @@ class Log extends CI_Controller {
      * Tail implementation for reading large files efficiently
      */
     private function read_file_tail($filepath, $lines = 1000) {
-        $f = fopen($filepath, "rb");
+        $f = @fopen($filepath, "rb");
         if (!$f) return '';
 
         $buffer = 4096;
@@ -333,3 +387,4 @@ class Log extends CI_Controller {
         }
     }
 }
+
