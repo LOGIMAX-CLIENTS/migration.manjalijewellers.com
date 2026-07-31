@@ -335,7 +335,17 @@ function initLogViewer() {
       },
       error: function(xhr, status, error) {
         $('#log-part-select').empty().append('<option value="">Error loading parts</option>');
-        alert('An error occurred while fetching log parts: ' + error);
+        var errMsg = 'An error occurred while fetching log parts: ';
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+            errMsg += xhr.responseJSON.message;
+        } else if (xhr.status === 404) {
+            errMsg += 'Endpoint not found (404).';
+        } else if (xhr.status === 500) {
+            errMsg += 'Internal Server Error (500).';
+        } else {
+            errMsg += (error || 'Unknown error');
+        }
+        alert(errMsg);
       }
     });
   }

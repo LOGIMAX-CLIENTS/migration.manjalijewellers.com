@@ -242,12 +242,10 @@
 				    </div>
 				    <div class="col-md-3">
     				 	<div class="form-group">
-                            <div class="input-group">
-                  				<select id="branch_select"  multiple style="width:310px;"  ></select>
-    							<div id="sel_bran" data-sel_bran='<?php echo  $id_branch;?>'></div> 
-    							<input id="id_branch" name="branch[id_branch]"  type="hidden" value=""/>
-                                <p class="help-block"></p>
-                           </div>
+                  			<select id="branch_select" class="form-control" multiple style="width:100%; min-width:300px;"></select>
+    						<div id="sel_bran" data-sel_bran='<?php echo  $id_branch;?>'></div> 
+    						<input id="id_branch" name="branch[id_branch]"  type="hidden" value=""/>
+                            <p class="help-block"></p>
                         </div>
                     </div>
 				 </div>	
