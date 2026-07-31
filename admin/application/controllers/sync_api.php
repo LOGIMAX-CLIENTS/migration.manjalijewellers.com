@@ -688,8 +688,7 @@ class sync_api extends REST_Controller
 			      }
 			      else if($updType == 'M'){
 			          /* To update customer scheme account data */
-                      $trans = array( 	'ref_no'	 	    => $tran->refPaymentNo,
-                    					'is_transferred'    => 'N',
+                      $trans = array( 	'is_transferred'    => 'N',
                     					'is_modified'	    => 1,
                     					"date_update"		    => $tran->transfer_date,
                     					'record_to'		    => 2,  // 1 - Offline , 2 - Online
@@ -705,6 +704,9 @@ class sync_api extends REST_Controller
                     					'additional_benefits'=> $tran->additional_benefits,
                     					'remark_close'      => $tran->remark_close,
                     					'transfer_date'	    => $tran->transfer_date);
+                      if (!$this->isNullValue($tran->refPaymentNo)) {
+                          $trans['ref_no'] = $tran->refPaymentNo;
+                      }
                        $chkdata = array( 
                     					'is_transferred'    => 'N',
                     					'is_modified'	    => 1,

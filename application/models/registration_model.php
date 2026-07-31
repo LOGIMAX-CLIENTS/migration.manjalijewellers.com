@@ -727,7 +727,6 @@ function upload_img__($field,$img_path,$filename)
 		} else {
 			$resultset = $this->db->query("SELECT * FROM customer_reg WHERE record_to=2 AND is_modified=1 AND mobile=" . $data['mobile']);
 		}
-
 		if ($resultset->num_rows() > 0) {
 			foreach ($resultset->result() as $row) {
 				if (!empty($row->clientid)) {
@@ -785,7 +784,6 @@ function upload_img__($field,$img_path,$filename)
 	   else{
 	       $resultset = $this->db->query("select * from customer_reg where record_to=2 and is_closed=0 and mobile=".$data['mobile']);
 	   } 
-
 	   $processed_client_ids = array();
 
 		if($resultset->num_rows() > 0 ){
@@ -1891,5 +1889,78 @@ function upload_img__($field,$img_path,$filename)
         //print_r($this->db->last_query());exit;
         return $sql->row_array();
     }
+	function sync_existing_data($mobile, $id_customer, $id_branch = '')
+	{
+		if (empty($mobile) || empty($id_customer)) {
+			return array("status" => FALSE, "msg" => "Invalid parameters");
+		}
+		$this->load->model('payment_modal');
+		$log_dir = 'log/' . date("Y-m-d");
+		if (!is_dir($log_dir . '/existing')) {
+			mkdir($log_dir . '/existing', 0777, true);
+		}
+		$log_path = $log_dir . '/existing/' . date("Y-m-d") . '.txt';
+		$allow_sync = false;
+		$last_sync_time = $this->getLastSyncTime($mobile);
+		if (!empty($last_sync_time)) {
+			$fifteen_min_earlier = date("Y-m-d H:i:s", strtotime(date("Y-m-d H:i:s")) - (15 * 60));
+			if (strtotime($last_sync_time) <= strtotime($fifteen_min_earlier)) {
+				$allow_sync = true;
+			} else {
+				$allow_sync = false;
+			}
+		} else {
+			$allow_sync = true;
+		}
+		if ($allow_sync) {
+			$data['id_customer'] = $id_customer;
+			$data['id_branch'] = $id_branch;
+			$data['branch_code'] = ($id_branch > 0 ? $this->getBranchCode($id_branch) : NULL);
+			$data['branchWise'] = 0;
+			$data['mobile'] = $mobile;
+			$this->db->trans_begin();
+			$this->updateLastSyncTime($id_customer);
+			$res = $this->insExisAcByMobile($data);
+			if (sizeof($res) > 0) {
+				$payData = $this->syncPayData($res);
+				if (sizeof($payData['succeedIds']) > 0 || $payData['no_records'] > 0) {
+					$status = $this->updateInterTableStatus($res, $payData['succeedIds']);
+					if ($status === TRUE && $this->db->trans_status() === TRUE) {
+						$this->db->trans_commit();
+						$TESTRes = array("status" => "On ENTER", "e" => $this->db->_error_message(), "q" => $this->db->last_query(), "res" => $res, "data" => $data);
+						$logData = "\n" . date('d-m-Y H:i:s') . "\n Model : registration_model \n Response : " . json_encode($TESTRes, true);
+						file_put_contents($log_path, $logData, FILE_APPEND | LOCK_EX);
+						return array("status" => TRUE, "msg" => "Purchase Plan registered successfully");
+					} else {
+						$this->db->trans_rollback();
+						$response = array("status" => FALSE, "e" => $this->db->_error_message(), "q" => $this->db->last_query(), "msg" => "Error in updating intermediate tables");
+						$logData = "\n" . date('d-m-Y H:i:s') . "\n Model : registration_model \n Response : " . json_encode($response, true);
+						file_put_contents($log_path, $logData, FILE_APPEND | LOCK_EX);
+						return $response;
+					}
+				} else {
+					$response = array("status" => FALSE, "e" => $this->db->_error_message(), "q" => $this->db->last_query(), "msg" => "Error in updating payment tables, kindly check payment data.");
+					$logData = "\n" . date('d-m-Y H:i:s') . "\n Model : registration_model \n Response : " . json_encode($response, true);
+					file_put_contents($log_path, $logData, FILE_APPEND | LOCK_EX);
+					$this->db->trans_rollback();
+					return $response;
+				}
+			} else {
+				$response = array("status" => FALSE, "e" => $this->db->_error_message(), "q" => $this->db->last_query(), "msg" => "No records to update in scheme account tables");
+				if ($this->db->trans_status() === TRUE) {
+					$this->db->trans_commit();
+				} else {
+					$this->db->trans_rollback();
+				}
+				$logData = "\n" . date('d-m-Y H:i:s') . "\n Model : registration_model \n Response : " . json_encode($response, true);
+				file_put_contents($log_path, $logData, FILE_APPEND | LOCK_EX);
+				return $response;
+			}
+		} else {
+			$logData = "\n" . date('d-m-Y H:i:s') . "\n Model : registration_model \n sync called less than 15 min";
+			file_put_contents($log_path, $logData, FILE_APPEND | LOCK_EX);
+			return array("status" => FALSE, "msg" => "sync called less than 15 min");
+		}
+	}
 }
 ?>

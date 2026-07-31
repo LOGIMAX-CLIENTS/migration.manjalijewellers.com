@@ -824,7 +824,7 @@ class Adminapp_api extends REST_Controller
 		
 			if($cus_mobile != ''){
 		    $cus = $this->$model->get_customerByMobile($cus_mobile,$data['emp_branch'],$data['branch_settings']); 
-		   
+		  
 		    /* $result['customer'] = $res;
 		    	if(sizeof($res)>0){
         			$result['isValid'] = TRUE;
@@ -836,6 +836,10 @@ class Adminapp_api extends REST_Controller
 
 			$result['customer'] = $cus;
 		if(sizeof($cus)>0){
+			if (!empty($cus['id_customer']) && !empty($cus['mobile'])) {
+				$this->load->model('registration_model');
+				$this->registration_model->sync_existing_data($cus['mobile'], $cus['id_customer'], $cus['id_branch']);
+			}
 		
 			// Check if employee allocation is enabled in settings
 			$emp_alloc_setting = $this->db->query("SELECT employee_allocation FROM chit_settings LIMIT 1")->row();

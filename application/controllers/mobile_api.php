@@ -4004,76 +4004,7 @@ class Mobile_api extends REST_Controller
     }
     function sync_existing_data($mobile, $id_customer, $id_branch)
     {
-        $post = array('m' => $mobile, 'id' => $id_customer, 'br' => $id_branch);  //Array([m] => 7639711990 [id] => 6390 [br] => 2)
-        if (!is_dir($this->log_dir . '/existing')) {
-            mkdir($this->log_dir . '/existing', 0777, true);
-        }
-        $log_path = $this->log_dir . '/existing/' . date("Y-m-d") . '.txt';
-        $allow_sync = false;
-        $last_sync_time = $this->registration_model->getLastSyncTime($mobile);
-        if (!empty($last_sync_time)) {
-            $fifteen_min_earlier = date("Y-m-d H:i:s", strtotime(date("Y-m-d H:i:s")) - (15 * 60));
-            if (strtotime($last_sync_time) <= strtotime($fifteen_min_earlier)) {
-                $allow_sync = true;
-            } else {
-                $allow_sync = false;
-            }
-        } else {
-            $allow_sync = true;
-        }
-        if ($allow_sync) {    //1
-            $data['id_customer'] = $id_customer;
-            $data['id_branch'] = $id_branch;
-            $data['branch_code'] = ($id_branch > 0 ? $this->registration_model->getBranchCode($id_branch) : NULL);
-            $data['branchWise'] = 0;
-            $data['mobile'] = $mobile;
-            $this->db->trans_begin();
-            $this->registration_model->updateLastSyncTime($id_customer);
-            //  $data -> Array(    [id_customer] => 6390    [id_branch] => 2    [branch_code] => 40    [branchWise] => 0    [mobile] => 7639711990)
-            $res = $this->registration_model->insExisAcByMobile($data);
-            if (sizeof($res) > 0) {
-                //$this->db->trans_begin();
-                $payData = $this->registration_model->syncPayData($res);
-                if (sizeof($payData['succeedIds']) > 0 || $payData['no_records'] > 0) {
-                    $status = $this->registration_model->updateInterTableStatus($res, $payData['succeedIds']);
-                    if ($status === TRUE && $this->db->trans_status() === TRUE) {
-                        $this->db->trans_commit();
-                        /*echo $this->db->_error_message();
-                        echo $this->db->last_query();*/
-                        $TESTRes = array("status" => "On ENTER", "e" => $this->db->_error_message(), "q" => $this->db->last_query(), "res" => $res, "data" => $data);
-                        $logData = "\n" . date('d-m-Y H:i:s') . "\n API : mobile_api \n Response : " . json_encode($TESTRes, true);
-                        file_put_contents($log_path, $logData, FILE_APPEND | LOCK_EX);
-                        return array("status" => TRUE, "msg" => "Purchase Plan registered successfully");
-                    } else {
-                        $this->db->trans_rollback();
-                        $response = array("status" => FALSE, "e" => $this->db->_error_message(), "q" => $this->db->last_query(), "msg" => "Error in updating intermediate tables");
-                        $logData = "\n" . date('d-m-Y H:i:s') . "\n API : mobile_api \n Response : " . json_encode($response, true);
-                        file_put_contents($log_path, $logData, FILE_APPEND | LOCK_EX);
-                        return $response;
-                    }
-                } else {
-                    $response = array("status" => FALSE, "e" => $this->db->_error_message(), "q" => $this->db->last_query(), "msg" => "Error in updating payment tables, kindly check payment data.");
-                    $logData = "\n" . date('d-m-Y H:i:s') . "\n API : mobile_api \n Response : " . json_encode($response, true);
-                    file_put_contents($log_path, $logData, FILE_APPEND | LOCK_EX);
-                    $this->db->trans_rollback();
-                    return $response;
-                }
-            } else {
-                $response = array("status" => FALSE, "e" => $this->db->_error_message(), "q" => $this->db->last_query(), "msg" => "No records to update in scheme account tables");
-                if ($this->db->trans_status() === TRUE) {
-                    $this->db->trans_commit();
-                } else {
-                    echo $this->db->_error_message();
-                    $this->db->trans_rollback();
-                }
-                $logData = "\n" . date('d-m-Y H:i:s') . "\n API : mobile_api \n Response : " . json_encode($response, true);
-                file_put_contents($log_path, $logData, FILE_APPEND | LOCK_EX);
-                return $response;
-            }
-        } else {
-            $logData = "\n" . date('d-m-Y H:i:s') . "\n API : mobile_api \n sync called less than 15 min";
-            file_put_contents($log_path, $logData, FILE_APPEND | LOCK_EX);
-        }
+        return $this->registration_model->sync_existing_data($mobile, $id_customer, $id_branch);
     }
     // To Get Bearer Token for ERP api call
     public function getBearerToken()
@@ -4471,6 +4402,10 @@ class Mobile_api extends REST_Controller
         } else {
             $id_branch = $this->$model->getCusBranch($this->get('id_customer'));
         }
+        //Sync Existing Data					
+        if ($this->config->item("integrationType") == 2 || $this->config->item("autoSyncExisting") == 1) {
+            $syncData = $this->sync_existing_data($this->get('mobile'), $this->get('id_customer'), $id_branch);
+        }
         // $this->load->model("commonapi_model");
         $schemeAcc = $this->$model->get_payment_details($this->get('id_customer'));
         if (!empty($schemeAcc)) {
@@ -4482,10 +4417,6 @@ class Mobile_api extends REST_Controller
         //	$result['chits'] = $this->array_sort($schemeAcc['chits'], 'allow_pay',SORT_DESC);
         $result['wallet_balance'] = $this->$model->wallet_balance($this->get('id_customer'));
         $customr_jonedbranch = $this->$model->getCusSchejoinedbranch($this->get('id_customer'));
-        //Sync Existing Data					
-        if ($this->config->item("integrationType") == 2 || $this->config->item("autoSyncExisting") == 1) {
-            $syncData = $this->sync_existing_data($this->get('mobile'), $this->get('id_customer'), $id_branch);
-        }
         // Get Branch Name and ID 
         if ($result['currency']['currency']['cost_center'] == 3) {
             if (count($result['chits']) > 0) {
@@ -6816,6 +6747,24 @@ class Mobile_api extends REST_Controller
     {
         $model = self::MOD_MOB;
         $data = $this->get_values();
+        $mobile = (!empty($data['mobile']) ? $data['mobile'] : '');
+        $id_customer = (!empty($data['id_customer']) ? $data['id_customer'] : '');
+        $id_branch = (!empty($data['id_branch']) ? $data['id_branch'] : '');
+
+        if (empty($mobile) && !empty($id_customer)) {
+            $cus_row = $this->db->query("SELECT mobile, id_branch FROM customer WHERE id_customer = " . (int)$id_customer)->row();
+            if (!empty($cus_row)) {
+                $mobile = $cus_row->mobile;
+                if (empty($id_branch)) {
+                    $id_branch = $cus_row->id_branch;
+                }
+            }
+        }
+
+        if (!empty($mobile) && !empty($id_customer)) {
+            $this->sync_existing_data($mobile, $id_customer, $id_branch);
+        }
+
         $chit = $this->$model->getdigidata(array('mobile' => $data['mobile'], 'id_customer' => $data['id_customer']));
         $this->response($chit, 200);
     }
