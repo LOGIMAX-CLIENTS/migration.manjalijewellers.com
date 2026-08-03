@@ -776,13 +776,13 @@ function upload_img__($field,$img_path,$filename)
 
 	   $result = array();
 	   if($data['branch_code'] > 0 && $data['branch_code'] != NULL && $data['branch_code'] != ""){ // Only for SCM and TKTM
-	       $resultset = $this->db->query("select * from customer_reg where record_to=2 and is_closed=0 and branch_code='".$data['branch_code']."' and mobile=".$data['mobile']);
+	       $resultset = $this->db->query("select * from customer_reg where is_closed=0 and branch_code='".$data['branch_code']."' and mobile=".$data['mobile']);
 	   }
 	   else if($data['id_branch'] > 0 && ($data['id_branch'] != '' || $data['id_branch'] != NULL)){
-	       $resultset = $this->db->query("select * from customer_reg where record_to=2 and is_closed=0 and id_branch='".$data['id_branch']."' and mobile=".$data['mobile']);
+	       $resultset = $this->db->query("select * from customer_reg where is_closed=0 and id_branch='".$data['id_branch']."' and mobile=".$data['mobile']);
 	   }
 	   else{
-	       $resultset = $this->db->query("select * from customer_reg where record_to=2 and is_closed=0 and mobile=".$data['mobile']);
+	       $resultset = $this->db->query("select * from customer_reg where is_closed=0 and mobile=".$data['mobile']);
 	   } 
 	   $processed_client_ids = array();
 
