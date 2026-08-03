@@ -1189,7 +1189,7 @@ function upload_img__($field,$img_path,$filename)
         	                                    'due_type'          =>$row->due_type,
         	                                    'due_month'         =>$row->due_month,
         	                                    'due_year'          =>$row->due_year,
-        	                                    'added_by' 			=> isset($data['added_by']) ? $data['added_by'] : 0,
+        	                                    'added_by' 			=> isset($data['added_by']) ? $data['added_by'] : 5,
         	                                    'installment'       => NULL,
         	                                    'gst'               => 0.00,
         	                                    'gst_type'          => 0,
