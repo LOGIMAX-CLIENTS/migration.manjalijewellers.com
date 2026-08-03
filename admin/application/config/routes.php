@@ -609,6 +609,15 @@ $route['reports/Employee_account'] = 'admin_reports/employee_account';
 
 $route['reports/ajax_emp_account_list']	=	'admin_reports/ajax_get_emp_account_list';
 
+$route['log/index']                     = 'Log/index';
+$route['log/ajax_get_logs_by_date']    = 'Log/ajax_get_logs_by_date';
+$route['log/ajax_get_file_content']    = 'Log/ajax_get_file_content';
+$route['log/download_file/(:any)']     = 'Log/download_file/$1';
+$route['Log/index']                     = 'Log/index';
+$route['Log/ajax_get_logs_by_date']    = 'Log/ajax_get_logs_by_date';
+$route['Log/ajax_get_file_content']    = 'Log/ajax_get_file_content';
+$route['Log/download_file/(:any)']     = 'Log/download_file/$1';
+
 $route['log/ajax_list']        			 = 'admin_reports/log/Ajax';
 
 $route['log/ajax_list_detail']       	 = 'admin_reports/log/Detail';
