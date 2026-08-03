@@ -72,7 +72,7 @@ if (file_exists($emp_img)) {
      <!-- Datetime picker -->
     <link href="<?php echo base_url(); ?>assets/plugins/bootstrap-datetimepicker/css/bootstrap-datetimepicker.css" rel="stylesheet" type="text/css" />
     <!-- Time picker -->
-    <link href="<?php echo base_url(); ?>assets/plugins/timepicker/src/jquery.timeselector.css" rel="stylesheet" type="text/css" />
+    <!-- <link href="<?php echo base_url(); ?>assets/plugins/timepicker/src/jquery.timeselector.css" rel="stylesheet" type="text/css" /> -->
 	<!-- bootstrap wysihtml5 - text editor -->
     <link href="<?php echo base_url(); ?>assets/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.min.css" rel="stylesheet" type="text/css" />
 	<link href="<?php echo base_url(); ?>assets/plugins/bootstrap-switch/bootstrap-switch.min.css" rel="stylesheet" type="text/css" />
