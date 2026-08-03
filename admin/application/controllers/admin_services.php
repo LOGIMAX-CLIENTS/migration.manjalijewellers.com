@@ -2878,6 +2878,7 @@ class Admin_services extends CI_Controller
 								"discountAmt"		=> $trans['discountAmt'],
 
 								"payment_ref_number" => $trans['ref_no'],
+								"added_by"          => 5,
 
 								"date_upd" 			=> date('Y-m-d H:i:s'),
 
