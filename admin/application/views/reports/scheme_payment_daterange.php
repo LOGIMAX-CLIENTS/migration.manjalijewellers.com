@@ -266,6 +266,8 @@
 
                         <option value="2">Online</option>
 
+                        <option value="5">Offline</option>
+
                         <option value="3">Admin App</option>
 
                         <option value="1">Web App</option>

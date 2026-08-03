@@ -6998,7 +6998,7 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
                                         if(chit.scheme_wise_acc_no=3,if(sa.scheme_acc_number is not null,concat(IFNULL(b.short_name,''),s.code,'-',sa.scheme_acc_number),concat(IFNULL(b.short_name,''),s.code,'-NotAllocated')),CONCAT(s.code,' - ',sa.scheme_acc_number)) as old_scheme_acc_number1,IFNULL(sa.old_scheme_acc_number,'-') as old_scheme_acc_number,
                                         IFNULL(sa.scheme_acc_number,'NOT ALLOCATED') as scheme_acc_number,
                                         IFNULL(sa.start_year,'') as start_year,
-                                        chit.scheme_wise_acc_no,
+                                        chit.scheme_wise_acc_no,p.is_offline,
                                         ifnull(pmd.payment_ref_number,ifnull(pmd.cheque_no,'-')) as ref_no,
                                     chit.scheme_wise_receipt,
                                     IFNULL(p.receipt_no, '') as receipt_no,
@@ -7014,7 +7014,7 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
                                         IF(p.metal_weight!='0' && p.metal_weight!='' ,p.metal_weight,'0') as metal_weight2,
                                         IF(p.payment_mode='FP','0',ifnull(pmd.payment_amount,'0.00')) as payment_amount1,
 										ifnull(pmd.payment_amount,'0.00') as payment_amount,
-                                        b.name as pay_branch,if(p.added_by=0,'Admin',if(p.added_by=1,'Web App',if(p.added_by=2,'Mobile App',if(p.added_by=3,'Collection App',if(p.added_by=4,'Retail',if(p.added_by=5,'Sync',if(p.added_by=6,'Import','-'))))))) as payment_through,s.scheme_name,IFNULL(s.firstPayDisc_value,0) as discountAmt,
+                                        b.name as pay_branch,if(p.added_by=0,'Admin',if(p.added_by=1,'Web App',if(p.added_by=2,'Mobile App',if(p.added_by=3,'Collection App',if(p.added_by=4,'Retail',if(p.added_by=5,'Offline',if(p.added_by=6,'Import','-'))))))) as payment_through,s.scheme_name,IFNULL(s.firstPayDisc_value,0) as discountAmt,
                                         IF(p.remark != '' AND p.remark is not null , p.remark,'-') as remarks,p.added_by,
                                         IFNULL(if(p.added_by = 0, if(pmd.payment_mode='FP','Free payment', if(pmd.payment_mode = 'NB' || pmd.payment_mode = 'CC' || pmd.payment_mode = 'DC' ,CONCAT( IF(pmd.payment_mode = 'NB' && pmd.NB_type = 3,'UPI',pm.mode_name),'-', IFNULL(IFNULL(CONCAT(bk.short_code,'(B)'),CONCAT(dev.device_name,'(D)')),if(pmd.NB_type = 1,'RTGS',if(pmd.NB_type = 2,'IMPS',if(pmd.NB_type = 3,'UPI',if(pmd.NB_type = 4,'NEFT','')))))),pm.mode_name ) ) ,pm.mode_name),p.payment_mode) as payment_mode,
                                         if(sa.is_closed=0 and sa.active=1,'Active',if(sa.is_closed=1 and sa.active=0,'Closed','')) as acc_status,
@@ -7185,7 +7185,7 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
     " . ($id_classfication != '' ? " and s.id_classification=" . $id_classfication . "" : '') . "
     " . ($mode != '' ? ($mode == 'NB' ? " and pmd.payment_mode='NB' and pmd.NB_type != 3 " : ($mode == 'UPI' ? " and (pmd.payment_mode  in ('NB','UPI') AND pmd.NB_type = 3) " : " and pmd.payment_mode='" . $mode . "'")) : '') . "
     " . ($id_scheme != '' && $id_scheme != '0' ? " and s.id_scheme=" . $id_scheme . "" : '') . "
-    " . ($pay_mode != '' ? (($pay_mode == 0) ? " and p.added_by=" . $pay_mode . "" : " ") : "AND p.added_by IN (0,6)") . "
+    " . ($pay_mode != '' ? (($pay_mode == 0) ? " and p.added_by=" . $pay_mode . "" : "AND p.added_by IN (0,5,6)") : "AND p.added_by IN (0,5,6)") . "
     " . ($id_branch != '' && $id_branch > 0 ? " and p.id_branch IN (" . $id_branch . ")" : '') . "
     " . ($acc_type == 1 ? " and sa.active = 1 and sa.is_closed = 0 and s.active = 1" : '') . "
     " . ($acc_type == 2 ? " and sa.active = 0 and sa.is_closed = 1 and s.active = 1" : '') . "
@@ -7245,14 +7245,14 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
     " . ($id_classfication != '' ? " and s.id_classification=" . $id_classfication . "" : '') . "
     " . ($mode != '' ? ($mode == 'NB' ? " and pmd.payment_mode='NB' and pmd.NB_type != 3 " : ($mode == 'UPI' ? " and (pmd.payment_mode  in ('NB','UPI') AND pmd.NB_type = 3) " : " and pmd.payment_mode='" . $mode . "'")) : '') . "
     " . ($id_scheme != '' && $id_scheme != '0' ? " and s.id_scheme=" . $id_scheme . "" : '') . "
-    " . ($pay_mode != '' ? ($pay_mode == 3 ? " and p.added_by=" . $pay_mode . "" : " ") : "AND p.added_by IN (3)") . "
+    " . ($pay_mode != '' ? ($pay_mode == 3 ? " and p.added_by=" . $pay_mode . "" : " AND p.added_by IN (3)") : "AND p.added_by IN (3)") . "
     " . ($id_branch != '' && $id_branch > 0 ? " and p.id_branch IN(" . $id_branch . ")" : '') . "
     " . ($acc_type == 1 ? " and sa.active = 1 and sa.is_closed = 0 and s.active = 1" : '') . "
     " . ($acc_type == 2 ? " and sa.active = 0 and sa.is_closed = 1 and s.active = 1" : '') . "
     " . ($id_employee != '' && $id_employee != null ? " and p.id_employee=" . $id_employee . "" : '') . "
     " . ($metal_date_type == 0 ? " and p.is_editing_enabled = 0" : " and p.is_editing_enabled = 1") . "
     group by pmd.payment_mode,pmd.id_bank,pmd.id_pay_device,pmd.NB_type		order by pm.mode_name ASC";
-        //print_r($sql3);exit;
+        // print_r($sql3);exit;
         if ($pay_mode == 0 && $pay_mode != '') {
             $result['offline'] = $this->db->query($sql1)->result_array();
         } elseif ($pay_mode == 1 || $pay_mode == 2) {
