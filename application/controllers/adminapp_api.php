@@ -834,6 +834,33 @@ class Adminapp_api extends REST_Controller
         			$result['metal'] = $this->$model->get_metalData();
 		        } */
 
+			if(empty($cus) || sizeof($cus) == 0){
+				$cus_reg_record = $this->db->query("SELECT * FROM customer_reg WHERE mobile = '".$this->db->escape_str($cus_mobile)."' ORDER BY id_customer_reg DESC LIMIT 1")->row_array();
+				if(!empty($cus_reg_record)){
+					$create_data = array(
+						'mobile'            => $cus_mobile,
+						'firstname'         => $cus_reg_record['firstname'],
+						'lastname'          => $cus_reg_record['lastname'],
+						'id_branch'         => ($cus_reg_record['id_branch'] > 0 ? $cus_reg_record['id_branch'] : (!empty($data['emp_branch']) ? $data['emp_branch'] : NULL)),
+						'state'             => $cus_reg_record['state'],
+						'city'              => $cus_reg_record['city'],
+						'address1'          => $cus_reg_record['address1'],
+						'address2'          => $cus_reg_record['address2'],
+						'address3'          => $cus_reg_record['address3'],
+						'pincode'           => $cus_reg_record['pincode'],
+						'phone'             => $cus_reg_record['phone'],
+						'email'             => $cus_reg_record['email'],
+						'is_closed'         => $cus_reg_record['is_closed'],
+						'custom_entry_date' => $cus_reg_record['reg_date']
+					);
+					$cus_created = $this->createExistingCus($create_data);
+					if(!empty($cus_created['status']) && $cus_created['status'] == 'success'){
+						$cus = $this->$model->get_customerByMobile($cus_mobile,$data['emp_branch'],$data['branch_settings']);
+						$cusdata['id_customer'] = (isset($cus['id_customer']) ? $cus['id_customer'] : (isset($cus_created['id_customer']) ? $cus_created['id_customer'] : ''));
+					}
+				}
+			}
+
 			$result['customer'] = $cus;
 		if(sizeof($cus)>0){
 			if (!empty($cus['id_customer']) && !empty($cus['mobile'])) {
@@ -911,6 +938,85 @@ class Adminapp_api extends REST_Controller
 		
 	    
 		$this->response($result,200);
+	}
+
+	function createExistingCus($data)
+	{
+		$model = self::ADM_MODEL;
+		$id_customer = 0;
+		$cus_check = $this->db->query("SELECT id_customer FROM customer WHERE mobile = '".$this->db->escape_str($data['mobile'])."' LIMIT 1")->row_array();
+		if(!empty($cus_check)){
+			$id_customer = $cus_check['id_customer'];
+		}
+
+		if ($id_customer == 0) {
+				$state_name = isset($data['state']) ? $data['state'] : '';
+				$city_name = isset($data['city']) ? $data['city'] : '';
+				
+				$id_state = 0;
+				if(!empty($state_name)){
+					$st_row = $this->db->query("SELECT id_state FROM state WHERE name = '".$this->db->escape_str($state_name)."' LIMIT 1")->row_array();
+					if(!empty($st_row)) $id_state = $st_row['id_state'];
+				}
+				
+				$id_city = 0;
+				if(!empty($city_name)){
+					$ct_row = $this->db->query("SELECT id_city FROM city WHERE name = '".$this->db->escape_str($city_name)."' LIMIT 1")->row_array();
+					if(!empty($ct_row)) $id_city = $ct_row['id_city'];
+				}
+
+				$cus_data = array(
+					'info' => array(
+						'firstname'			=> (isset($data['firstname']) ? ucfirst($data['firstname']) : NULL),
+						'lastname' 			=> (isset($data['lastname']) ? ucfirst($data['lastname']) : NULL),
+						'id_branch'	    	=> (isset($data['id_branch']) && $data['id_branch'] > 0 ? $data['id_branch'] : NULL),
+						'date_of_birth'		=> (isset($data['date_of_birth']) && $data['date_of_birth'] != '' ? $data['date_of_birth'] : NULL),
+						'date_of_wed'		=> (isset($data['date_of_wed']) && $data['date_of_wed'] != '' ? $data['date_of_wed'] : NULL),
+						'email'				=> (isset($data['email']) ? $data['email'] : NULL),
+						'mobile'			=> (isset($data['mobile']) ? $data['mobile'] : NULL),
+						'phone'				=> (isset($data['phone']) ? $data['phone'] : NULL),
+						'passwd'			=>	$data['mobile'],
+						'active'			=> (isset($data['is_closed']) ? ($data['is_closed'] == 1 ? 0 : 1) : 1),
+						'date_add'			=>  date("Y-m-d H:i:s"),
+						'custom_entry_date' => (isset($data['custom_entry_date']) ? ucfirst($data['custom_entry_date']) : NULL),
+						'added_by'			=>  5,   // import
+					),
+					'address' => array(
+						'id_country'		=>	101,
+						'id_state' 			=>	$id_state,
+						'id_city'			=>	$id_city,
+						'address1'			=> (isset($data['address1']) ? $data['address1'] : NULL),
+						'address2'			=> (isset($data['address2']) ? $data['address2'] : NULL),
+						'address3'			=> (isset($data['address3']) ? $data['address3'] : NULL),
+						'pincode'			=> (isset($data['pincode']) ? $data['pincode'] : NULL),
+						'active'			=>	1,
+						'date_add'			=>	date("Y-m-d H:i:s")
+					)
+				);
+
+				$cus_res =  $this->$model->insert_customer($cus_data);
+
+				if (!empty($cus_res['status']) && !empty($cus_res['insertID'])) {
+					$response = array(
+						"status" => 'success',
+						"message" => "Customer created successfully",
+						"id_customer" => $cus_res['insertID']
+					);
+				} else {
+					$response = array(
+						"status" => 'error',
+						"message" => "Customer creation failed",
+					);
+				}
+		} else {
+			$response = array(
+				"status" => 'success',
+				"message" => "Customer already exist",
+				"id_customer" => $id_customer
+			);
+		}
+
+		return $response;
 	} 
 	
 	
