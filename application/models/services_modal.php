@@ -544,7 +544,7 @@ class Services_modal extends CI_Model {
 	    $params = [];
         $sms_msg = "";
         $template_name = "";
-        $sql = $this->db->query("Select c.id_company,c.company_name as cmp_name,c.short_code,c.pincode,c.mobile,c.phone as cmp_ph,c.email,c.website,c.address1,c.address2,c.id_country,c.id_state,c.id_city,ct.name as city,s.name as state,cy.name as country,
+        $sql = $this->db->query("Select c.id_company,c.company_name as cmp_name,c.short_code,c.pincode,c.mobile,c.phone as cmp_ph,c.email,c.website,c.address1,c.address2,c.id_country,c.id_state,c.id_city,ct.name as city,s.name as state,cy.name as country,c.comp_name_in_sms,
         cs.currency_symbol,cs.currency_name,concat(cs.loginOTP_exp,'s') as loginOTP_exp
 				from company c
 				left join country cy on (c.id_country=cy.id_country)
@@ -557,6 +557,7 @@ class Services_modal extends CI_Model {
             $customer_data['short_code']    = $cust_data['short_code'];
             $customer_data['cmp_ph']        = $cust_data['cmp_ph'];
             $customer_data['mobile']        = $cust_data['mobile'];
+            $customer_data['comp_name_in_sms']   = $cust_data['comp_name_in_sms'];
             $customer_data['email']         = $cust_data['email'];
             $customer_data['currency_symbol'] = $cust_data['currency_symbol'];
             $customer_data['loginOTP_exp'] = $cust_data['loginOTP_exp'];
