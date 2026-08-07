@@ -975,7 +975,7 @@ class Adminapp_api extends REST_Controller
 						'email'				=> (isset($data['email']) ? $data['email'] : NULL),
 						'mobile'			=> (isset($data['mobile']) ? $data['mobile'] : NULL),
 						'phone'				=> (isset($data['phone']) ? $data['phone'] : NULL),
-						'passwd'			=>	$data['mobile'],
+						'passwd'			=> (isset($data['mobile']) ? $this->__encrypt($data['mobile']) : NULL),
 						'active'			=> (isset($data['is_closed']) ? ($data['is_closed'] == 1 ? 0 : 1) : 1),
 						'date_add'			=>  date("Y-m-d H:i:s"),
 						'custom_entry_date' => (isset($data['custom_entry_date']) ? ucfirst($data['custom_entry_date']) : NULL),
