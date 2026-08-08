@@ -595,9 +595,9 @@ class Admin_settings extends CI_Controller
                 }
                 if ($status) {
                     $sendNoti = $this->$model->canSendNoti(1);
-                    if ($sendNoti) {
+                    /* if ($sendNoti) {
                         $this->send_RatesToAllUsers($branch_id[0]);
-                    }
+                    } */
                     /*$data['rates'] = $this->$model->metal_ratesDB("get",$status['insertID']);
                     $this->update_rate_file($data['rates']);
                     //$this->send_rate_noti();
