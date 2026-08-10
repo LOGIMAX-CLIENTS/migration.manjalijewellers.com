@@ -7039,23 +7039,28 @@ $('#Table_Select').select2().on("change", function (e) {
     //get_intertable_transdata(client_id,ref_no,cus="");
   }
 });
+// Id Sch Acc filter accepts digits only
+$(document).on('input', '#id_scheme_account', function () {
+  this.value = this.value.replace(/[^\d]/g, '');
+});
 $('#mob_submit').on('click', function () {
   var id_cus = $('#id_cus').val();
+  var id_scheme_account = $('#id_scheme_account').val().trim();
   if (id_cus == 1) {
     var mobile = $('#mobilenumber').val();
     var clientid = $('#clientid').val();
     var ref_no = $('#ref_no').val();
     var group_code = $('#group_code').val();
-    get_intertable_cusdata(mobile, clientid, ref_no, group_code);
+    get_intertable_cusdata(mobile, clientid, ref_no, group_code, "", id_scheme_account);
   }
   else {
     var clientid = $('#clientid').val();
     var ref_no = $('#ref_no').val();
     // console.log(client_id);
-    get_intertable_transdata(clientid, ref_no);
+    get_intertable_transdata(clientid, ref_no, "", id_scheme_account);
   }
 });
-function get_intertable_cusdata(mobile, clientid, ref_no, group_code, cus = "") {
+function get_intertable_cusdata(mobile, clientid, ref_no, group_code, cus = "", id_scheme_account = "") {
   var cus = $('#Table_Select').find(":selected").val();
   $("div.overlay").css("display", "block");
   my_Date = new Date();
@@ -7065,7 +7070,7 @@ function get_intertable_cusdata(mobile, clientid, ref_no, group_code, cus = "") 
   $.ajax({
     type: 'POST',
     url: base_url + 'index.php/reports/intertable_list',
-    data: { 'mobile': mobile, 'clientid': clientid, 'ref_no': ref_no, 'group_code': group_code, 'cus': cus },
+    data: { 'mobile': mobile, 'clientid': clientid, 'ref_no': ref_no, 'group_code': group_code, 'cus': cus, 'id_scheme_account': id_scheme_account },
     dataType: 'json',
     success: function (data) {
       console.log(data);
@@ -7092,6 +7097,11 @@ function get_intertable_cusdata(mobile, clientid, ref_no, group_code, cus = "") 
         { "mDataProp": "record_to" },
         { "mDataProp": "is_modified" },
         { "mDataProp": "reg_date" },
+        {
+          "mDataProp": function (row, type, val, meta) {
+            return (row.maturity_date != null && row.maturity_date != '' ? row.maturity_date : '-');
+          }
+        },
         // { "mDataProp": "ac_name" },
         {
           "mDataProp": function (row, type, val, meta) {
@@ -7170,7 +7180,7 @@ function get_intertable_cusdata(mobile, clientid, ref_no, group_code, cus = "") 
     }
   });
 }
-function get_intertable_transdata(client_id, ref_no, cus = "") {
+function get_intertable_transdata(client_id, ref_no, cus = "", id_scheme_account = "") {
   // var log = {'client_id':client_id,'ref_no':ref_no,'cus':cus};
   // console.log(log);
   var cus = $('#Table_Select').find(":selected").val();
@@ -7182,7 +7192,7 @@ function get_intertable_transdata(client_id, ref_no, cus = "") {
   $.ajax({
     type: 'POST',
     url: base_url + 'index.php/reports/intertable_translist',
-    data: { 'client_id': client_id, 'ref_no': ref_no, 'cus': cus },
+    data: { 'client_id': client_id, 'ref_no': ref_no, 'cus': cus, 'id_scheme_account': id_scheme_account },
     dataType: 'json',
     success: function (data) {
       console.log(data);
@@ -12567,6 +12577,10 @@ $(document).on('input', '#pay_id', function (e) {
     $(this).focus();
   }
 });
+// Sch_Acc_Id transfer field accepts digits only
+$(document).on('input', '.row-sch-account-id', function () {
+  this.value = this.value.replace(/[^\d]/g, '');
+});
 
 // ==================== ACCOUNT SUBMIT (multi-row) ====================
 $("#acc_submit").on("click", function () {
@@ -12695,13 +12709,13 @@ function set_pay_table_multi(results) {
       ' data-acc-start="' + (data.acc_start_date || '') + '">' +
       '<td>' + rowIdx + '</td>' +
       '<td><span class="row-id-payment">' + id_payment + '</span></td>' +
-      '<td><span>' + data.id_scheme_account + '</span><input type="hidden" class="row-sch-account-id" value="' + data.id_scheme_account + '"></td>' +
+      '<td><input type="text" value="' + data.id_scheme_account + '" class="form-control input-sm row-sch-account-id" style="width:90px;margin:0 auto;text-align:center;" ' + (data.added_by == 2 ? 'disabled' : '') + ' /></td>' +
       '<td><div class="input-group date"><input type="text" value="' + data.date_payment + '" class="form-control input-sm date row-pay-datetimepicker" data-date-end-date="0d" data-date-format="dd-mm-yyyy" ' + (data.added_by == 2 ? 'disabled' : '') + ' /><span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span></div></td>' +
       '<td><span class="row-pay-amt">' + parseFloat(data.payment_amount) + '</span></td>' +
       '<td><span class="row-metal-rate">' + parseFloat(data.metal_rate) + '</span></td>' +
       '<td><span class="row-metal-weight">' + (data.metal_weight != null && data.metal_weight != '' ? formatMetalWeight(data.metal_weight) : '0') + '</span></td>' +
       '<td><span class="row-saved-benefits">' + (data.saved_benefits != null && data.saved_benefits != '' && parseFloat(data.saved_benefits) > 0 ? formatMetalWeight(data.saved_benefits) : '-') + '</span></td>' +
-      '<td><span class="row-receipt-no">' + data.receipt_no + '</span></td>' +
+      '<td><span class="row-receipt-no">' + (data.receipt_no != null && data.receipt_no !== '' ? data.receipt_no : '-') + '</span></td>' +
       '<td><span class="row-payment-status-text">' + payment_status + '</span>' +
       '<input type="hidden" class="row-payment-status" value="' + data.payment_status + '">' +
       '<input type="hidden" class="row-gst-amount" value="' + (parseFloat(data.gst_amount) || 0) + '">' +
@@ -12749,25 +12763,85 @@ function set_acc_table_multi(results) {
       '</tr>';
   });
   $('#table_acc_list > tbody').html(srHTML);
-  // Initialize datepickers for each row
+  // Initialize datepickers for each row with installment cycle date restrictions based on scheme start date
   $('#table_acc_list tbody tr').each(function() {
     var $row = $(this);
-    $row.find('.row-acc-start-date').datepicker({
+    var rowIdx = $row.data('row');
+    var schData = window._accRowSchData ? window._accRowSchData[rowIdx] : {};
+    var cycle = schData.installment_cycle;
+    var origStartStr = String($row.data('original-startdate') || $row.find('.row-acc-start-date').val() || '').trim();
+
+    var datepickerOptions = {
       format: 'yyyy-mm-dd',
       autoclose: true,
       todayHighlight: true
-    });
+    };
+
+    if (origStartStr) {
+      var origParts = origStartStr.substring(0, 10).split('-');
+      if (origParts.length === 3) {
+        var startYr = parseInt(origParts[0], 10);
+        var startMo = parseInt(origParts[1], 10) - 1;
+        var startDy = parseInt(origParts[2], 10);
+
+        if (cycle === 1 || cycle === 3) {
+          // Daily scheme: restrict to start date itself (even next day from start date is restricted)
+          datepickerOptions.endDate = new Date(startYr, startMo, startDy);
+        } else if (cycle === 0) {
+          // Monthly scheme: restrict to end of the start date's month (next month from start date is restricted)
+          datepickerOptions.endDate = new Date(startYr, startMo + 1, 0);
+        } else {
+          datepickerOptions.endDate = new Date(startYr, startMo, startDy);
+        }
+      }
+    }
+
+    $row.find('.row-acc-start-date').datepicker(datepickerOptions);
   });
   $(".update_acc").show();
   $("#cancel_acc").show();
 }
 
-// ==================== ACCOUNT START DATE CHANGE (per-row maturity recalc) ====================
-$('body').on('changeDate', '.row-acc-start-date', function () {
+// ==================== ACCOUNT START DATE CHANGE (per-row maturity recalc + cycle restriction) ====================
+$('body').on('changeDate change', '.row-acc-start-date', function () {
   var $row = $(this).closest('tr');
   var rowIdx = $row.data('row');
   var schData = window._accRowSchData ? window._accRowSchData[rowIdx] : {};
-  var newStartDate = $(this).val();
+  var cycle = schData.installment_cycle;
+  var newStartDate = $(this).val() ? $(this).val().trim() : '';
+  if (!newStartDate) return;
+
+  var origStartStr = String($row.data('original-startdate') || '').trim();
+  if (origStartStr) {
+    var origParts = origStartStr.substring(0, 10).split('-');
+    if (origParts.length === 3) {
+      var startYr = parseInt(origParts[0], 10);
+      var startMo = parseInt(origParts[1], 10) - 1;
+      var startDy = parseInt(origParts[2], 10);
+
+      var selectedDt = new Date(newStartDate);
+      selectedDt.setHours(0, 0, 0, 0);
+
+      if (cycle === 1 || cycle === 3) {
+        // Daily basis: restrict future date from start date (even next day is restricted)
+        var maxDailyDt = new Date(startYr, startMo, startDy, 23, 59, 59, 999);
+        if (selectedDt > maxDailyDt) {
+          $.toaster({ priority: 'danger', title: 'Invalid Date!', message: 'Row #' + rowIdx + ': Daily scheme start date cannot be later than ' + origStartStr.substring(0, 10) + '.' });
+          $(this).val(origStartStr.substring(0, 10));
+          return;
+        }
+      } else if (cycle === 0) {
+        // Monthly basis: restrict next month from start date
+        var maxMonthlyDt = new Date(startYr, startMo + 1, 0, 23, 59, 59, 999);
+        if (selectedDt > maxMonthlyDt) {
+          $.toaster({ priority: 'danger', title: 'Invalid Date!', message: 'Row #' + rowIdx + ': Monthly scheme start date cannot be in next month from ' + origStartStr.substring(0, 10) + '.' });
+          $(this).val(origStartStr.substring(0, 10));
+          return;
+        }
+      }
+    }
+  }
+
   if (newStartDate && schData) {
     var startDt = new Date(newStartDate);
     var maturityDt;
@@ -12839,6 +12913,54 @@ $('body').on('changeDate', '.row-pay-datetimepicker', function () {
   } else {
     updateRowMetalRate($row, selectedDate);
   }
+});
+
+// ==================== SCH_ACC_ID CHANGE (payment transfer target) ====================
+// Re-point the row at the new scheme account: validate the target is open, active and still
+// has installments left, and refresh its start date so the payment date validation runs
+// against the TARGET account rather than the one the payment came from.
+function validateTransferTarget($input) {
+  var $row = $input.closest('tr');
+  var rowIdx = $row.data('row');
+  var payId = $row.data('payid');
+  var newAccId = $input.val().trim();
+  var originalAccId = String($row.data('original-accid') || '').trim();
+
+  if (newAccId === '' || !$.isNumeric(newAccId)) {
+    $.toaster({ priority: 'warning', title: 'Warning!', message: 'Row #' + rowIdx + ': Enter a valid Scheme Account ID.' });
+    $input.val(originalAccId);
+    return;
+  }
+  if (newAccId === originalAccId) return;
+
+  $.ajax({
+    url: base_url + 'index.php/admin_reports/editAccOrPayments/check_transfer_target',
+    type: 'POST',
+    data: { id_scheme_account: newAccId },
+    dataType: 'json',
+    success: function (res) {
+      // Target account rejected (missing, closed, inactive or installments complete)
+      if (!res || res.valid != 1) {
+        $.toaster({ priority: 'danger', title: 'Error!', message: 'Row #' + rowIdx + ': ' + ((res && res.msg) ? res.msg : 'Scheme Account ' + newAccId + ' cannot be used.') });
+        $input.val(originalAccId);
+        return;
+      }
+      var accStartDate = res.acc_start_date || '';
+      $row.find('.row-acc-start-date').val(accStartDate);
+      var payDate = format_date($row.find('.row-pay-datetimepicker').val());
+      if (accStartDate && payDate && payDate < accStartDate) {
+        $.toaster({ priority: 'danger', title: 'Error!', message: 'Row #' + rowIdx + ' (Pay ID: ' + payId + '): Payment date ' + payDate + ' is before account ' + newAccId + ' start date (' + accStartDate + ').' });
+      }
+    }
+  });
+}
+$('body').on('change', '.row-sch-account-id', function () {
+  validateTransferTarget($(this));
+});
+// A pasted id fires no change event until blur - validate as soon as the value lands
+$('body').on('paste', '.row-sch-account-id', function () {
+  var $input = $(this);
+  setTimeout(function () { validateTransferTarget($input); }, 0);
 });
 
 // ==================== PER-ROW METAL RATE + WEIGHT + BENEFIT UPDATE ====================
@@ -13048,10 +13170,46 @@ $('.update_pay').on("click", function () {
   });
 });
 
+// Helper to update or create single row status cell without duplicating td elements
+function setRowStatusCell($row, type, message) {
+  var iconClass = 'fa-check';
+  var textClass = 'text-success';
+  var bgClass = '#dff0d8';
+
+  if (type === 'success') {
+    iconClass = 'fa-check';
+    textClass = 'text-success';
+    bgClass = '#dff0d8';
+  } else if (type === 'no_change') {
+    iconClass = 'fa-minus-circle';
+    textClass = 'text-muted';
+    bgClass = '#f5f5f5';
+  } else {
+    iconClass = 'fa-times';
+    textClass = 'text-danger';
+    bgClass = '#f2dede';
+  }
+
+  $row.css('background-color', bgClass);
+  var statusHtml = '<span class="' + textClass + '"><i class="fa ' + iconClass + '"></i> ' + message + '</span>';
+
+  var $statusTd = $row.find('.row-status-td');
+  if ($statusTd.length > 0) {
+    $statusTd.html(statusHtml);
+  } else {
+    $row.append('<td class="row-status-td" style="min-width:100px;">' + statusHtml + '</td>');
+  }
+}
+
 $(".confirm_pay_upd").on("click", function (e) {
   e.preventDefault();
   $('#payupdate_confirm').modal('hide');
   var $rows = $('#table_paymnt_list tbody tr');
+  if ($rows.length === 0) return;
+
+  // Clear previous status cells before new update run
+  $rows.find('.row-status-td').remove();
+
   var successCount = 0;
   var failCount = 0;
   var noChangeCount = 0;
@@ -13068,7 +13226,7 @@ $(".confirm_pay_upd").on("click", function (e) {
       payment_amount: $row.find('.row-pay-amt').text(),
       metal_rate: $row.find('.row-metal-rate').text(),
       metal_weight: $row.find('.row-metal-weight').text(),
-      receipt_no: $row.find('.row-receipt-no').text(),
+      // receipt_no is display-only and never posted - the server keeps the issued value
       payment_status: $row.find('.row-payment-status').val()
     };
     $.ajax({
@@ -13079,23 +13237,19 @@ $(".confirm_pay_upd").on("click", function (e) {
       success: function (data) {
         if (data.status && data.no_change) {
           noChangeCount++;
-          $row.css('background-color', '#f5f5f5');
-          $row.find('td:last').after('<td style="min-width:100px;"><span class="text-muted"><i class="fa fa-minus-circle"></i> No changes</span></td>');
+          setRowStatusCell($row, 'no_change', 'No changes');
         } else if (data.status) {
           successCount++;
-          $row.css('background-color', '#dff0d8');
-          $row.find('td:last').after('<td style="min-width:100px;"><span class="text-success"><i class="fa fa-check"></i> Updated</span></td>');
+          setRowStatusCell($row, 'success', 'Updated');
         } else {
           failCount++;
-          $row.css('background-color', '#f2dede');
-          $row.find('td:last').after('<td style="min-width:100px;"><span class="text-danger"><i class="fa fa-times"></i> ' + data.msg + '</span></td>');
+          setRowStatusCell($row, 'danger', data.msg);
           $.toaster({ priority: 'danger', title: 'Update Failed!', message: 'Row #' + rowIdx + ' (Pay ID: ' + post_data.id_payment + '): ' + data.msg });
         }
       },
       error: function() {
         failCount++;
-        $row.css('background-color', '#f2dede');
-        $row.find('td:last').after('<td style="min-width:100px;"><span class="text-danger"><i class="fa fa-times"></i> Server Error</span></td>');
+        setRowStatusCell($row, 'danger', 'Server Error');
       },
       complete: function() {
         processedCount++;
@@ -13118,6 +13272,9 @@ $(".confirm_pay_upd").on("click", function (e) {
 $(".update_acc").on("click", function () {
   var $rows = $('#table_acc_list tbody tr');
   if ($rows.length === 0) return;
+
+  // Clear previous status cells before new update run
+  $rows.find('.row-status-td').remove();
 
   // Validate each row's mobile
   var hasErrors = false;
@@ -13152,8 +13309,7 @@ $(".update_acc").on("click", function () {
     if (currentMobile === originalMobile && currentStartDate === originalStartDate) {
       noChangeCount++;
       processedCount++;
-      $row.css('background-color', '#f5f5f5');
-      $row.find('td:last').after('<td style="min-width:100px;"><span class="text-muted"><i class="fa fa-minus-circle"></i> No changes</span></td>');
+      setRowStatusCell($row, 'no_change', 'No changes');
       if (processedCount === totalRows) {
         if (noChangeCount === totalRows) {
           $.toaster({ priority: 'info', title: 'Info', message: 'No changes detected in any account row.' });
@@ -13183,18 +13339,15 @@ $(".update_acc").on("click", function () {
       success: function (data) {
         if (data.status) {
           successCount++;
-          $row.css('background-color', '#dff0d8');
-          $row.find('td:last').after('<td style="min-width:100px;"><span class="text-success"><i class="fa fa-check"></i> Updated</span></td>');
+          setRowStatusCell($row, 'success', 'Updated');
         } else {
           failCount++;
-          $row.css('background-color', '#f2dede');
-          $row.find('td:last').after('<td style="min-width:100px;"><span class="text-danger"><i class="fa fa-times"></i> ' + data.msg + '</span></td>');
+          setRowStatusCell($row, 'danger', data.msg);
         }
       },
       error: function() {
         failCount++;
-        $row.css('background-color', '#f2dede');
-        $row.find('td:last').after('<td style="min-width:100px;"><span class="text-danger"><i class="fa fa-times"></i> Server Error</span></td>');
+        setRowStatusCell($row, 'danger', 'Server Error');
       },
       complete: function() {
         processedCount++;

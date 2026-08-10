@@ -557,6 +557,8 @@ $route['reports/payment_outstanding_list']	 = 'admin_reports/payment_outstanding
 
 //reports
 
+$route['reports/edit_acc_pay'] = 'admin_reports/edit_acc_pay';
+
 $route['reports/customer_enquiry']	 ='admin_reports/customer_enquiry';
 
 $route['reports/payment_pending']        = 'admin_reports/payment_due_list/';
