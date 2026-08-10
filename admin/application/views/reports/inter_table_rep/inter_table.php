@@ -158,19 +158,6 @@
     width: 100%;
     overflow-x: auto;
 }
-.search-filter-card .search-title {
-    font-size: 13px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #334155;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    white-space: nowrap;
-    margin-right: 2px;
-    flex-shrink: 0;
-}
 .filter-field-item {
     display: inline-flex;
     align-items: center;
@@ -264,8 +251,6 @@
 					<div class="col-md-12" id="table" style="display: none; margin-bottom: 15px;">
 						<div class="search-filter-card">
 							<div class="search-filter-wrapper">
-								<span class="search-title"><i class="fa fa-search"></i> SEARCH FILTER:</span>
-								
 								<span id="mob_wrap" class="filter-field-item">
 									<label id="mob">Mobile No</label>
 									<input type="text" id="mobilenumber" class="form-control" placeholder="Mobile No" autocomplete="off" />
@@ -284,6 +269,11 @@
 								<span id="group_wrap" class="filter-field-item">
 									<label id="mob1">Group Code</label>
 									<input type="text" id="group_code" class="form-control" placeholder="Group Code" autocomplete="off" />
+								</span>
+
+								<span class="filter-field-item">
+									<label>Id Sch Acc</label>
+									<input type="text" id="id_scheme_account" class="form-control" placeholder="Id Sch Acc" autocomplete="off" />
 								</span>
 
 								<button type="button" id="mob_submit" name="mob_submit" class="btn btn-primary btn-search">
@@ -309,6 +299,7 @@
                         <th>Record To</th>
                         <th>Is Modified</th>
                         <th>Reg Date</th>
+                        <th>Maturity Date</th>
                         <th>Acc Name</th>
                         <th>First Nmae</th>
                         <th>Last Name</th>

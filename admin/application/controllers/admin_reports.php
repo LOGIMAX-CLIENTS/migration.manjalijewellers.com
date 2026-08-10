@@ -753,8 +753,9 @@ class Admin_reports extends CI_Controller
 		$clientid = $_POST['clientid'];
 		$ref_no = $_POST['ref_no'];
 		$group_code = $_POST['group_code'];
+		$id_scheme_account = $this->input->post('id_scheme_account');
 		// $scheme_ac_no=$_POST['scheme_ac_no'];
-		$data = $this->$model->get_intertable_list($mobile, $clientid, $ref_no, $group_code, $range['cus']);
+		$data = $this->$model->get_intertable_list($mobile, $clientid, $ref_no, $group_code, $range['cus'], $id_scheme_account);
 		echo json_encode($data);
 	}
 	function intertable_translist()
@@ -763,7 +764,8 @@ class Admin_reports extends CI_Controller
 		$range['cus']  = $this->input->post('cus');
 		$client_id = $_POST['client_id'];
 		$ref_no = $_POST['ref_no'];
-		$data = $this->$model->get_intertable_translist($client_id, $ref_no, $range['cus']);
+		$id_scheme_account = $this->input->post('id_scheme_account');
+		$data = $this->$model->get_intertable_translist($client_id, $ref_no, $range['cus'], $id_scheme_account);
 		//echo"<pre>";	print_r($data);exit;
 		echo json_encode($data);
 	}
@@ -1702,7 +1704,7 @@ class Admin_reports extends CI_Controller
 				echo json_encode($data);
 				break;
 			case 'get_pay_byId':
-				$id_payment = $this->input->post('id_payment');
+				$id_payment = intval($this->input->post('id_payment'));
 				$data = $this->$model->getPaymentDataByID($id_payment);
 				if (!empty($data['id_scheme_account'])) {
 					$acc_data = $this->db->query("SELECT DATE_FORMAT(sa.start_date, '%Y-%m-%d') as acc_start_date, 
@@ -1714,7 +1716,7 @@ class Admin_reports extends CI_Controller
 						IFNULL(s.flexible_sch_type, 0) as flexible_sch_type
 						FROM scheme_account sa 
 						LEFT JOIN scheme s ON s.id_scheme = sa.id_scheme 
-						WHERE sa.id_scheme_account = " . $data['id_scheme_account'])->row();
+						WHERE sa.id_scheme_account = " . intval($data['id_scheme_account']))->row();
 					$data['acc_start_date'] = isset($acc_data->acc_start_date) ? $acc_data->acc_start_date : '';
 					$data['is_digi'] = isset($acc_data->is_digi) ? $acc_data->is_digi : 0;
 					$data['installment_cycle'] = isset($acc_data->installment_cycle) ? intval($acc_data->installment_cycle) : 0;
@@ -1722,6 +1724,10 @@ class Admin_reports extends CI_Controller
 					$data['payment_chances'] = isset($acc_data->payment_chances) ? intval($acc_data->payment_chances) : 0;
 					$data['scheme_type'] = isset($acc_data->scheme_type) ? intval($acc_data->scheme_type) : 0;
 					$data['flexible_sch_type'] = isset($acc_data->flexible_sch_type) ? intval($acc_data->flexible_sch_type) : 0;
+
+					// Check if this payment is the 1st payment of the scheme account
+					$first_pay_row = $this->db->query("SELECT id_payment FROM payment WHERE id_scheme_account = " . intval($data['id_scheme_account']) . " ORDER BY id_payment ASC LIMIT 1")->row();
+					$data['is_first_payment'] = (!empty($first_pay_row) && $first_pay_row->id_payment == $id_payment) ? 1 : 0;
 				}
 				echo json_encode($data);
 				break;
@@ -1729,6 +1735,17 @@ class Admin_reports extends CI_Controller
 				$id_scheme_account = intval($this->input->post('id_scheme_account'));
 				$acc_data = $this->db->query("SELECT DATE_FORMAT(sa.start_date, '%Y-%m-%d') as acc_start_date FROM scheme_account sa WHERE sa.id_scheme_account = " . $id_scheme_account)->row();
 				echo json_encode(array('acc_start_date' => isset($acc_data->acc_start_date) ? $acc_data->acc_start_date : ''));
+				break;
+			case 'check_transfer_target':
+				// Same rules the save path enforces, surfaced as the account id is entered
+				$id_scheme_account = intval($this->input->post('id_scheme_account'));
+				$acc_data = $this->db->query("SELECT DATE_FORMAT(sa.start_date, '%Y-%m-%d') as acc_start_date FROM scheme_account sa WHERE sa.id_scheme_account = " . $id_scheme_account)->row();
+				$check = $this->$model->checkTransferTargetAccount($id_scheme_account);
+				echo json_encode(array(
+					'acc_start_date' => isset($acc_data->acc_start_date) ? $acc_data->acc_start_date : '',
+					'valid'          => $check['status'] ? 1 : 0,
+					'msg'            => $check['status'] ? '' : $check['msg']
+				));
 				break;
 			case 'get_digi_benefit':
 				$id_scheme_account = intval($this->input->post('id_scheme_account'));
@@ -1806,6 +1823,8 @@ class Admin_reports extends CI_Controller
 					
 					// Update start_date and recalculate maturity_date if start_date is provided
 					$date_updated = false;
+					$new_start_date = '';
+					$new_maturity_date = '';
 					if (!empty($_POST['start_date'])) {
 						$new_start_date = date('Y-m-d', strtotime($_POST['start_date']));
 						$new_maturity_date = $this->$model->calcMaturityDate($new_start_date, $_POST['id_scheme_account']);
@@ -1814,6 +1833,24 @@ class Admin_reports extends CI_Controller
 							'maturity_date' => $new_maturity_date
 						);
 						$date_updated = $this->$model->updData($date_data, 'id_scheme_account', $_POST['id_scheme_account'], 'scheme_account');
+						if ($date_updated) {
+							$this->$model->recalculateAccountPaymentDueDates($_POST['id_scheme_account'], $new_start_date);
+						}
+					}
+
+					// Sync tool integration : mirror the same edit on the intermediate
+					// customer_reg row of this scheme account (start_date -> reg_date, mobile -> mobile)
+					if ($this->config->item('integrationType') == 2) {
+						$reg_data = array('mobile' => $_POST['mobile']);
+						if ($date_updated) {
+							$reg_data['reg_date'] = $new_start_date;
+							if (!empty($new_maturity_date)) {
+								$reg_data['maturity_date'] = $new_maturity_date;
+							}
+						}
+						$reg_synced = $this->$model->syncCustomerRegOnAccEdit($_POST['id_scheme_account'], $reg_data);
+						$ldata = "\n" . date('d-m-Y H:i:s') . " \n customer_reg sync (id_scheme_account : " . $_POST['id_scheme_account'] . ") : " . ($reg_synced ? 'updated ' . json_encode($reg_data, true) : 'no matching customer_reg row / no change');
+						file_put_contents($log_path, $ldata, FILE_APPEND | LOCK_EX);
 					}
 
 					if ($data == true || $date_updated) {
@@ -2278,29 +2315,26 @@ class Admin_reports extends CI_Controller
 	function checkCommonSettings($data){
 		$branchSet = $this->payment_model->getBranchwiseSettings();
 		$getBranch = $this->payment_model->getBranchData($data);
-		
-		$prevBranch = $getBranch['prev_cus_branch'] ?? 0;
-		$accBranch  = $getBranch['acc_branch'] ?? 0;
-		$cusBranch  = $getBranch['cus_branch'] ?? 0;
 
-		// 1️⃣ Check customer registration branch rule
-		if ($branchSet['is_branchwise_cus_reg'] == 1) {
-
-			if ($prevBranch != $cusBranch) {
+		// Scheme branch rule : when branchwise_scheme is enabled the newly mapped
+		// customer's branch must be one of the branches this scheme is allotted to.
+		// The previous customer's branch is irrelevant - only the new customer vs
+		// the scheme's branches decides whether the re-mapping is allowed.
+		if ($branchSet['branchwise_scheme'] == 1) {
+			// A customer with no branch cannot be matched against the scheme's branches
+			$cusBranch = isset($getBranch['cus_branch']) ? intval($getBranch['cus_branch']) : 0;
+			if (empty($cusBranch)) {
 				return [
 					"success" => false,
-					"message" => "Branch mismatch: The previous customer and the updated customer are assigned to different branches."
+					"message" => "Customer has no branch. Please update the branch for this customer and try again."
 				];
 			}
-		}
 
-		// 2️⃣ Check scheme branch rule
-		if ($branchSet['branchwise_scheme'] == 1) {
-
-			if ($accBranch != $cusBranch) {
+			$is_valid = isset($getBranch['is_scheme_branch_valid']) ? $getBranch['is_scheme_branch_valid'] : 0;
+			if ($is_valid == 0) {
 				return [
 					"success" => false,
-					"message" => "Branch mismatch: Customer branch differs from scheme branch."
+					"message" => "Branch mismatch: The selected customer's branch is not allotted to this scheme."
 				];
 			}
 		}

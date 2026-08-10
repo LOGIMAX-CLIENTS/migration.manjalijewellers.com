@@ -5623,22 +5623,24 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
     //Employee wise summary
     //mob no,ref no,clientid,sch A/c no wise filter & change options in inter table Data's // 
     // Customer Reg& transaction records  // HH	
-    function get_intertable_list($mobile, $clientid, $ref_no, $group_code, $cus = "")
+    function get_intertable_list($mobile, $clientid, $ref_no, $group_code, $cus = "", $id_scheme_account = "")
     {
         $sql = "SELECT * FROM `customer_reg` WHERE 1=1 " .
             ($mobile != '' ? "AND mobile = '" . $mobile . "' " : "") .
             ($clientid != '' ? "AND clientid = '" . $clientid . "' " : "") .
             ($ref_no != '' ? "AND ref_no = '" . $ref_no . "' " : "") .
-            ($group_code != '' ? "AND group_code = '" . $group_code . "' " : "");
+            ($group_code != '' ? "AND group_code = '" . $group_code . "' " : "") .
+            ($id_scheme_account != '' ? "AND id_scheme_account = " . intval($id_scheme_account) . " " : "");
         $this->load->database('default', true);
         //print_r($sql);exit;  
         return $this->db->query($sql)->result_array();
     }
-    function get_intertable_translist($client_id, $ref_no, $cus = "")
+    function get_intertable_translist($client_id, $ref_no, $cus = "", $id_scheme_account = "")
     {
         $sql = "SELECT * FROM `transaction` where 1=1 " .
             ($client_id != '' ? " AND client_id = '" . $client_id . "' " : "") .
-            ($ref_no != '' ? " AND ref_no = '" . $ref_no . "' " : "");
+            ($ref_no != '' ? " AND ref_no = '" . $ref_no . "' " : "") .
+            ($id_scheme_account != '' ? " AND id_scheme_account = " . intval($id_scheme_account) . " " : "");
         $this->load->database('default', true);
         //print_r($sql);exit;  
         return $this->db->query($sql)->result_array();
@@ -7719,6 +7721,227 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
         WHERE sa.id_scheme_account = " . $id_scheme_account);
         return $sql->row()->maturity_date;
     }
+    /**
+     * Sync tool integration (config integrationType = 2)
+     * Mirrors Edit Account changes onto the intermediate customer_reg row that belongs
+     * to the same scheme account. Column mapping:
+     *   scheme_account.start_date    -> customer_reg.reg_date
+     *   scheme_account.maturity_date -> customer_reg.maturity_date
+     *   edited mobile                -> customer_reg.mobile
+     * (scheme_account itself never stores the mobile, it only re-maps id_customer)
+     */
+    public function syncCustomerRegOnAccEdit($id_scheme_account, $reg_data)
+    {
+        $id_scheme_account = intval($id_scheme_account);
+        if ($id_scheme_account <= 0 || empty($reg_data)) {
+            return false;
+        }
+        $exist = $this->db->query("SELECT id_customer_reg FROM " . self::CUS_REG_TABLE . "
+            WHERE id_scheme_account = " . $id_scheme_account);
+        if ($exist->num_rows() == 0) {
+            return false; // account was never pushed to the intermediate table
+        }
+        $reg_data['date_update'] = date('Y-m-d H:i:s');
+        $this->db->where('id_scheme_account', $id_scheme_account);
+        $this->db->update(self::CUS_REG_TABLE, $reg_data);
+        return ($this->db->affected_rows() > 0);
+    }
+    /**
+     * Recomputes scheme_account.total_paid_ins from the account's successful payments.
+     * Uses getPaidInsData(), the same calculation the payment collection screens already
+     * apply, so an edited payment leaves the account with the count it would have had if
+     * the payment had been collected that way in the first place.
+     * Call after any edit that adds, removes, re-dates or re-homes a payment.
+     */
+    public function updateAccountPaidInstallments($id_scheme_account)
+    {
+        $id_scheme_account = intval($id_scheme_account);
+        if ($id_scheme_account <= 0) {
+            return false;
+        }
+        $paid = $this->getPaidInsData($id_scheme_account);
+        $total_paid_ins = isset($paid['paid_installments']) ? intval($paid['paid_installments']) : 0;
+        $this->updData(array('total_paid_ins' => $total_paid_ins), 'id_scheme_account', $id_scheme_account, self::ACC_TABLE);
+        return $total_paid_ins;
+    }
+    /**
+     * Validates a scheme account as the TARGET of a payment transfer.
+     * A payment may only be moved onto an account that is still open, still active and has
+     * installments left to fill. Used both by the save path and by the Edit Payment screen
+     * as the account id is typed or pasted, so both report the same reasons.
+     *
+     * Returns array('status' => TRUE) or array('status' => FALSE, 'msg' => ...).
+     */
+    public function checkTransferTargetAccount($id_scheme_account)
+    {
+        $id_scheme_account = intval($id_scheme_account);
+        if ($id_scheme_account <= 0) {
+            return array("status" => FALSE, "msg" => "Enter a valid Scheme Account ID.");
+        }
+        $acc = $this->db->query("SELECT IFNULL(sa.is_closed, 0) as is_closed, IFNULL(sa.active, 0) as active,
+            IFNULL(s.total_installments, 0) as total_installments
+            FROM " . self::ACC_TABLE . " sa
+            LEFT JOIN " . self::SCH_TABLE . " s ON s.id_scheme = sa.id_scheme
+            WHERE sa.id_scheme_account = " . $id_scheme_account)->row();
+
+        if (empty($acc)) {
+            return array("status" => FALSE, "msg" => "Scheme account " . $id_scheme_account . " does not exist.");
+        }
+        if (intval($acc->is_closed) == 1) {
+            return array("status" => FALSE, "msg" => "Scheme account " . $id_scheme_account
+                . " is closed, so this payment cannot be moved to it.");
+        }
+        if (intval($acc->active) != 1) {
+            return array("status" => FALSE, "msg" => "Scheme account " . $id_scheme_account
+                . " is not active, so this payment cannot be moved to it.");
+        }
+
+        $total_installments = intval($acc->total_installments);
+        if ($total_installments > 0) {
+            $paid = $this->getPaidInsData($id_scheme_account);
+            $paid_ins = isset($paid['paid_installments']) ? intval($paid['paid_installments']) : 0;
+            if ($paid_ins >= $total_installments) {
+                return array("status" => FALSE, "msg" => "Scheme account " . $id_scheme_account
+                    . " has already completed all its installments (" . $paid_ins . "/" . $total_installments
+                    . "), so this payment cannot be moved to it.");
+            }
+        }
+        return array("status" => TRUE);
+    }
+    /**
+     * Sync tool integration (config integrationType = 2)
+     * Locates the intermediate `transaction` row that mirrors a payment, on both conditions:
+     *   scheme_account.ref_no = transaction.client_id   (account the payment belongs to)
+     *   payment reference     = transaction.ref_no
+     *
+     * The payment reference is payment.payment_ref_number when the sync tool populated it.
+     * Locally collected payments leave that column empty and the transaction is keyed on the
+     * id_payment instead, so that is used as the fallback.
+     *
+     * Both conditions are always applied. transaction.ref_no on its own is not selective
+     * enough - numeric ref_no values collide with other accounts' rows.
+     */
+    public function findMirrorTransaction($id_payment, $id_scheme_account, $payment_ref_number)
+    {
+        $id_payment = intval($id_payment);
+        if ($id_payment <= 0) {
+            return null;
+        }
+        $src = $this->db->query("SELECT ref_no FROM " . self::ACC_TABLE . "
+            WHERE id_scheme_account = " . intval($id_scheme_account))->row();
+        if (empty($src) || empty($src->ref_no)) {
+            return null;
+        }
+        $ref = trim((string) $payment_ref_number);
+        if ($ref === '') {
+            $ref = (string) $id_payment;
+        }
+        return $this->db->query("SELECT id_transaction FROM " . self::TRANS_TABLE . "
+            WHERE client_id = " . $this->db->escape($src->ref_no) . "
+            AND ref_no = " . $this->db->escape($ref))->row();
+    }
+    /**
+     * Sync tool integration (config integrationType = 2)
+     * Pre-flight guard for transferring a payment to another scheme account.
+     *
+     * The transaction row mirroring this payment carries a client_id, and that client id has
+     * to move to the target account alongside id_scheme_account. The target's client id comes
+     * from customer_reg - if it is missing the mirror cannot be completed, so the transfer is
+     * refused up front and nothing is written to either table.
+     *
+     * Returns array('status' => TRUE) when the transfer can be mirrored, or
+     * array('status' => FALSE, 'msg' => ...) when it must be blocked.
+     */
+    public function checkTransactionSyncTarget($pay_data, $target_sch_acc)
+    {
+        // Only guard when this payment actually has a mirrored transaction row
+        $trans = $this->findMirrorTransaction(
+            isset($pay_data['id_payment']) ? $pay_data['id_payment'] : 0,
+            $pay_data['id_scheme_account'],
+            isset($pay_data['payment_ref_number']) ? $pay_data['payment_ref_number'] : ''
+        );
+        if (empty($trans)) {
+            return array("status" => TRUE); // nothing mirrored, so nothing to keep consistent
+        }
+
+        $tgt = $this->db->query("SELECT clientid FROM " . self::CUS_REG_TABLE . "
+            WHERE id_scheme_account = " . intval($target_sch_acc))->row();
+
+        if (empty($tgt)) {
+            return array("status" => FALSE, "msg" => "Scheme account " . intval($target_sch_acc)
+                . " has no customer registration record in the sync table (customer_reg), so this payment cannot be transferred to it. No changes have been made.");
+        }
+        if (trim((string) $tgt->clientid) === '') {
+            return array("status" => FALSE, "msg" => "Scheme account " . intval($target_sch_acc)
+                . " has no client id in the sync table (customer_reg), so this payment cannot be transferred to it. No changes have been made.");
+        }
+        return array("status" => TRUE);
+    }
+    /**
+     * Sync tool integration (config integrationType = 2)
+     * Mirrors an Edit Payment change onto the intermediate `transaction` row of the same
+     * payment. The row is located by findMirrorTransaction() on both of the sync tool's
+     * keys. $old_id_scheme_account is the account the payment belonged to BEFORE the edit,
+     * because that is the account whose ref_no the transaction row still carries.
+     */
+    public function syncTransactionOnPaymentEdit($id_payment, $old_id_scheme_account, $payment_ref_number)
+    {
+        $id_payment = intval($id_payment);
+        $trans = $this->findMirrorTransaction($id_payment, $old_id_scheme_account, $payment_ref_number);
+        if (empty($trans)) {
+            return false; // this payment has no mirrored transaction row
+        }
+
+        // Final state of the payment, read after due date / installment recalculation so the
+        // transaction mirrors exactly what the payment table ended up with
+        $pay = $this->db->query("SELECT id_scheme_account, DATE(date_payment) as date_payment,
+            metal_rate, metal_weight, payment_status, installment, due_type,
+            IFNULL(saved_benefits, 0) as saved_benefits, IFNULL(saved_benefit_amt, 0) as saved_benefit_amt,
+            IFNULL(benefit_value, 0) as benefit_value, benefit_type
+            FROM " . self::PAY_TABLE . " WHERE id_payment = " . $id_payment)->row();
+        if (empty($pay)) {
+            return false;
+        }
+
+        $upd = array(
+            'payment_date'       => $pay->date_payment,
+            'rate'               => $pay->metal_rate,
+            'weight'             => $pay->metal_weight,
+            'payment_status'     => $pay->payment_status,
+            'installment_no'     => $pay->installment,
+            'due_type'           => $pay->due_type,
+            'saved_benefits_wgt' => $pay->saved_benefits,
+            'saved_benefit_amt'  => $pay->saved_benefit_amt,
+            'benefit_value'      => $pay->benefit_value,
+            'benefit_type'       => $pay->benefit_type,
+            'date_upd'           => date('Y-m-d H:i:s')
+        );
+
+        // receipt_no is deliberately NOT mirrored. The Edit Payment screen only changes the
+        // payment date and the scheme account; the receipt number is never edited and never
+        // derived from those, so the transaction keeps whatever receipt number it was issued.
+
+        // Payment was transferred to another scheme account. id_scheme_account maps the
+        // payment across on the payment side; client_id is what maps it across on the
+        // transaction side, so both have to move together. The target account's client id
+        // is taken from customer_reg, which is where the sync tool holds it.
+        if (intval($pay->id_scheme_account) != intval($old_id_scheme_account)) {
+            $upd['id_scheme_account'] = $pay->id_scheme_account;
+            $tgt = $this->db->query("SELECT clientid FROM " . self::CUS_REG_TABLE . "
+                WHERE id_scheme_account = " . intval($pay->id_scheme_account))->row();
+            $tgt_clientid = (!empty($tgt) && isset($tgt->clientid)) ? trim($tgt->clientid) : '';
+            if ($tgt_clientid !== '') {
+                $upd['client_id'] = $tgt_clientid;
+            }
+            // Defence in depth only - checkTransactionSyncTarget() already refuses a transfer
+            // whose target has no customer_reg client id, so this branch is not reached in
+            // normal operation. Leaving client_id alone still beats blanking it.
+        }
+
+        $this->db->where('id_transaction', $trans->id_transaction);
+        $this->db->update(self::TRANS_TABLE, $upd);
+        return ($this->db->affected_rows() > 0);
+    }
     function updatePaymentdata($postdata)
     {
         $upd_data = array();
@@ -7739,21 +7962,47 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
         $upd_data['date_payment'] = $postdata['date_payment'] != '' && $postdata['date_payment'] != NULL && $pay_data['added_by'] != 2 ? $postdata['date_payment'] : $pay_data['date_payment'];
         $upd_data['metal_rate'] = $postdata['metal_rate'] != '' && $postdata['metal_rate'] != NULL && $postdata['metal_rate'] != $pay_data['metal_rate'] ? $postdata['metal_rate'] : $pay_data['metal_rate'];
         $upd_data['metal_weight'] = $postdata['metal_weight'] != '' && $postdata['metal_weight'] != NULL && $postdata['metal_weight'] != $pay_data['metal_weight'] ? $postdata['metal_weight'] : $pay_data['metal_weight'];
-        $upd_data['receipt_no'] = $postdata['receipt_no'] != '' && $postdata['receipt_no'] != NULL && $postdata['receipt_no'] != $pay_data['receipt_no'] ? $postdata['receipt_no'] : $pay_data['receipt_no'];
-        $upd_data['payment_status'] = $postdata['payment_status'] != '' && $postdata['payment_status'] != NULL && $postdata['payment_status'] != $pay_data['payment_status'] && $pay_data['added_by'] != 2 ? $postdata['payment_status'] : $pay_data['payment_status'];
+        // receipt_no is never edited on this screen, so it is deliberately left out of the
+        // update. The posted value is the rendered cell text, which is a formatted/display
+        // form of the receipt number (and the literal "null" when the payment has none) -
+        // writing it back would overwrite the issued receipt number with display text.
+        $upd_data['payment_status'] =$postdata['payment_status'] != '' && $postdata['payment_status'] != NULL && $postdata['payment_status'] != $pay_data['payment_status'] && $pay_data['added_by'] != 2 ? $postdata['payment_status'] : $pay_data['payment_status'];
         
         // --- due_date / due_date_to calculation based on scheme installment_cycle ---
         $target_sch_acc = $upd_data['id_scheme_account'];
         $target_date_payment = date('Y-m-d', strtotime($upd_data['date_payment']));
         $date_changed = ($target_date_payment != date('Y-m-d', strtotime($pay_data['date_payment'])));
         $acc_changed = ($target_sch_acc != $pay_data['id_scheme_account']);
-        
+
+        // The target account must be open, active and still have installments to fill.
+        // Checked before anything is written so a rejected transfer leaves no trace.
+        if ($acc_changed) {
+            $target_check = $this->checkTransferTargetAccount($target_sch_acc);
+            if ($target_check['status'] === FALSE) {
+                $this->db->trans_rollback();
+                return array("status" => FALSE, "msg" => $target_check['msg']);
+            }
+        }
+
+        // Sync tool integration : a transfer must be mirrorable onto the transaction table
+        // before anything is written. If the target account has no client id in customer_reg
+        // the mirror cannot be completed, so the whole edit is refused rather than leaving
+        // payment and transaction pointing at different accounts.
+        if ($acc_changed && $this->config->item('integrationType') == 2) {
+            $sync_check = $this->checkTransactionSyncTarget($pay_data, $target_sch_acc);
+            if ($sync_check['status'] === FALSE) {
+                $this->db->trans_rollback();
+                return array("status" => FALSE, "msg" => $sync_check['msg']);
+            }
+        }
+
         // Recalculate due dates if date or account changed
         if ($date_changed || $acc_changed) {
-            $sch_settings = $this->db->query("SELECT s.installment_cycle, s.ins_days_duration, 
-                s.payment_chances, sa.start_date, s.is_digi, s.interest, s.id_metal, 
-                sa.id_branch, sa.id_scheme, sa.id_customer, s.scheme_type, s.flexible_sch_type
-                FROM scheme_account sa 
+            $sch_settings = $this->db->query("SELECT s.installment_cycle, s.ins_days_duration,
+                s.payment_chances, sa.start_date, s.is_digi, s.interest, s.id_metal,
+                sa.id_branch, sa.id_scheme, sa.id_customer, s.scheme_type, s.flexible_sch_type,
+                IFNULL(s.allow_general_advance, 0) as allow_general_advance
+                FROM scheme_account sa
                 LEFT JOIN scheme s ON s.id_scheme = sa.id_scheme 
                 WHERE sa.id_scheme_account = " . $target_sch_acc);
             
@@ -7770,8 +8019,15 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
                 // --- Duplicate payment validation (only for single payment schemes) ---
                 // payment_chances: 0 = single payment per cycle, 1 = multiple (no limit check needed)
                 $payment_chances = intval($sch->payment_chances);
-                
-                if ($payment_chances == 0) {
+
+                // When a payment is TRANSFERRED into another scheme account, an occupied
+                // installment slot is not an error - the payment is carried as an advance
+                // and lands on the next free installment. The same applies when the scheme
+                // itself permits general advance payments. Only same-account date edits
+                // still reject, because there the collision is a genuine input mistake.
+                $allow_advance = ($acc_changed || intval($sch->allow_general_advance) == 1);
+
+                if ($payment_chances == 0 && !$allow_advance) {
                     if ($sch->installment_cycle == 1 || $sch->installment_cycle == 3) {
                         // Daily scheme — check same exact date for successful payments
                         $existing_count = $this->db->query("SELECT COUNT(*) as cnt FROM payment 
@@ -7936,30 +8192,41 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
             }
             
             if ($new_installment > 0) {
-                // Only check duplicate slots for single-payment-per-cycle schemes
+                // Only check duplicate slots for single-payment-per-cycle schemes.
+                // On a transfer (or when the scheme allows general advance) an occupied slot
+                // is carried as an advance instead of being rejected - the exact slot is
+                // resolved below by recalculateAccountPaymentDueDates() via get_due_date().
+                $slot_taken = false;
                 if (isset($payment_chances) && $payment_chances == 0) {
                     // Use due_date from upd_data (already calculated above) for duplicate check
                     $check_due_date = isset($upd_data['due_date']) ? $upd_data['due_date'] : $pay_data['due_date'];
-                    $dup_check = $this->db->query("SELECT id_payment FROM payment 
-                        WHERE id_scheme_account = " . $target_sch_acc . " 
-                        AND due_date = '" . $check_due_date . "' 
-                        AND payment_status = 1 
+                    $dup_check = $this->db->query("SELECT id_payment FROM payment
+                        WHERE id_scheme_account = " . $target_sch_acc . "
+                        AND due_date = '" . $check_due_date . "'
+                        AND payment_status = 1
                         AND id_payment != " . $postdata['id_payment'])->row();
-                    
+
                     if (!empty($dup_check)) {
-                        $this->db->trans_rollback();
-                        return array("status" => FALSE, "msg" => "Installment #" . $new_installment . " (due: " . $check_due_date . ") already has a payment (ID: " . $dup_check->id_payment . ") for this account.");
+                        if (empty($allow_advance)) {
+                            $this->db->trans_rollback();
+                            return array("status" => FALSE, "msg" => "Installment #" . $new_installment . " (due: " . $check_due_date . ") already has a payment (ID: " . $dup_check->id_payment . ") for this account.");
+                        }
+                        // Carry as advance - the free slot is assigned during recalculation
+                        $slot_taken = true;
+                        $upd_data['due_type'] = 'AD';
                     }
                 }
-                
-                $upd_data['installment'] = $new_installment;
-                $upd_data['due_monthyear'] = $new_installment;
+
+                if (!$slot_taken) {
+                    $upd_data['installment'] = $new_installment;
+                    $upd_data['due_monthyear'] = $new_installment;
+                }
             }
         }
         
         // --- No-change detection: compare upd_data vs existing pay_data ---
         $has_changes = false;
-        $compare_fields = array('id_scheme_account', 'date_payment', 'metal_rate', 'metal_weight', 'receipt_no', 'payment_status');
+        $compare_fields = array('id_scheme_account', 'date_payment', 'metal_rate', 'metal_weight', 'payment_status');
         foreach ($compare_fields as $field) {
             if (isset($upd_data[$field])) {
                 $old_val = isset($pay_data[$field]) ? trim($pay_data[$field]) : '';
@@ -8001,6 +8268,32 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
         //updating payment table for postdata -> id_payment
         $result = $this->updData($upd_data, 'id_payment', $postdata['id_payment'], 'payment');
         if ($result > 0) {
+            // Recalculate target account payments using get_due_date()
+            $this->recalculateAccountPaymentDueDates($target_sch_acc);
+
+            // Recalculate original account payments if moved
+            if ($acc_changed && !empty($pay_data['id_scheme_account']) && $pay_data['id_scheme_account'] != $target_sch_acc) {
+                $this->recalculateAccountPaymentDueDates($pay_data['id_scheme_account']);
+            }
+
+            // Refresh the paid installment count on the affected accounts. Runs after the due
+            // date recalculation because the by-days-duration count is derived from due_date.
+            // On a transfer both accounts change: the target gains a due, the source loses one.
+            $this->updateAccountPaidInstallments($target_sch_acc);
+            if ($acc_changed && !empty($pay_data['id_scheme_account']) && $pay_data['id_scheme_account'] != $target_sch_acc) {
+                $this->updateAccountPaidInstallments($pay_data['id_scheme_account']);
+            }
+
+            // Sync tool integration : mirror this edit onto the intermediate transaction row.
+            // Runs after recalculation so installment / due_type carry their final values.
+            if ($this->config->item('integrationType') == 2) {
+                $this->syncTransactionOnPaymentEdit(
+                    $postdata['id_payment'],
+                    $pay_data['id_scheme_account'],
+                    isset($pay_data['payment_ref_number']) ? $pay_data['payment_ref_number'] : ''
+                );
+            }
+
             //getting data from payment_mode_details for postdata->id_payment
             $paymodedetails = $this->getPaymentModeDetailsDataByID($postdata['id_payment']);
             $update_pay = array(
@@ -8015,7 +8308,7 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
                 $new_mode_entry = [];
                 foreach ($paymodedetails as $pmode) {
                     foreach ($pmode as $key => $value) {
-                        if ($key != id_pay_mode_details) {
+                        if ($key != 'id_pay_mode_details') {
                             if ($key == 'payment_status') {
                                 $temp[$key] = $postdata['payment_status'];
                             } else if ($key == 'payment_date') {
@@ -8041,16 +8334,122 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
             $this->db->trans_rollback();
             return array("status" => FALSE, "msg" => "Unable to proceed your request");
         }
-        /* if($result > 0)
-        {
-            return array("status" => TRUE,"msg" => "Payment details Updated Successfully");
-        }
-        else
-        {
-            return array("status" => FALSE,"msg" => "Unable to proceed your request");
-        }*/
     }
     /*account and payment edit block ends*/
+
+    function recalculateAccountPaymentDueDates($id_scheme_account, $new_start_date = NULL)
+    {
+        $id_scheme_account = intval($id_scheme_account);
+        $sch_query = $this->db->query("SELECT s.installment_cycle, s.ins_days_duration, s.payment_chances, sa.start_date
+            FROM scheme_account sa 
+            LEFT JOIN scheme s ON s.id_scheme = sa.id_scheme 
+            WHERE sa.id_scheme_account = " . $id_scheme_account);
+        
+        if ($sch_query->num_rows() == 0) return;
+        $sch = $sch_query->row();
+
+        if (!empty($new_start_date)) {
+            $acc_start_date = date('Y-m-d', strtotime($new_start_date));
+            $this->db->where('id_scheme_account', $id_scheme_account)->update('scheme_account', array('start_date' => $acc_start_date));
+        }
+
+        // Fetch all valid payments ordered chronologically
+        $payments = $this->db->query("SELECT id_payment, date_payment FROM payment WHERE id_scheme_account = " . $id_scheme_account . " AND payment_status IN (1, 2) ORDER BY date_payment ASC, id_payment ASC")->result_array();
+        if (empty($payments)) return;
+
+        if (!empty($new_start_date)) {
+            $first_orig_date = date('Y-m-d', strtotime($payments[0]['date_payment']));
+            // Update date_payment for all payments that took place on the initial start date to the new start date
+            $this->db->where('id_scheme_account', $id_scheme_account)
+                     ->where("DATE(date_payment) = '" . $this->db->escape_str($first_orig_date) . "'")
+                     ->update('payment', array('date_payment' => $acc_start_date));
+
+            // Update in-memory array so chronological recalculation processes all initial payments on the new start date
+            foreach ($payments as &$p) {
+                if (date('Y-m-d', strtotime($p['date_payment'])) === $first_orig_date) {
+                    $p['date_payment'] = $acc_start_date;
+                }
+            }
+            unset($p);
+        }
+
+        // Reset due_date to NULL temporarily so get_due_date assigns clean non-overlapping slots
+        $this->db->where('id_scheme_account', $id_scheme_account)->update('payment', array('due_date' => NULL));
+
+        foreach ($payments as $idx => $pay) {
+            $pay_id = $pay['id_payment'];
+            $pay_date = date('Y-m-d', strtotime($pay['date_payment']));
+
+            $upd = array();
+
+            // 1. For multiple payment chances (payment_chances == 1), share the installment of
+            // an earlier payment that falls in the SAME installment cycle. The cycle window
+            // depends on installment_cycle: a monthly scheme groups by calendar month, a
+            // daily scheme by exact date, a custom-days scheme by its own cycle window.
+            if (intval($sch->payment_chances) == 1) {
+                $cycle = intval($sch->installment_cycle);
+                if ($cycle == 0) {
+                    // Monthly: any payment in the same calendar month shares the installment
+                    $same_cycle = "DATE_FORMAT(p.date_payment, '%Y-%m') = '" . date('Y-m', strtotime($pay_date)) . "'";
+                } else if ($cycle == 2 && intval($sch->ins_days_duration) > 0) {
+                    // Custom days duration: group by the cycle window from the account start date
+                    $days_duration = intval($sch->ins_days_duration);
+                    $cyc_start_ref = date('Y-m-d', strtotime($sch->start_date));
+                    $cyc_diff      = floor((strtotime($pay_date) - strtotime($cyc_start_ref)) / 86400);
+                    $cyc_index     = floor($cyc_diff / $days_duration);
+                    $cyc_from      = date('Y-m-d', strtotime($cyc_start_ref . ' + ' . ($cyc_index * $days_duration) . ' days'));
+                    $cyc_to        = date('Y-m-d', strtotime($cyc_from . ' + ' . ($days_duration - 1) . ' days'));
+                    $same_cycle    = "DATE(p.date_payment) BETWEEN '" . $cyc_from . "' AND '" . $cyc_to . "'";
+                } else {
+                    // Daily (1, 3) and any other cycle: exact same date
+                    $same_cycle = "DATE(p.date_payment) = '" . $this->db->escape_str($pay_date) . "'";
+                }
+
+                // due_date IS NOT NULL restricts the match to payments already re-assigned in
+                // this pass - installment alone is stale until its slot is recalculated.
+                $sameday_pay = $this->db->query(
+                    "SELECT p.installment, p.due_date, p.due_date_to, p.due_type
+                     FROM payment p
+                     WHERE p.id_scheme_account = " . $id_scheme_account . "
+                       AND p.payment_status IN (1, 2)
+                       AND p.installment IS NOT NULL
+                       AND p.installment > 0
+                       AND p.due_date IS NOT NULL
+                       AND " . $same_cycle . "
+                       AND p.id_payment != " . (int)$pay_id . "
+                     ORDER BY p.id_payment ASC
+                     LIMIT 1"
+                )->row_array();
+
+                if (!empty($sameday_pay) && !empty($sameday_pay['installment'])) {
+                    $upd['due_date']    = $sameday_pay['due_date'];
+                    $upd['due_date_to'] = $sameday_pay['due_date_to'];
+                    $upd['installment'] = $sameday_pay['installment'];
+                    $upd['due_type']    = $sameday_pay['due_type'];
+                }
+            }
+
+            // 2. If no same-day payment match found (or payment_chances == 0), evaluate get_due_date
+            if (empty($upd)) {
+                $due_info = $this->get_due_date('ND', $pay_date, $id_scheme_account);
+                if (empty($due_info)) $due_info = $this->get_due_date('AD', $pay_date, $id_scheme_account);
+                if (empty($due_info)) $due_info = $this->get_due_date('PD', $pay_date, $id_scheme_account);
+
+                if (!empty($due_info) && isset($due_info[0]['due_date_from'])) {
+                    $upd['due_date']    = $due_info[0]['due_date_from'];
+                    $upd['due_date_to'] = $due_info[0]['due_date_to'];
+                    $upd['installment'] = $due_info[0]['installment'];
+                    $upd['due_type']    = $due_info[0]['due_type'];
+                }
+            }
+
+            if (!empty($upd)) {
+                $this->db->where('id_payment', $pay_id)->update('payment', $upd);
+            }
+        }
+        
+        $this->update_dueMonYear($id_scheme_account);
+    }
     /*ends*/
     function update_dueMonYear($id_scheme_account)
     {
@@ -9261,7 +9660,8 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
             SELECT 
                 IFNULL(prev_cus.id_branch, 0) AS prev_cus_branch,
                 IFNULL(sa.id_branch, 0) AS acc_branch,
-                IFNULL(new_cus.id_branch, 0) AS cus_branch
+                IFNULL(new_cus.id_branch, 0) AS cus_branch,
+                sa.id_scheme
             FROM scheme_account sa
             LEFT JOIN customer prev_cus 
                 ON prev_cus.id_customer = sa.id_customer
@@ -9274,10 +9674,38 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
             $data['id_scheme_account']
         ]);
         $row = $query->row_array();
+
+        $prev_cus_branch = intval($row['prev_cus_branch'] ?? 0);
+        $acc_branch      = intval($row['acc_branch'] ?? 0);
+        $cus_branch      = intval($row['cus_branch'] ?? 0);
+        $id_scheme       = intval($row['id_scheme'] ?? 0);
+
+        $is_scheme_branch_valid = 0;
+        if (!empty($id_scheme) && !empty($cus_branch)) {
+            // Check if scheme has specific branch mappings in scheme_branch table
+            $total_sb = $this->db->query("SELECT COUNT(*) AS cnt FROM scheme_branch WHERE id_scheme = " . $id_scheme)->row_array();
+            if (empty($total_sb['cnt']) || intval($total_sb['cnt']) == 0) {
+                // Scheme is open to all branches
+                $is_scheme_branch_valid = 1;
+            } else {
+                // Scheme is allotted to specific branches; the new customer's branch must be
+                // one of them. This is checked even when the customer branch equals the
+                // account branch, because the account branch itself is not guaranteed to be
+                // among the scheme's allotted branches.
+                $sb_match = $this->db->query("SELECT COUNT(*) AS cnt FROM scheme_branch WHERE id_scheme = " . $id_scheme . " AND id_branch = " . $cus_branch)->row_array();
+                if (!empty($sb_match['cnt']) && intval($sb_match['cnt']) > 0) {
+                    $is_scheme_branch_valid = 1;
+                }
+            }
+        } else {
+            $is_scheme_branch_valid = 1;
+        }
+
         return [
-            "prev_cus_branch" => $row['prev_cus_branch'] ?? 0,
-            "acc_branch" => $row['acc_branch'] ?? 0,
-            "cus_branch" => $row['cus_branch'] ?? 0
+            "prev_cus_branch"        => $prev_cus_branch,
+            "acc_branch"             => $acc_branch,
+            "cus_branch"             => $cus_branch,
+            "is_scheme_branch_valid" => $is_scheme_branch_valid
         ];
     }
 }
