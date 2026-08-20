@@ -136,11 +136,11 @@ if (file_exists($emp_img)) {
               </li>
 
               <!-- Messages: style can be found in dropdown.less-->
-            <?php if($this->uri->segment(1) == 'admin' &&  $headerData['show_dayClose'] == 1 && $ret_module['m_web']==1 && $ret_module['m_active']==1 ){ ?>
+           <!--  <?php if($this->uri->segment(1) == 'admin' &&  $headerData['show_dayClose'] == 1 && $ret_module['m_web']==1 && $ret_module['m_active']==1 ){ ?>
               <li class="dropdown user user-menu" style="height: 51px;color:#000;padding: 0px 4px 0px 4px;">
 		         <a type="button" class="btn btn-flat" id="day_close" style="background-color: #f39c12;">Day Close</a>
               </li>
-              <?php }?>
+              <?php }?> -->
 
 
               <li class="dropdown user user-menu rate_block_button">
@@ -215,7 +215,7 @@ if (file_exists($emp_img)) {
               </li>
 
               <li class="dropdown user user-menu" style="height: 51px;color:#000;padding: 0px 4px 0px 4px;">
-                <a><span class="header_rate"><b><?php echo $headerData['day_close_date'];?></b></span></a>
+                <!-- <a><span class="header_rate"><b><?php echo $headerData['day_close_date'];?></b></span></a> -->
                </li>
 
               <input type="hidden" id="company_name" value="<?php echo $comp_details['company_name'];?>">
