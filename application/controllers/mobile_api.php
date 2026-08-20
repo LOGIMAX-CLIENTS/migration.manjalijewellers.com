@@ -7801,6 +7801,13 @@ class Mobile_api extends REST_Controller
     }
     function sendtoDirectApi($api, $postData)
     {
+        $this->load->helper('directapi');
+
+        // Host was unreachable a moment ago - don't make this request wait on it again.
+        if (directapi_is_down()) {
+            return false;
+        }
+
         $url = $this->config->item('directAPIurl') . $api;
         $payLoad[] = $postData;
         $curl = curl_init();
@@ -7809,7 +7816,9 @@ class Mobile_api extends REST_Controller
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => "",
             CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
+            CURLOPT_CONNECTTIMEOUT => directapi_config('directAPI_connect_timeout', 5),
+            CURLOPT_TIMEOUT => directapi_config('directAPI_timeout', 30),
+            CURLOPT_NOSIGNAL => 1,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => "POST",
             CURLOPT_POSTFIELDS => json_encode($payLoad),
@@ -7820,11 +7829,16 @@ class Mobile_api extends REST_Controller
             ),
         ));
         $response = curl_exec($curl);
+        $errno = curl_errno($curl);
         $err = curl_error($curl);
         curl_close($curl);
         if ($err) {
+            if (directapi_is_connection_error($errno)) {
+                directapi_mark_down($err);
+            }
             return false;
         } else {
+            directapi_mark_up();
             return json_decode($response);
         }
     }

@@ -5568,6 +5568,13 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
 
     function sendtoDirectApi($api,$postData)
 	{
+		$this->load->helper('directapi');
+
+		// Host was unreachable a moment ago - don't make this request wait on it again.
+		if (directapi_is_down()) {
+			return false;
+		}
+
 		$url = $this->config->item('directAPIurl').$api;
 
 		$curl = curl_init();
@@ -5577,7 +5584,9 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_ENCODING => "",
 			CURLOPT_MAXREDIRS => 10,
-			CURLOPT_TIMEOUT => 30,
+			CURLOPT_CONNECTTIMEOUT => directapi_config('directAPI_connect_timeout', 5),
+			CURLOPT_TIMEOUT => directapi_config('directAPI_timeout', 30),
+			CURLOPT_NOSIGNAL => 1,
 			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
 			CURLOPT_CUSTOMREQUEST => "POST",
 			CURLOPT_POSTFIELDS => json_encode($postData),
@@ -5591,11 +5600,16 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
 		$response = curl_exec($curl);
 		//print_r($response);exit;
 
+		$errno = curl_errno($curl);
 		$err = curl_error($curl);
 		curl_close($curl);
 		if ($err) {
+			if (directapi_is_connection_error($errno)) {
+				directapi_mark_down($err);
+			}
 			return false;
 		} else {
+			directapi_mark_up();
 			return json_decode($response);
 		}
 	}
