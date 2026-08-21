@@ -2599,8 +2599,9 @@ class Paymt extends CI_Controller {
 		$pay_ids = explode(',',$paymtData['pay_ids']);
 		unset($pay_ids[0]); // 0th key will be always empty so delete 
 		$transData = array();
+		$intermediate_pay_ids = array(); // payments whose directAPI push is deferred, see below
 		$this->load->model('adminappapi_model');
-        $pay = $this->adminappapi_model->getWalletPaymentContent($pay_ids[1]); 
+        $pay = $this->adminappapi_model->getWalletPaymentContent($pay_ids[1]);
         $this->db->trans_begin();
         if($pay['redeemed_amount'] > 0){ 
         	  $transData = array('mobile' 			=> $pay['mobile'],
@@ -2854,19 +2855,44 @@ class Paymt extends CI_Controller {
                                         }
 
 					// Insert Data in Intermediate table
+					// [PERF] Queued instead of run here: insert_common_data() pushes to the
+					// directAPI host over cURL, so it used to hold the payment request (and
+					// this open transaction) for the full cURL timeout whenever the ERP was
+					// unreachable. It runs below, after the commit and after the response.
 					 if($approval_type == 2 || $approval_type == 3 && ($this->config->item('integrationType') == 2 || $this->config->item('integrationType') == 3))
 					 {
-						if($this->config->item('integrationType') == 1){
-							$this->insert_common_data_jil($pay['id_payment']);
-						}else if($this->config->item('integrationType') == 2){
-							$this->mobileapi_model->insert_common_data($pay['id_payment']);
+						if($this->config->item('integrationType') == 1 || $this->config->item('integrationType') == 2){
+							$intermediate_pay_ids[] = $pay['id_payment'];
 						}
 					 }
 				}
-			} 
+			}
        // }              
 		if($this->db->trans_status()=== TRUE)
 	    {
+	    	// Commit before any network I/O. Nothing below this line writes to the
+	    	// payment tables, and holding the transaction open across cURL calls kept
+	    	// row locks alive for as long as the slowest gateway took to answer.
+	    	$this->db->trans_commit();
+
+	    	// The caller is done: the payment is saved. Everything after this point is
+	    	// best-effort delivery (ERP push, SMS, WhatsApp, e-mail), so release the
+	    	// client instead of making it wait on those hosts. This is what took the
+	    	// request to ~31s whenever the directAPI host was unreachable -- the push
+	    	// blocked on the cURL timeout with the app still waiting on the response.
+	    	$this->load->helper('deferred_response');
+	    	finish_response_and_continue(site_url('paymt/adminapp/success'));
+
+	    	// Intermediate-table sync + directAPI push, deferred from the loop above.
+	    	foreach ($intermediate_pay_ids as $intermediate_pay_id)
+	    	{
+	    		if($this->config->item('integrationType') == 1){
+	    			$this->insert_common_data_jil($intermediate_pay_id);
+	    		}else if($this->config->item('integrationType') == 2){
+	    			$this->mobileapi_model->insert_common_data($intermediate_pay_id);
+	    		}
+	    	}
+
 	    	$serv_model= self::SERV_MODEL;
 	    	foreach ($pay_ids as $pay_id)
 			{
@@ -2909,9 +2935,8 @@ class Paymt extends CI_Controller {
     	    		$message = $this->load->view('include/emailPayment',$data,true);
     	    		$sendEmail = $this->email_model->send_email($to,$subject,$message,"","");	
     	    	}	
-			}	
-		 	$this->db->trans_commit();
-    		redirect('paymt/adminapp/success');
+			}
+		 	exit; // response already sent above
     	}else{
 		 	$this->db->trans_rollback();
 		 	redirect('paymt/adminapp/failed');
