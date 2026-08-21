@@ -4797,11 +4797,12 @@ where sa.id_customer=" . $id_customer . " GROUP by sa.id_scheme_account";
                         LIMIT 1";
                 //echo $sql;exit;
             } else if ($data['is_branchwise_rate'] == 1) {
-                $sql = "select " . $rate_field . " from metal_rates 
-    			left join branch_rate br on br.id_metalrate=metal_rates.id_metalrates 
-    			where br.status=1
-    	   		'.($start_date!=NULL?' date(metal_rates.add_date) BETWEEN '" . $start_date . "' AND '" . $today . "' ' :'').'
-    			";
+                $sql = "SELECT $rate_field FROM metal_rates
+    			LEFT JOIN branch_rate br ON br.id_metalrate = metal_rates.id_metalrates
+    			WHERE br.status = 1
+    	   		" . (!empty($start_date) ? " AND DATE(metal_rates.add_date) BETWEEN '$start_date' AND '$today' " : "") . "
+    			ORDER BY metal_rates.id_metalrates DESC
+    			LIMIT 1";
             } else {
                 $sql = "select " . $rate_field . " from metal_rates 
     			left join branch_rate br on br.id_metalrate=metal_rates.id_metalrates
