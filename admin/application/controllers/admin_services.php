@@ -809,7 +809,10 @@ class Admin_services extends CI_Controller
 
 		$registrationIds = array();
 
-		$registrationIds[0] = $alertdetails['token'];
+		// Accept either one token or a batch -- OneSignal takes many player ids per request.
+		$registrationIds = (isset($alertdetails['token']) && is_array($alertdetails['token'])
+		    ? array_values($alertdetails['token'])
+		    : array(isset($alertdetails['token']) ? $alertdetails['token'] : ''));
 
 		$content = array(
 
@@ -872,6 +875,9 @@ class Admin_services extends CI_Controller
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $fields);
 
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+		// Without timeouts one stalled connection hangs the page forever.
+		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 15);
 
 		$response = curl_exec($ch);
 
@@ -1631,6 +1637,9 @@ class Admin_services extends CI_Controller
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $fields);
 
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+		// Without timeouts one stalled connection hangs the page forever.
+		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 15);
 
 		$response = curl_exec($ch);
 
@@ -2579,7 +2588,10 @@ class Admin_services extends CI_Controller
 
 		$registrationIds = array();
 
-		$registrationIds[0] = $alertdetails['token'];
+		// Accept either one token or a batch -- OneSignal takes many player ids per request.
+		$registrationIds = (isset($alertdetails['token']) && is_array($alertdetails['token'])
+		    ? array_values($alertdetails['token'])
+		    : array(isset($alertdetails['token']) ? $alertdetails['token'] : ''));
 
 		$content = array(
 
@@ -2628,6 +2640,9 @@ class Admin_services extends CI_Controller
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $fields);
 
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+		// Without timeouts one stalled connection hangs the page forever.
+		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 15);
 
 		$response = curl_exec($ch);
 

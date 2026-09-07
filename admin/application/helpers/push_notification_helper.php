@@ -150,10 +150,32 @@ if (!function_exists('notify_cred_for')) {
     {
         $settings = get_notify_settings(TRUE);
         $cred     = isset($settings['cred'][$slug]) ? $settings['cred'][$slug] : array();
-        return array(
+        $out = array(
             'id'  => isset($cred['id'])  ? (string) $cred['id']  : '',
             'key' => isset($cred['key']) ? (string) $cred['key'] : '',
         );
+
+        // Blank credentials for the ACTIVE provider are the single most common
+        // reason "nothing was sent" -- say so instead of firing doomed requests.
+        if (($out['id'] === '' || $out['key'] === '') && notify_platform_is($slug)) {
+            log_message('error', 'push_notification: "' . $slug . '" is the active provider but its credentials are blank -- set them under Settings > APP Notification Settings.');
+        }
+        return $out;
+    }
+}
+
+if (!function_exists('notify_cred_ready')) {
+    /**
+     * TRUE when the given platform has both an id and a key stored.
+     *
+     * @param  string $slug
+     * @return bool
+     */
+    function notify_cred_ready($slug)
+    {
+        $settings = get_notify_settings(TRUE);
+        $cred     = isset($settings['cred'][$slug]) ? $settings['cred'][$slug] : array();
+        return (!empty($cred['id']) && !empty($cred['key']));
     }
 }
 
