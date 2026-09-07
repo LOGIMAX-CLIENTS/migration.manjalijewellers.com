@@ -2773,10 +2773,20 @@ function set_image($filename)
 									'id_branch'=>$data['id_branch'],	
 									'targetUrl'=>$targetUrl	
 				); HH*/
-				if($chitsettings['is_branchwise_cus_reg'] == 1)    // based on the branch settings to showed branch filter && sent notifi(offers/new arrivals/general) in admin//HH
+				// "All Branch" posts an empty / 0 id_branch. The branch-wise query
+				// would then filter on c.id_branch=0 and match nobody, so fall
+				// through to the broadcast dispatcher, which is exactly what an
+				// all-branches send means.
+				$data['id_branch'] = (isset($data['id_branch']) ? trim((string) $data['id_branch']) : '');
+				$send_branchwise = ($chitsettings['is_branchwise_cus_reg'] == 1
+									&& $data['id_branch'] !== ''
+									&& strtolower($data['id_branch']) !== 'all'
+									&& (int) $data['id_branch'] > 0);
+
+				if($send_branchwise)    // based on the branch settings to showed branch filter && sent notifi(offers/new arrivals/general) in admin//HH
         		    {
-        		        
-        		       
+
+
         		         $cusData = $this->$model->get_sendnotifi_cusBranch($data['id_branch'],"");
 
         		         // One send per device -- accumulate the recipient counts

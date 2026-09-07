@@ -211,8 +211,9 @@ class Fcm_service
     {
         $sql = "SELECT r.token AS token
                   FROM registered_devices r
-                  LEFT JOIN customer c ON (c.id_customer = r.id_customer)
+                  INNER JOIN customer c ON (c.id_customer = r.id_customer)
                  WHERE c.notification = 1
+                   AND c.active = 1
                    AND r.token IS NOT NULL
                    AND r.token <> ''
                    AND CHAR_LENGTH(r.token) >= " . (int) self::MIN_FCM_TOKEN_LENGTH;
@@ -221,7 +222,24 @@ class Fcm_service
         $rows = ($res) ? $res->result_array() : array();
 
         if (empty($rows)) {
-            log_message('error', 'Fcm_service: broadcast found no usable FCM tokens (check registered_devices.token and customer.notification).');
+            // Say WHICH precondition failed -- "0 recipients" alone sends people
+            // hunting for a credentials problem that isn't there.
+            $diag = $this->CI->db->query(
+                "SELECT COUNT(*) AS devices,
+                        SUM(r.token IS NOT NULL AND r.token <> '') AS with_token,
+                        SUM(CHAR_LENGTH(r.token) >= " . (int) self::MIN_FCM_TOKEN_LENGTH . ") AS fcm_sized,
+                        SUM(c.notification = 1) AS opted_in,
+                        SUM(c.active = 1) AS active_cus
+                   FROM registered_devices r
+                   LEFT JOIN customer c ON (c.id_customer = r.id_customer)"
+            );
+            $d = ($diag && $diag->num_rows() > 0) ? $diag->row_array() : array();
+            log_message('error', 'Fcm_service: broadcast found no usable FCM tokens. registered_devices=' .
+                (isset($d['devices']) ? $d['devices'] : '?') . ', with_token=' .
+                (isset($d['with_token']) ? (int) $d['with_token'] : '?') . ', fcm_sized(>=' . self::MIN_FCM_TOKEN_LENGTH . ')=' .
+                (isset($d['fcm_sized']) ? (int) $d['fcm_sized'] : '?') . ', notification=1 -> ' .
+                (isset($d['opted_in']) ? (int) $d['opted_in'] : '?') . ', active=1 -> ' .
+                (isset($d['active_cus']) ? (int) $d['active_cus'] : '?'));
         }
 
         return $this->sendToTokens($rows, $title, $body, $data, $image);

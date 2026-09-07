@@ -576,13 +576,22 @@ class Admin_settings extends CI_Controller
                     'id_employee' => 0,
                     'updatetime' => date("Y-m-d H:i:s")
                 );
-                file_put_contents('../api/rate.txt', $rate_array);
-                $branch_id = array();
-                if (($this->session->userdata('branch_settings') == 1 && $metal['is_branchwise_rate'] == 1 && $status['status'] == 1)) {
-                    //  metalrate branch	
-                    $branch_list = implode(",", $branch_data);
-                    $branch_id = array(explode(',', $branch_list));
-                    foreach ($branch_id[0] as $branch) {
+                // Every other writer of this file stores JSON; writing the raw
+                // array here made the customer API json_decode() it to null.
+                file_put_contents('../api/rate.txt', json_encode($insertData));
+
+                // Flat list of branch ids. Must ALWAYS be an array: it is passed
+                // to send_RatesToAllUsers(), and count()/implode() on NULL is a
+                // fatal TypeError on PHP 8 -- which aborted the request before
+                // redirect() and before any notification was sent.
+                $branch_ids = array();
+                if (($this->session->userdata('branch_settings') == 1
+                        && isset($metal['is_branchwise_rate']) && $metal['is_branchwise_rate'] == 1
+                        && $status['status'] == 1)) {
+                    //  metalrate branch
+                    $branch_list = (is_array($branch_data) ? implode(",", $branch_data) : (string) $branch_data);
+                    $branch_ids  = array_values(array_filter(array_map('trim', explode(',', $branch_list)), 'strlen'));
+                    foreach ($branch_ids as $branch) {
                         $branch_info = array(
                             'id_metalrate' => ($status['insertID']),
                             'id_branch' => ($branch),
@@ -591,12 +600,17 @@ class Admin_settings extends CI_Controller
                         );
                         $this->$model->insert_metalrate($branch_info, 'branch_rate');
                     }
-                    //  metalrate branch	
+                    //  metalrate branch
                 }
                 if ($status) {
                     $sendNoti = $this->$model->canSendNoti(1);
                     if ($sendNoti) {
-                        $this->send_RatesToAllUsers($branch_id[0]);
+                        // Never let a notification failure block the save/redirect.
+                        try {
+                            $this->send_RatesToAllUsers($branch_ids);
+                        } catch (Throwable $e) {
+                            log_message('error', 'metal_rates Save: rate notification failed -- ' . $e->getMessage());
+                        }
                     }
                     /*$data['rates'] = $this->$model->metal_ratesDB("get",$status['insertID']);
                     $this->update_rate_file($data['rates']);
@@ -3631,16 +3645,31 @@ class Admin_settings extends CI_Controller
             force_download($filename . '.txt', $backup);
         }
     }
-    function send_RatesToAllUsers($branchArr)
+    function send_RatesToAllUsers($branchArr = array())
     {
         $model = self::MODEL;
         $result = array();
         $send_notif = $this->$model->check_noti_settings();
         $chitsettings = $this->admin_settings_model->settingsDB("get", 1, "");
         $targetUrl = '#/app/notification';
+
+        // Callers may hand us NULL or a scalar. count()/implode() on NULL is a
+        // fatal TypeError on PHP 8, so normalise before touching it.
+        if (!is_array($branchArr)) {
+            $branchArr = ($branchArr === NULL || $branchArr === '') ? array() : array($branchArr);
+        }
+        $branchArr = array_values(array_filter(array_map('trim', $branchArr), 'strlen'));
+
         if ($send_notif == 1) {
             //send rate notification
             if ($chitsettings['is_branchwise_rate'] == 1) {
+                // A rate save that did not carry a branch list still has to reach
+                // every customer -- fall back to all active branches rather than
+                // silently notifying nobody.
+                if (empty($branchArr)) {
+                    $branchArr = $this->$model->get_all_active_branch_ids();
+                    log_message('error', 'send_RatesToAllUsers: no branch list supplied; falling back to all ' . count($branchArr) . ' active branches.');
+                }
                 if (sizeof($branchArr) > 0) {
                     if ($chitsettings['is_branchwise_cus_reg'] == 1) {
                         foreach ($branchArr as $branch) {
@@ -3682,9 +3711,13 @@ class Admin_settings extends CI_Controller
                         }
                     } else {
                         $account = $this->$model->get_account(implode(",", $branchArr));
-                        if (count($account) > 0) {
+                        if (is_array($account) && count($account) > 0) {
                             foreach ($account as $acc) {
                                 $rate = $this->$model->get_metal_rateby_branch($acc['id_customer']);
+                                // No device row for this customer -- nothing to send to.
+                                if (empty($rate) || !isset($rate[0]['token'])) {
+                                    continue;
+                                }
                                 $msg = '';
                                 $resultset = $this->db->query("SELECT noti_name,noti_name, noti_footer,noti_msg from notification where id_notification =1");
                                 foreach ($resultset->result() as $row) {
@@ -3725,17 +3758,26 @@ class Admin_settings extends CI_Controller
                 }
             } else {
                 $data = $this->$model->get_cusnotiData('1');
-                foreach ($data['data'] as $r) {
-                    $arraycontent = array(
-                        'notification_service' => 1,
-                        'header' => $data['header'],
-                        'message' => $r['message'],
-                        'footer' => $data['footer'],
-                        'targetUrl' => $targetUrl
-                    );
+                $arraycontent = array();
+                if (isset($data['data']) && is_array($data['data'])) {
+                    foreach ($data['data'] as $r) {
+                        $arraycontent = array(
+                            'notification_service' => 1,
+                            'header' => $data['header'],
+                            'message' => (isset($r['message']) ? $r['message'] : ''),
+                            'footer' => $data['footer'],
+                            'targetUrl' => $targetUrl
+                        );
+                    }
                 }
-                $send = $this->sendPushNotificationToAll($arraycontent);
-                $result['rate_noti'] = $send;
+                if (empty($arraycontent)) {
+                    // Do not broadcast an empty notification body.
+                    log_message('error', 'send_RatesToAllUsers: notification template 1 produced no content; nothing broadcast.');
+                    $result['rate_noti'] = json_encode(array('id' => '', 'recipients' => 0, 'error' => 'NO_NOTIFICATION_CONTENT'));
+                } else {
+                    $send = $this->sendPushNotificationToAll($arraycontent);
+                    $result['rate_noti'] = $send;
+                }
             }
         }
         return $result;
