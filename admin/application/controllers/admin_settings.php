@@ -2582,7 +2582,7 @@ class Admin_settings extends CI_Controller
                             'id_branch' => '',
                             'targetUrl' => '#/app/offers'
                         );
-                        $this->onesignalNotificationToAll($arraycontent);
+                        $this->sendPushNotificationToAll($arraycontent);
                     }
                 }
                 if ($this->db->trans_status() === TRUE) {
@@ -2645,7 +2645,7 @@ class Admin_settings extends CI_Controller
                             'id_branch' => '',
                             'targetUrl' => '#/app/offers'
                         );
-                        $this->onesignalNotificationToAll($arraycontent);
+                        $this->sendPushNotificationToAll($arraycontent);
                     }
                 }
                 if ($this->db->trans_status() === TRUE) {
@@ -2831,7 +2831,7 @@ class Admin_settings extends CI_Controller
                             'id_branch' => '',
                             'targetUrl' => '#/app/newarrivals'
                         );
-                        $this->onesignalNotificationToAll($arraycontent);
+                        $this->sendPushNotificationToAll($arraycontent);
                     }
                 }
                 if ($this->db->trans_status() === TRUE) {
@@ -2898,7 +2898,7 @@ class Admin_settings extends CI_Controller
                             'id_branch' => '',
                             'targetUrl' => '#/app/newarrivals'
                         );
-                        $this->onesignalNotificationToAll($arraycontent);
+                        $this->sendPushNotificationToAll($arraycontent);
                     }
                 }
                 if ($this->db->trans_status() === TRUE) {
@@ -3734,20 +3734,49 @@ class Admin_settings extends CI_Controller
                         'targetUrl' => $targetUrl
                     );
                 }
-                $send = $this->onesignalNotificationToAll($arraycontent);
+                $send = $this->sendPushNotificationToAll($arraycontent);
                 $result['rate_noti'] = $send;
             }
         }
         return $result;
     }
-    function onesignalNotificationToAll($alertdetails = array())
+    /**
+     * Broadcast dispatcher. The original name became the dispatcher so no call
+     * site changes; every platform is matched explicitly -- never a catch-all
+     * else, or a future platform 3 would silently send via FCM.
+     */
+    function sendPushNotificationToAll($alertdetails = array())
     {
+        $this->load->helper('push_notification');
+        if (notify_platform_is('fcm')) {
+            return $this->sendPushNotificationToAll_fcm($alertdetails);
+        }
+        return $this->sendPushNotificationToAll_onesignal($alertdetails);
+    }
+    function sendPushNotificationToAll_fcm($alertdetails = array())
+    {
+        $this->load->library('fcm_service');
+        return $this->fcm_service->sendToAll(
+            (isset($alertdetails['header']) ? $alertdetails['header'] : ''),
+            (isset($alertdetails['message']) ? $alertdetails['message'] : ''),
+            array(
+                'targetUrl'    => (isset($alertdetails['targetUrl']) ? $alertdetails['targetUrl'] : '#/app/notification'),
+                'noti_service' => (isset($alertdetails['notification_service']) ? $alertdetails['notification_service'] : ''),
+                'mobile'       => ''
+            ),
+            (isset($alertdetails['noti_img']) ? $alertdetails['noti_img'] : '')
+        );
+    }
+    function sendPushNotificationToAll_onesignal($alertdetails = array())
+    {
+        $this->load->helper('push_notification');
+        $onesignal = notify_cred_for('onesignal');
         $content = array(
             "en" => $alertdetails['message']
         );
         //$targetUrl='#/app/notification';
         $fields = array(
-            'app_id' => $this->config->item('app_id'),
+            'app_id' => $onesignal['id'],
             'included_segments' => array(
                 'All'
             ),
@@ -3757,7 +3786,7 @@ class Admin_settings extends CI_Controller
             'data' => array('targetUrl' => $alertdetails['targetUrl'], 'noti_service' => $alertdetails['notification_service'], 'mobile' => ''),
             'big_picture' => (isset($alertdetails['noti_img']) ? $alertdetails['noti_img'] : " ")
         );
-        $auth_key = $this->config->item('authentication_key');
+        $auth_key = $onesignal['key'];
         $fields = json_encode($fields);
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, "https://onesignal.com/api/v1/notifications");
@@ -4004,6 +4033,30 @@ class Admin_settings extends CI_Controller
     }
     function send_singlealert_rate_notification($alertdetails = array())
     {
+        $this->load->helper('push_notification');
+        if (notify_platform_is('fcm')) {
+            return $this->send_singlealert_rate_notification_fcm($alertdetails);
+        }
+        return $this->send_singlealert_rate_notification_onesignal($alertdetails);
+    }
+    function send_singlealert_rate_notification_fcm($alertdetails = array())
+    {
+        $this->load->library('fcm_service');
+        return $this->fcm_service->sendToTokens(
+            (isset($alertdetails['token']) ? (array) $alertdetails['token'] : array()),
+            (isset($alertdetails['header']) ? $alertdetails['header'] : ''),
+            (isset($alertdetails['message']) ? $alertdetails['message'] : ''),
+            array(
+                'targetUrl'    => '#/app/notification',
+                'noti_service' => (isset($alertdetails['notification_service']) ? $alertdetails['notification_service'] : '')
+            ),
+            (isset($alertdetails['noti_img']) ? $alertdetails['noti_img'] : '')
+        );
+    }
+    function send_singlealert_rate_notification_onesignal($alertdetails = array())
+    {
+        $this->load->helper('push_notification');
+        $onesignal = notify_cred_for('onesignal');
         $registrationIds = array();
         $registrationIds[0] = $alertdetails['token'];
         $content = array(
@@ -4011,14 +4064,14 @@ class Admin_settings extends CI_Controller
         );
         $targetUrl = '#/app/notification';
         $fields = array(
-            'app_id' => $this->config->item('app_id'),
+            'app_id' => $onesignal['id'],
             'include_player_ids' => $registrationIds,
             'contents' => $content,
             'headings' => array("en" => $alertdetails['header']),
             'data' => array('targetUrl' => $targetUrl, 'noti_service' => $alertdetails['notification_service']),
             'big_picture' => (isset($alertdetails['noti_img']) ? $alertdetails['noti_img'] : " ")
         );
-        $auth_key = $this->config->item('authentication_key');
+        $auth_key = $onesignal['key'];
         $fields = json_encode($fields);
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, "https://onesignal.com/api/v1/notifications");
@@ -4800,8 +4853,91 @@ class Admin_settings extends CI_Controller
         }
     }
 
+    /**
+     * APP Notification settings (push provider + credentials).
+     *
+     * Posted from its own <form> in settings/general/form.php as
+     * app_notify[notify_platform] and app_notify[cred][<slug>][id|key].
+     * Every platform's credentials are stored, so switching provider never
+     * destroys the other's -- the radio itself is the rollback mechanism.
+     *
+     * Writes through the shared settings writer; no bespoke save function.
+     */
+    function app_notification_settings($type = "", $id = 1)
+    {
+        $model = self::SET_MODEL;
+        $this->load->helper('push_notification');
+
+        if ($type != 'Update' && $type != 'Save') {
+            redirect('settings/general/edit/1');
+            return;
+        }
+
+        $post      = $this->input->post('app_notify');
+        $platforms = notify_platform_map();
+
+        if (!is_array($post)) {
+            $this->session->set_flashdata('chit_alert', array('message' => 'No notification settings received', 'class' => 'danger', 'title' => 'APP Notification'));
+            redirect('settings/general/edit/' . $id);
+            return;
+        }
+
+        // --- 1. Platform must be in the whitelist ---
+        $platform = isset($post['notify_platform']) ? (int) $post['notify_platform'] : 0;
+        if (!isset($platforms[$platform])) {
+            $this->session->set_flashdata('chit_alert', array('message' => 'Invalid notification provider selected', 'class' => 'danger', 'title' => 'APP Notification'));
+            redirect('settings/general/edit/' . $id);
+            return;
+        }
+        $active_slug = $platforms[$platform]['slug'];
+
+        // --- 2. Collect credentials for EVERY platform ---
+        $cred = array();
+        foreach ($platforms as $p) {
+            $slug = $p['slug'];
+            $cred[$slug] = array(
+                'id'  => isset($post['cred'][$slug]['id'])  ? trim((string) $post['cred'][$slug]['id'])  : '',
+                'key' => isset($post['cred'][$slug]['key']) ? trim((string) $post['cred'][$slug]['key']) : '',
+            );
+        }
+
+        // --- 3. Validate the ACTIVE platform only ---
+        $error = '';
+        if ($cred[$active_slug]['id'] === '' || $cred[$active_slug]['key'] === '') {
+            $error = $platforms[$platform]['label'] . ' requires both ' . $platforms[$platform]['id_label'] . ' and ' . $platforms[$platform]['key_label'];
+        } elseif ($active_slug === 'fcm') {
+            $sa = json_decode($cred['fcm']['key'], TRUE);
+            if (!is_array($sa)) {
+                $error = 'Service Account JSON is not valid JSON';
+            } elseif (empty($sa['project_id']) || empty($sa['client_email']) || empty($sa['private_key'])) {
+                $error = 'Service Account JSON must contain project_id, client_email and private_key';
+            } elseif ($sa['project_id'] !== $cred['fcm']['id']) {
+                $error = 'Project ID does not match project_id in the Service Account JSON ("' . $sa['project_id'] . '")';
+            }
+        }
+
+        if ($error !== '') {
+            $this->session->set_flashdata('chit_alert', array('message' => $error, 'class' => 'danger', 'title' => 'APP Notification'));
+            redirect('settings/general/edit/' . $id);
+            return;
+        }
+
+        // --- 4. Save through the shared settings writer ---
+        $status = $this->$model->settingsDB('update', $id, array(
+            'notify_platform' => $platform,
+            'notify_cred'     => json_encode($cred)
+        ));
+
+        if (!empty($status['status'])) {
+            $this->session->set_flashdata('chit_alert', array('message' => 'APP Notification settings saved. Active provider: ' . $platforms[$platform]['label'], 'class' => 'success', 'title' => 'APP Notification'));
+        } else {
+            $this->session->set_flashdata('chit_alert', array('message' => 'Unable to save APP Notification settings', 'class' => 'danger', 'title' => 'APP Notification'));
+        }
+        redirect('settings/general/edit/' . $id);
+    }
+
     public function kyc_master(){
-        
+
         $data = $this->admin_settings_model->kyc_master();
         echo json_encode($data);
     }

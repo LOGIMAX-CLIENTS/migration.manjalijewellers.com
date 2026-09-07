@@ -54,6 +54,7 @@
       						<?php if ($userType <= 2) { ?>
       							<li><a href="#tab_5" data-toggle="pill">Clear Database</a></li>
       							<li><a href="#tab_6" data-toggle="pill">Gateway API</a></li>
+								<li><a href="#tab_notify" data-toggle="pill">APP Notification Settings</a></li>
       							<li><a href="#tab_7" data-toggle="pill"> Otp & Promotion API</a></li>
       							<li><a href="#otpcredit" data-toggle="pill"> Otp & Promotion Credit</a></li>
       							<li><a href="#tab_8" data-toggle="pill">Mail Settings</a></li>
@@ -64,7 +65,7 @@
       							<li><a href="#tab_Referral" data-toggle="pill">Referral Settings</a></li>
       							<li><a href="#tab_kyc" data-toggle="pill">KYC Configuration</a></li>
       							<li><a href="#tab_feature_flags" data-toggle="pill">Feature Flags</a></li>
-      							
+
       							<li><a href="#tab_10" data-toggle="pill">Other settings</a></li>
       						<?php } ?>
       					</ul>
@@ -2570,6 +2571,88 @@
 							</div>
 						</div>
 						<!-- /Feature Flags Tab -->
+
+						<!-- APP Notification Settings Tab -->
+						<?php
+						$this->load->helper('push_notification');
+						$notify_platforms = notify_platform_map();
+						$active_platform  = (isset($general['notify_platform']) && (int) $general['notify_platform'] > 0) ? (int) $general['notify_platform'] : NOTIFY_PLATFORM_ONESIGNAL;
+						$notify_cred      = array();
+						if (isset($general['notify_cred'])) {
+							$decoded_cred = json_decode((string) $general['notify_cred'], TRUE);
+							if (is_array($decoded_cred)) {
+								$notify_cred = $decoded_cred;
+							}
+						}
+						?>
+						<div class="tab-pane" id="tab_notify">
+							<?php
+							// Its own <form> -- HTML forms cannot overlap, and this tab sits
+							// outside the main settings form. No route entry needed.
+							echo form_open('admin_settings/app_notification_settings/Update/1', array('class' => 'form-horizontal', 'id' => 'app_notify_form'));
+							?>
+							<h4 class="page-header">APP Notification Settings</h4>
+							<div class="row">
+								<div class="col-md-12">
+									<div class="form-group">
+										<label class="col-md-3 control-label">Notification Provider</label>
+										<div class="col-md-9">
+											<?php foreach ($notify_platforms as $p_id => $p) { ?>
+												<div class="radio inline" style="display:inline-block; margin-right:20px;">
+													<label>
+														<input type="radio" class="notify_platform_radio" name="app_notify[notify_platform]" value="<?php echo $p_id; ?>" <?php if ($active_platform == $p_id) { echo 'checked="checked"'; } ?> />
+														<?php echo $p['label']; ?>
+													</label>
+												</div>
+											<?php } ?>
+											<p class="help-block" style="margin-bottom:0;">Switching the provider does not erase the other provider's credentials &mdash; this is the rollback switch.</p>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<?php foreach ($notify_platforms as $p_id => $p) {
+								$slug    = $p['slug'];
+								$cred_id = isset($notify_cred[$slug]['id'])  ? $notify_cred[$slug]['id']  : '';
+								$cred_key = isset($notify_cred[$slug]['key']) ? $notify_cred[$slug]['key'] : '';
+							?>
+								<div class="row notify_block" id="notify_block_<?php echo $p_id; ?>" <?php if ($active_platform != $p_id) { echo 'style="display:none;"'; } ?>>
+									<div class="col-md-12">
+										<div class="box box-solid box-default" style="border:1px solid #d2d6de;">
+											<div class="box-header with-border" style="background-color:#f4f4f4;">
+												<h3 class="box-title"><?php echo $p['label']; ?> Credentials</h3>
+											</div>
+											<div class="box-body">
+												<div class="form-group">
+													<label class="col-md-3 control-label"><?php echo $p['id_label']; ?></label>
+													<div class="col-md-9">
+														<input type="text" class="form-control" name="app_notify[cred][<?php echo $slug; ?>][id]" value="<?php echo htmlspecialchars((string) $cred_id, ENT_QUOTES); ?>" placeholder="<?php echo $p['id_label']; ?>" />
+													</div>
+												</div>
+												<div class="form-group">
+													<label class="col-md-3 control-label"><?php echo $p['key_label']; ?></label>
+													<div class="col-md-9">
+														<?php if ($p['key_type'] == 'textarea') { ?>
+															<textarea class="form-control" rows="8" name="app_notify[cred][<?php echo $slug; ?>][key]" placeholder="<?php echo $p['key_label']; ?>"><?php echo htmlspecialchars((string) $cred_key, ENT_QUOTES); ?></textarea>
+														<?php } else { ?>
+															<input type="text" class="form-control" name="app_notify[cred][<?php echo $slug; ?>][key]" value="<?php echo htmlspecialchars((string) $cred_key, ENT_QUOTES); ?>" placeholder="<?php echo $p['key_label']; ?>" />
+														<?php } ?>
+														<span class="help-block" style="margin-bottom:0;"><?php echo $p['hint']; ?></span>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							<?php } ?>
+
+							<div class="box-footer clearfix" style="padding:0;">
+								<a class="btn btn-sm btn-app pull-left" href="<?php echo base_url('settings/general/list'); ?>"><i class="fa fa-remove"></i> Cancel</a>
+								<button class="btn btn-sm btn-app pull-right" type="submit"><i class="fa fa-save"></i> Save</button>
+							</div>
+							<?php echo form_close(); ?>
+						</div>
+						<!-- /APP Notification Settings Tab -->
 
 </div> <!-- /Tab content -->
       				</div>

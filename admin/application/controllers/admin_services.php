@@ -755,9 +755,57 @@ class Admin_services extends CI_Controller
 		}
 	}  	// send due sms by service call//   
 
+	/**
+	 * Single-device dispatcher. Original name kept so no call site changes.
+	 * Every platform matched explicitly -- no catch-all else.
+	 */
 	function send_singlealert_notification($alertdetails = array())
+	{
+		$this->load->helper('push_notification');
+		if (notify_platform_is('fcm')) {
+			return $this->send_singlealert_notification_fcm($alertdetails);
+		}
+		return $this->send_singlealert_notification_onesignal($alertdetails);
+	}
+
+	function send_singlealert_notification_fcm($alertdetails = array())
+	{
+		$this->load->library('fcm_service');
+		return $this->fcm_service->sendToTokens(
+			(isset($alertdetails['token']) ? (array) $alertdetails['token'] : array()),
+			(isset($alertdetails['header']) ? $alertdetails['header'] : ''),
+			(isset($alertdetails['message']) ? $alertdetails['message'] : ''),
+			array(
+				'targetUrl'    => $this->notification_target_url((isset($alertdetails['notification_service']) ? $alertdetails['notification_service'] : '')),
+				'noti_service' => (isset($alertdetails['notification_service']) ? $alertdetails['notification_service'] : ''),
+				'mobile'       => (isset($alertdetails['mobile']) ? $alertdetails['mobile'] : '')
+			),
+			(isset($alertdetails['noti_img']) ? $alertdetails['noti_img'] : '')
+		);
+	}
+
+	/**
+	 * Shared targetUrl mapping so the FCM and OneSignal paths cannot drift apart.
+	 */
+	function notification_target_url($notification_service)
+	{
+		if ($notification_service == '2') {
+			return '#/app/offers';
+		} else if ($notification_service == '3') {
+			return '#/app/newarrivals';
+		} else if ($notification_service == '4' || $notification_service == '5' || $notification_service == '6') {
+			return '#/app/paydues';
+		}
+		return '#/app/notification';
+	}
+
+	function send_singlealert_notification_onesignal($alertdetails = array())
 
 	{
+
+		$this->load->helper('push_notification');
+
+		$onesignal = notify_cred_for('onesignal');
 
 		$registrationIds = array();
 
@@ -785,7 +833,7 @@ class Admin_services extends CI_Controller
 
 		$fields = array(
 
-			'app_id' => $this->config->item('app_id'),
+			'app_id' => $onesignal['id'],
 
 			'include_player_ids' => $registrationIds,
 
@@ -801,7 +849,7 @@ class Admin_services extends CI_Controller
 
 		);
 
-		$auth_key = $this->config->item('authentication_key');
+		$auth_key = $onesignal['key'];
 
 		$fields = json_encode($fields);
 
@@ -1486,7 +1534,7 @@ class Admin_services extends CI_Controller
 
 				);
 
-				$send = $this->onesignalNotificationToAll($arraycontent);
+				$send = $this->sendPushNotificationToAll($arraycontent);
 
 				$result['rate_noti'] = $send;
 
@@ -1498,9 +1546,37 @@ class Admin_services extends CI_Controller
 		return $result;
 	}
 
-	function onesignalNotificationToAll($alertdetails = array())
+	function sendPushNotificationToAll($alertdetails = array())
+	{
+		$this->load->helper('push_notification');
+		if (notify_platform_is('fcm')) {
+			return $this->sendPushNotificationToAll_fcm($alertdetails);
+		}
+		return $this->sendPushNotificationToAll_onesignal($alertdetails);
+	}
+
+	function sendPushNotificationToAll_fcm($alertdetails = array())
+	{
+		$this->load->library('fcm_service');
+		return $this->fcm_service->sendToAll(
+			(isset($alertdetails['header']) ? $alertdetails['header'] : ''),
+			(isset($alertdetails['message']) ? $alertdetails['message'] : ''),
+			array(
+				'targetUrl'    => '#/app/notification',
+				'noti_service' => (isset($alertdetails['notification_service']) ? $alertdetails['notification_service'] : ''),
+				'mobile'       => ''
+			),
+			(isset($alertdetails['noti_img']) ? $alertdetails['noti_img'] : '')
+		);
+	}
+
+	function sendPushNotificationToAll_onesignal($alertdetails = array())
 
 	{
+
+		$this->load->helper('push_notification');
+
+		$onesignal = notify_cred_for('onesignal');
 
 		$content = array(
 
@@ -1512,7 +1588,7 @@ class Admin_services extends CI_Controller
 
 		$fields = array(
 
-			'app_id' => $this->config->item('app_id'),
+			'app_id' => $onesignal['id'],
 
 			'included_segments' => array(
 
@@ -1532,7 +1608,7 @@ class Admin_services extends CI_Controller
 
 		);
 
-		$auth_key = $this->config->item('authentication_key');
+		$auth_key = $onesignal['key'];
 
 		$fields = json_encode($fields);
 
@@ -2470,8 +2546,36 @@ class Admin_services extends CI_Controller
 	}
 
 	function send_singlealert_rate_notification($alertdetails = array())
+	{
+		$this->load->helper('push_notification');
+		if (notify_platform_is('fcm')) {
+			return $this->send_singlealert_rate_notification_fcm($alertdetails);
+		}
+		return $this->send_singlealert_rate_notification_onesignal($alertdetails);
+	}
+
+	function send_singlealert_rate_notification_fcm($alertdetails = array())
+	{
+		$this->load->library('fcm_service');
+		return $this->fcm_service->sendToTokens(
+			(isset($alertdetails['token']) ? (array) $alertdetails['token'] : array()),
+			(isset($alertdetails['header']) ? $alertdetails['header'] : ''),
+			(isset($alertdetails['message']) ? $alertdetails['message'] : ''),
+			array(
+				'targetUrl'    => '#/app/notification',
+				'noti_service' => (isset($alertdetails['notification_service']) ? $alertdetails['notification_service'] : '')
+			),
+			(isset($alertdetails['noti_img']) ? $alertdetails['noti_img'] : '')
+		);
+	}
+
+	function send_singlealert_rate_notification_onesignal($alertdetails = array())
 
 	{
+
+		$this->load->helper('push_notification');
+
+		$onesignal = notify_cred_for('onesignal');
 
 		$registrationIds = array();
 
@@ -2487,7 +2591,7 @@ class Admin_services extends CI_Controller
 
 		$fields = array(
 
-			'app_id' => $this->config->item('app_id'),
+			'app_id' => $onesignal['id'],
 
 			'include_player_ids' => $registrationIds,
 
@@ -2501,7 +2605,7 @@ class Admin_services extends CI_Controller
 
 		);
 
-		$auth_key = $this->config->item('authentication_key');
+		$auth_key = $onesignal['key'];
 
 		$fields = json_encode($fields);
 

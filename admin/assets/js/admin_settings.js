@@ -6871,3 +6871,13 @@ $(document).on('click', '#ff_save_btn', function() {
 });
 
 // ─── End Feature Flags CRUD ───────────────────────────────────────────────────
+
+// ─── APP Notification Settings ────────────────────────────────────────────────
+// Platform-agnostic toggle: show #notify_block_<id> for the checked radio.
+// A third platform needs no change here.
+$(document).on('change', '.notify_platform_radio', function () {
+    $('.notify_block').hide();
+    $('#notify_block_' + $(this).val()).show();
+});
+
+// ─── End APP Notification Settings ────────────────────────────────────────────

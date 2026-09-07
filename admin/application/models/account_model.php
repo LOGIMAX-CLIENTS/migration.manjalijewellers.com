@@ -1869,6 +1869,11 @@ WHERE   (date(schReg.date_add) BETWEEN '" . date('Y-m-d', strtotime($from_date))
             return $value['token'];
         }, $sql->result_array());
         $data = $sql->result_array();
+        // registered_devices has no unique constraint on token, so one physical
+        // device can sit on several rows and get the same push twice.
+        // Dedupe by token value, never by customer.
+        $this->load->helper('push_notification');
+        $data = dedupe_device_tokens($data, 'token');
         return $data;
     }
     function get_notiContent($id_notification)
@@ -1922,6 +1927,8 @@ WHERE   (date(schReg.date_add) BETWEEN '" . date('Y-m-d', strtotime($from_date))
 									LEFT JOIN customer c on (c.id_customer=r.id_customer)
 									where mobile=" . $mobile);
         $data = $sql->result_array();
+        $this->load->helper('push_notification');
+        $data = dedupe_device_tokens($data, 'token');
         return $data;
     }
     function checkClientID($id_scheme_account = "", $client_id = "")

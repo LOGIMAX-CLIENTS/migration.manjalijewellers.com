@@ -3345,21 +3345,88 @@ IF((s.scheme_type = 1 OR s.scheme_type = 2 OR s.scheme_type = 3) AND (s.flexible
         return $status;
     }
     /* Device registration functions */
+
+    /**
+     * Upsert ONE ROW PER DEVICE, keyed on customer + device.
+     *
+     * The device key is `uuid` when supplied, else `token`. Keying on
+     * id_customer alone overwrote every row for a customer, so a second device
+     * (an iPhone after an Android) silently killed the first; and the plain
+     * insert path created duplicate rows for the same handset.
+     *
+     * @param  array $data token / uuid / device_type / id_customer
+     * @return array array('status' => bool, 'insertID' => int, 'action' => string)
+     */
+    function upsert_deviceData($data)
+    {
+        $token       = isset($data['token']) ? trim((string) $data['token']) : '';
+        $uuid        = isset($data['uuid']) ? trim((string) $data['uuid']) : '';
+        $id_customer = isset($data['id_customer']) ? (int) $data['id_customer'] : 0;
+        $now         = date('Y-m-d H:i:s');
+
+        // A blank token can never be delivered to and pollutes every broadcast query.
+        if ($token === '' || strtolower($token) === 'null' || $id_customer <= 0) {
+            return array('status' => FALSE, 'insertID' => 0, 'action' => 'rejected');
+        }
+
+        $row = array(
+            'token'       => $token,
+            'uuid'        => $uuid,
+            'device_type' => (isset($data['device_type']) && $data['device_type'] !== '') ? $data['device_type'] : NULL,
+            'id_customer' => $id_customer,
+            'updated_on'  => $now,
+        );
+
+        // A handed-down handset: the same token under a DIFFERENT customer must go.
+        $this->db->where('token', $token);
+        $this->db->where('id_customer !=', $id_customer);
+        $this->db->delete('registered_devices');
+
+        // Locate this customer's row for THIS device (uuid when we have one, else token).
+        $this->db->where('id_customer', $id_customer);
+        if ($uuid !== '') {
+            $this->db->where('uuid', $uuid);
+        } else {
+            $this->db->where('token', $token);
+        }
+        $existing = $this->db->get('registered_devices');
+
+        if ($existing->num_rows() > 0) {
+            $id_device = $existing->row()->id_device_detail;
+            $this->db->where('id_device_detail', $id_device);
+            $status = $this->db->update('registered_devices', $row);
+            return array('status' => $status, 'insertID' => $id_device, 'action' => 'updated');
+        }
+
+        $row['created_on'] = $now;
+        $status = $this->db->insert('registered_devices', $row);
+        return array('status' => $status, 'insertID' => ($status ? $this->db->insert_id() : 0), 'action' => 'inserted');
+    }
+
+    /**
+     * Wrapper kept for existing call sites -- original return shape preserved.
+     *
+     * @param  array $data
+     * @return array array('status' => bool, 'insertID' => int)
+     */
     function insert_deviceData($data)
     {
-        $status = $this->db->insert('registered_devices', $data);
-        return array('status' => $status, 'insertID' => $this->db->insert_id());
+        $res = $this->upsert_deviceData($data);
+        return array('status' => $res['status'], 'insertID' => $res['insertID']);
     }
+
+    /**
+     * Wrapper kept for existing call sites -- original return shape (bool) preserved.
+     *
+     * @param  array $data
+     * @param  int   $id id_customer
+     * @return bool
+     */
     function update_deviceData($data, $id)
     {
-        $sql = "select * from registered_devices where id_customer=" . $id;
-        $res = $this->db->query($sql);
-        if ($res->num_rows() > 0) {
-            $this->db->where('id_customer', $id);
-            return $this->db->update('registered_devices', $data);
-        } else {
-            return $this->db->insert('registered_devices', $data);
-        }
+        $data['id_customer'] = $id;
+        $res = $this->upsert_deviceData($data);
+        return $res['status'];
     }
     //to get closed account by customer
     function get_closed_account($id_cus)

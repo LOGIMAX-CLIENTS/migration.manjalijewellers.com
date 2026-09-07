@@ -761,7 +761,9 @@ class Mobile_api extends REST_Controller
             $result['payments']        = $this->$model->countPayments($result['customer']['id_customer']);
             $result['wallet']          = $this->$model->countWallets($result['customer']['id_customer']);
             $result['notification']    = $this->$model->get_cus_noti_settings($result['customer']['id_customer']);*/
-            if ($data['token'] != 'null') {
+            // The old guard compared to the literal string 'null', so empty
+            // tokens sailed through and piled up undeliverable rows.
+            if (isset($data['token']) && trim($data['token']) !== '' && strtolower(trim($data['token'])) !== 'null') {
                 //insert device token , uuid , device type
                 $device_data = array(
                     'token' => (!empty($data['token']) ? $data['token'] : ''),
@@ -992,7 +994,7 @@ class Mobile_api extends REST_Controller
                 'created_on' => date('Y-m-d H:i:s'),
                 'id_customer' => $id
             );
-            if ($data['token'] != null) {
+            if (isset($data['token']) && trim($data['token']) !== '' && strtolower(trim($data['token'])) !== 'null') {
                 $insStatus = $this->$model->insert_deviceData($deviceData);
                 if ($insStatus) {
                     $cus = array('notification' => 1);
@@ -1693,7 +1695,7 @@ class Mobile_api extends REST_Controller
         $insStatus = $this->$model->update_cusnotisettings($updData);
         if ($insStatus) {
             if ($data['notification'] == 1) {
-                if ($data['token'] != null) {
+                if (isset($data['token']) && trim($data['token']) !== '' && strtolower(trim($data['token'])) !== 'null') {
                     $res = $this->$model->insert_deviceData($deviceData);
                     if ($this->db->trans_status() === TRUE) {
                         $this->db->trans_commit();

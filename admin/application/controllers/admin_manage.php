@@ -3051,6 +3051,31 @@ class Admin_manage extends CI_Controller
     }
     function send_singlealert_notification($alertdetails = array())
     {
+        $this->load->helper('push_notification');
+        if (notify_platform_is('fcm')) {
+            return $this->send_singlealert_notification_fcm($alertdetails);
+        }
+        return $this->send_singlealert_notification_onesignal($alertdetails);
+    }
+    function send_singlealert_notification_fcm($alertdetails = array())
+    {
+        $this->load->library('fcm_service');
+        return $this->fcm_service->sendToTokens(
+            (isset($alertdetails['token']) ? (array) $alertdetails['token'] : array()),
+            (isset($alertdetails['header']) ? $alertdetails['header'] : ''),
+            (isset($alertdetails['message']) ? $alertdetails['message'] : ''),
+            array(
+                'targetUrl'    => '#/app/notification',
+                'noti_service' => (isset($alertdetails['notification_service']) ? $alertdetails['notification_service'] : ''),
+                'mobile'       => (isset($alertdetails['mobile']) ? $alertdetails['mobile'] : '')
+            ),
+            (isset($alertdetails['noti_img']) ? $alertdetails['noti_img'] : '')
+        );
+    }
+    function send_singlealert_notification_onesignal($alertdetails = array())
+    {
+        $this->load->helper('push_notification');
+        $onesignal = notify_cred_for('onesignal');
         $registrationIds = array();
         $registrationIds[0] = $alertdetails['token'];
         $content = array(
@@ -3058,7 +3083,7 @@ class Admin_manage extends CI_Controller
         );
         $targetUrl = '#/app/notification';
         $fields = array(
-            'app_id' => $this->config->item('app_id'),
+            'app_id' => $onesignal['id'],
             'include_player_ids' => $registrationIds,
             'contents' => $content,
             'headings' => array("en" => $alertdetails['header']),
@@ -3066,7 +3091,7 @@ class Admin_manage extends CI_Controller
             'data' => array('targetUrl' => $targetUrl, 'noti_service' => $alertdetails['notification_service'], 'mobile' => $alertdetails['mobile']),
             'big_picture' => (isset($alertdetails['noti_img']) ? $alertdetails['noti_img'] : " ")
         );
-        $auth_key = $this->config->item('authentication_key');
+        $auth_key = $onesignal['key'];
         $fields = json_encode($fields);
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, "https://onesignal.com/api/v1/notifications");
