@@ -2777,22 +2777,30 @@ function set_image($filename)
         		    {
         		        
         		       
-        		         $cusData = $this->$model->get_sendnotifi_cusBranch($data['id_branch'],""); 
-        		         
-        		        
+        		         $cusData = $this->$model->get_sendnotifi_cusBranch($data['id_branch'],"");
+
+        		         // One send per device -- accumulate the recipient counts
+        		         // instead of keeping only the last customer's response.
+        		         $sent_count = 0;
         		         	foreach($cusData as $branch){
         		         	     $arraycontent = array( 'notification_service'=>$data['notification_service'],
 									'header'=>$data['header'],
 									'message'=>$data['message'],
 									'mobile'=>'',
-									'footer'=>$data['footer'],						
+									'footer'=>$data['footer'],
 									'noti_img'=>$data['noti_img'],
-									'id_branch'=>$data['id_branch'],	
+									'id_branch'=>$data['id_branch'],
 									'targetUrl'=>$targetUrl,
         		         	         'token'     => $branch['token']);
         		         	   // print_r($arraycontent);exit;
                 $res = $this->send_singlealert_send_notification($arraycontent);
+                $one = json_decode($res);
+                if (isset($one->recipients)) { $sent_count += (int) $one->recipients; }
         		    }
+        		         if (empty($cusData)) {
+        		             log_message('error', 'send_notification: branch '.$data['id_branch'].' has no notification-enabled device for the active provider.');
+        		         }
+        		         $res = json_encode(array('id' => '', 'recipients' => $sent_count));
         		    }
         		    else
         		    {
@@ -2808,12 +2816,24 @@ function set_image($filename)
 				);
         		        $res = $this->sendPushNotificationToAll($arraycontent);
         		    }
-                $result = json_decode($res);   
-                //	 echo "<pre>";print_r($result);echo "</pre>"; 
-                //if($result->recipients > 0){
-                $this->$model->insert_sent_notification($arraycontent);  
-               // }
-                $this->session->set_flashdata('chit_alert',array('message'=>'Notification sent successfuly. Receipts : '.$result->recipients,'class'=>'success','title'=>'Notification'));	
+                $result = json_decode($res);
+                $recipients = (isset($result->recipients) ? (int) $result->recipients : 0);
+                if (isset($arraycontent)) {
+                    $this->$model->insert_sent_notification($arraycontent);
+                }
+                // Do not report success when nothing was delivered -- that is the
+                // symptom that hides an unusable-token problem.
+                if ($recipients > 0) {
+                    $this->session->set_flashdata('chit_alert',array('message'=>'Notification sent successfuly. Receipts : '.$recipients,'class'=>'success','title'=>'Notification'));
+                } else {
+                    $reason = '';
+                    if (isset($result->error)) {
+                        $reason = ' ('.$result->error.')';
+                    } elseif (isset($result->fcm_response->error)) {
+                        $reason = ' ('.$result->fcm_response->error.')';
+                    }
+                    $this->session->set_flashdata('chit_alert',array('message'=>'Notification was not delivered to any device'.$reason.'. Check that the customers have a valid push token for the active provider.','class'=>'danger','title'=>'Notification'));
+                }
                 
 			
 			}
