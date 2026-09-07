@@ -2806,7 +2806,7 @@ function set_image($filename)
 									'targetUrl'=>$targetUrl	
 									
 				);
-        		        $res = $this->onesignalNotificationToAll($arraycontent);
+        		        $res = $this->sendPushNotificationToAll($arraycontent);
         		    }
                 $result = json_decode($res);   
                 //	 echo "<pre>";print_r($result);echo "</pre>"; 
@@ -2829,16 +2829,42 @@ function set_image($filename)
 		
 	}
 	
-	function onesignalNotificationToAll($alertdetails = array()) 
-	{		  
+	function sendPushNotificationToAll($alertdetails = array())
+	{
+		$this->load->helper('push_notification');
+		if (notify_platform_is('fcm')) {
+			return $this->sendPushNotificationToAll_fcm($alertdetails);
+		}
+		return $this->sendPushNotificationToAll_onesignal($alertdetails);
+	}
+
+	function sendPushNotificationToAll_fcm($alertdetails = array())
+	{
+		$this->load->library('fcm_service');
+		return $this->fcm_service->sendToAll(
+			(isset($alertdetails['header']) ? $alertdetails['header'] : ''),
+			(isset($alertdetails['message']) ? $alertdetails['message'] : ''),
+			array(
+				'targetUrl'    => (isset($alertdetails['targetUrl']) ? $alertdetails['targetUrl'] : '#/app/notification'),
+				'noti_service' => (isset($alertdetails['notification_service']) ? $alertdetails['notification_service'] : ''),
+				'mobile'       => ''
+			),
+			(isset($alertdetails['noti_img']) ? $alertdetails['noti_img'] : '')
+		);
+	}
+
+	function sendPushNotificationToAll_onesignal($alertdetails = array())
+	{
+		$this->load->helper('push_notification');
+		$onesignal = notify_cred_for('onesignal');
 		$content = array(
 		"en" => $alertdetails['message']
 		);
-	 
+
 		$targetUrl='#/app/notification';
-		
+
 		$fields = array(
-		'app_id' => $this->config->item('app_id'),
+		'app_id' => $onesignal['id'],
 		'included_segments' => array('All'), // All
 		'contents' => $content,
 		'headings' => array("en" => $alertdetails['header']),
@@ -2847,7 +2873,7 @@ function set_image($filename)
 		'big_picture' =>(isset($alertdetails['noti_img'])?$alertdetails['noti_img']:" ")
 		);
 		
-		$auth_key = $this->config->item('authentication_key');
+		$auth_key = $onesignal['key'];
 		$fields = json_encode($fields);
 
 		 $ch = curl_init();
@@ -2866,17 +2892,43 @@ function set_image($filename)
 	}
 	
 	
-	function send_singlealert_send_notification($alertdetails = array()) 
+	function send_singlealert_send_notification($alertdetails = array())
 	{
+		$this->load->helper('push_notification');
+		if (notify_platform_is('fcm')) {
+			return $this->send_singlealert_send_notification_fcm($alertdetails);
+		}
+		return $this->send_singlealert_send_notification_onesignal($alertdetails);
+	}
+
+	function send_singlealert_send_notification_fcm($alertdetails = array())
+	{
+		$this->load->library('fcm_service');
+		return $this->fcm_service->sendToTokens(
+			(isset($alertdetails['token']) ? (array) $alertdetails['token'] : array()),
+			(isset($alertdetails['header']) ? $alertdetails['header'] : ''),
+			(isset($alertdetails['message']) ? $alertdetails['message'] : ''),
+			array(
+				'targetUrl'    => (isset($alertdetails['targetUrl']) ? $alertdetails['targetUrl'] : '#/app/notification'),
+				'noti_service' => (isset($alertdetails['notification_service']) ? $alertdetails['notification_service'] : '')
+			),
+			(isset($alertdetails['noti_img']) ? $alertdetails['noti_img'] : '')
+		);
+	}
+
+	function send_singlealert_send_notification_onesignal($alertdetails = array())
+	{
+		$this->load->helper('push_notification');
+		$onesignal = notify_cred_for('onesignal');
 		$registrationIds =array();
 		$registrationIds[0] = $alertdetails['token'];
 		$content = array(
 		"en" => $alertdetails['message']
 		);
-	    
+
 		$targetUrl='#/app/notification';
 		$fields = array(
-		'app_id' => $this->config->item('app_id'),
+		'app_id' => $onesignal['id'],
 		'include_player_ids' => $registrationIds,
 		'contents' => $content,
 		'headings' => array("en" => $alertdetails['header']),
@@ -2884,7 +2936,7 @@ function set_image($filename)
 		'big_picture' => (isset($alertdetails['noti_img'])?$alertdetails['noti_img']:" ")
 		);
 	
-		$auth_key = $this->config->item('authentication_key');
+		$auth_key = $onesignal['key'];
 		$fields = json_encode($fields);
 			
 		 $ch = curl_init();
@@ -2902,17 +2954,55 @@ function set_image($filename)
 	return $response;
 	}
 	
-	function send_singlealert_notification($alertdetails = array()) 
+	function send_singlealert_notification($alertdetails = array())
 	{
-		
+		$this->load->helper('push_notification');
+		if (notify_platform_is('fcm')) {
+			return $this->send_singlealert_notification_fcm($alertdetails);
+		}
+		return $this->send_singlealert_notification_onesignal($alertdetails);
+	}
+
+	function send_singlealert_notification_fcm($alertdetails = array())
+	{
+		$this->load->library('fcm_service');
+		$noti_service = (isset($alertdetails['notification_service']) ? $alertdetails['notification_service'] : '');
+		if ($noti_service == '2') {
+			$targetUrl = '#/app/offers';
+		} else if ($noti_service == '3') {
+			$targetUrl = '#/app/newarrivals';
+		} else if ($noti_service == '4' || $noti_service == '5' || $noti_service == '6') {
+			$targetUrl = '#/app/paydues';
+		} else {
+			$targetUrl = '#/app/notification';
+		}
+		return $this->fcm_service->sendToTokens(
+			(isset($alertdetails['token']) ? (array) $alertdetails['token'] : array()),
+			(isset($alertdetails['header']) ? $alertdetails['header'] : ''),
+			(isset($alertdetails['message']) ? $alertdetails['message'] : ''),
+			array(
+				'targetUrl'    => $targetUrl,
+				'noti_service' => $noti_service,
+				'mobile'       => (isset($alertdetails['mobile']) ? $alertdetails['mobile'] : '')
+			),
+			(isset($alertdetails['noti_img']) ? $alertdetails['noti_img'] : '')
+		);
+	}
+
+	function send_singlealert_notification_onesignal($alertdetails = array())
+	{
+		$this->load->helper('push_notification');
+
+		$onesignal = notify_cred_for('onesignal');
+
 		$registrationIds =array();
-		
+
 		$registrationIds[0] = $alertdetails['token'];
-		
+
 		$content = array(
 		"en" => $alertdetails['message']
 		);
-	
+
 		if($alertdetails['notification_service']== '2'){
 			$targetUrl='#/app/offers';
 		}
@@ -2927,7 +3017,7 @@ function set_image($filename)
 		}
 			
 		$fields = array(
-		'app_id' => $this->config->item('app_id'),
+		'app_id' => $onesignal['id'],
 		'include_player_ids' => $registrationIds,
 		'contents' => $content,
 		'headings' => array("en" => $alertdetails['header']),
@@ -2936,7 +3026,7 @@ function set_image($filename)
 		'big_picture' => (isset($alertdetails['noti_img'])?$alertdetails['noti_img']:" ")
 		);
 	//echo "<pre>";print_r($fields);echo "</pre>";
-		$auth_key = $this->config->item('authentication_key');
+		$auth_key = $onesignal['key'];
 		$fields = json_encode($fields);
 			
 		 $ch = curl_init();

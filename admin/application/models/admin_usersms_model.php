@@ -36,7 +36,13 @@ class Admin_usersms_model extends CI_Model
 					return  $value['token'];
 					}, $sql->result_array());*/
 					$data =$sql->result_array();
-		
+
+		// registered_devices has no unique constraint on token, so one physical
+		// device can sit on several rows and get the same push twice.
+		// Dedupe by token value, never by customer.
+		$this->load->helper('push_notification');
+		$data = dedupe_device_tokens($data, 'token');
+
 		return $data;
 	}
 	
@@ -938,17 +944,22 @@ public function update_notification_status($data,$id)
 	}
 	function getnotification_id($id)
 	{
-		 $sql = $this->db->query("SELECT r.token as token 
-									from registered_devices r								
+		 $sql = $this->db->query("SELECT r.token as token
+									from registered_devices r
 									where r.id_customer =".$id."");
-		
+
 		$token = array_map(function ($value) {
 					return  $value['token'];
 					}, $sql->result_array());
-		
+
+		// One customer can legitimately own several devices; only collapse rows
+		// that share the SAME token (and drop empties).
+		$this->load->helper('push_notification');
+		$token = dedupe_device_tokens($token);
+
 		return $token;
-		
-	} 
+
+	}
 	function get_notiData($id_notification)
      {
 		//Declaration of variables
@@ -1387,11 +1398,15 @@ public function update_notification_status($data,$id)
 					return  $value['token'];
 					}, $sql->result_array());
 					$data =$sql->result_array();
-		
+
+		// Collapse rows sharing a token; drop empties. Never dedupe by customer.
+		$this->load->helper('push_notification');
+		$data = dedupe_device_tokens($data, 'token');
+
 		return $data;
 	}
-	
-	
+
+
  /* select bassed to group_message  */
 	
 // all customer group_message
