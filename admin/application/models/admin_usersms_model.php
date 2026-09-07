@@ -1706,6 +1706,18 @@ function get_allcustomeremail_list()
             $resultset = $this->db->query("select id_branch from branch");
 			return $resultset->result_array();
         }
+
+        /**
+         * Flat list of active branch ids -- used as the "all branches" fallback
+         * when a rate save does not carry an explicit branch selection.
+         */
+        function get_all_active_branch_ids(){
+            $resultset = $this->db->query("select id_branch from branch where active = 1");
+            if (!$resultset) { return array(); }
+            $ids = array();
+            foreach ($resultset->result_array() as $row) { $ids[] = $row['id_branch']; }
+            return $ids;
+        }
         
         function get_cusBranchRate($id_branch,$types)
         {
@@ -1758,6 +1770,11 @@ function get_allcustomeremail_list()
         	$this->load->helper('push_notification');
         	$token_col = notify_token_column('rd');
 
+        	// An empty / 0 branch means "all branches" -- never interpolate it raw
+        	// into the SQL, which would either be a syntax error or match nobody.
+        	$id_branch    = (int) $id_branch;
+        	$branch_where = ($id_branch > 0) ? "c.id_branch = ".$id_branch : "1=1";
+
         	$resultset = $this->db->query("select
 											$token_col as token,c.id_branch,c.id_customer
 
@@ -1766,11 +1783,16 @@ function get_allcustomeremail_list()
 
 										inner join registered_devices rd on rd.id_customer=c.id_customer
 
-										WHERE c.id_branch=".$id_branch."
+										WHERE $branch_where
+										  and c.active = 1
 										  and c.notification = 1
 										  and $token_col is not null
 										  and $token_col <> ''");
 									//	print_r($this->db->last_query());exit;
+			if (!$resultset) {
+				log_message('error', 'get_sendnotifi_cusBranch: query failed for branch '.$id_branch);
+				return array();
+			}
 			$data = $resultset->result_array();
 			return dedupe_device_tokens($data, 'token');
         }
