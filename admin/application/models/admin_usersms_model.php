@@ -1709,8 +1709,10 @@ function get_allcustomeremail_list()
         
         function get_cusBranchRate($id_branch,$types)
         {
-        	$resultset = $this->db->query("select 
-											rd.uuid as token,b.name as branch,c.id_branch,c.id_customer,
+        	$this->load->helper('push_notification');
+        	$token_col = notify_token_column('rd');
+        	$resultset = $this->db->query("select
+											$token_col as token,b.name as branch,c.id_branch,c.id_customer,
 											r.goldrate_22ct as rate,r.silverrate_1gm as silver,goldrate_22ct as rate,mjdmagoldrate_22ct as mjdmarate,mjdmasilverrate_1gm as mjdmasilver,
 											goldrate_24ct as goldRate24,goldrate_18ct as goldRate18,platinum_1g as platinum,
 											Date_format(r.updatetime,'%h:%i %p')as time,cmp.company_name as cmp_name,b.metal_rate_type
@@ -1732,7 +1734,9 @@ function get_allcustomeremail_list()
         
     function get_metal_rateby_branch($id_customer)
     {
-        $resultset = $this->db->query("SELECT rd.uuid as token,b.name as branch,sa.id_branch,r.id_metalrates,br.id_metalrate,sa.id_customer,r.goldrate_22ct as rate,r.silverrate_1gm as silver,goldrate_22ct as rate,mjdmagoldrate_22ct as mjdmarate,mjdmasilverrate_1gm as mjdmasilver,
+        $this->load->helper('push_notification');
+        $token_col = notify_token_column('rd');
+        $resultset = $this->db->query("SELECT $token_col as token,b.name as branch,sa.id_branch,r.id_metalrates,br.id_metalrate,sa.id_customer,r.goldrate_22ct as rate,r.silverrate_1gm as silver,goldrate_22ct as rate,mjdmagoldrate_22ct as mjdmarate,mjdmasilverrate_1gm as mjdmasilver,
                                         goldrate_24ct as goldRate24,goldrate_18ct as goldRate18,platinum_1g as platinum,
                                         Date_format(r.add_date,'%h:%i %p')as time,cmp.company_name as cmp_name,b.metal_rate_type
                                         FROM metal_rates r
@@ -1741,24 +1745,34 @@ function get_allcustomeremail_list()
                                         LEFT JOIN branch b on b.id_branch=sa.id_branch
                                         left join registered_devices rd on rd.id_customer=sa.id_customer
                                         join company cmp
-                                        WHERE uuid is not null and uuid !='' and br.status=1 and rd.token IS NOT NULL and sa.id_customer=".$id_customer." GROUP by sa.id_branch"); 				
+                                        WHERE $token_col is not null and $token_col !='' and br.status=1 and sa.id_customer=".$id_customer." GROUP by sa.id_branch");				
 			//print_r($this->db->last_query());exit;
 			return $resultset->result_array();
     }
     
     function get_sendnotifi_cusBranch($id_branch,$types)
         {
-        	$resultset = $this->db->query("select 
-											rd.uuid as token,c.id_branch,c.id_customer
-										
+        	// Address the device on whichever provider is active: OneSignal wants
+        	// the player id (uuid), FCM wants the registration token (token).
+        	// Hardcoding uuid made every FCM send report recipients:0.
+        	$this->load->helper('push_notification');
+        	$token_col = notify_token_column('rd');
+
+        	$resultset = $this->db->query("select
+											$token_col as token,c.id_branch,c.id_customer
+
 										FROM customer c
 										LEFT JOIN branch b on b.id_branch=c.id_branch
-										
-										left join registered_devices rd on rd.id_customer=c.id_customer
-										
-										WHERE c.id_branch=".$id_branch);
+
+										inner join registered_devices rd on rd.id_customer=c.id_customer
+
+										WHERE c.id_branch=".$id_branch."
+										  and c.notification = 1
+										  and $token_col is not null
+										  and $token_col <> ''");
 									//	print_r($this->db->last_query());exit;
-			return $resultset->result_array();
+			$data = $resultset->result_array();
+			return dedupe_device_tokens($data, 'token');
         }
         
     function deleteNoPayments_Acc($months)

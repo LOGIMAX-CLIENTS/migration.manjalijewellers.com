@@ -1922,12 +1922,16 @@ WHERE   (date(schReg.date_add) BETWEEN '" . date('Y-m-d', strtotime($from_date))
     }
     function getnotificationids($mobile)
     {
-        $sql = $this->db->query("SELECT r.uuid as token ,c.mobile
+        // OneSignal addresses a player id (uuid); FCM addresses a registration
+        // token (token). Pick the column the active provider can actually use.
+        $this->load->helper('push_notification');
+        $token_col = notify_token_column('r');
+        $sql = $this->db->query("SELECT $token_col as token ,c.mobile
 									from registered_devices r
 									LEFT JOIN customer c on (c.id_customer=r.id_customer)
-									where mobile=" . $mobile);
+									where mobile=" . $mobile . "
+									  and $token_col is not null and $token_col <> ''");
         $data = $sql->result_array();
-        $this->load->helper('push_notification');
         $data = dedupe_device_tokens($data, 'token');
         return $data;
     }

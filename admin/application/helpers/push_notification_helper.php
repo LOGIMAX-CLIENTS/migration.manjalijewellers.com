@@ -171,6 +171,31 @@ if (!function_exists('notify_platform_is')) {
     }
 }
 
+if (!function_exists('notify_token_column')) {
+    /**
+     * The `registered_devices` column that actually addresses a device on the
+     * ACTIVE platform.
+     *
+     * OneSignal targets a player id, which this schema stores in `uuid`.
+     * FCM targets a registration token, stored in `token`. Queries that
+     * hardcode one of them break the moment the provider is switched: an
+     * OneSignal player id is ~36 chars, so Fcm_service filters it out and the
+     * send reports recipients:0 for a customer that genuinely has a token.
+     *
+     * Use inside a SQL SELECT so one query serves both providers:
+     *   $col = notify_token_column('rd');
+     *   ... "SELECT $col AS token FROM registered_devices rd ..."
+     *
+     * @param  string $alias Table alias used in the query
+     * @return string        e.g. "rd.token" or "rd.uuid"
+     */
+    function notify_token_column($alias = 'r')
+    {
+        $alias = ($alias !== '') ? rtrim($alias, '.') . '.' : '';
+        return $alias . (notify_platform_is('fcm') ? 'token' : 'uuid');
+    }
+}
+
 if (!function_exists('dedupe_device_tokens')) {
     /**
      * Collapse rows that share a device token and drop empty ones.
