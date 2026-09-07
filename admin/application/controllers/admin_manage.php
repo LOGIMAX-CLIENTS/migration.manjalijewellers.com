@@ -3077,7 +3077,10 @@ class Admin_manage extends CI_Controller
         $this->load->helper('push_notification');
         $onesignal = notify_cred_for('onesignal');
         $registrationIds = array();
-        $registrationIds[0] = $alertdetails['token'];
+        // Accept either one token or a batch -- OneSignal takes many player ids per request.
+        $registrationIds = (isset($alertdetails['token']) && is_array($alertdetails['token'])
+            ? array_values($alertdetails['token'])
+            : array(isset($alertdetails['token']) ? $alertdetails['token'] : ''));
         $content = array(
             "en" => $alertdetails['message']
         );
@@ -3104,6 +3107,9 @@ class Admin_manage extends CI_Controller
         curl_setopt($ch, CURLOPT_POST, TRUE);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $fields);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+        // Without timeouts one stalled connection hangs the page forever.
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
         $response = curl_exec($ch);
         curl_close($ch);
         return $response;

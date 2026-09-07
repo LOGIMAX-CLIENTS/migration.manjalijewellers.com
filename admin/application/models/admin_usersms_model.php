@@ -1737,11 +1737,21 @@ function get_allcustomeremail_list()
 												LEFT JOIN branch_rate br on br.id_metalrate=m.id_metalrates and br.id_branch=".$id_branch."
 												ORDER by br.id_metalrate desc LIMIT 1
 												) r on r.id_branch=b.id_branch
-										left join registered_devices rd on rd.id_customer=c.id_customer
+										inner join registered_devices rd on rd.id_customer=c.id_customer
 										join company cmp
-										WHERE c.id_branch=".$id_branch);
+										WHERE c.id_branch=".$id_branch."
+										  and c.active = 1
+										  and c.notification = 1
+										  and $token_col is not null
+										  and $token_col <> ''");
 										//print_r($this->db->last_query());exit;
-			return $resultset->result_array();
+			if (!$resultset) {
+				log_message('error', 'get_cusBranchRate: query failed for branch '.$id_branch);
+				return array();
+			}
+			// Unfiltered this returned EVERY customer in the branch (6800+ on this
+			// client), each costing a template query and an un-batched HTTPS push.
+			return dedupe_device_tokens($resultset->result_array(), 'token');
         }
         
     function get_metal_rateby_branch($id_customer)

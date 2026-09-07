@@ -3672,18 +3672,29 @@ class Admin_settings extends CI_Controller
                 }
                 if (sizeof($branchArr) > 0) {
                     if ($chitsettings['is_branchwise_cus_reg'] == 1) {
+                        // Read the template ONCE. It used to be re-queried inside
+                        // the per-customer loop -- one SELECT per recipient.
+                        $tpl_msg = '';
+                        $tpl_footer = '';
+                        $tplset = $this->db->query("SELECT noti_name, noti_footer, noti_msg from notification where id_notification =1");
+                        if ($tplset) {
+                            foreach ($tplset->result() as $row) {
+                                $tpl_msg = $row->noti_msg;
+                                $tpl_footer = $row->noti_footer;
+                            }
+                            $tplset->free_result();
+                        }
+
                         foreach ($branchArr as $branch) {
                             $cusData = $this->$model->get_cusBranchRate($branch, "");
                             if (count($cusData) > 0) {
+                                // Group tokens by the message they resolve to, so
+                                // identical messages go out in ONE batched send
+                                // instead of one blocking HTTPS call per customer.
+                                $batches = array();
                                 foreach ($cusData as $cus) {
-                                    $noti_msg = '';
-                                    $resultset = $this->db->query("SELECT noti_name,noti_name, noti_footer,noti_msg from notification where id_notification =1");
-                                    foreach ($resultset->result() as $row) {
-                                        $noti_msg = $row->noti_msg;
-                                        $noti_footer = $row->noti_footer;
-                                        $noti_header = $row->noti_name;
-                                    }
-                                    $resultset->free_result();
+                                    $noti_msg = $tpl_msg;
+                                    $noti_footer = $tpl_footer;
                                     //Generating Message content
                                     $field_name = explode('@@', $noti_msg);
                                     for ($i = 1; $i < count($field_name); $i += 2) {
@@ -3694,15 +3705,23 @@ class Admin_settings extends CI_Controller
                                     }
                                     $field_name_footer = explode('@@', $noti_footer);
                                     for ($i = 1; $i < count($field_name_footer); $i += 2) {
-                                        if (isset($cus->$field_name_footer[$i])) {
+                                        if (isset($cus[$field_name_footer[$i]])) {
                                             $noti_footer = str_replace("@@" . $field_name_footer[$i] . "@@", $cus[$field_name_footer[$i]], $noti_footer);
                                         }
                                     }
+                                    $key = md5($noti_msg);
+                                    if (!isset($batches[$key])) {
+                                        $batches[$key] = array('message' => $noti_msg, 'tokens' => array());
+                                    }
+                                    $batches[$key]['tokens'][] = $cus['token'];
+                                }
+
+                                foreach ($batches as $batch) {
                                     $arraycontent = array(
                                         'notification_service' => 1,
                                         'header' => 'Daliy Rate',
-                                        'message' => $noti_msg,
-                                        'token' => $cus['token'],
+                                        'message' => $batch['message'],
+                                        'token' => $batch['tokens'],
                                         'targetUrl' => $targetUrl
                                     );
                                     $result = $this->send_singlealert_rate_notification($arraycontent);
@@ -3841,6 +3860,9 @@ class Admin_settings extends CI_Controller
         curl_setopt($ch, CURLOPT_POST, TRUE);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $fields);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+        // Without timeouts one stalled connection hangs the page forever.
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
         $response = curl_exec($ch);
         curl_close($ch);
         return $response;
@@ -4100,7 +4122,10 @@ class Admin_settings extends CI_Controller
         $this->load->helper('push_notification');
         $onesignal = notify_cred_for('onesignal');
         $registrationIds = array();
-        $registrationIds[0] = $alertdetails['token'];
+        // Accept either one token or a batch -- OneSignal takes many player ids per request.
+        $registrationIds = (isset($alertdetails['token']) && is_array($alertdetails['token'])
+            ? array_values($alertdetails['token'])
+            : array(isset($alertdetails['token']) ? $alertdetails['token'] : ''));
         $content = array(
             "en" => $alertdetails['message']
         );
@@ -4126,6 +4151,9 @@ class Admin_settings extends CI_Controller
         curl_setopt($ch, CURLOPT_POST, TRUE);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $fields);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+        // Without timeouts one stalled connection hangs the page forever.
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
         $response = curl_exec($ch);
         //print_r($response);exit;
         curl_close($ch);
