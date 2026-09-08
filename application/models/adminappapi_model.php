@@ -1683,6 +1683,33 @@ pm.mode_name as payment_mode
 	   $daily = [];
 	   ///'account_type'  => $record->id_metal == 1 ? 'Gold' : 'Silver'
 
+	   // Payment mode filter.
+	   // 'online'/'offline' are not stored in payment.payment_mode - gateway payments are saved with the
+	   // gateway's own mode (UPI, CC, DC, NB, Wallet...) and are identified by id_payGateway > 0.
+	   // Any other value is matched literally against payment_mode.
+	   $mode = strtolower(trim((string)$payment_mode));
+	   $pay_mode_cond    = '';   // condition for `payment` (alias p)
+	   $pp_pay_mode_cond = '';   // condition for `partial_payment` (alias pp)
+	   if($mode != '' && $mode != 'all')
+	   {
+	   		if($mode == 'online')
+	   		{
+	   			$pay_mode_cond = ' and IFNULL(p.id_payGateway,0) > 0 ';
+	   			// partial_payment has no gateway - collection app partials are always offline
+	   			$pp_pay_mode_cond = ' and 1 = 0 ';
+	   		}
+	   		else if($mode == 'offline' || $mode == 'cash' || $mode == 'collection')
+	   		{
+	   			$pay_mode_cond = ' and IFNULL(p.id_payGateway,0) = 0 ';
+	   			$pp_pay_mode_cond = '';
+	   		}
+	   		else
+	   		{
+	   			$pay_mode_cond    = ' and p.payment_mode = '.$this->db->escape($payment_mode).' ';
+	   			$pp_pay_mode_cond = ' and pp.payment_mode = '.$this->db->escape($payment_mode).' ';
+	   		}
+	   }
+
     	$month =  $this->db->query("Select IFNULL(sa.start_year,'') as start_year,(select b.short_name from branch b where b.id_branch = sa.id_branch) as acc_branch,s.code,
 		                s.is_lucky_draw,ifnull(sa.scheme_acc_number,'Not Allocated') as scheme_acc_number,cs.scheme_wise_acc_no,
 		                IFNULL(p.receipt_year,'') as receipt_year, (select b.short_name from branch b where b.id_branch = p.id_branch) as payment_branch, s.code,ifnull(p.receipt_no,'') as receipt_no,cs.scheme_wise_receipt,sa.id_scheme_account,sa.id_scheme_account,
@@ -1718,7 +1745,7 @@ pm.mode_name as payment_mode
 			 ".($id_employee!='' && $login_type!='' && $login_type=='EMP' ? ' and p.id_employee ='.$id_employee :'and p.id_agent ='.$id_employee)."  
 			 ".($emp_branch!='' && $emp_branch!=0?' and p.id_branch ='.$emp_branch:'')."
 			  ".($metal_filter!='' && $metal_filter!= null && $metal_filter > 0 ? 'and s.id_metal = '.$metal_filter :'')."
-			 ".($payment_mode!=''  && $payment_mode != 'all' ? "and p.payment_mode ='".$payment_mode."'" : '')."
+			 ".$pay_mode_cond."
 			 ".($from_date!='' && $from_date!=null && $To_date!='' && $To_date!=null  ? "and date(p.date_payment) BETWEEN '".date('Y-m-d',strtotime($from_date))."' AND '".date('Y-m-d',strtotime($To_date))."' " :'')."
                 order by p.date_payment desc
 			 ")->result_array();
@@ -1749,7 +1776,7 @@ pm.mode_name as payment_mode
 			 ".($id_employee!='' && $login_type!='' && $login_type=='EMP' ? ' and pp.id_employee ='.$id_employee :'and pp.id_agent ='.$id_employee)."  
 			 ".($emp_branch!='' && $emp_branch!=0?' and pp.id_branch ='.$emp_branch:'')."
 			  ".($metal_filter!='' && $metal_filter!= null && $metal_filter > 0 ? 'and s.id_metal = '.$metal_filter :'')."
-			 ".($payment_mode!=''  && $payment_mode != 'all' ? "and pp.payment_mode ='".$payment_mode."'" : '')."
+			 ".$pp_pay_mode_cond."
 			 ".($from_date!='' && $from_date!=null && $To_date!='' && $To_date!=null  ? "and date(pp.date_payment) BETWEEN '".date('Y-m-d',strtotime($from_date))."' AND '".date('Y-m-d',strtotime($To_date))."' " :'')."
 			 order by pp.date_payment desc
 			 ")->result_array();	
