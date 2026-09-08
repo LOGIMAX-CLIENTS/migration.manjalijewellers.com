@@ -4724,7 +4724,7 @@ class Mobile_api extends REST_Controller
                             "id_transaction" => (isset($txnid) ? $txnid . '-' . $i : NULL),
                             "ref_trans_id" => (isset($txnid) ? $txnid : NULL), // to update pay status after trans complete.
                             "remark" => 'Paid for ' . $pay->udf5 . ($pay->udf5 > 1 ? 'months' : 'month'),
-                            "added_by" => 2,
+                            "added_by" => ($id_employee != NULL ? 3 : 2),
                             "add_charges" => (isset($pay->charge) ? $pay->charge : NULL),
                             "discountAmt" => ($pay->discount != "" ? $pay->discount : 0.00),
                             "payment_status" => $this->payment_status['pending'],
