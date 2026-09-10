@@ -480,7 +480,7 @@ class Syncapi_model extends CI_Model
 	function getCustomerByID($id_scheme_account)
 	{
 		$sql = "SELECT
-					   sa.id_scheme_account as  id_scheme_account,sa.id_branch,b.warehouse,maturity_date,
+					   sa.id_scheme_account as  id_scheme_account,IFNULL(NULLIF(sa.id_branch, 0), c.id_branch) as id_branch,b.warehouse,maturity_date,
 		               Date_Format(sa.start_date,'%Y-%m-%d')  as reg_date,sh.sync_scheme_code,sh.code as group_code,
 					   c.title as salutation,sa.account_name as ac_name,c.firstname,c.lastname,sa.scheme_acc_number as scheme_ac_no, 
 					   a.address1 as address1,a.address2 as address2,a.address3 as address3,ct.name as city,a.pincode,s.name as state,cy.name as country,
