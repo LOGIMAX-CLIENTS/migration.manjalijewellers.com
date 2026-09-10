@@ -658,7 +658,7 @@ class Syncapi_model extends CI_Model
 	{
 		$sql = "SELECT
 		               IF(ref_no = '' || ref_no is NULL ,'',ref_no) as clientid,
-					   sa.id_scheme_account as  id_scheme_account,sa.id_branch,maturity_date,
+					   sa.id_scheme_account as  id_scheme_account,if(sa.id_branch != 0,ifnull(sa.id_branch,c.id_branch),c.id_branch) as id_branch,maturity_date,
 		               Date_Format(sa.start_date,'%Y-%m-%d')  as reg_date,sh.sync_scheme_code,sh.code as group_code,
 					   c.title as salutation,sa.account_name as ac_name,c.firstname,c.lastname,sa.group_code,sa.scheme_acc_number as scheme_ac_no, 
 					   a.address1 as address1,a.address2 as address2,a.address3 as address3,ct.name as city,a.pincode,s.name as state,cy.name as country,
