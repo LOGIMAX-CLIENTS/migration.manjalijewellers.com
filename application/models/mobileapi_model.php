@@ -5505,10 +5505,10 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
 					'date_upd'          => date("Y-m-d H:i:s")
 				);
 
-				if (!empty($response->data->softwareJoinNo)) {
+				if (!empty($response->data->softwareJoinNo) && !empty($cus_reg_data[0]['id_customer_reg'])) {
 					$acc_status = $this->$model->update_account(
-						$acc_data, 
-						$cus_reg_data[0]['id_scheme_account'], 
+						$acc_data,
+						$cus_reg_data[0]['id_scheme_account'],
 						$cus_reg_data[0]['id_customer_reg']
 					);
 				}

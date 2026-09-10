@@ -181,6 +181,8 @@ class Syncapi_model extends CI_Model
 		if($status){
 			$cus_reg = array( 'is_transferred' => 'Y',
 		                    'is_modified'    => 0,
+							'clientid'   => $data['ref_no'],
+							'scheme_ac_no'   => $data['scheme_acc_number'],
         					"date_update"		 => date('Y-m-d'),
         					'transfer_date'	 => date('Y-m-d'));
 		    $this->db->where('id_customer_reg',$id_customer_reg);
@@ -189,8 +191,8 @@ class Syncapi_model extends CI_Model
 	//	echo $this->db->last_query();
 		return $status;
 	}
-	
-	function update_closed_ac($data,$clientId,$id_customer_reg) 
+
+	function update_closed_ac($data,$clientId,$id_customer_reg)
 	{
 		$this->db->where('ref_no',$clientId);
 		$status = $this->db->update('scheme_account',$data);
