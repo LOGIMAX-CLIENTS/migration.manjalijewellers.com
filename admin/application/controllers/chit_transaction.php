@@ -1193,14 +1193,14 @@ class Chit_transaction extends CI_Controller
             }
 
 		} 
-        /* elseif ($isTranExists['status'] && ($isTranExists['clientid'] == null || $isTranExists['clientid'] == '') && $chit_settings['gent_clientid'] == 1) {
+        elseif ($isTranExists['status'] && ($isTranExists['client_id'] == null || $isTranExists['client_id'] == '')) {
 			$trans_data = array(
 				'client_id' => $pay_data[0]['client_id']
 			);
 			$this->$model->update_transaction($trans_data,$isTranExists['id_transaction']);
 
 			$runPayDirect = true;
-		}  */
+		} 
         else if ($isTranExists['status'] && $isTranExists['is_transferred'] == 'N' && !empty($payID_data[0]['scheme_acc_number'])) {
 
 			$runPayDirect = true;
