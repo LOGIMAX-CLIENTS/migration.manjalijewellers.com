@@ -130,7 +130,7 @@ $autoload['libraries'] = array('database', 'session','form_validation','upload')
 
 
 
-$autoload['helper'] = array('url','form','file','cookie','formsecret','lmx/functions/common_helper','client_config','metal_wgt_digit','feature_flag');
+$autoload['helper'] = array('url','form','file','cookie','formsecret','lmx/functions/common_helper','client_config','metal_wgt_digit','feature_flag','applog');
 
 
 

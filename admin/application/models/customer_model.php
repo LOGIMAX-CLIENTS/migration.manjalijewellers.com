@@ -627,6 +627,10 @@ class Customer_model extends CI_Model
             foreach ($resultset->result() as $row) {
                 $data['sync_scheme_code'] = $row->sync_scheme_code;
                 $data['client_id'] = $row->clientid;
+                // Resolve the scheme against this customer_reg row's own branch - the
+                // caller's branch can be empty/different and the same sync_scheme_code
+                // exists in several branches.
+                $data['id_branch'] = ($row->id_branch > 0 ? $row->id_branch : (isset($data['id_branch']) ? $data['id_branch'] : NULL));
                 $id_scheme = $this->getschId($data);
                 $sql = $this->db->query("SELECT * FROM scheme_account WHERE ref_no='" . $row->clientid . "'");
                 $existing_sch = $sql->row_array();
@@ -672,24 +676,44 @@ class Customer_model extends CI_Model
     function getschId($data)
     {
         $branchwise_scheme = 0;
-        $settings = $this->db->query("select branchwise_scheme from chit_settings");
+        $settings = $this->db->query("select branchwise_scheme from chit_settings limit 1");
         if ($settings->num_rows() > 0) {
             $branchwise_scheme = $settings->row()->branchwise_scheme;
         }
-        if ($branchwise_scheme == 1 && ($data['id_branch'] != '' || $data['id_branch'] != NULL)) {
+
+        $sync_code = isset($data['sync_scheme_code']) ? trim($data['sync_scheme_code']) : '';
+        if ($sync_code === '') {
+            return null;
+        }
+        // The old guard ($id_branch != '' || $id_branch != NULL) is FALSE for both ''
+        // and NULL, so an empty branch fell through to the branch-agnostic lookup and
+        // returned the lowest id_scheme sharing the code - another branch's scheme.
+        $id_branch = (isset($data['id_branch']) && is_numeric($data['id_branch'])) ? (int)$data['id_branch'] : 0;
+
+        if ($branchwise_scheme == 1 && $id_branch > 0) {
             $result = $this->db->query("SELECT s.id_scheme
                                        FROM `scheme` s
-                                        LEFT JOIN scheme_branch sb ON sb.id_scheme = s.id_scheme
-                                       WHERE sync_scheme_code='" . $data['sync_scheme_code'] . "' AND sb.id_branch='" . $data['id_branch'] . "'"
+                                        JOIN scheme_branch sb ON sb.id_scheme = s.id_scheme
+                                       WHERE s.sync_scheme_code='" . $this->db->escape_str($sync_code) . "' AND sb.id_branch=" . $id_branch . "
+                                       ORDER BY s.id_scheme ASC LIMIT 1"
             );
-        } else {
-            $result = $this->db->query("select id_scheme from scheme where sync_scheme_code='" . $data['sync_scheme_code'] . "'");
+            if ($result->num_rows() > 0) {
+                return $result->row()->id_scheme;
+            }
+            return null;
+        }
+
+        $result = $this->db->query("select id_scheme from scheme where sync_scheme_code='" . $this->db->escape_str($sync_code) . "' order by id_scheme asc");
+        if ($result->num_rows() == 1) {
+            return $result->row()->id_scheme;
+        }
+        if ($branchwise_scheme == 1 && $result->num_rows() > 1) {
+            return null;
         }
         if ($result->num_rows() > 0) {
             return $result->row()->id_scheme;
-        } else {
-            return null;
         }
+        return null;
     }
     function syncPayData($ac_data)
     {

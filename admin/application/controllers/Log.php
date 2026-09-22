@@ -148,7 +148,16 @@ class Log extends CI_Controller {
     /**
      * Download a log file securely
      */
-    public function download_file($key) {
+    public function download_file($key = NULL) {
+        // The key is a base64 string and routinely contains '+', '/' and '='.
+        // Passed as a raw URI segment it gets mangled: '/' splits it across
+        // extra segments (only the first reaches $key) and '+' is rejected by
+        // permitted_uri_chars. The query string bypasses both, so prefer it
+        // and keep the segment as a fallback for old links.
+        if (empty($key)) {
+            $key = $this->input->get('key');
+        }
+
         if (empty($key)) {
             show_error('Missing file key.', 400);
         }
@@ -174,8 +183,17 @@ class Log extends CI_Controller {
             show_error('Access denied or file not found.', 403);
         }
 
+        // This CI2 download helper's force_download($filename, $data) takes the file
+        // CONTENTS as $data, unlike later CI versions that can stream from a path;
+        // passing NULL makes it evaluate $data == '' and silently return FALSE,
+        // which is why this used to render a blank page instead of downloading.
+        $file_data = @file_get_contents($file_path);
+        if ($file_data === FALSE) {
+            show_error('Unable to read file.', 500);
+        }
+
         $this->load->helper('download');
-        force_download($file_path, NULL);
+        force_download(basename($file_path), $file_data);
     }
 
     /**

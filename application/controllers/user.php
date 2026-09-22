@@ -1397,10 +1397,9 @@ public function mobileapp()    	{		$data['content'] = '';		$pageType = array('pa
 	function sync_existing_data($mobile, $id_customer, $id_branch, $page)
 	{
 		if ($id_customer > 0 && strlen($mobile) == 10) {
-			if (!is_dir($this->log_dir . '/existing')) {
-				mkdir($this->log_dir . '/existing', 0777, true);
-			}
-			$log_path = $this->log_dir . '/existing/' . date("Y-m-d") . '.txt';
+			// applog writes to the shared <webroot>/admin/log/<date>/existing channel and
+			// stamps each entry with the trigger, so the calling page is visible.
+			$log_ref = array('id_customer' => $id_customer, 'mobile' => $mobile, 'id_branch' => $id_branch, 'page' => $page);
 			$allow_sync = false;
 			/*$last_sync_time = $this->registration_model->getLastSyncTime($mobile);
 	       if(!empty($last_sync_time)){
@@ -1423,8 +1422,7 @@ public function mobileapp()    	{		$data['content'] = '';		$pageType = array('pa
 				$data['added_by'] = 2;
 				$res = $this->registration_model->insExisAcByMobile($data);
 				$TESTRes = array("status" => "On ENTER", "e" => $this->db->_error_message(), "q" => $this->db->last_query(), "res" => $res, "data" => $data);
-				$logData = "\n" . date('d-m-Y H:i:s') . "\n API : user \n Response : " . json_encode($TESTRes, true);
-				file_put_contents($log_path, $logData, FILE_APPEND | LOCK_EX);
+				applog_write('existing', 'Existing accounts pulled (on enter)', $TESTRes, array('ref' => $log_ref));
 				if (sizeof($res) > 0) {
 					$payData = $this->registration_model->syncPayData($res);
 					if ((sizeof($payData['succeedIds']) > 0 || $payData['no_records'] > 0) && $this->db->trans_status() === TRUE) {
@@ -1437,14 +1435,12 @@ public function mobileapp()    	{		$data['content'] = '';		$pageType = array('pa
 						} else {
 							$this->db->trans_rollback();
 							$response = array("status" => FALSE, "e" => $this->db->_error_message(), "q" => $this->db->last_query(), "msg" => "Error in updating intermediate tables");
-							$logData = "\n" . date('d-m-Y H:i:s') . "\n API : user \n Response : " . json_encode($response, true);
-							file_put_contents($log_path, $logData, FILE_APPEND | LOCK_EX);
+							applog_write('existing', 'Error in updating intermediate tables', $response, array('ref' => $log_ref));
 							return $response;
 						}
 					} else {
 						$response = array("status" => FALSE, "e" => $this->db->_error_message(), "q" => $this->db->last_query(), "msg" => "Error in updating payment tables");
-						$logData = "\n" . date('d-m-Y H:i:s') . "\n API : user \n Response : " . json_encode($response, true);
-						file_put_contents($log_path, $logData, FILE_APPEND | LOCK_EX);
+						applog_write('existing', 'Error in updating payment tables', $response, array('ref' => $log_ref));
 						$this->db->trans_rollback();
 						return $response;
 					}
@@ -1456,14 +1452,12 @@ public function mobileapp()    	{		$data['content'] = '';		$pageType = array('pa
 						echo $this->db->_error_message();
 						$this->db->trans_rollback();
 					}
-					$logData = "\n" . date('d-m-Y H:i:s') . "\n API : user \n Response : " . json_encode($response, true);
-					file_put_contents($log_path, $logData, FILE_APPEND | LOCK_EX);
+					applog_write('existing', 'No records to update in scheme account tables', $response, array('ref' => $log_ref));
 					return $response;
 				}
 			} else {
-				$logData = "\n" . date('d-m-Y H:i:s') . "\n API : user \n sync called less than 15 min. CUS ID : " . $id_customer . " | " . $mobile . " | BRN ID :" . $id_branch . " | " . $page;
-				file_put_contents($log_path, $logData, FILE_APPEND | LOCK_EX);
-				return $logData;
+				applog_write('existing', 'Skipped : sync called less than 15 min', NULL, array('ref' => $log_ref));
+				return array("status" => FALSE, "msg" => "sync called less than 15 min");
 			}
 		} else {
 			return array("status" => FALSE, "msg" => "Invalid customer data");

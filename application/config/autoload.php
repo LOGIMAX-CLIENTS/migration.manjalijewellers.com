@@ -196,7 +196,7 @@ $autoload['libraries'] = array('session','database');
 
 
 
-$autoload['helper'] = array('url', 'file', 'html', 'form', 'metal_wgt_digit', 'feature_flag');
+$autoload['helper'] = array('url', 'file', 'html', 'form', 'metal_wgt_digit', 'feature_flag', 'applog');
 
 
 

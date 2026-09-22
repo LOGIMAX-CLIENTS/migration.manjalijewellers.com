@@ -129,10 +129,16 @@
                         <button class="btn btn-default" type="button" id="btn-clear-search" title="Clear Search">
                           <i class="fa fa-times"></i>
                         </button>
-                        <button class="btn btn-info" type="button" id="btn-toggle-filter-view" data-filtered="false" title="Show only matching lines">
-                          Filter View
+                        <button class="btn btn-default" type="button" id="btn-search-prev" title="Previous match">
+                          <i class="fa fa-arrow-up"></i>
+                        </button>
+                        <button class="btn btn-default" type="button" id="btn-search-next" title="Next match">
+                          <i class="fa fa-arrow-down"></i>
                         </button>
                       </span>
+                    </div>
+                    <div class="text-right" style="margin-top: 3px;">
+                      <small class="text-muted" id="search-match-count"></small>
                     </div>
                   </div>
                 </div>
@@ -247,6 +253,12 @@
     padding: 0 2px;
   }
 
+  /* The match currently selected via the up/down navigation buttons */
+  .highlight-match-current {
+    background-color: #f97316 !important;
+    box-shadow: 0 0 0 2px #fff;
+  }
+
   /* Active log file row highlight */
   .log-file-row.active-log {
     background-color: #e8f0fe !important;
@@ -271,6 +283,7 @@ function initLogViewer() {
   var filesData = {};
   var currentKey = null;
   var rawLogLines = [];
+  var currentMatchIndex = -1; // index into the .highlight-match spans currently on screen
 
   // Initialize Bootstrap Datepicker
   $('#log-datepicker').datepicker({
@@ -318,6 +331,9 @@ function initLogViewer() {
             else if (part === 'manual') label = 'Manual Payments';
             else if (part === 'existing') label = 'Existing Logs';
             else if (part === 'general') label = 'General Logs';
+            else if (part === 'customer_reg_update') label = 'Customer_reg update';
+            else if (part === 'customer_reg_entry') label = 'Customer_reg entry';
+            else if (part === 'transaction_entry') label = 'Transaction entry';
             else label = part.charAt(0).toUpperCase() + part.slice(1);
             
             $('#log-part-select').append('<option value="' + part + '">' + label + '</option>');
@@ -390,7 +406,7 @@ function initLogViewer() {
           '<button class="btn btn-info btn-xs btn-view-log" data-key="' + file.key + '" title="View File">' +
           '<i class="fa fa-eye"></i> View' +
           '</button>' +
-          '<a href="<?php echo base_url("index.php/log/download_file"); ?>/' + file.key + '" class="btn btn-default btn-xs text-olive" title="Download File" style="margin-top: 2px;">' +
+          '<a href="<?php echo base_url("index.php/log/download_file"); ?>?key=' + encodeURIComponent(file.key) + '" class="btn btn-default btn-xs text-olive" title="Download File" style="margin-top: 2px;">' +
           '<i class="fa fa-download"></i> Download' +
           '</a>' +
           '</div>';
@@ -455,7 +471,7 @@ function initLogViewer() {
             $('#log-truncated-warning').hide();
           }
           
-          $('#btn-download-log').attr('href', '<?php echo base_url("index.php/log/download_file"); ?>/' + key);
+          $('#btn-download-log').attr('href', '<?php echo base_url("index.php/log/download_file"); ?>?key=' + encodeURIComponent(key));
           $('#viewer-actions').show();
           
           rawLogLines = res.content.split(/\r?\n/);
@@ -465,7 +481,7 @@ function initLogViewer() {
           scrollToBottom();
           
           $('#log-search').val('');
-          $('#btn-toggle-filter-view').attr('data-filtered', 'false').removeClass('btn-warning').addClass('btn-info').text('Filter View');
+          $('#search-match-count').text('');
         } else {
           alert('Error: ' + res.message);
           $('#viewer-empty-state').show();
@@ -479,28 +495,27 @@ function initLogViewer() {
     });
   }
 
-  // Render processed lines to the log element
-  function renderLogLines(filterText = "", onlyMatches = false) {
+  // Render processed lines to the log element. All lines always stay visible —
+  // searching only highlights matches; navigation between them is done with the
+  // up/down buttons instead of hiding non-matching lines (which used to hide
+  // the very context, e.g. the Response line, that the user was looking for).
+  function renderLogLines(filterText = "") {
     var html = "";
     var searchLower = filterText.toLowerCase();
-    
+
     for (var i = 0; i < rawLogLines.length; i++) {
       var line = rawLogLines[i];
       var lineLower = line.toLowerCase();
-      var isMatch = searchLower === "" || lineLower.indexOf(searchLower) !== -1;
-      
-      if (onlyMatches && !isMatch) {
-        continue;
-      }
-      
+      var isMatch = searchLower !== "" && lineLower.indexOf(searchLower) !== -1;
+
       var displayLine = line;
-      if (filterText !== "" && isMatch) {
+      if (isMatch) {
         var regex = new RegExp(escapeRegExp(filterText), "gi");
         displayLine = line.replace(regex, function(match) {
           return '<span class="highlight-match">' + match + '</span>';
         });
       }
-      
+
       var cls = "";
       if (lineLower.indexOf('error') !== -1 || lineLower.indexOf('fail') !== -1 || lineLower.indexOf('exception') !== -1 || lineLower.indexOf('severity: error') !== -1) {
         cls = "log-error";
@@ -513,42 +528,90 @@ function initLogViewer() {
       } else if (lineLower.indexOf('directapi') !== -1) {
         cls = "log-direct";
       }
-      
+
       var lineNumber = i + 1;
       html += '<div class="log-line ' + cls + '">' +
                 '<span class="log-line-num">' + lineNumber + '</span>' +
                 displayLine +
               '</div>';
     }
-    
-    $('#log-content').html(html || '<div class="text-muted text-center" style="padding: 20px;">No matching log lines found.</div>');
+
+    $('#log-content').html(html || '<div class="text-muted text-center" style="padding: 20px;">Empty file.</div>');
+  }
+
+  // Jump to a specific match (by index into the current .highlight-match set),
+  // marking it as the "current" match and scrolling it into view.
+  function goToMatch(index) {
+    var matches = $('#log-content .highlight-match');
+    var total = matches.length;
+
+    if (total === 0) {
+      currentMatchIndex = -1;
+      $('#search-match-count').text('No matches');
+      return;
+    }
+
+    // Wrap around in both directions.
+    currentMatchIndex = ((index % total) + total) % total;
+
+    matches.removeClass('highlight-match-current');
+    var target = matches.eq(currentMatchIndex).addClass('highlight-match-current');
+
+    var container = $('#log-content');
+    var containerTop = container.scrollTop();
+    var containerHeight = container.height();
+    var targetTop = target.position().top + containerTop;
+
+    container.scrollTop(targetTop - (containerHeight / 2));
+
+    $('#search-match-count').text((currentMatchIndex + 1) + ' of ' + total);
+  }
+
+  // Re-render highlights for the current search term and jump to the first match.
+  function runSearch(filterText) {
+    renderLogLines(filterText);
+
+    if (filterText === '') {
+      currentMatchIndex = -1;
+      $('#search-match-count').text('');
+      return;
+    }
+
+    goToMatch(0);
   }
 
   // Live search input handler
   $('#log-search').on('keyup input', function() {
-    var searchVal = $(this).val();
-    var onlyMatches = $('#btn-toggle-filter-view').attr('data-filtered') === 'true';
-    renderLogLines(searchVal, onlyMatches);
+    runSearch($(this).val());
   });
 
   // Clear search
   $('#btn-clear-search').on('click', function() {
     $('#log-search').val('');
-    var onlyMatches = $('#btn-toggle-filter-view').attr('data-filtered') === 'true';
-    renderLogLines('', onlyMatches);
+    runSearch('');
   });
 
-  // Toggle filter view (only display matches)
-  $('#btn-toggle-filter-view').on('click', function() {
-    var isFiltered = $(this).attr('data-filtered') === 'true';
-    var searchVal = $('#log-search').val();
-    
-    if (isFiltered) {
-      $(this).attr('data-filtered', 'false').removeClass('btn-warning').addClass('btn-info').text('Filter View');
-      renderLogLines(searchVal, false);
+  // Navigate to the next / previous match
+  $('#btn-search-next').on('click', function() {
+    if ($('#log-search').val() === '') return;
+    goToMatch(currentMatchIndex + 1);
+  });
+
+  $('#btn-search-prev').on('click', function() {
+    if ($('#log-search').val() === '') return;
+    goToMatch(currentMatchIndex - 1);
+  });
+
+  // Enter / Shift+Enter in the search box also step through matches, like
+  // browser find bars.
+  $('#log-search').on('keydown', function(e) {
+    if (e.which !== 13) return;
+    e.preventDefault();
+    if ($(this).val() === '') return;
+    if (e.shiftKey) {
+      goToMatch(currentMatchIndex - 1);
     } else {
-      $(this).attr('data-filtered', 'true').removeClass('btn-info').addClass('btn-warning').text('Showing Matches Only');
-      renderLogLines(searchVal, true);
+      goToMatch(currentMatchIndex + 1);
     }
   });
 
