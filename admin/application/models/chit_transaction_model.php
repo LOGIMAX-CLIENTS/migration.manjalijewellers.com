@@ -1433,17 +1433,16 @@ class Chit_transaction_model extends CI_Model
 				
 			}
 
-			// Log response
-			if (!is_dir($this->log_dir.'/directAPI')) {
-				mkdir($this->log_dir.'/directAPI', 0777, true);
-			}
-
-			$log_path = $this->log_dir.'/directAPI/response'.date("Y-m-d").'.txt';
-			$ldata = "\n".date('d-m-Y H:i:s')
-				." \n Acc Postdata : ".json_encode($account,true)
-				." \n Acc Response :".json_encode($response,true);
-
-			file_put_contents($log_path, $ldata, FILE_APPEND | LOCK_EX);
+			// Log response. applog resolves an absolute channel directory, so directAPI
+			// entries from the admin app and the customer app share one folder
+			// (<webroot>/admin/log/<date>/directAPI) instead of splitting across trees.
+			applog_write('directAPI', 'Scheme joining insertion', array(
+				'postdata' => $account,
+				'response' => $response,
+			), array(
+				'file' => 'response'.date("Y-m-d").'.txt',
+				'ref'  => array('id_scheme_account' => (isset($id_scheme_account) ? $id_scheme_account : '-')),
+			));
 		}
 
 		$isTranExists = $this->$model->checkTransExists($ref_no);
@@ -1537,13 +1536,16 @@ class Chit_transaction_model extends CI_Model
 					
 				}
 
-				if (!is_dir($this->log_dir.'/directAPI')) 
-				{
-					mkdir($this->log_dir.'/directAPI', 0777, true);
-				}
-				$log_path = $this->log_dir.'/directAPI/response'.date("Y-m-d").'.txt';
-				$ldata = "\n".date('d-m-Y H:i:s')." \n Postdata : ".json_encode($payment,true)." \n Response :".json_encode($response,true);
-				file_put_contents($log_path,$ldata,FILE_APPEND | LOCK_EX);
+				applog_write('directAPI', 'Scheme payment entry insertion', array(
+					'postdata' => $payment,
+					'response' => $response,
+				), array(
+					'file' => 'response'.date("Y-m-d").'.txt',
+					'ref'  => array(
+						'id_payment' => (isset($id_payment) ? $id_payment : '-'),
+						'ref_no'     => (isset($pay_data[0]['ref_no']) ? $pay_data[0]['ref_no'] : '-'),
+					),
+				));
 		}
 		
 		//echo $this->db->last_query();exit;

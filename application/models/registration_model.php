@@ -793,7 +793,13 @@ function upload_img__($field,$img_path,$filename)
 			    $curr_data['sync_scheme_code'] = $row->sync_scheme_code;
 			    $curr_data['client_id'] = $row->clientid;
 			    $curr_data['firstname']  =$row->firstname;
-			    
+			    // Resolve the scheme against the branch of THIS customer_reg row.
+			    // The caller's branch may be empty (app login without customer.id_branch)
+			    // or may not match the row, and the same sync_scheme_code exists in
+			    // several branches - picking by the caller's branch mapped the account
+			    // to another branch's scheme.
+			    $curr_data['id_branch'] = ($row->id_branch > 0 ? $row->id_branch : (isset($data['id_branch']) ? $data['id_branch'] : NULL));
+
 			    $id_scheme = $this->getschId($curr_data);
 			    $sql =$this->db->query("SELECT id_scheme_account FROM scheme_account WHERE ref_no='".$row->clientid."'");
 			    $existing_sch = $sql->row_array();
@@ -886,28 +892,51 @@ function upload_img__($field,$img_path,$filename)
 		return $result; 
 	} 
 	
-	function getschId($data) 
+	function getschId($data)
 	{
 		$branchwise_scheme = 0;
-    	$settings = $this->db->query("select branchwise_scheme from chit_settings"); 
+    	$settings = $this->db->query("select branchwise_scheme from chit_settings limit 1");
     	if($settings->num_rows() > 0 ){
     		$branchwise_scheme =  $settings->row()->branchwise_scheme;
-    	}  
-    	if($branchwise_scheme == 1 && ($data['id_branch'] != '' || $data['id_branch'] != NULL)){
+    	}
+
+    	$sync_code = isset($data['sync_scheme_code']) ? trim($data['sync_scheme_code']) : '';
+    	if($sync_code === ''){
+    		return null;
+    	}
+    	// NOTE: the old guard was ($id_branch != '' || $id_branch != NULL), which is
+    	// FALSE for both '' and NULL - so an empty branch silently fell through to the
+    	// branch-agnostic lookup below and returned the lowest id_scheme sharing the code.
+    	$id_branch = (isset($data['id_branch']) && is_numeric($data['id_branch'])) ? (int)$data['id_branch'] : 0;
+
+    	if($branchwise_scheme == 1 && $id_branch > 0){
     	   $result = $this->db->query("SELECT s.id_scheme
                                        FROM `scheme` s
-                                        LEFT JOIN scheme_branch sb ON sb.id_scheme = s.id_scheme
-                                       WHERE sync_scheme_code='".$data['sync_scheme_code']."' AND sb.id_branch='".$data['id_branch']."'" 
-                                    );  
-    	}else{
-    		$result = $this->db->query("select id_scheme from scheme where sync_scheme_code='".$data['sync_scheme_code']."'");  
+                                        JOIN scheme_branch sb ON sb.id_scheme = s.id_scheme
+                                       WHERE s.sync_scheme_code='".$this->db->escape_str($sync_code)."' AND sb.id_branch=".$id_branch."
+                                       ORDER BY s.id_scheme ASC LIMIT 1"
+                                    );
+    	   if($result->num_rows() > 0 ){
+    	   	   return $result->row()->id_scheme;
+    	   }
+    	   // No scheme of this code is mapped to the account's branch. Returning another
+    	   // branch's scheme would create the account under a completely different scheme,
+    	   // so leave it unsynced instead.
+    	   return null;
+    	}
+
+    	$result = $this->db->query("select id_scheme from scheme where sync_scheme_code='".$this->db->escape_str($sync_code)."' order by id_scheme asc");
+    	if($result->num_rows() == 1 ){
+    		return $result->row()->id_scheme;
+    	}
+    	if($branchwise_scheme == 1 && $result->num_rows() > 1){
+    		// Branch unknown and the code is ambiguous across branches - do not guess.
+    		return null;
     	}
     	if($result->num_rows() > 0 ){
     		return $result->row()->id_scheme;
     	}
-    	else{
-    		return null;
-    	}
+    	return null;
 	}
 	
 	/*function getschId($data) 
@@ -996,11 +1025,13 @@ function upload_img__($field,$img_path,$filename)
                             $arrayPayMode['id_payment'] = $id_payment;
                             $payModeInsert = $this->payment_modal->insertData($arrayPayMode,'payment_mode_details');
                             
-                            $log_path = 'log/'.date("Y-m-d").'/existing/'.date("Y-m-d").'.txt';
-                            $TESTRes = array("status" => "Payment Mode Detail Log", "e" => $this->db->_error_message() ,"q" => $this->db->last_query(), "res" => $res, "data" => $data);
-                            $logData = "\n".date('d-m-Y H:i:s')."\n API : mobile_api \n Response : ".json_encode($TESTRes,true);
-                            file_put_contents($log_path,$logData,FILE_APPEND | LOCK_EX);
-                               
+                            applog_write('existing', 'Payment mode detail inserted (old_syncPayData)', array(
+                                "e"    => $this->db->_error_message(),
+                                "q"    => $this->db->last_query(),
+                                "res"  => $res,
+                                "data" => $data,
+                            ), array('ref' => array('id_payment' => $id_payment, 'client_id' => $data['client_id'])));
+
                                //update due_date,installment
                                $dt_pay = date('Y-m-d H:i:s',strtotime(str_replace("/","-",$row->payment_date)));
                             $actual_due_type = $this->get_sync_due_type($data['id_sch_ac'], $dt_pay);
@@ -1018,11 +1049,16 @@ function upload_img__($field,$img_path,$filename)
                                                                 
                             } else {
                                 // Log empty get_due_date result for debugging
-                                $due_log_path = 'log/'.date("Y-m-d").'/existing/due_date_fail_'.date("Y-m-d").'.txt';
-                                $due_log_data = "\n".date('d-m-Y H:i:s')." EMPTY get_due_date for id_payment=".$id_payment
-                                    ." id_sch_ac=".$data['id_sch_ac']." due_type=".$actual_due_type
-                                    ." dt_pay=".$dt_pay." client_id=".$data['client_id'];
-                                file_put_contents($due_log_path, $due_log_data, FILE_APPEND | LOCK_EX);
+                                applog_write('existing', 'EMPTY get_due_date result', NULL, array(
+                                    'file' => 'due_date_fail_'.date("Y-m-d").'.txt',
+                                    'ref'  => array(
+                                        'id_payment' => $id_payment,
+                                        'id_sch_ac'  => $data['id_sch_ac'],
+                                        'due_type'   => $actual_due_type,
+                                        'dt_pay'     => $dt_pay,
+                                        'client_id'  => $data['client_id'],
+                                    ),
+                                ));
                             }
 
                             // ── POST-PAYMENT PROCESSING (ported from admin_payment saveall) ──────────
@@ -1220,11 +1256,13 @@ function upload_img__($field,$img_path,$filename)
                             $arrayPayMode['id_payment'] = $id_payment;
                             $payModeInsert = $this->payment_modal->insertData($arrayPayMode,'payment_mode_details');
                             
-                            $log_path = 'log/'.date("Y-m-d").'/existing/'.date("Y-m-d").'.txt';
-                            $TESTRes = array("status" => "Payment Mode Detail Log", "e" => $this->db->_error_message() ,"q" => $this->db->last_query(), "res" => $res, "data" => $data);
-                            $logData = "\n".date('d-m-Y H:i:s')."\n API : mobile_api \n Response : ".json_encode($TESTRes,true);
-                            file_put_contents($log_path,$logData,FILE_APPEND | LOCK_EX);
-                               
+                            applog_write('existing', 'Payment mode detail inserted (syncPayData)', array(
+                                "e"    => $this->db->_error_message(),
+                                "q"    => $this->db->last_query(),
+                                "res"  => $res,
+                                "data" => $data,
+                            ), array('ref' => array('id_payment' => $id_payment, 'client_id' => $data['client_id'])));
+
                                // Calculate Dynamic Due Date and Installment Number based on Scheme Cycle
                                $dt_pay = date('Y-m-d H:i:s',strtotime(str_replace("/","-",$row->payment_date)));
                                $pay_date_only = date('Y-m-d', strtotime($dt_pay));
@@ -1314,11 +1352,16 @@ function upload_img__($field,$img_path,$filename)
                                        $this->payment_modal->updData($cycle_data, 'id_payment', $id_payment, 'payment');
                                    } else {
                                        // Log empty get_due_date result for debugging
-                                       $due_log_path = 'log/' . date("Y-m-d") . '/existing/due_date_fail_' . date("Y-m-d") . '.txt';
-                                       $due_log_data = "\n" . date('d-m-Y H:i:s') . " EMPTY get_due_date for id_payment=" . $id_payment
-                                           . " id_sch_ac=" . $data['id_sch_ac'] . " due_type=" . $actual_due_type
-                                           . " dt_pay=" . $dt_pay . " client_id=" . $data['client_id'];
-                                       file_put_contents($due_log_path, $due_log_data, FILE_APPEND | LOCK_EX);
+                                       applog_write('existing', 'EMPTY get_due_date result', NULL, array(
+                                           'file' => 'due_date_fail_' . date("Y-m-d") . '.txt',
+                                           'ref'  => array(
+                                               'id_payment' => $id_payment,
+                                               'id_sch_ac'  => $data['id_sch_ac'],
+                                               'due_type'   => $actual_due_type,
+                                               'dt_pay'     => $dt_pay,
+                                               'client_id'  => $data['client_id'],
+                                           ),
+                                       ));
                                    }
                                }
 
@@ -1895,11 +1938,10 @@ function upload_img__($field,$img_path,$filename)
 			return array("status" => FALSE, "msg" => "Invalid parameters");
 		}
 		$this->load->model('payment_modal');
-		$log_dir = 'log/' . date("Y-m-d");
-		if (!is_dir($log_dir . '/existing')) {
-			mkdir($log_dir . '/existing', 0777, true);
-		}
-		$log_path = $log_dir . '/existing/' . date("Y-m-d") . '.txt';
+		// applog names the calling app in every entry ('From Mobile App',
+		// 'From Collection App', 'From Service Trigger', ...) — this function is
+		// reached from all of them, and the log used to say only "registration_model".
+		$log_ref = array('mobile' => $mobile, 'id_customer' => $id_customer, 'id_branch' => $id_branch);
 		$allow_sync = false;
 		$last_sync_time = $this->getLastSyncTime($mobile);
 		if (!empty($last_sync_time)) {
@@ -1928,20 +1970,17 @@ function upload_img__($field,$img_path,$filename)
 					if ($status === TRUE && $this->db->trans_status() === TRUE) {
 						$this->db->trans_commit();
 						$TESTRes = array("status" => "On ENTER", "e" => $this->db->_error_message(), "q" => $this->db->last_query(), "res" => $res, "data" => $data);
-						$logData = "\n" . date('d-m-Y H:i:s') . "\n Model : registration_model \n Response : " . json_encode($TESTRes, true);
-						file_put_contents($log_path, $logData, FILE_APPEND | LOCK_EX);
+						applog_write('existing', 'Purchase Plan registered successfully', $TESTRes, array('ref' => $log_ref));
 						return array("status" => TRUE, "msg" => "Purchase Plan registered successfully");
 					} else {
 						$this->db->trans_rollback();
 						$response = array("status" => FALSE, "e" => $this->db->_error_message(), "q" => $this->db->last_query(), "msg" => "Error in updating intermediate tables");
-						$logData = "\n" . date('d-m-Y H:i:s') . "\n Model : registration_model \n Response : " . json_encode($response, true);
-						file_put_contents($log_path, $logData, FILE_APPEND | LOCK_EX);
+						applog_write('existing', 'Error in updating intermediate tables', $response, array('ref' => $log_ref));
 						return $response;
 					}
 				} else {
 					$response = array("status" => FALSE, "e" => $this->db->_error_message(), "q" => $this->db->last_query(), "msg" => "Error in updating payment tables, kindly check payment data.");
-					$logData = "\n" . date('d-m-Y H:i:s') . "\n Model : registration_model \n Response : " . json_encode($response, true);
-					file_put_contents($log_path, $logData, FILE_APPEND | LOCK_EX);
+					applog_write('existing', 'Error in updating payment tables', $response, array('ref' => $log_ref));
 					$this->db->trans_rollback();
 					return $response;
 				}
@@ -1952,13 +1991,11 @@ function upload_img__($field,$img_path,$filename)
 				} else {
 					$this->db->trans_rollback();
 				}
-				$logData = "\n" . date('d-m-Y H:i:s') . "\n Model : registration_model \n Response : " . json_encode($response, true);
-				file_put_contents($log_path, $logData, FILE_APPEND | LOCK_EX);
+				applog_write('existing', 'No records to update in scheme account tables', $response, array('ref' => $log_ref));
 				return $response;
 			}
 		} else {
-			$logData = "\n" . date('d-m-Y H:i:s') . "\n Model : registration_model \n sync called less than 15 min";
-			file_put_contents($log_path, $logData, FILE_APPEND | LOCK_EX);
+			applog_write('existing', 'Skipped : sync called less than 15 min', NULL, array('ref' => $log_ref));
 			return array("status" => FALSE, "msg" => "sync called less than 15 min");
 		}
 	}

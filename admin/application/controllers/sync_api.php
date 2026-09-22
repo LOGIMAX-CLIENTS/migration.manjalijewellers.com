@@ -29,9 +29,111 @@ class sync_api extends REST_Controller
 		}	
 		
 	}
-	
+
+	/* ------------------------------------------------------------------
+	 * Sync logging
+	 *
+	 * Every entry pushed through these endpoints is logged so a missing or
+	 * duplicated record can be traced back to the request that produced it.
+	 * Channels (under <webroot>/admin/log/<date>/):
+	 *   customer_reg_update -> 'Customer_reg update'  (updateCustomers)
+	 *   customer_reg_entry  -> 'Customer_reg entry'   (insertCustomers)
+	 *   transaction_entry   -> 'Transaction entry'    (insertTransactions)
+	 * ------------------------------------------------------------------ */
+
+	/**
+	 * Log the request as it arrives: who called, for which branch, how many rows.
+	 */
+	private function logSyncRequest($channel, $login, $records)
+	{
+		if (!function_exists('applog_write')) {
+			return;
+		}
+		applog_write($channel, 'Request received : ' . (int) $records . ' record(s)', NULL, array(
+			'ref' => array(
+				'username'  => (isset($login->username) ? $login->username : '-'),
+				'id_branch' => (isset($login->id_branch) ? $login->id_branch : '-'),
+				'records'   => (int) $records,
+			),
+		));
+	}
+
+	/**
+	 * Log the outcome of one record. $result is the response row just pushed into
+	 * $r, so the log always says exactly what the caller was told.
+	 */
+	private function logSyncRecord($channel, $result, $data = NULL)
+	{
+		if (!function_exists('applog_write') || !is_array($result)) {
+			return;
+		}
+
+		$succeeded = (!empty($result['isSucceeded']) ? 'SUCCESS' : 'FAILED');
+		$event     = $succeeded . ' : ' . (isset($result['result']) ? $result['result'] : 'Processed');
+
+		$ref = array();
+		foreach (array('clientid', 'client_id', 'ref_no', 'receipt_no', 'payment_date', 'insID', 'InsId') as $key) {
+			if (isset($result[$key]) && $result[$key] !== '') {
+				$ref[$key] = $result[$key];
+			}
+		}
+		if (!empty($result['error'])) {
+			$ref['db_error'] = $result['error'];
+		}
+
+		applog_write($channel, $event, $data, array('ref' => $ref));
+	}
+
+	/**
+	 * Log the outcome of the record just processed inside a batch loop.
+	 *
+	 * $count_before is count($r) as it was before the record was handled, so a record
+	 * that fell through every branch without producing a response row is logged as
+	 * such instead of silently re-logging the previous record.
+	 */
+	private function logSyncOutcome($channel, $results, $count_before, $data = NULL)
+	{
+		if (is_array($results) && count($results) > $count_before) {
+			$this->logSyncRecord($channel, $results[count($results) - 1], $data);
+			return;
+		}
+
+		$this->logSyncRecord($channel, array(
+			'isSucceeded' => FALSE,
+			'result'      => 'No response row produced for this record',
+		), $data);
+	}
+
+	/**
+	 * Log the request-level summary (how many of the batch succeeded).
+	 */
+	private function logSyncSummary($channel, $results)
+	{
+		if (!function_exists('applog_write')) {
+			return;
+		}
+
+		$total   = (is_array($results) ? count($results) : 0);
+		$success = 0;
+		if (is_array($results)) {
+			foreach ($results as $row) {
+				if (is_array($row) && !empty($row['isSucceeded'])) {
+					$success++;
+				}
+			}
+		}
+
+		applog_write($channel, 'Request completed', NULL, array(
+			'ref' => array(
+				'total'  => $total,
+				'passed' => $success,
+				'failed' => $total - $success,
+			),
+		));
+	}
+
 	//validation functions
-	
+
 	//to validate empty value
 	function isNullValue($data){
     return (!isset($data) || trim($data)==='');
@@ -375,13 +477,15 @@ class sync_api extends REST_Controller
 			$payments = $transactions->data;
 			$records = 0;
 			$invalid = 0;
+			$this->logSyncRequest('transaction_entry', $login, ($payments ? count((array) $payments) : 0));
 			if($payments)
 			{
 				$total_records = count($payments);
 				
 				foreach($payments as $transaction)
 				{
-					$data = array(	
+					$rows_before = (isset($r) ? count($r) : 0);
+					$data = array(
                     				"record_to" 	 =>  2, //1 - offline , 2 - online
                     				'transfer_date'	 => date('Y-m-d'),
                     				"payment_date" 	 =>  $transaction->payment_date,
@@ -557,23 +661,29 @@ class sync_api extends REST_Controller
 									 "responseData" => 1,  // for sync reference
 									 "result" 			=> $valid['error']);
 					}
-					
+
+					// Log this record's outcome: exactly what the caller was told, with
+					// the row that produced it, so the entry can be traced later.
+					$this->logSyncOutcome('transaction_entry', (isset($r) ? $r : array()), $rows_before, $data);
                 }
+				  $this->logSyncSummary('transaction_entry', $r);
 				  $this->response($r,200);
-			}	
-						
+			}
+
 			else
 			{
 			    $msg[] = array('message' => 'No records to proceed the requested operation!',"responseData" => 0);
-				$this->response($msg, 200); 
+				$this->logSyncRecord('transaction_entry', array('isSucceeded' => FALSE, 'result' => 'No records to proceed the requested operation!'));
+				$this->response($msg, 200);
 			}
 		}
    		else
 		{
+			$this->logSyncRecord('transaction_entry', array('isSucceeded' => FALSE, 'result' => 'Invalid credentials'), array('username' => (isset($login->username) ? $login->username : '-')));
 			$this->response('Invalid credentials!', 401);
-		}		
+		}
 	}
-	
+
 	//To get customers by status
 	public function customersByStatus_post()
 	{
@@ -670,12 +780,13 @@ class sync_api extends REST_Controller
 			$model = self::MOD_API;
 			$records = 0;
 			
+			$this->logSyncRequest('customer_reg_update', $login, ($transactions ? count((array) $transactions) : 0));
 			if($transactions)
 			{
 				$records = count($transactions);
 				foreach($transactions as $tran)
 				{//$this->response($tran,200);
-				  
+				  $rows_before = (isset($r) ? count($r) : 0);
 				  $updType = $tran->type;
 				  $valid = array();
 			      if($updType == 'R'){
@@ -752,21 +863,28 @@ class sync_api extends REST_Controller
 											"responseData" => 1,  // for sync reference
 											"result" 		 =>$valid['error']);
 							//$this->response($r,401);
-						} 
+						}
+
+					// Log this record's outcome together with the update payload, so an
+					// unexpected close/modify can be traced back to its request.
+					$this->logSyncOutcome('customer_reg_update', (isset($r) ? $r : array()), $rows_before, array('type' => $updType, 'request' => $tran));
 				}
+				$this->logSyncSummary('customer_reg_update', $r);
 				$this->response($r,200);
-			}	
+			}
 			else
 			{
 			    $msg[] = array('message' => 'No records to proceed the requested operation!',"responseData" => 0);
-				$this->response($msg, 200); 
+				$this->logSyncRecord('customer_reg_update', array('isSucceeded' => FALSE, 'result' => 'No records to proceed the requested operation!'));
+				$this->response($msg, 200);
 			}
-		
+
 		}
    		else
 		{
+			$this->logSyncRecord('customer_reg_update', array('isSucceeded' => FALSE, 'result' => 'Invalid credentials'), array('username' => (isset($login->username) ? $login->username : '-')));
 			$this->response('Invalid credentials!', 401);
-		}			
+		}
 	}
 	
 	
@@ -787,13 +905,15 @@ class sync_api extends REST_Controller
 			$customers = $registrations->data;
 			$records = 0;
 			$invalid = 0;
+			$this->logSyncRequest('customer_reg_entry', $login, ($customers ? count((array) $customers) : 0));
 			if($customers)
 			{
 				$total_records = count($customers);
-				
+
 				foreach($customers as $cus)
 				{
-				    $data = array(	
+				    $rows_before = (isset($r) ? count($r) : 0);
+				    $data = array(
                     				"record_to" 	 =>  2, //1 - offline , 2 - online
                     				"custom_entry_date"=>  (isset($cus->custom_entry_date) ? $cus->custom_entry_date : NULL), 
                     				'transfer_date'	 => date('Y-m-d'),
@@ -982,22 +1102,26 @@ class sync_api extends REST_Controller
 									 "responseData" => 1,  // for sync reference
 									 "result" 			=> $valid['error']);
 					}
-					
-					
+
+					// Log this account-joining record with the payload that produced it.
+					$this->logSyncOutcome('customer_reg_entry', (isset($r) ? $r : array()), $rows_before, $data);
                 }
+				  $this->logSyncSummary('customer_reg_entry', $r);
 				  $this->response($r,200);
-			}	
-						
+			}
+
 			else
 			{
     			$msg[] = array('message' => 'No records to proceed the requested operation!',"responseData" => 0);
-				$this->response($msg, 200); 
+				$this->logSyncRecord('customer_reg_entry', array('isSucceeded' => FALSE, 'result' => 'No records to proceed the requested operation!'));
+				$this->response($msg, 200);
 			}
 		}
    		else
 		{
+			$this->logSyncRecord('customer_reg_entry', array('isSucceeded' => FALSE, 'result' => 'Invalid credentials'), array('username' => (isset($login->username) ? $login->username : '-')));
 			$this->response('Invalid credentials!', 401);
-		}	
+		}
 	}
 	
 	//To get transactions by status

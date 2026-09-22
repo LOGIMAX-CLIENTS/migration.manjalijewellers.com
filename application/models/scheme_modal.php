@@ -1126,16 +1126,21 @@ ifnull(p.add_charges,0.00) as add_charges,
 	}
 	function insertExisAccData($data)
 	{
-		if ($data['id_branch'] != '' || $data['id_branch'] != NULL) {
-			$resultset = $this->db->query("select * from customer_reg where record_to=2 and is_registered_online=0 and is_closed=0 and id_branch='" . $data['id_branch'] . "' and group_code='" . $data['group_code'] . "' and scheme_ac_no='" . $data['scheme_acc_number'] . "'");
+		// Old guard ($id_branch != '' || $id_branch != NULL) is true for every value,
+		// including '' and NULL, since at least one side always holds - it never fell
+		// through to the "id_branch is null" branch as intended.
+		if (isset($data['id_branch']) && $data['id_branch'] !== '' && $data['id_branch'] !== NULL) {
+			$resultset = $this->db->query("select * from customer_reg where record_to=2 and is_registered_online=0 and is_closed=0 and id_branch='" . $this->db->escape_str($data['id_branch']) . "' and group_code='" . $this->db->escape_str($data['group_code']) . "' and scheme_ac_no='" . $this->db->escape_str($data['scheme_acc_number']) . "'");
 		} else {
-			$resultset = $this->db->query("select * from customer_reg where record_to=2 and is_registered_online=0 and is_closed=0 and id_branch is null and group_code='" . $data['group_code'] . "' and scheme_ac_no='" . $data['scheme_acc_number'] . "'");
+			$resultset = $this->db->query("select * from customer_reg where record_to=2 and is_registered_online=0 and is_closed=0 and id_branch is null and group_code='" . $this->db->escape_str($data['group_code']) . "' and scheme_ac_no='" . $this->db->escape_str($data['scheme_acc_number']) . "'");
 		}
 		if ($resultset->num_rows() == 1) {
 			$records = array();
 			foreach ($resultset->result() as $row) {
 				$data['sync_scheme_code'] = $row->sync_scheme_code;
 				$data['client_id'] = $row->clientid;
+				// Resolve the scheme against this customer_reg row's own branch.
+				$data['id_branch'] = ($row->id_branch > 0 ? $row->id_branch : (isset($data['id_branch']) ? $data['id_branch'] : NULL));
 				$records = array(
 					'id_customer' 		=> $data['id_customer'],
 					'id_scheme'			=> $this->getschId($data),
@@ -1155,7 +1160,7 @@ ifnull(p.add_charges,0.00) as add_charges,
 					//	'last_paid_chances'	=> $row->last_paid_chances,
 					//	'last_paid_date' 	=> $row->last_paid_date,
 					//	'paid_installments' => $row->paid_installments,
-					'id_branch '        => $data['id_branch'],
+					'id_branch'         => $data['id_branch'],
 					'added_by' 			=> 1
 				);
 				$addData = $this->get_cityData($row->city);
@@ -1216,25 +1221,45 @@ ifnull(p.add_charges,0.00) as add_charges,
 	function getschId($data)
 	{
 		$branchwise_scheme = 0;
-		$settings = $this->db->query("select branchwise_scheme from chit_settings");
+		$settings = $this->db->query("select branchwise_scheme from chit_settings limit 1");
 		if ($settings->num_rows() > 0) {
 			$branchwise_scheme =  $settings->row()->branchwise_scheme;
 		}
-		if ($branchwise_scheme == 1 && ($data['id_branch'] != '' || $data['id_branch'] != NULL)) {
+
+		$sync_code = isset($data['sync_scheme_code']) ? trim($data['sync_scheme_code']) : '';
+		if ($sync_code === '') {
+			return null;
+		}
+		// The old guard ($id_branch != '' || $id_branch != NULL) is FALSE for both ''
+		// and NULL, so an empty branch fell through to the branch-agnostic lookup and
+		// returned the lowest id_scheme sharing the code - another branch's scheme.
+		$id_branch = (isset($data['id_branch']) && is_numeric($data['id_branch'])) ? (int)$data['id_branch'] : 0;
+
+		if ($branchwise_scheme == 1 && $id_branch > 0) {
 			$result = $this->db->query(
 				"SELECT s.id_scheme
                                            FROM `scheme` s
-                                            LEFT JOIN scheme_branch sb ON sb.id_scheme = s.id_scheme
-                                           WHERE sync_scheme_code='" . $data['sync_scheme_code'] . "' AND sb.id_branch='" . $data['id_branch'] . "'"
+                                            JOIN scheme_branch sb ON sb.id_scheme = s.id_scheme
+                                           WHERE s.sync_scheme_code='" . $this->db->escape_str($sync_code) . "' AND sb.id_branch=" . $id_branch . "
+                                           ORDER BY s.id_scheme ASC LIMIT 1"
 			);
-		} else {
-			$result = $this->db->query("select id_scheme from scheme where sync_scheme_code='" . $data['sync_scheme_code'] . "'");
+			if ($result->num_rows() > 0) {
+				return $result->row()->id_scheme;
+			}
+			return null;
+		}
+
+		$result = $this->db->query("select id_scheme from scheme where sync_scheme_code='" . $this->db->escape_str($sync_code) . "' order by id_scheme asc");
+		if ($result->num_rows() == 1) {
+			return $result->row()->id_scheme;
+		}
+		if ($branchwise_scheme == 1 && $result->num_rows() > 1) {
+			return null;
 		}
 		if ($result->num_rows() > 0) {
 			return $result->row()->id_scheme;
-		} else {
-			return null;
 		}
+		return null;
 	}
 	function get_cityData($city)
 	{
