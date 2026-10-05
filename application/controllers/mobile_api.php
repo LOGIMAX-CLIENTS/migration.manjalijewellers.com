@@ -4667,7 +4667,7 @@ class Mobile_api extends REST_Controller
                         $data = array('amount' => $pay->amount, 'metal_rate' => $pay->udf3);
                         $metal_wgt = formatMetalWeight($this->amount_to_weight($data));
                         if ($chit['interest'] == 1) {
-                            $digi_account = $this->digigold_modal->digiGold_account($cusData['id_customer'], $chit['id_scheme']);
+                            $digi_account = $this->digigold_modal->digiGold_account($cusData['id_customer'], $chit['id_scheme'], $pay->udf1);
                             $digi_benefitData = $this->digigold_modal->get_digi_benefit($digi_account);
                             // echo("<pre>");
                             // print_r($digi_benefitData);
@@ -5565,7 +5565,7 @@ class Mobile_api extends REST_Controller
                     if ($chit['is_digi'] == 1) {
                         $metal_wgt = formatMetalWeight(($pay->amount / $pay->udf3));
                         if ($chit['interest'] == 1) {
-                            $digi_account = $this->digigold_modal->digiGold_account($cusData['id_customer']);
+                            $digi_account = $this->digigold_modal->digiGold_account($cusData['id_customer'], '', $pay->udf1);
                             $digi_benefit = $this->digigold_modal->get_digi_benefit($digi_account);
                             if (sizeof($digi_benefit) > 0) {
                                 if ($digi_benefit['interest_type'] == 0) {

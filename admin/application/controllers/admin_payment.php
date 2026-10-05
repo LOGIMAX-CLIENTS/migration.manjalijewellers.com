@@ -1570,7 +1570,7 @@ class Admin_payment extends CI_Controller
                             if ($sch_data['is_digi'] == 1) {
                                 $metal_wgt = formatMetalWeight($payment_amount / $generic['metal_rate']);
                                 if ($sch_data['interest'] == 1) {
-                                    $digi_account = $this->digigold_modal->digiGold_account($cusData['id_customer']);
+                                    $digi_account = $this->digigold_modal->digiGold_account($cusData['id_customer'], $generic['id_scheme_account']);
                                     $digi_benefitData = $this->digigold_modal->get_digi_benefit($digi_account);
                                     if (sizeof($digi_benefitData) > 0) {
                                         $is_other_benefit = 0;
