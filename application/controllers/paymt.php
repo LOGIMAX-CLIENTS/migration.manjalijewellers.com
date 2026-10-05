@@ -2295,7 +2295,7 @@ class Paymt extends CI_Controller {
 						$metal_wgt = formatMetalWeight($this->amount_to_weight($data));
 
 						if ($chit['interest'] == 1) {
-							$digi_account = $this->digigold_modal->digiGold_account($cusData['id_customer'], $chit['id_scheme']);
+							$digi_account = $this->digigold_modal->digiGold_account($cusData['id_customer'], $chit['id_scheme'], $pay->udf1);
 							$digi_benefitData = $this->digigold_modal->get_digi_benefit($digi_account);
 
 							if (sizeof($digi_benefitData) > 0) {

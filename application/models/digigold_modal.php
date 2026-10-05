@@ -70,10 +70,17 @@ class Digigold_modal extends CI_Model
 		}
 		return $data;
 	}
-	function digiGold_account($id_customer, $id_scheme = '')
+	function digiGold_account($id_customer, $id_scheme = '', $id_scheme_account = '')
 	{
+		// When the scheme_account is already known (e.g. the account the current
+		// payment belongs to), filter on it directly instead of re-deriving the
+		// account via id_customer + id_scheme — a customer can be resolved to the
+		// wrong/empty row (stale phone lookup, etc.) and silently return no benefit.
+		$accountFilter = !empty($id_scheme_account)
+			? "sa.id_scheme_account = " . $id_scheme_account
+			: "sa.id_customer =" . $id_customer;
 		$sql = $this->db->query("SELECT s.is_digi,s.min_chance,s.max_chance,sa.id_scheme_account,sa.id_scheme,date_format(sa.start_date, '%d-%b-%Y') as start_date,sa.id_branch,
-	                            IF(CURDATE() = date(sa.start_date), 1, DATEDIFF(CURDATE(),date(sa.start_date))) as date_difference,CURDATE() as cur_date, 
+	                            IF(CURDATE() = date(sa.start_date), 1, DATEDIFF(CURDATE(),date(sa.start_date))) as date_difference,CURDATE() as cur_date,
 		                        DATE_ADD(date(sa.start_date), INTERVAL s.total_days_to_pay DAY) as allow_pay_till,IFNULL(sa.account_name,c.firstname) as account_name,
 								IFNULL((SELECT count(p.id_payment) FROM payment p WHERE p.id_scheme_account = sa.id_scheme_account AND p.payment_status = 1 AND date(p.date_payment) = curdate()),0) as curday_total_paid_count,
 		                        CONCAT(sa.start_year,'-',s.code,'-',IFNULL(sa.scheme_acc_number,'Not Allocated')) as scheme_acc_number,
@@ -82,7 +89,7 @@ class Digigold_modal extends CI_Model
  		                        IFNULL(SUM(p.payment_amount),'') as total_paid_amount,
 		                        IFNULL(SUM(p.metal_weight),0) as total_paid_weight,
 		                        IFNULL(SUM(p.saved_benefits),0) as total_saved_benefits,
-		                        IFNULL((SUM(p.metal_weight) + SUM(p.saved_benefits)),'') as total_saved, 
+		                        IFNULL((SUM(p.metal_weight) + SUM(p.saved_benefits)),'') as total_saved,
 		                        if(sa.dg_target_value_wgt > 0,sa.dg_target_value_wgt,'Target not set') entered_target,sa.dg_target_value_wgt,sa.total_paid_ins,
 								IFNULL(SUM(p.dg_other_benefit_wgt), '') AS other_benefit_wgt,
 								IFNULL(SUM(p.dg_other_benefit_amt), '') AS other_benefit_amt
@@ -90,7 +97,7 @@ class Digigold_modal extends CI_Model
                                 LEFT JOIN customer c ON (c.id_customer = sa.id_customer)
                                 LEFT JOIN scheme s ON (s.id_scheme = sa.id_scheme)
                                 LEFT JOIN payment p ON (p.id_scheme_account = sa.id_scheme_account and p.payment_status = 1)
-                               WHERE sa.id_customer =" . $id_customer . "  AND s.is_digi = 1 AND sa.is_closed = 0 AND sa.active = 1 and (s.visible =1 or s.visible = 0) 
+                               WHERE " . $accountFilter . " AND s.is_digi = 1 AND sa.is_closed = 0 AND sa.active = 1 and (s.visible =1 or s.visible = 0)
 							   " . (empty($id_scheme) ? '' : "and sa.id_scheme = " . $id_scheme) . "
                                 GROUP BY p.id_scheme_account
 	                            ");
