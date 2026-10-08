@@ -683,7 +683,7 @@ class Syncapi_model extends CI_Model
 
 	function getCustomerDet($id_scheme_account)
 	{
-		$sql = "SELECT c.id_customer, IFNULL(c.nominee_mobile,'-')AS nomineeMobile, IFNULL(cy.name,'-') AS city, IFNULL(ad.pincode,'-') AS pincode, IFNULL(st.name,'-') AS state, IFNULL(cn.name,'-') AS country, s.total_installments,s.max_weight,s.maturity_installment,s.maturity_days,s.closing_maturity_days,s.maturity_type,IFNULL(v.village_name,'-') AS area, sa.id_scheme FROM customer c 
+		$sql = "SELECT c.id_customer, IFNULL(c.nominee_mobile,'-')AS nomineeMobile, IFNULL(cy.name,'-') AS city, IFNULL(ad.pincode,'-') AS pincode,IFNULL(ad.address1,'-') as address1, IFNULL(ad.address2,'-') as address2, IFNULL(ad.address3,'-') as address3, IFNULL(st.name,'-') AS state, IFNULL(cn.name,'-') AS country, s.total_installments,s.max_weight,s.maturity_installment,s.maturity_days,s.closing_maturity_days,s.maturity_type,IFNULL(v.village_name,'-') AS area, sa.id_scheme FROM customer c 
 		LEFT JOIN scheme_account sa ON c.id_customer = sa.id_customer 
 		LEFT JOIN scheme s ON s.id_scheme = sa.id_scheme 
 		LEFT JOIN address ad ON ad.id_customer = c.id_customer 
