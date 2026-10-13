@@ -67,12 +67,15 @@ class Mobile_api extends REST_Controller
         if (!is_dir($this->log_dir)) {
             mkdir($this->log_dir, 0777, TRUE);
         }
+        // Must match cf_autodebit.php auth_status (webhook) and the customer app status codes
         $this->auth_status = array(
             'INITIALIZED'           => 1,
             'BANK_APPROVAL_PENDING' => 2,
             'ACTIVE'                => 3,
-            'CANCELLED'             => 4,
-            'PENDING'               => 5
+            'ON_HOLD'               => 4,
+            'CANCELLED'             => 5,
+            'CUSTOMER_CANCELLED'    => 5,
+            'COMPLETED'             => 6
         );
     }
     public function payment_gateway($id_branch, $id_pg)
@@ -7923,9 +7926,13 @@ class Mobile_api extends REST_Controller
 					return;
 				}
 
-				// Determine plan type: PERIODIC or ON_DEMAND
-				// auto_debit_plan_type: 0=Periodic, 1=On Demand
-				$plan_type = ($planDetail['auto_debit_plan_type'] == 1) ? 'ON_DEMAND' : 'PERIODIC';
+				// auto_debit_plan_type: 0=Not Applicable, 1=Periodic (On Demand option is disabled in scheme master)
+				// $plan_type = ($planDetail['auto_debit_plan_type'] == 1) ? 'ON_DEMAND' : 'PERIODIC';
+				if ($planDetail['auto_debit_plan_type'] != 1) {
+					echo json_encode(array('status' => false, 'msg' => 'Auto debit is not applicable for this plan'));
+					return;
+				}
+				$plan_type = 'PERIODIC';
 
 				// Generate unique subscription_id
 				$subscription_id = 'SUB_' . $id_sch_ac . '_' . time();
@@ -7947,10 +7954,10 @@ class Mobile_api extends REST_Controller
 						'customer_phone' => $planDetail['mobile']
 					),
 					'plan_details' => array(
-						'plan_name'             => $planDetail['scheme_name'] . ' - ' . $planDetail['code'],
+						'plan_name'             => substr($planDetail['scheme_name'] . ' - ' . $planDetail['code'], 0, 40), // Cashfree max 40 chars
 						'plan_type'             => $plan_type,
 						'plan_currency'         => 'INR',
-						'plan_recurring_amount' => $plan_amount,
+						'plan_amount'           => $plan_amount, // per-cycle amount (plan_recurring_amount is a response-only field)
 						'plan_max_amount'       => $plan_amount,
 						'plan_max_cycles'       => intval($planDetail['total_installments'])
 					),
@@ -7964,9 +7971,9 @@ class Mobile_api extends REST_Controller
 
 				// Add periodic-specific fields
 				if ($plan_type == 'PERIODIC') {
-					$cf_payload['plan_details']['plan_recurring_interval'] = 1;
-					$cf_payload['plan_details']['plan_recurring_interval_type'] = 1; // 1 = Month
-					$cf_payload['subscription_meta']['first_charge_date'] = $first_charge_date;
+					$cf_payload['plan_details']['plan_intervals'] = 1;
+					$cf_payload['plan_details']['plan_interval_type'] = 'MONTH';
+					$cf_payload['subscription_first_charge_time'] = $first_charge_date . 'T10:00:00+05:30';
 				}
 
 				// Insert local subscription record
@@ -8157,10 +8164,79 @@ class Mobile_api extends REST_Controller
 				));
 				break;
 
+			case '4': // ─── Retry failed charge (subscription ON_HOLD) ──
+				$planDetail = $this->scheme_modal->get_subsDetail('sa.id_scheme_account', intval($id_sch_ac));
+				if (empty($planDetail) || empty($planDetail['sub_reference_id'])) {
+					echo json_encode(array('status' => false, 'msg' => 'Subscription not found'));
+					return;
+				}
+
+				$parsed_url  = parse_url($planDetail['api_url']);
+				$base_domain = $parsed_url['scheme'] . '://' . $parsed_url['host'];
+				$sub_id      = $planDetail['sub_reference_id'];
+
+				// 1. Find the latest failed CHARGE payment of this subscription
+				$payments = $this->_cf_api_call($base_domain . '/pg/subscriptions/' . rawurlencode($sub_id) . '/payments', array(), $planDetail['param_3'], $planDetail['param_1'], 'GET');
+				$failed = null;
+				if (is_array($payments)) {
+					foreach ($payments as $pay) {
+						if (!is_array($pay) || !isset($pay['payment_type'], $pay['payment_status'])) {
+							continue;
+						}
+						if ($pay['payment_type'] == 'CHARGE' && $pay['payment_status'] == 'FAILED') {
+							if ($failed == null || strtotime($pay['payment_initiated_date']) > strtotime($failed['payment_initiated_date'])) {
+								$failed = $pay;
+							}
+						}
+					}
+				}
+
+				if ($failed == null) {
+					$this->_cf_logToFile('cf_subscription', array('action' => 'retry', 'id_sch_ac' => $id_sch_ac, 'payments' => $payments));
+					echo json_encode(array('status' => false, 'msg' => 'No failed payment found to retry for this plan.'));
+					return;
+				}
+
+				// 2. Schedule the retry — Cashfree considers only the date, next day allows the pre-debit notification
+				$retry_date = date('Y-m-d', strtotime('+1 day'));
+				$retry_payload = array(
+					'subscription_id' => $sub_id,
+					'payment_id'      => $failed['payment_id'],
+					'action'          => 'RETRY',
+					'action_details'  => array(
+						'next_scheduled_time' => $retry_date . 'T10:00:00+05:30'
+					)
+				);
+				$api_url = $base_domain . '/pg/subscriptions/' . rawurlencode($sub_id) . '/payments/' . rawurlencode($failed['payment_id']) . '/manage';
+				$res = $this->_cf_api_call($api_url, $retry_payload, $planDetail['param_3'], $planDetail['param_1']);
+
+				$this->_cf_logToFile('cf_subscription', array(
+					'action'    => 'retry',
+					'id_sch_ac' => $id_sch_ac,
+					'api_url'   => $api_url,
+					'request'   => $retry_payload,
+					'response'  => $res
+				));
+
+				if (isset($res['payment_id'])) {
+					// Subscription stays ON_HOLD until the charge succeeds — webhook updates the status
+					echo json_encode(array(
+						'status'            => true,
+						'msg'               => 'Payment retry scheduled on ' . date('d-m-Y', strtotime($retry_date)) . '.',
+						'auto_debit_status' => intval($planDetail['auth_status'])
+					));
+				} else {
+					echo json_encode(array(
+						'status' => false,
+						'msg'    => isset($res['message']) ? $res['message'] : 'Unable to retry payment, try again later...'
+					));
+				}
+				break;
+
 			default:
 				echo json_encode(array(
 					'status' => false,
-					'msg'    => 'Invalid type. Use 1 for subscribe, 2 for unsubscribe.'
+					'msg'    => 'Invalid type. Use 1 for subscribe, 2 for unsubscribe, 3 for session, 4 for retry.'
 				));
 				break;
 		}
@@ -8246,7 +8322,7 @@ class Mobile_api extends REST_Controller
 		}
 
 		// 1. Fetch subscription and gateway details
-		$planDetail = $this->scheme_modal->get_subsDetail('sub_reference_id', "'".$order_id."'");
+		$planDetail = $this->scheme_modal->get_subsDetail('sub_reference_id', $this->db->escape($order_id));
 		
 		if (empty($planDetail)) {
 			echo json_encode(array('status' => false, 'msg' => 'Subscription not found'));
@@ -8269,6 +8345,10 @@ class Mobile_api extends REST_Controller
 				'message'     => $res['subscription_status'],
 				'last_update' => date('Y-m-d H:i:s')
 			);
+			// Cancelled / Completed subscriptions are closed so the customer can subscribe again
+			if ($status_code == 5 || $status_code == 6) {
+				$updSubscription['status'] = 0;
+			}
 			$this->scheme_modal->updateData($updSubscription, 'sub_reference_id', $order_id, 'auto_debit_subscription');
 
 			$updSchAc = array(
