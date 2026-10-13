@@ -8070,6 +8070,13 @@ class Mobile_api extends REST_Controller
 				} else {
 					// API error
 					$error_msg = isset($res['message']) ? $res['message'] : 'Failed to create subscription';
+					// Keep the reason on the (status 0) record so failed attempts can be identified
+					$this->scheme_modal->updateData(
+						array('message' => 'FAILED: ' . substr($error_msg, 0, 200), 'last_update' => date('Y-m-d H:i:s')),
+						'id_auto_debit_subscription',
+						$ins['insertID'],
+						'auto_debit_subscription'
+					);
 					echo json_encode(array(
 						'status' => false,
 						'msg'    => $error_msg,
@@ -8172,6 +8179,27 @@ class Mobile_api extends REST_Controller
 				}
 
 				$cf_env = (strpos($planDetail['api_url'], 'sandbox') !== false || strpos($planDetail['api_url'], 'test') !== false) ? 'SANDBOX' : 'PRODUCTION';
+
+				// A used session shows Cashfree's "Something went wrong" page, so check the live status first.
+				// Once the mandate is past INITIALIZED, save that status and let the app refresh instead of opening the session.
+				$live = $this->_cf_api_call($this->_cf_base_domain($planDetail['api_url']) . '/pg/subscriptions/' . rawurlencode($planDetail['sub_reference_id']), array(), $planDetail['param_3'], $planDetail['param_1'], 'GET');
+				if (isset($live['subscription_status']) && $live['subscription_status'] != 'INITIALIZED' && isset($this->auth_status[$live['subscription_status']])) {
+					$status_code = $this->_cf_save_status($planDetail, $live['subscription_status']);
+					$status_msg = array(
+						2 => 'Authorization is already completed. Bank approval is pending.',
+						3 => 'Auto debit is already active for this plan.',
+						4 => 'Auto debit is on hold for this plan.',
+						5 => 'This subscription is cancelled. Kindly subscribe again.',
+						6 => 'This subscription is completed.'
+					);
+					echo json_encode(array(
+						'status'            => true,
+						'authorized'        => true,
+						'auto_debit_status' => $status_code,
+						'msg'               => isset($status_msg[$status_code]) ? $status_msg[$status_code] : 'Subscription status: ' . $live['subscription_status']
+					));
+					return;
+				}
 
 				echo json_encode(array(
 					'status'                  => true,
@@ -8315,6 +8343,13 @@ class Mobile_api extends REST_Controller
 	{
 		$gw = $this->scheme_modal->get_cf_gateway($id_sch_ac);
 		if (empty($gw) || trim($gw['api_url']) == '') {
+			// Log what the gateway table holds so a missing configuration can be diagnosed from the log
+			$this->_cf_logToFile('cf_subscription', array(
+				'action'    => 'gateway_not_found',
+				'id_sch_ac' => $id_sch_ac,
+				'scheme_account' => $this->db->query("SELECT sa.id_scheme_account, sa.id_branch, c.id_branch as cus_id_branch FROM scheme_account sa LEFT JOIN customer c on c.id_customer = sa.id_customer WHERE sa.id_scheme_account=" . (int)$id_sch_ac)->row_array(),
+				'cashfree_rows'  => $this->db->query("SELECT id_pg, id_branch, pg_name, pg_code, active, is_default, api_url FROM gateway WHERE pg_code=4 OR pg_name LIKE '%cash%'")->result_array()
+			));
 			return false;
 		}
 		foreach (array('id_pg', 'param_1', 'param_3', 'api_url') as $field) {
@@ -8334,6 +8369,31 @@ class Mobile_api extends REST_Controller
 		}
 		$parsed_url = parse_url($api_url);
 		return $parsed_url['scheme'] . '://' . $parsed_url['host'];
+	}
+
+	/**
+	 * Save a Cashfree subscription_status on auto_debit_subscription and scheme_account. Returns the status code.
+	 */
+	private function _cf_save_status($planDetail, $cf_status)
+	{
+		$status_code = isset($this->auth_status[$cf_status]) ? $this->auth_status[$cf_status] : 1;
+		$updSubscription = array(
+			'auth_status' => $status_code,
+			'message'     => $cf_status,
+			'last_update' => date('Y-m-d H:i:s')
+		);
+		// Cancelled / Completed subscriptions are closed so the customer can subscribe again
+		if ($status_code == 5 || $status_code == 6) {
+			$updSubscription['status'] = 0;
+		}
+		$this->scheme_modal->updateData($updSubscription, 'id_auto_debit_subscription', $planDetail['id_auto_debit_subscription'], 'auto_debit_subscription');
+
+		$updSchAc = array(
+			'auto_debit_status' => $status_code,
+			'date_upd'          => date('Y-m-d H:i:s')
+		);
+		$this->scheme_modal->updateData($updSchAc, 'id_scheme_account', $planDetail['id_scheme_account'], 'scheme_account');
+		return $status_code;
 	}
 
 	/**
@@ -8394,25 +8454,8 @@ class Mobile_api extends REST_Controller
 		$res = $this->_cf_api_call($api_url, array(), $planDetail['param_3'], $planDetail['param_1'], 'GET');
 
 		if (isset($res['subscription_status'])) {
-			$status_code = isset($this->auth_status[$res['subscription_status']]) ? $this->auth_status[$res['subscription_status']] : 1;
-			
 			// 3. Update DB
-			$updSubscription = array(
-				'auth_status' => $status_code,
-				'message'     => $res['subscription_status'],
-				'last_update' => date('Y-m-d H:i:s')
-			);
-			// Cancelled / Completed subscriptions are closed so the customer can subscribe again
-			if ($status_code == 5 || $status_code == 6) {
-				$updSubscription['status'] = 0;
-			}
-			$this->scheme_modal->updateData($updSubscription, 'sub_reference_id', $order_id, 'auto_debit_subscription');
-
-			$updSchAc = array(
-				'auto_debit_status' => $status_code,
-				'date_upd'          => date('Y-m-d H:i:s')
-			);
-			$this->scheme_modal->updateData($updSchAc, 'id_scheme_account', $planDetail['id_scheme_account'], 'scheme_account');
+			$status_code = $this->_cf_save_status($planDetail, $res['subscription_status']);
 
 			echo json_encode(array(
 				'status'            => true,
