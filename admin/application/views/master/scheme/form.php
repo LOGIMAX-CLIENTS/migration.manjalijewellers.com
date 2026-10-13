@@ -80,7 +80,9 @@
 									<select id="2" name="sch[auto_debit_plan_type]" class="form-control">
 										<option value="0" <?php if ($sch['auto_debit_plan_type'] == 0) { ?> selected="true" <?php } ?>>Not Applicable</option>
 										<option value="1" <?php if ($sch['auto_debit_plan_type'] == 1) { ?> selected="true" <?php } ?>>Periodic</option>
+										<?php /* On Demand auto debit disabled — only Not Applicable / Periodic supported
 										<option value="2" <?php if ($sch['auto_debit_plan_type'] == 2) { ?> selected="true" <?php } ?>>OnDemand</option>
+										*/ ?>
 									</select>
 								</div>
 							</div>
