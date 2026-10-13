@@ -5371,8 +5371,10 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
     	function metalRateDiffCalculation($metal_rates){
 
 		foreach($metal_rates as $key => $value){
-			$diff['goldrate_22ct'] = $value['goldrate_22ct'] - $metal_rates[$key+1]['goldrate_22ct'];
-			$diff['silverrate_1gm'] = $value['silverrate_1gm'] - $metal_rates[$key+1]['silverrate_1gm'];
+			// Only one rate row (query is LIMIT 2) -> compare with itself, difference 0
+			$prev = isset($metal_rates[$key+1]) ? $metal_rates[$key+1] : $value;
+			$diff['goldrate_22ct'] = $value['goldrate_22ct'] - $prev['goldrate_22ct'];
+			$diff['silverrate_1gm'] = $value['silverrate_1gm'] - $prev['silverrate_1gm'];
 			$diff['goldrate_22ct_diff_status'] = ($diff['goldrate_22ct'] > 0) ? 1 : 0;
 			$diff['silverrate_1gm_diff_status'] = ($diff['silverrate_1gm'] > 0) ? 1 : 0;
 			$diff['goldrate_22ct'] = abs($diff['goldrate_22ct']);

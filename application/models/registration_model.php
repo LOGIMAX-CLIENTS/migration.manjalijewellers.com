@@ -1259,7 +1259,7 @@ function upload_img__($field,$img_path,$filename)
                             applog_write('existing', 'Payment mode detail inserted (syncPayData)', array(
                                 "e"    => $this->db->_error_message(),
                                 "q"    => $this->db->last_query(),
-                                "res"  => $res,
+                                "res"  => $payModeInsert,
                                 "data" => $data,
                             ), array('ref' => array('id_payment' => $id_payment, 'client_id' => $data['client_id'])));
 
@@ -1727,7 +1727,8 @@ function upload_img__($field,$img_path,$filename)
 			$max_chance = $record->max_chance;
 			
 			//get range for date....
-			$range = $this->mobileapi_modal->get_due_date('current_range', $date, $record->id_scheme_account);
+			$this->load->model('mobileapi_model');
+			$range = $this->mobileapi_model->get_due_date('current_range', $date, $record->id_scheme_account);
 			
 			if (!empty($range)) {
 				//take the no of paid dues with due_type customer paid already...
