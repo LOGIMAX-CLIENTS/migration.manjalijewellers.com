@@ -1911,22 +1911,24 @@ ifnull(p.add_charges,0.00) as add_charges,
 		return $sql->row_array();
 	}
 	/**
-	 * Cashfree (pg_code 4) gateway for auto debit — same branch rule as mobileapi_model::getBranchGateways():
-	 * branch-wise only when cost_center is 2 or 3, otherwise any active Cashfree gateway (default preferred).
+	 * Cashfree (pg_code 4) gateway for auto debit.
+	 * All branches are mapped to the same Cashfree account, so the branch is a preference, not a filter:
+	 * account's branch first, then active, then default. The account's id_branch can be empty and the
+	 * Cashfree row may be inactive for normal checkout while still used for auto debit.
 	 */
 	function get_cf_gateway($id_scheme_account)
 	{
-		$cs = $this->db->query("SELECT cost_center FROM chit_settings")->row_array();
-		$branch_wise = (isset($cs['cost_center']) && ($cs['cost_center'] == 2 || $cs['cost_center'] == 3));
-		$branch_filter = '';
-		if ($branch_wise) {
-			$sa = $this->db->query("SELECT id_branch FROM scheme_account WHERE id_scheme_account=" . (int)$id_scheme_account)->row_array();
-			$branch_filter = " AND id_branch=" . (int)(isset($sa['id_branch']) ? $sa['id_branch'] : 0);
-		}
-		$sql = $this->db->query("SELECT id_pg, param_1, param_3, api_url
+		// Account's branch; when it is NULL or 0, fall back to the customer's branch
+		$sa = $this->db->query("SELECT IFNULL(NULLIF(sa.id_branch, 0), c.id_branch) as id_branch
+								FROM scheme_account sa
+									LEFT JOIN customer c on c.id_customer = sa.id_customer
+								WHERE sa.id_scheme_account=" . (int)$id_scheme_account)->row_array();
+		$id_branch = (int)(isset($sa['id_branch']) ? $sa['id_branch'] : 0);
+		$sql = $this->db->query("SELECT id_pg, id_branch, active, is_default, param_1, param_3, api_url
 								FROM gateway
-								WHERE pg_code=4 AND active=1" . $branch_filter . "
-								ORDER BY is_default DESC, id_pg ASC LIMIT 1");
+								WHERE pg_code=4 AND api_url IS NOT NULL AND TRIM(api_url) != ''
+								ORDER BY (id_branch = " . $id_branch . ") DESC, (active = 1) DESC, (is_default = 1) DESC, id_pg ASC
+								LIMIT 1");
 		return $sql->row_array();
 	}
 	function isPaymentAlreadyExist($payment_ref_number)
