@@ -7934,6 +7934,12 @@ class Mobile_api extends REST_Controller
 				}
 				$plan_type = 'PERIODIC';
 
+				$planDetail = $this->_cf_gateway($planDetail, $id_sch_ac);
+				if ($planDetail === false) {
+					echo json_encode(array('status' => false, 'msg' => 'Auto debit gateway is not configured. Kindly contact the branch.'));
+					return;
+				}
+
 				// Generate unique subscription_id
 				$subscription_id = 'SUB_' . $id_sch_ac . '_' . time();
 
@@ -7996,8 +8002,7 @@ class Mobile_api extends REST_Controller
 
 				// Call Cashfree API (new endpoint: {base_domain}/pg/subscriptions)
 				// Strip any path from api_url — server may have /pg/orders/ in it
-				$parsed_url = parse_url($planDetail['api_url']);
-				$base_domain = $parsed_url['scheme'] . '://' . $parsed_url['host'];
+				$base_domain = $this->_cf_base_domain($planDetail['api_url']);
 				$api_url = $base_domain . '/pg/subscriptions';
 				$res = $this->_cf_api_call($api_url, $cf_payload, $planDetail['param_3'], $planDetail['param_1']);
 
@@ -8081,6 +8086,12 @@ class Mobile_api extends REST_Controller
 					return;
 				}
 
+				$planDetail = $this->_cf_gateway($planDetail, $id_sch_ac);
+				if ($planDetail === false) {
+					echo json_encode(array('status' => false, 'msg' => 'Auto debit gateway is not configured. Kindly contact the branch.'));
+					return;
+				}
+
 				// Cancel via new API: POST {api_url}/subscriptions/{subscription_id}/cancel
 				$subData = $this->db->query("SELECT subscription_id FROM auto_debit_subscription 
 											 WHERE id_auto_debit_subscription = " . intval($planDetail['id_auto_debit_subscription']))
@@ -8092,10 +8103,10 @@ class Mobile_api extends REST_Controller
 				}
 
 				// Strip any path from api_url — server may have /pg/orders/ in it
-				$parsed_url = parse_url($planDetail['api_url']);
-				$base_domain = $parsed_url['scheme'] . '://' . $parsed_url['host'];
-				$api_url = $base_domain . '/pg/subscriptions/' . $subData['subscription_id'] . '/cancel';
-				$res = $this->_cf_api_call($api_url, array(), $planDetail['param_3'], $planDetail['param_1']);
+				$base_domain = $this->_cf_base_domain($planDetail['api_url']);
+				// Cancel = Manage Subscription API with action CANCEL (there is no /cancel endpoint)
+				$api_url = $base_domain . '/pg/subscriptions/' . rawurlencode($subData['subscription_id']) . '/manage';
+				$res = $this->_cf_api_call($api_url, array('subscription_id' => $subData['subscription_id'], 'action' => 'CANCEL'), $planDetail['param_3'], $planDetail['param_1']);
 
 				// Log
 				$this->_cf_logToFile('cf_subscription', array(
@@ -8154,6 +8165,12 @@ class Mobile_api extends REST_Controller
 					return;
 				}
 
+				$planDetail = $this->_cf_gateway($planDetail, $id_sch_ac);
+				if ($planDetail === false) {
+					echo json_encode(array('status' => false, 'msg' => 'Auto debit gateway is not configured. Kindly contact the branch.'));
+					return;
+				}
+
 				$cf_env = (strpos($planDetail['api_url'], 'sandbox') !== false || strpos($planDetail['api_url'], 'test') !== false) ? 'SANDBOX' : 'PRODUCTION';
 
 				echo json_encode(array(
@@ -8171,8 +8188,13 @@ class Mobile_api extends REST_Controller
 					return;
 				}
 
-				$parsed_url  = parse_url($planDetail['api_url']);
-				$base_domain = $parsed_url['scheme'] . '://' . $parsed_url['host'];
+				$planDetail = $this->_cf_gateway($planDetail, $id_sch_ac);
+				if ($planDetail === false) {
+					echo json_encode(array('status' => false, 'msg' => 'Auto debit gateway is not configured. Kindly contact the branch.'));
+					return;
+				}
+
+				$base_domain = $this->_cf_base_domain($planDetail['api_url']);
 				$sub_id      = $planDetail['sub_reference_id'];
 
 				// 1. Find the latest failed CHARGE payment of this subscription
@@ -8285,6 +8307,36 @@ class Mobile_api extends REST_Controller
 	}
 
 	/**
+	 * Put the Cashfree gateway (id_pg, param_1 secret, param_3 app id, api_url) on a plan/subscription row.
+	 * Every auto debit call uses this so create, cancel, retry and status always hit the same gateway.
+	 * Returns false when no active Cashfree gateway is configured.
+	 */
+	private function _cf_gateway($planDetail, $id_sch_ac)
+	{
+		$gw = $this->scheme_modal->get_cf_gateway($id_sch_ac);
+		if (empty($gw) || trim($gw['api_url']) == '') {
+			return false;
+		}
+		foreach (array('id_pg', 'param_1', 'param_3', 'api_url') as $field) {
+			$planDetail[$field] = $gw[$field];
+		}
+		return $planDetail;
+	}
+
+	/**
+	 * https://api.cashfree.com from a gateway api_url such as https://api.cashfree.com/pg/orders/ (scheme added if missing)
+	 */
+	private function _cf_base_domain($api_url)
+	{
+		$api_url = trim($api_url);
+		if (!preg_match('#^https?://#i', $api_url)) {
+			$api_url = 'https://' . $api_url;
+		}
+		$parsed_url = parse_url($api_url);
+		return $parsed_url['scheme'] . '://' . $parsed_url['host'];
+	}
+
+	/**
 	 * Generate random alphanumeric string (for dummy email generation)
 	 */
 	private function _cf_random_strings($length)
@@ -8329,9 +8381,14 @@ class Mobile_api extends REST_Controller
 			return;
 		}
 
+		$planDetail = $this->_cf_gateway($planDetail, $planDetail['id_scheme_account']);
+		if ($planDetail === false) {
+			echo json_encode(array('status' => false, 'msg' => 'Auto debit gateway is not configured. Kindly contact the branch.'));
+			return;
+		}
+
 		// 2. Call Cashfree to get latest status
-		$parsed_url = parse_url($planDetail['api_url']);
-		$base_domain = $parsed_url['scheme'] . '://' . $parsed_url['host'];
+		$base_domain = $this->_cf_base_domain($planDetail['api_url']);
 		$api_url = $base_domain . '/pg/subscriptions/' . $order_id;
 		
 		$res = $this->_cf_api_call($api_url, array(), $planDetail['param_3'], $planDetail['param_1'], 'GET');

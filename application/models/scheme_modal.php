@@ -1910,6 +1910,25 @@ ifnull(p.add_charges,0.00) as add_charges,
 		//	echo $this->db->last_query();exit;
 		return $sql->row_array();
 	}
+	/**
+	 * Cashfree (pg_code 4) gateway for auto debit — same branch rule as mobileapi_model::getBranchGateways():
+	 * branch-wise only when cost_center is 2 or 3, otherwise any active Cashfree gateway (default preferred).
+	 */
+	function get_cf_gateway($id_scheme_account)
+	{
+		$cs = $this->db->query("SELECT cost_center FROM chit_settings")->row_array();
+		$branch_wise = (isset($cs['cost_center']) && ($cs['cost_center'] == 2 || $cs['cost_center'] == 3));
+		$branch_filter = '';
+		if ($branch_wise) {
+			$sa = $this->db->query("SELECT id_branch FROM scheme_account WHERE id_scheme_account=" . (int)$id_scheme_account)->row_array();
+			$branch_filter = " AND id_branch=" . (int)(isset($sa['id_branch']) ? $sa['id_branch'] : 0);
+		}
+		$sql = $this->db->query("SELECT id_pg, param_1, param_3, api_url
+								FROM gateway
+								WHERE pg_code=4 AND active=1" . $branch_filter . "
+								ORDER BY is_default DESC, id_pg ASC LIMIT 1");
+		return $sql->row_array();
+	}
 	function isPaymentAlreadyExist($payment_ref_number)
 	{
 		$sql = $this->db->query("SELECT payment_ref_number FROM payment WHERE payment_ref_number='" . $payment_ref_number . "'");
