@@ -481,6 +481,12 @@ class Cf_autodebit extends CI_Controller {
 			$sub_id = isset($data['subscription_id']) ? $data['subscription_id'] : '';
 		}
 		$planDetail = ($sub_id != '' ? $this->scheme_modal->get_subsDetail('sub_reference_id', $this->db->escape($sub_id)) : array());
+		if(!empty($planDetail)){
+			// Same Cashfree gateway as mobile_api used to create the subscription (secret is needed for the signature)
+			$gw = $this->scheme_modal->get_cf_gateway($planDetail['id_scheme_account']);
+			$planDetail['param_1'] = isset($gw['param_1']) ? $gw['param_1'] : '';
+			$planDetail['id_pg']   = isset($gw['id_pg']) ? $gw['id_pg'] : NULL;
+		}
 
 		if(empty($planDetail)){
 			$response = array("status" => FALSE, "message" => "subscription_id not found", "time" => date('d-m-Y H:i:s'));
