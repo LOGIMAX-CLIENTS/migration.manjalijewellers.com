@@ -7918,203 +7918,7 @@ class Mobile_api extends REST_Controller
 
 		switch ($type) {
 			case '1': // ─── Subscribe ───────────────────────────────
-				$planDetail = $this->scheme_modal->get_plan_detail($id_sch_ac);
-
-				if (empty($planDetail) || sizeof($planDetail) == 0) {
-					echo json_encode(array('status' => false, 'msg' => 'No record found...'));
-					return;
-				}
-
-				// Guard: Already subscribed
-				if ($planDetail['id_auto_debit_subscription'] > 0) {
-					echo json_encode(array(
-						'status' => false,
-						'msg'    => 'Already subscription created, Kindly check the authorization status...'
-					));
-					return;
-				}
-
-				$pendingIns = $planDetail['total_installments'] - $planDetail['paid_installments'];
-
-				if ($pendingIns <= 0) {
-					echo json_encode(array('status' => false, 'msg' => 'You have already paid all your installments...'));
-					return;
-				}
-
-				// Determine plan amount based on scheme_type
-				// scheme_type: 0=Amount, 1=Weight, 2=Amount to Weight, 3=Flexible Amount
-				$plan_amount = 0;
-				if ($planDetail['scheme_type'] == 0 || $planDetail['scheme_type'] == 2) {
-					$plan_amount = floatval($planDetail['scheme_amount']);
-				} elseif ($planDetail['scheme_type'] == 3) {
-					$plan_amount = floatval($planDetail['min_amount']);
-				} else {
-					// Weight-based — amount from POST (app calculates based on rate × weight)
-					$plan_amount = isset($post_data['plan_amount']) ? floatval($post_data['plan_amount']) : 0;
-				}
-
-				if ($plan_amount <= 0) {
-					echo json_encode(array('status' => false, 'msg' => 'Invalid plan amount'));
-					return;
-				}
-
-				// auto_debit_plan_type: 0=Not Applicable, 1=Periodic (On Demand option is disabled in scheme master)
-				// $plan_type = ($planDetail['auto_debit_plan_type'] == 1) ? 'ON_DEMAND' : 'PERIODIC';
-				if ($planDetail['auto_debit_plan_type'] != 1) {
-					echo json_encode(array('status' => false, 'msg' => 'Auto debit is not applicable for this plan'));
-					return;
-				}
-				$plan_type = 'PERIODIC';
-
-				$planDetail = $this->_cf_gateway($planDetail, $id_sch_ac);
-				if ($planDetail === false) {
-					echo json_encode(array('status' => false, 'msg' => 'Auto debit gateway is not configured. Kindly contact the branch.'));
-					return;
-				}
-
-				// Generate unique subscription_id
-				$subscription_id = 'SUB_' . $id_sch_ac . '_' . time();
-
-				// Return URL — cf_autodebit callback on front-end
-				$return_url = $this->config->item('base_url') . 'index.php/cf_autodebit/autoDebitRURL/M/' . $id_sch_ac;
-
-				// First charge date (1st of next month for PERIODIC)
-				$first_charge_date = date('Y-m-d', strtotime('first day of next month'));
-
-				$gen_email  = $this->_cf_random_strings(8) . '@noemail.com';
-
-				// Build new Cashfree API payload (v2025-01-01 format)
-				$cf_payload = array(
-					'subscription_id'     => $subscription_id,
-					'customer_details'    => array(
-						'customer_name'  => trim($planDetail['cus_name']),
-						'customer_email' => !empty($planDetail['email']) ? $planDetail['email'] : $gen_email,
-						'customer_phone' => $planDetail['mobile']
-					),
-					'plan_details' => array(
-						'plan_name'             => substr($planDetail['scheme_name'] . ' - ' . $planDetail['code'], 0, 40), // Cashfree max 40 chars
-						'plan_type'             => $plan_type,
-						'plan_currency'         => 'INR',
-						'plan_amount'           => $plan_amount, // per-cycle amount (plan_recurring_amount is a response-only field)
-						'plan_max_amount'       => $plan_amount,
-						'plan_max_cycles'       => intval($planDetail['total_installments'])
-					),
-					'subscription_meta' => array(
-						'return_url' => $return_url
-					),
-					'authorization_details' => array(
-						'authorization_amount' => 1  // Re 1 authorization charge (refundable)
-					)
-				);
-
-				// Add periodic-specific fields
-				if ($plan_type == 'PERIODIC') {
-					$cf_payload['plan_details']['plan_intervals'] = 1;
-					$cf_payload['plan_details']['plan_interval_type'] = 'MONTH';
-					$cf_payload['subscription_first_charge_time'] = $first_charge_date . 'T10:00:00+05:30';
-				}
-
-				// Insert local subscription record
-				$insSubscription = array(
-					'id_scheme_account' => $id_sch_ac,
-					'subscription_id'   => $subscription_id,
-					'plan_id'           => $planDetail['sync_scheme_code'],
-					'first_charge_delay' => 1,
-					'expires_on'        => date('Y-m-d H:i:s', strtotime('+' . $pendingIns . ' months')),
-					'status'            => 0,
-					'created_on'        => date('Y-m-d H:i:s'),
-					'added_by'          => 1,  // 1 = Mobile App
-				);
-				$ins = $this->scheme_modal->insertData($insSubscription, 'auto_debit_subscription');
-
-				if (!$ins['status']) {
-					echo json_encode(array('status' => false, 'msg' => 'Error in subscription process, try again later...'));
-					return;
-				}
-
-				// Call Cashfree API (new endpoint: {base_domain}/pg/subscriptions)
-				// Strip any path from api_url — server may have /pg/orders/ in it
-				$base_domain = $this->_cf_base_domain($planDetail['api_url']);
-				$api_url = $base_domain . '/pg/subscriptions';
-				$res = $this->_cf_api_call($api_url, $cf_payload, $planDetail['param_3'], $planDetail['param_1']);
-
-				// Log request and response
-				$this->_cf_logToFile('cf_subscription', array(
-					'action'    => 'subscribe',
-					'id_sch_ac' => $id_sch_ac,
-					'api_url'   => $api_url,
-					'request'   => $cf_payload,
-					'response'  => $res
-				));
-
-				if (isset($res['cf_subscription_id'])) {
-					// The new API (v2025-01-01) returns subscription_session_id (a token).
-					// This token must be used by the Cashfree JS SDK — it is NOT a direct URL.
-					// We store the raw token in auth_link and build a server-hosted authorize URL
-					// that the mobile app opens in a WebView (replaces old cfre.in URL).
-					$session_id = isset($res['subscription_session_id']) ? $res['subscription_session_id'] : null;
-					
-					// Build the authorize URL — mobile app opens this in WebView
-					// This page loads the Cashfree JS SDK and auto-triggers subscriptionsCheckout()
-					$auth_url = base_url() . 'index.php/cf_autodebit/authorize/' . $id_sch_ac;
-
-					// Success — update local subscription record
-					$updSubscription = array(
-						'sub_reference_id' => isset($res['subscription_id']) ? $res['subscription_id'] : null,
-						'auth_status'      => 1, // INITIALIZED
-						'auth_link'        => $session_id, // Raw session token for SDK
-						'message'          => isset($res['subscription_status']) ? $res['subscription_status'] : 'INITIALIZED',
-						'status'           => 1,
-						'last_update'      => date('Y-m-d H:i:s')
-					);
-					$this->scheme_modal->updateData(
-						$updSubscription,
-						'id_auto_debit_subscription',
-						$ins['insertID'],
-						'auto_debit_subscription'
-					);
-
-					// Update scheme_account auto_debit_status = 1 (Pending)
-					$updSchAc = array(
-						'auto_debit_status' => 1,
-						'date_upd'          => date('Y-m-d H:i:s')
-					);
-					$this->scheme_modal->updateData(
-						$updSchAc,
-						'id_scheme_account',
-						$id_sch_ac,
-						'scheme_account'
-					);
-
-					// Determine CF environment from api_url for mobile SDK
-					$cf_env = (strpos($planDetail['api_url'], 'sandbox') !== false || strpos($planDetail['api_url'], 'test') !== false) ? 'sandbox' : 'production';
-
-					echo json_encode(array(
-						'status'                  => true,
-						'msg'                     => 'Subscription created successfully. Kindly do the authorization process.',
-						'auth_link'               => $auth_url, // URL for WebView (replaces old cfre.in)
-						'subscription_id'         => isset($res['subscription_id']) ? $res['subscription_id'] : null,
-						'subscription_session_id' => $session_id ? $session_id : '', // Raw token for native SDK
-						'cf_environment'          => $cf_env,
-						'environment'             => strtoupper($cf_env), // For consistency with plan
-						'sub_status'              => isset($res['subscription_status']) ? $res['subscription_status'] : 'INITIALIZED'
-					));
-				} else {
-					// API error
-					$error_msg = isset($res['message']) ? $res['message'] : 'Failed to create subscription';
-					// Keep the reason on the (status 0) record so failed attempts can be identified
-					$this->scheme_modal->updateData(
-						array('message' => 'FAILED: ' . substr($error_msg, 0, 200), 'last_update' => date('Y-m-d H:i:s')),
-						'id_auto_debit_subscription',
-						$ins['insertID'],
-						'auto_debit_subscription'
-					);
-					echo json_encode(array(
-						'status' => false,
-						'msg'    => $error_msg,
-						'data'   => $res
-					));
-				}
+				echo json_encode($this->_cf_create_subscription($id_sch_ac, $post_data));
 				break;
 
 			case '2': // ─── Unsubscribe ────────────────────────────
@@ -8217,6 +8021,7 @@ class Mobile_api extends REST_Controller
 				$live = $this->_cf_api_call($this->_cf_base_domain($planDetail['api_url']) . '/pg/subscriptions/' . rawurlencode($planDetail['sub_reference_id']), array(), $planDetail['param_3'], $planDetail['param_1'], 'GET');
 				if (isset($live['subscription_status']) && $live['subscription_status'] != 'INITIALIZED' && isset($this->auth_status[$live['subscription_status']])) {
 					$status_code = $this->_cf_save_status($planDetail, $live['subscription_status']);
+					$auth_payment = $this->_cf_sync_auth($planDetail);
 					$status_msg = array(
 						2 => 'Authorization is already completed. Bank approval is pending.',
 						3 => 'Auto debit is already active for this plan.',
@@ -8224,11 +8029,50 @@ class Mobile_api extends REST_Controller
 						5 => 'This subscription is cancelled. Kindly subscribe again.',
 						6 => 'This subscription is completed.'
 					);
+					$autopay = $this->mobileapi_model->get_autopay_block($id_sch_ac);
 					echo json_encode(array(
 						'status'            => true,
 						'authorized'        => true,
 						'auto_debit_status' => $status_code,
+						'auth_payment'      => $auth_payment,
+						'autopay_enabled'   => $autopay['enabled'],
 						'msg'               => isset($status_msg[$status_code]) ? $status_msg[$status_code] : 'Subscription status: ' . $live['subscription_status']
+					));
+					return;
+				}
+
+				// Before opening authorization, make sure the subscription created at Subscribe is still right:
+				// 1. Cashfree's session is valid for 2 hours — an expired one cannot be authorized.
+				// 2. No double payment: if the installment month of the first debit has been paid manually since
+				//    Subscribe (customer paid before authorizing), Cashfree would collect that month again.
+				// Either way cancel it and create a fresh subscription, which recalculates the first debit date.
+				$sub_row = $this->db->query("SELECT created_on, first_charge_on FROM auto_debit_subscription WHERE id_auto_debit_subscription = " . (int)$planDetail['id_auto_debit_subscription'])->row_array();
+				$session_expired = (!empty($sub_row['created_on']) && (time() - strtotime($sub_row['created_on'])) > (115 * 60));
+				$fcd_month_paid  = false;
+				if (!empty($sub_row['first_charge_on'])) {
+					$fcd = strtotime($sub_row['first_charge_on']);
+					$fcd_month_paid = $this->db->query("SELECT COUNT(id_payment) as cnt FROM payment
+											WHERE id_scheme_account = " . (int)$id_sch_ac . " AND payment_status IN (1, 2)
+											AND MONTH(date_payment) = " . (int)date('n', $fcd) . " AND YEAR(date_payment) = " . (int)date('Y', $fcd))->row()->cnt > 0;
+				}
+				if ($session_expired || $fcd_month_paid) {
+					$reason = $fcd_month_paid ? 'FIRST_DEBIT_MONTH_PAID' : 'SESSION_EXPIRED';
+					$cancel = $this->_cf_api_call($this->_cf_base_domain($planDetail['api_url']) . '/pg/subscriptions/' . rawurlencode($planDetail['sub_reference_id']) . '/manage', array('subscription_id' => $planDetail['sub_reference_id'], 'action' => 'CANCEL'), $planDetail['param_3'], $planDetail['param_1']);
+					$this->_cf_logToFile('cf_subscription', array('action' => 'recreate_before_authorize', 'reason' => $reason, 'id_sch_ac' => $id_sch_ac, 'old_subscription' => $planDetail['sub_reference_id'], 'cancel_response' => $cancel));
+					$this->scheme_modal->updateData(array('status' => 0, 'auth_status' => 5, 'message' => $reason, 'last_update' => date('Y-m-d H:i:s')), 'id_auto_debit_subscription', $planDetail['id_auto_debit_subscription'], 'auto_debit_subscription');
+					$fresh = $this->_cf_create_subscription($id_sch_ac, $post_data);
+					if (!$fresh['status']) {
+						// Could not recreate (e.g. Subscribe window for next month not open yet) — show the plan as not subscribed
+						$this->scheme_modal->updateData(array('auto_debit_status' => 0, 'date_upd' => date('Y-m-d H:i:s')), 'id_scheme_account', $id_sch_ac, 'scheme_account');
+						echo json_encode(array('status' => true, 'authorized' => true, 'auto_debit_status' => 0, 'autopay_enabled' => false,
+							'msg' => ($fcd_month_paid ? '' : 'Authorization session expired. ') . $fresh['msg']));
+						return;
+					}
+					echo json_encode(array(
+						'status'                  => true,
+						'subscription_id'         => $fresh['subscription_id'],
+						'subscription_session_id' => $fresh['subscription_session_id'],
+						'environment'             => $fresh['environment']
 					));
 					return;
 				}
@@ -8279,6 +8123,13 @@ class Mobile_api extends REST_Controller
 					return;
 				}
 
+				// No double payment: the failed debit's month may have been paid manually since (allowed while ON_HOLD)
+				$failed_on = !empty($failed['payment_schedule_date']) ? strtotime($failed['payment_schedule_date']) : strtotime($failed['payment_initiated_date']);
+				if ($this->mobileapi_model->is_installment_month_paid($id_sch_ac, (int)date('n', $failed_on), (int)date('Y', $failed_on))) {
+					echo json_encode(array('status' => false, 'msg' => 'The installment for ' . date('M-Y', $failed_on) . ' is already paid. No retry is needed; auto debit continues from next month.'));
+					return;
+				}
+
 				// 2. Schedule the retry — Cashfree considers only the date, next day allows the pre-debit notification
 				$retry_date = date('Y-m-d', strtotime('+1 day'));
 				$retry_payload = array(
@@ -8322,6 +8173,328 @@ class Mobile_api extends REST_Controller
 				));
 				break;
 		}
+	}
+
+	/**
+	 * Monthly auto debit day (Manjali: 5th). Every debit, first to last installment, falls on this day.
+	 * 0 = no fixed day: first debit 2 days after subscribing and the same day each month after.
+	 */
+	const CF_DEBIT_DAY = 5;
+
+	/**
+	 * First debit date for a new subscription (Y-m-d), or array('error' => msg) when it cannot start yet.
+	 */
+	private function _cf_first_charge_date($id_sch_ac)
+	{
+		$cur_paid = $this->db->query("SELECT COUNT(id_payment) as cnt FROM payment
+									WHERE id_scheme_account = " . (int)$id_sch_ac . " AND payment_status IN (1, 2)
+									AND MONTH(date_payment) = MONTH(CURDATE()) AND YEAR(date_payment) = YEAR(CURDATE())")->row()->cnt > 0;
+		return self::cf_schedule_first_charge(date('Y-m-d'), $cur_paid, self::CF_DEBIT_DAY);
+	}
+
+	/**
+	 * Debit schedule rules (pure — $today is a parameter so the rules can be tested for any date).
+	 * Cashfree: first charge date within 14 days of creating the subscription; earliest debit T+1/T+2
+	 * after authorization plus a 25 hr pre-debit notice -> not before today + 2 days.
+	 * Fixed debit day D:
+	 *   this month paid   -> first debit on D of next month; Subscribe opens 13 days before it
+	 *   this month unpaid -> first debit on D of this month if still reachable, else the customer pays
+	 *                        this month manually first (auto debit can only start on a later D)
+	 */
+	public static function cf_schedule_first_charge($today, $cur_paid, $debit_day)
+	{
+		$today_ts = strtotime($today);
+		$earliest = strtotime($today . ' +2 days');
+		$window_end = strtotime($today . ' +13 days');
+
+		if ($debit_day <= 0) { // no fixed day
+			if (!$cur_paid) {
+				return date('Y-m-d', $earliest);
+			}
+			$first_charge = max(strtotime(date('Y-m-01', strtotime($today . ' first day of next month'))), $earliest);
+		} else {
+			$month_start  = $cur_paid ? date('Y-m-01', strtotime(date('Y-m-01', $today_ts) . ' +1 month')) : date('Y-m-01', $today_ts);
+			$first_charge = strtotime(date('Y-m-', strtotime($month_start)) . sprintf('%02d', min($debit_day, (int)date('t', strtotime($month_start)))));
+			if (!$cur_paid && $first_charge < $earliest) {
+				return array('error' => "Kindly pay this month's installment first. Auto debit will start from the " . $debit_day . self::cf_ordinal($debit_day) . ' of next month.');
+			}
+		}
+		if ($first_charge > $window_end) {
+			$open_on = strtotime(date('Y-m-d', $first_charge) . ' -13 days');
+			return array('error' => "This month's installment is already paid. Auto debit can be enabled from " . date('d-m-Y', $open_on) . ' (first debit on ' . date('d-m-Y', $first_charge) . ').');
+		}
+		return date('Y-m-d', $first_charge);
+	}
+
+	private static function cf_ordinal($n)
+	{
+		if (in_array($n % 100, array(11, 12, 13))) {
+			return 'th';
+		}
+		$suffix = array(1 => 'st', 2 => 'nd', 3 => 'rd');
+		return isset($suffix[$n % 10]) ? $suffix[$n % 10] : 'th';
+	}
+
+	/**
+	 * Subscribe (type 1): create the Cashfree PERIODIC subscription for the plan's pending installments.
+	 * Returns the response array for the app.
+	 */
+	private function _cf_create_subscription($id_sch_ac, $post_data)
+	{
+		// One subscription create per plan at a time — a double tap / retry must not create two mandates.
+		// MySQL named lock, released when done (or automatically if the connection drops).
+		$lock_name = $this->db->escape('cf_subscribe_' . (int)$id_sch_ac);
+		$got_lock = $this->db->query("SELECT GET_LOCK(" . $lock_name . ", 0) as got")->row()->got;
+		if ($got_lock != 1) {
+			return array('status' => false, 'msg' => 'Subscription is already in progress for this plan. Kindly wait a moment.');
+		}
+		try {
+			return $this->_cf_create_subscription_locked($id_sch_ac, $post_data);
+		} finally {
+			$this->db->query("SELECT RELEASE_LOCK(" . $lock_name . ")");
+		}
+	}
+
+	private function _cf_create_subscription_locked($id_sch_ac, $post_data)
+	{
+		$planDetail = $this->scheme_modal->get_plan_detail($id_sch_ac);
+
+		if (empty($planDetail) || sizeof($planDetail) == 0) {
+			return array('status' => false, 'msg' => 'No record found...');
+		}
+
+		// Guard: Already subscribed
+		if ($planDetail['id_auto_debit_subscription'] > 0) {
+			return array(
+				'status' => false,
+				'msg'    => 'Already subscription created, Kindly check the authorization status...'
+			);
+		}
+
+		$pendingIns = $planDetail['total_installments'] - $planDetail['paid_installments'];
+
+		if ($pendingIns <= 0) {
+			return array('status' => false, 'msg' => 'You have already paid all your installments...');
+		}
+
+		// Determine plan amount based on scheme_type
+		// scheme_type: 0=Amount, 1=Weight, 2=Amount to Weight, 3=Flexible Amount
+		$plan_amount = 0;
+		if ($planDetail['scheme_type'] == 0 || $planDetail['scheme_type'] == 2) {
+			$plan_amount = floatval($planDetail['scheme_amount']);
+		} elseif ($planDetail['scheme_type'] == 3) {
+			$plan_amount = floatval($planDetail['min_amount']);
+		} else {
+			// Weight-based — amount from POST (app calculates based on rate × weight)
+			$plan_amount = isset($post_data['plan_amount']) ? floatval($post_data['plan_amount']) : 0;
+		}
+
+		if ($plan_amount <= 0) {
+			return array('status' => false, 'msg' => 'Invalid plan amount');
+		}
+
+		// auto_debit_plan_type: 0=Not Applicable, 1=Periodic (On Demand option is disabled in scheme master)
+		// $plan_type = ($planDetail['auto_debit_plan_type'] == 1) ? 'ON_DEMAND' : 'PERIODIC';
+		if ($planDetail['auto_debit_plan_type'] != 1) {
+			return array('status' => false, 'msg' => 'Auto debit is not applicable for this plan');
+		}
+		$plan_type = 'PERIODIC';
+
+		$planDetail = $this->_cf_gateway($planDetail, $id_sch_ac);
+		if ($planDetail === false) {
+			return array('status' => false, 'msg' => 'Auto debit gateway is not configured. Kindly contact the branch.');
+		}
+
+		// Debit schedule: first installment debit .. last installment debit
+		$first_charge_date = $this->_cf_first_charge_date($id_sch_ac);
+		if (is_array($first_charge_date)) {
+			return array('status' => false, 'msg' => $first_charge_date['error']);
+		}
+		// One debit per pending installment; last debit = first + (pending - 1) months.
+		// Expiry one month after the last debit leaves room for retries of the final installment.
+		$last_charge_date = date('Y-m-d', strtotime($first_charge_date . ' +' . ($pendingIns - 1) . ' months'));
+		$expiry_date      = date('Y-m-d', strtotime($last_charge_date . ' +1 month'));
+
+		// Generate unique subscription_id
+		$subscription_id = 'SUB_' . $id_sch_ac . '_' . time();
+
+		// Return URL — cf_autodebit callback on front-end
+		$return_url = $this->config->item('base_url') . 'index.php/cf_autodebit/autoDebitRURL/M/' . $id_sch_ac;
+
+		$gen_email  = $this->_cf_random_strings(8) . '@noemail.com';
+
+		// Build new Cashfree API payload (v2025-01-01 format)
+		$cf_payload = array(
+			'subscription_id'     => $subscription_id,
+			'customer_details'    => array(
+				'customer_name'  => trim($planDetail['cus_name']),
+				'customer_email' => !empty($planDetail['email']) ? $planDetail['email'] : $gen_email,
+				'customer_phone' => $planDetail['mobile']
+			),
+			'plan_details' => array(
+				'plan_name'          => substr($planDetail['scheme_name'] . ' - ' . $planDetail['code'], 0, 40), // Cashfree max 40 chars
+				'plan_type'          => $plan_type,
+				'plan_currency'      => 'INR',
+				'plan_amount'        => $plan_amount, // per-cycle amount (plan_recurring_amount is a response-only field)
+				'plan_max_amount'    => $plan_amount,
+				'plan_max_cycles'    => intval($pendingIns), // stops after the final installment
+				'plan_intervals'     => 1,
+				'plan_interval_type' => 'MONTH'
+			),
+			'subscription_meta' => array(
+				'return_url' => $return_url
+			),
+			'authorization_details' => array(
+				'authorization_amount'        => 1,   // Re 1 mandate authorization
+				'authorization_amount_refund' => true // refunded to the customer after authorization
+			),
+			'subscription_first_charge_time' => $first_charge_date . 'T10:00:00+05:30',
+			'subscription_expiry_time'       => $expiry_date . 'T23:59:59+05:30'
+		);
+
+		// Insert local subscription record
+		$insSubscription = array(
+			'id_scheme_account' => $id_sch_ac,
+			'subscription_id'   => $subscription_id,
+			'plan_id'           => $planDetail['sync_scheme_code'],
+			'first_charge_delay' => 1,
+			'first_charge_on'   => $first_charge_date,
+			'expires_on'        => $expiry_date . ' 23:59:59',
+			'status'            => 0,
+			'created_on'        => date('Y-m-d H:i:s'),
+			'added_by'          => 1,  // 1 = Mobile App
+		);
+		$ins = $this->scheme_modal->insertData($insSubscription, 'auto_debit_subscription');
+
+		if (!$ins['status']) {
+			return array('status' => false, 'msg' => 'Error in subscription process, try again later...');
+		}
+
+		// Call Cashfree API (new endpoint: {base_domain}/pg/subscriptions)
+		// Strip any path from api_url — server may have /pg/orders/ in it
+		$base_domain = $this->_cf_base_domain($planDetail['api_url']);
+		$api_url = $base_domain . '/pg/subscriptions';
+		$res = $this->_cf_api_call($api_url, $cf_payload, $planDetail['param_3'], $planDetail['param_1']);
+
+		// Log request and response
+		$this->_cf_logToFile('cf_subscription', array(
+			'action'    => 'subscribe',
+			'id_sch_ac' => $id_sch_ac,
+			'api_url'   => $api_url,
+			'request'   => $cf_payload,
+			'response'  => $res
+		));
+
+		if (isset($res['cf_subscription_id'])) {
+			// The new API (v2025-01-01) returns subscription_session_id (a token) for the SDK — valid 2 hours.
+			$session_id = isset($res['subscription_session_id']) ? $res['subscription_session_id'] : null;
+
+			// Build the authorize URL — mobile app opens this in WebView
+			// This page loads the Cashfree JS SDK and auto-triggers subscriptionsCheckout()
+			$auth_url = base_url() . 'index.php/cf_autodebit/authorize/' . $id_sch_ac;
+
+			// Success — update local subscription record
+			$updSubscription = array(
+				'sub_reference_id' => isset($res['subscription_id']) ? $res['subscription_id'] : null,
+				'auth_status'      => 1, // INITIALIZED
+				'auth_link'        => $session_id, // Raw session token for SDK
+				'message'          => isset($res['subscription_status']) ? $res['subscription_status'] : 'INITIALIZED',
+				'status'           => 1,
+				'last_update'      => date('Y-m-d H:i:s')
+			);
+			$this->scheme_modal->updateData($updSubscription, 'id_auto_debit_subscription', $ins['insertID'], 'auto_debit_subscription');
+
+			// Update scheme_account auto_debit_status = 1 (Pending)
+			$updSchAc = array(
+				'auto_debit_status' => 1,
+				'date_upd'          => date('Y-m-d H:i:s')
+			);
+			$this->scheme_modal->updateData($updSchAc, 'id_scheme_account', $id_sch_ac, 'scheme_account');
+
+			// Determine CF environment from api_url for mobile SDK
+			$cf_env = (strpos($planDetail['api_url'], 'sandbox') !== false || strpos($planDetail['api_url'], 'test') !== false) ? 'sandbox' : 'production';
+
+			return array(
+				'status'                  => true,
+				'msg'                     => 'Subscription created successfully. Kindly do the authorization process.',
+				'auth_link'               => $auth_url, // URL for WebView (replaces old cfre.in)
+				'subscription_id'         => isset($res['subscription_id']) ? $res['subscription_id'] : null,
+				'subscription_session_id' => $session_id ? $session_id : '', // Raw token for native SDK
+				'cf_environment'          => $cf_env,
+				'environment'             => strtoupper($cf_env), // For consistency with plan
+				'sub_status'              => isset($res['subscription_status']) ? $res['subscription_status'] : 'INITIALIZED',
+				'first_charge_on'         => date('d-m-Y', strtotime($first_charge_date)),
+				'last_charge_on'          => date('d-m-Y', strtotime($last_charge_date))
+			);
+		}
+
+		// API error
+		$error_msg = isset($res['message']) ? $res['message'] : 'Failed to create subscription';
+		// Keep the reason on the (status 0) record so failed attempts can be identified
+		$this->scheme_modal->updateData(
+			array('message' => 'FAILED: ' . substr($error_msg, 0, 200), 'last_update' => date('Y-m-d H:i:s')),
+			'id_auto_debit_subscription',
+			$ins['insertID'],
+			'auto_debit_subscription'
+		);
+		return array(
+			'status' => false,
+			'msg'    => $error_msg,
+			'data'   => $res
+		);
+	}
+
+	/**
+	 * Rs.1 authorization (AUTH payment) result from Cashfree's payment list, saved on auto_debit_subscription.
+	 * Auto pay is enabled only when this is SUCCESS. Returns SUCCESS / FAILED / PENDING / '' (no attempt yet).
+	 */
+	private function _cf_sync_auth($planDetail)
+	{
+		$row = $this->db->query("SELECT auth_payment_status FROM auto_debit_subscription WHERE id_auto_debit_subscription = " . (int)$planDetail['id_auto_debit_subscription'])->row_array();
+		if (isset($row['auth_payment_status']) && $row['auth_payment_status'] == 'SUCCESS') {
+			return 'SUCCESS'; // only one AUTH is allowed per mandate — success is final
+		}
+		$payments = $this->_cf_api_call($this->_cf_base_domain($planDetail['api_url']) . '/pg/subscriptions/' . rawurlencode($planDetail['sub_reference_id']) . '/payments', array(), $planDetail['param_3'], $planDetail['param_1'], 'GET');
+		$auth = null;
+		if (is_array($payments)) {
+			foreach ($payments as $pay) {
+				if (!is_array($pay) || !isset($pay['payment_type']) || $pay['payment_type'] != 'AUTH') {
+					continue;
+				}
+				// A customer can attempt AUTH more than once: a SUCCESS wins, otherwise the latest attempt
+				if ($auth == null || $pay['payment_status'] == 'SUCCESS' || ($auth['payment_status'] != 'SUCCESS' && strtotime($pay['payment_initiated_date']) > strtotime($auth['payment_initiated_date']))) {
+					$auth = $pay;
+				}
+			}
+		}
+		if ($auth == null) {
+			return '';
+		}
+		$upd = array(
+			'auth_payment_status' => $auth['payment_status'],
+			'auth_payment_id'     => isset($auth['cf_payment_id']) ? $auth['cf_payment_id'] : null,
+			'last_update'         => date('Y-m-d H:i:s')
+		);
+		if ($auth['payment_status'] == 'SUCCESS') {
+			$upd['auth_paid_on'] = date('Y-m-d H:i:s');
+		}
+		$this->scheme_modal->updateData($upd, 'id_auto_debit_subscription', $planDetail['id_auto_debit_subscription'], 'auto_debit_subscription');
+		return $auth['payment_status'];
+	}
+
+	/**
+	 * Message for the app after authorization, based on the Rs.1 AUTH result.
+	 */
+	private function _cf_auth_msg($auth_status)
+	{
+		if ($auth_status == 'SUCCESS') {
+			return 'Authorization successful. Auto pay is enabled for this plan.';
+		} else if ($auth_status == 'FAILED') {
+			return 'Authorization failed. You can authorize again or continue to pay manually.';
+		} else if ($auth_status == 'PENDING') {
+			return 'Authorization is pending with your bank. We will update the status shortly.';
+		}
+		return 'Authorization not completed. You can authorize again or continue to pay manually.';
 	}
 
 	/**
@@ -8488,12 +8661,17 @@ class Mobile_api extends REST_Controller
 		if (isset($res['subscription_status'])) {
 			// 3. Update DB
 			$status_code = $this->_cf_save_status($planDetail, $res['subscription_status']);
+			// 4. Rs.1 authorization result — decides auto pay (SUCCESS) or manual payment
+			$auth_payment = $this->_cf_sync_auth($planDetail);
+			$autopay = $this->mobileapi_model->get_autopay_block($planDetail['id_scheme_account']);
 
 			echo json_encode(array(
 				'status'            => true,
 				'title'             => 'Auto Debit',
-				'msg'               => 'Subscription status: ' . $res['subscription_status'],
-				'auto_debit_status' => $status_code
+				'msg'               => $this->_cf_auth_msg($auth_payment),
+				'auto_debit_status' => $status_code,
+				'auth_payment'      => $auth_payment,
+				'autopay_enabled'   => $autopay['enabled']
 			));
 		} else {
 			echo json_encode(array('status' => false, 'msg' => 'Failed to fetch status from Cashfree'));

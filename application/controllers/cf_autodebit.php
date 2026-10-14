@@ -480,11 +480,17 @@ class Cf_autodebit extends CI_Controller {
 		}else{
 			$sub_id = isset($data['subscription_id']) ? $data['subscription_id'] : '';
 		}
-		$planDetail = ($sub_id != '' ? $this->scheme_modal->get_subsDetail('sub_reference_id', $this->db->escape($sub_id)) : array());
+		// A debit result can arrive after the subscription was closed (COMPLETED processed first, or unsubscribed
+		// while the debit was running) — the money is already taken, so look up closed subscriptions too.
+		// Status messages stay open-only so a late message cannot reopen a closed subscription.
+		$is_debit_result = in_array($type, array('SUBSCRIPTION_PAYMENT_SUCCESS', 'SUBSCRIPTION_PAYMENT_FAILED')) && isset($data['payment_type']) && $data['payment_type'] == 'CHARGE';
+		$planDetail = ($sub_id != '' ? $this->scheme_modal->get_subsDetail('sub_reference_id', $this->db->escape($sub_id), !$is_debit_result) : array());
 		if(!empty($planDetail)){
 			// Same Cashfree gateway as mobile_api used to create the subscription (secret is needed for the signature)
 			$gw = $this->scheme_modal->get_cf_gateway($planDetail['id_scheme_account']);
 			$planDetail['param_1'] = isset($gw['param_1']) ? $gw['param_1'] : '';
+			$planDetail['param_3'] = isset($gw['param_3']) ? $gw['param_3'] : '';
+			$planDetail['api_url'] = isset($gw['api_url']) ? $gw['api_url'] : '';
 			$planDetail['id_pg']   = isset($gw['id_pg']) ? $gw['id_pg'] : NULL;
 		}
 
@@ -497,109 +503,18 @@ class Cf_autodebit extends CI_Controller {
 		}
 		else if($type == 'SUBSCRIPTION_STATUS_CHANGED'){
 			$cf_status = isset($data['subscription_details']['subscription_status']) ? $data['subscription_details']['subscription_status'] : '';
-			$status_map = array_merge($this->auth_status, array('CUSTOMER_CANCELLED' => 5));
-			if(!isset($status_map[$cf_status])){
-				$response = array("status" => FALSE, "message" => "Status ".$cf_status." not mapped", "time" => date('d-m-Y H:i:s'));
-			}
-			else if($planDetail['auth_status'] == $status_map[$cf_status]){
-				$response = array("status" => FALSE, "message" => "Status already updated", "time" => date('d-m-Y H:i:s'));
-			}else{
-				$updSubscription = array(
-									"auth_status"	=>	$status_map[$cf_status],
-									"message"		=>	$cf_status,
-									// Cancelled / Completed subscriptions are closed so the customer can subscribe again
-									"status"		=>	($status_map[$cf_status] == 5 || $status_map[$cf_status] == 6 ? 0 : 1),
-									"last_update"	=>	date('Y-m-d H:i:s')
-									);
-				$this->scheme_modal->updateData($updSubscription,'id_auto_debit_subscription',$planDetail['id_auto_debit_subscription'],'auto_debit_subscription');
-				$updSchAc = array(
-							"auto_debit_status"	=>	$status_map[$cf_status],
-							"date_upd"			=>	date('Y-m-d H:i:s')
-							);
-				$upd = $this->scheme_modal->updateData($updSchAc,'id_scheme_account',$planDetail['id_scheme_account'],'scheme_account');
-				$response = array("status" => ($upd > 0), "message" => "Status changed to ".$cf_status, "time" => date('d-m-Y H:i:s'));
-			}
+			$response = $this->_cf_apply_status($planDetail, $cf_status);
+		}
+		else if(in_array($type, array('SUBSCRIPTION_AUTH_STATUS', 'SUBSCRIPTION_PAYMENT_SUCCESS', 'SUBSCRIPTION_PAYMENT_FAILED')) && isset($data['payment_type']) && $data['payment_type'] == 'AUTH'){
+			// Rs.1 authorization result — SUCCESS enables auto pay for the plan (mobileapi_model::get_autopay_block)
+			$response = $this->_cf_record_auth($planDetail, isset($data['payment_status']) ? $data['payment_status'] : '', isset($data['cf_payment_id']) ? $data['cf_payment_id'] : NULL);
+		}
+		else if($type == 'SUBSCRIPTION_PAYMENT_NOTIFICATION_INITIATED' && isset($data['payment_type']) && $data['payment_type'] == 'CHARGE'){
+			// Pre-debit notice: the debit happens on payment_schedule_date (~1 day later).
+			$response = $this->_cf_check_upcoming_debit($planDetail, $sub_id, $data);
 		}
 		else if(($type == 'SUBSCRIPTION_PAYMENT_SUCCESS' || $type == 'SUBSCRIPTION_PAYMENT_FAILED') && isset($data['payment_type']) && $data['payment_type'] == 'CHARGE'){
-			// AUTH payments (Re 1 mandate authorization) are not installments, only CHARGE payments are recorded
-			$this->load->model('payment_modal');
-			$is_success = ($type == 'SUBSCRIPTION_PAYMENT_SUCCESS');
-			$ref_no     = $data['cf_payment_id'];
-			$amount     = $data['payment_amount'];
-			if($is_success){
-				// A retried charge can carry the same cf_payment_id as its failed attempt, so only a non-failed row is a duplicate
-				$isPaymentAlreadyExist = $this->db->where('payment_ref_number', $ref_no)->where('payment_status !=', $this->payment_status['failure'])->count_all_results('payment') > 0;
-			}else{
-				$isPaymentAlreadyExist = $this->scheme_modal->isPaymentAlreadyExist($ref_no);
-			}
-			if($isPaymentAlreadyExist){
-				$response = array("status" => FALSE, "message" => "Payment_ref_number : ".$ref_no." already exist", "time" => date('d-m-Y H:i:s'));
-			}else{
-				$metal_rate   = NULL;
-				$metal_weight = NULL;
-				if($is_success){
-					$metal_rates = $this->payment_modal->getMetalRate($planDetail['id_branch']);
-					$rate_fields = $this->payment_modal->getRateFields($planDetail['id_metal']);
-					$rate_field  = sizeof($rate_fields) == 1 ? $rate_fields['rate_field'] : NULL;
-					$metal_rate  = (float) ( $rate_field == null ? null : $metal_rates[$rate_field] );
-					if($metal_rate > 0 && ($planDetail['scheme_type'] == 2 || ( $planDetail['scheme_type'] == 4 && ($planDetail['flexible_sch_type'] == 2 || $planDetail['flexible_sch_type'] == 3)))){
-						$weight = $amount/$metal_rate;
-						$decimal = $planDetail['metal_wgt_decimal'];
-						$round_off = $planDetail['metal_wgt_roundoff'];
-						$metal_weight =  ($round_off == 0 ? bcdiv($weight,1,$decimal) : $weight );
-					}
-				}
-				// Create due month and year
-				$dueType = "ND";
-				$dueData = $this->payment_modal->generateDueDate($planDetail['id_scheme_account'],$dueType);
-				$insertData = array(
-								"id_scheme_account"	 => $planDetail['id_scheme_account'],
-								"payment_amount" 	 => $amount,
-								"payment_type" 		 => "Cash Free",
-								"payment_mode" 		 => "Subscription",
-								"gst" 	             => 0,
-								"gst_type" 	   		 => 0,
-								"gst_amount" 	   	 => NULL,
-								"no_of_dues" 	     => 1,
-								"act_amount" 	     => $amount,
-								"actual_trans_amt"   => $amount,
-								"date_payment"   	 => date('Y-m-d H:i:s'),
-								"metal_rate"         => $metal_rate == 0 ? NULL : $metal_rate,
-								"metal_weight"       => $metal_weight,
-								"payment_ref_number" => $ref_no,
-								"remark"             => ($is_success ? "Payment done through cashfree subscription" : (isset($data['failure_details']['failure_reason']) ? $data['failure_details']['failure_reason'] : 'Payment failed')),
-								"added_by"			 => 4, // Cashfree Subscription
-								"add_charges"		 => 0,
-								"payment_status"     => ($is_success ? ($this->config->item('auto_pay_approval') == 1 ||  $this->config->item('auto_pay_approval') == 2 ? $this->payment_status['success']:$this->payment_status['awaiting']) : $this->payment_status['failure']),
-								"id_payGateway"      => (isset($planDetail['id_pg']) ? $planDetail['id_pg']: NULL),
-								"id_branch"          => $planDetail['id_branch'],
-								"due_month"          => $dueData['due_month'],
-								"due_year"           => $dueData['due_year'],
-								"due_type"           => $dueType
-							 );
-				if($is_success){
-					$response = $this->createPayment($insertData,$planDetail);
-				}else{
-					$ins = $this->scheme_modal->insertData($insertData,'payment');
-					if($ins['insertID'] > 0){
-						$serviceID = 7;
-						$service = $this->services_modal->checkService($serviceID);
-						if($service['sms'] == 1)
-						{
-							$smsData = $this->services_modal->get_SMS_data($serviceID,$ins['insertID']);
-							if($this->config->item('sms_gateway') == '1'){
-								$this->sms_model->sendSMS_MSG91($smsData['mobile'],$smsData['message'],'',$service['dlt_te_id']);
-							}
-							elseif($this->config->item('sms_gateway') == '2'){
-								$this->sms_model->sendSMS_Nettyfish($smsData['mobile'],$smsData['message'],'trans');
-							}
-						}
-						$response = array("status" => TRUE, "message" => "Failed payment inserted successfully..", "time" => date('d-m-Y H:i:s'));
-					}else{
-						$response = array("status" => FALSE, "message" => "Unable to create payment", "time" => date('d-m-Y H:i:s'));
-					}
-				}
-			}
+			$response = $this->_cf_record_charge($planDetail, $data, $type == 'SUBSCRIPTION_PAYMENT_SUCCESS');
 		}
 		else{
 			$response = array("status" => TRUE, "message" => "Event ".$type." ignored", "time" => date('d-m-Y H:i:s'));
@@ -608,6 +523,442 @@ class Cf_autodebit extends CI_Controller {
 		echo json_encode($response);
 		$logData = "\n".date('d-m-Y H:i:s')." \n BODY : ".$raw_body."\n Result : ".json_encode($response,true);
 		file_put_contents($log_path,$logData,FILE_APPEND | LOCK_EX);
+	}
+
+	/* ═══════════════════════════════════════════════════════════════
+	 * Daily reconciliation with Cashfree (cron)
+	 *
+	 * URL : {base_url}index.php/cf_autodebit/cron_reconcile
+	 *       optional ?key=... when config item 'cf_cron_key' is set
+	 * CLI : php index.php cf_autodebit cron_reconcile
+	 *
+	 * Cashfree never resends a missed webhook. This job reads Cashfree directly and repairs anything missed:
+	 *  1. Subscription status   (Active / On Hold / Cancelled / Completed / Expired) -> plan status
+	 *  2. Rs.1 authorization    -> auto pay enabled flag
+	 *  3. Debits (CHARGE)       -> success / failed payments not yet saved are saved (same code as webhook)
+	 *  4. Upcoming debits       -> cancelled when that month is already paid by any channel (same check as pre-debit webhook)
+	 * Open subscriptions get all four; subscriptions closed in the last 7 days get only step 3 (late debits).
+	 * Safe to run any number of times: every step skips what is already saved.
+	 * ═══════════════════════════════════════════════════════════════ */
+	function cron_reconcile()
+	{
+		@set_time_limit(0);
+		$started = microtime(true);
+		$log_path = $this->log_dir.'/'.date("Y-m-d").'_cron_reconcile.txt';
+		$summary = array(
+			'status' => TRUE, 'started' => date('d-m-Y H:i:s'), 'subscriptions' => 0,
+			'status_updated' => 0, 'auth_updated' => 0, 'payments_saved' => 0, 'debits_cancelled' => 0, 'errors' => 0, 'details' => array()
+		);
+
+		// Optional shared key so the URL cannot be triggered by others (set $config['cf_cron_key'] to enable)
+		$cron_key = $this->config->item('cf_cron_key');
+		if(!$this->input->is_cli_request() && !empty($cron_key) && !hash_equals((string)$cron_key, (string)$this->input->get('key'))){
+			$this->output->set_status_header(403);
+			echo json_encode(array('status' => FALSE, 'message' => 'Invalid key'));
+			return;
+		}
+
+		// Only one run at a time (a slow run must not overlap the next one)
+		$lock = $this->db->query("SELECT GET_LOCK('cf_autodebit_cron_reconcile', 0) as got")->row();
+		if(empty($lock) || $lock->got != 1){
+			echo json_encode(array('status' => FALSE, 'message' => 'Already running'));
+			return;
+		}
+
+		try{
+			$subs = $this->db->query("SELECT id_auto_debit_subscription, sub_reference_id, status
+									FROM auto_debit_subscription
+									WHERE sub_reference_id LIKE 'SUB\\_%' /* new API (mobile) subscriptions only — old web v1 ones are not on this API */
+									  AND (status = 1 OR (status = 0 AND auth_status IN (5, 6) AND last_update >= DATE_SUB(NOW(), INTERVAL 7 DAY)))
+									ORDER BY id_auto_debit_subscription")->result_array();
+			$summary['subscriptions'] = count($subs);
+
+			foreach($subs as $sub){
+				$detail = array('subscription' => $sub['sub_reference_id']);
+				try{
+					$detail = array_merge($detail, $this->_cf_reconcile_one($sub, $summary));
+				}catch(Exception $e){
+					$summary['errors']++;
+					$detail['error'] = $e->getMessage();
+				}catch(Error $e){ // PHP 7 engine errors (e.g. bad data) — skip this subscription, continue with the rest
+					$summary['errors']++;
+					$detail['error'] = $e->getMessage();
+				}
+				$summary['details'][] = $detail;
+			}
+		}catch(Exception $e){
+			$summary['status'] = FALSE;
+			$summary['errors']++;
+			$summary['message'] = $e->getMessage();
+		}
+		$this->db->query("SELECT RELEASE_LOCK('cf_autodebit_cron_reconcile')");
+
+		$summary['seconds'] = round(microtime(true) - $started, 1);
+		echo json_encode($summary);
+		file_put_contents($log_path, "\n".date('d-m-Y H:i:s')." \n".json_encode($summary), FILE_APPEND | LOCK_EX);
+	}
+
+	/**
+	 * Reconcile one subscription with Cashfree. Updates $summary counters and returns what was done.
+	 */
+	function _cf_reconcile_one($sub, &$summary)
+	{
+		$done = array();
+		$is_open = ($sub['status'] == 1);
+		$planDetail = $this->scheme_modal->get_subsDetail('ad.id_auto_debit_subscription', (int)$sub['id_auto_debit_subscription'], false);
+		if(empty($planDetail)){
+			return array('skipped' => 'scheme account not found');
+		}
+		$gw = $this->scheme_modal->get_cf_gateway($planDetail['id_scheme_account']);
+		if(empty($gw) || trim($gw['api_url']) == ''){
+			$summary['errors']++;
+			return array('error' => 'gateway not configured');
+		}
+		$planDetail['param_1'] = $gw['param_1'];
+		$planDetail['param_3'] = $gw['param_3'];
+		$planDetail['api_url'] = $gw['api_url'];
+		$planDetail['id_pg']   = $gw['id_pg'];
+		$sub_id = $planDetail['sub_reference_id'];
+		$base   = $this->_cf_base_domain($planDetail['api_url']).'/pg/subscriptions/'.rawurlencode($sub_id);
+
+		// 1. Subscription status (open subscriptions only — a closed one is never reopened)
+		if($is_open){
+			$live = $this->_cf_api_call_v2($base, array(), $planDetail['param_3'], $planDetail['param_1'], 'GET');
+			if(!is_array($live) || !isset($live['subscription_status'])){
+				$summary['errors']++;
+				return array('error' => 'status fetch failed: '.(is_array($live) && isset($live['message']) ? $live['message'] : 'no response'));
+			}
+			$res = $this->_cf_apply_status($planDetail, $live['subscription_status']);
+			if($res['status']){
+				$summary['status_updated']++;
+				$done['status'] = $res['message'];
+			}
+		}
+
+		// 2-4. Payments of the subscription
+		$payments = $this->_cf_api_call_v2($base.'/payments', array(), $planDetail['param_3'], $planDetail['param_1'], 'GET');
+		if(!is_array($payments) || isset($payments['message'])){
+			$summary['errors']++;
+			$done['error'] = 'payments fetch failed: '.(is_array($payments) && isset($payments['message']) ? $payments['message'] : 'no response');
+			return $done;
+		}
+
+		// 2. Rs.1 authorization: a SUCCESS wins, otherwise the latest attempt
+		if($is_open){
+			$auth = null;
+			foreach($payments as $pay){
+				if(!is_array($pay) || !isset($pay['payment_type'], $pay['payment_status']) || $pay['payment_type'] != 'AUTH'){
+					continue;
+				}
+				if($auth == null || $pay['payment_status'] == 'SUCCESS' || ($auth['payment_status'] != 'SUCCESS' && strtotime($pay['payment_initiated_date']) > strtotime($auth['payment_initiated_date']))){
+					$auth = $pay;
+				}
+			}
+			if($auth != null && in_array($auth['payment_status'], array('SUCCESS', 'FAILED'))){
+				$res = $this->_cf_record_auth($planDetail, $auth['payment_status'], isset($auth['cf_payment_id']) ? $auth['cf_payment_id'] : NULL);
+				if($res['status']){
+					$summary['auth_updated']++;
+					$done['auth'] = $res['message'];
+				}
+			}
+		}
+
+		// 5. ON_HOLD whose failed month was paid manually (allowed while on hold): no Cashfree payment will
+		//    succeed for that month, so ask Cashfree to resume debits from the next debit day.
+		//    Needs sandbox confirmation that ACTIVATE is accepted from ON_HOLD; if refused, it is only logged —
+		//    the plan stays On Hold and the customer keeps paying manually (never a double payment).
+		if($is_open && isset($live['subscription_status']) && $live['subscription_status'] == 'ON_HOLD'){
+			$failed = null;
+			foreach($payments as $pay){
+				if(is_array($pay) && isset($pay['payment_type'], $pay['payment_status']) && $pay['payment_type'] == 'CHARGE' && $pay['payment_status'] == 'FAILED'
+					&& ($failed == null || strtotime($pay['payment_initiated_date']) > strtotime($failed['payment_initiated_date']))){
+					$failed = $pay;
+				}
+			}
+			$failed_on = ($failed != null ? strtotime(!empty($failed['payment_schedule_date']) ? $failed['payment_schedule_date'] : $failed['payment_initiated_date']) : 0);
+			if($failed_on && $this->_cf_debit_not_needed($planDetail['id_scheme_account'], (int)date('n', $failed_on), (int)date('Y', $failed_on)) != ''){
+				$next_debit = $this->_cf_next_debit_date();
+				$act = $this->_cf_api_call_v2($base.'/manage',
+					array('subscription_id' => $sub_id, 'action' => 'ACTIVATE', 'action_details' => array('next_scheduled_time' => $next_debit.'T10:00:00+05:30')),
+					$planDetail['param_3'], $planDetail['param_1']);
+				if(is_array($act) && isset($act['subscription_status']) && !isset($act['message'])){
+					$this->_cf_apply_status($planDetail, $act['subscription_status']);
+					$summary['reactivated'] = (isset($summary['reactivated']) ? $summary['reactivated'] : 0) + 1;
+					$done['reactivated'] = 'Resumed from '.date('d-m-Y', strtotime($next_debit)).' ('.date('M-Y', $failed_on).' paid manually)';
+				}else{
+					$summary['errors']++;
+					$done['reactivate_error'] = is_array($act) && isset($act['message']) ? $act['message'] : 'no response';
+				}
+			}
+		}
+
+		foreach($payments as $pay){
+			if(!is_array($pay) || !isset($pay['payment_type'], $pay['payment_status']) || $pay['payment_type'] != 'CHARGE' || empty($pay['cf_payment_id'])){
+				continue;
+			}
+			// 3. Debit results not saved yet (duplicates are skipped inside _cf_record_charge)
+			if($pay['payment_status'] == 'SUCCESS' || $pay['payment_status'] == 'FAILED'){
+				$res = $this->_cf_record_charge($planDetail, $pay, $pay['payment_status'] == 'SUCCESS');
+				if(!empty($res['status'])){
+					$summary['payments_saved']++;
+					$done['payments'][] = $pay['cf_payment_id'].' '.$pay['payment_status'];
+				}
+			}
+			// 4. Upcoming debit (open subscriptions): cancel when that month is already paid
+			else if($is_open && $pay['payment_status'] == 'INITIALIZED' && !empty($pay['payment_schedule_date']) && strtotime($pay['payment_schedule_date']) > time()){
+				$res = $this->_cf_check_upcoming_debit($planDetail, $sub_id, $pay);
+				if(!empty($res['cancelled'])){
+					$summary['debits_cancelled']++;
+				}
+				if(!empty($res['cancelled']) || !$res['status']){
+					$done['upcoming'][] = $res['message'];
+				}
+			}
+		}
+		return $done;
+	}
+
+	/**
+	 * Next monthly debit date (Y-m-d): the next debit day (5th — keep same as mobile_api::CF_DEBIT_DAY)
+	 * that is at least 2 days away (Cashfree T+1/T+2 + 25 hr pre-debit notice).
+	 */
+	function _cf_next_debit_date()
+	{
+		$debit_day = 5;
+		$earliest = strtotime(date('Y-m-d').' +2 days');
+		$month = strtotime(date('Y-m-01'));
+		for($i = 0; $i < 3; $i++){
+			$m = strtotime(date('Y-m-01', $month).' +'.$i.' month');
+			$d = strtotime(date('Y-m-', $m).sprintf('%02d', min($debit_day, (int)date('t', $m))));
+			if($d >= $earliest){
+				return date('Y-m-d', $d);
+			}
+		}
+		return date('Y-m-d', $earliest);
+	}
+
+	/**
+	 * Apply a Cashfree subscription_status to the plan. Unknown statuses are reported, not saved.
+	 */
+	function _cf_apply_status($planDetail, $cf_status)
+	{
+		// Cancelled from any side, and never-authorized subscriptions past expiry, all mean "not subscribed any more"
+		$status_map = array_merge($this->auth_status, array('CUSTOMER_CANCELLED' => 5, 'EXPIRED' => 5, 'LINK_EXPIRED' => 5));
+		if(!isset($status_map[$cf_status])){
+			return array("status" => FALSE, "message" => "Status ".$cf_status." not mapped", "time" => date('d-m-Y H:i:s'));
+		}
+		if($planDetail['auth_status'] == $status_map[$cf_status]){
+			return array("status" => FALSE, "message" => "Status already updated", "time" => date('d-m-Y H:i:s'));
+		}
+		$updSubscription = array(
+							"auth_status"	=>	$status_map[$cf_status],
+							"message"		=>	$cf_status,
+							// Cancelled / Completed subscriptions are closed so the customer can subscribe again
+							"status"		=>	($status_map[$cf_status] == 5 || $status_map[$cf_status] == 6 ? 0 : 1),
+							"last_update"	=>	date('Y-m-d H:i:s')
+							);
+		$this->scheme_modal->updateData($updSubscription,'id_auto_debit_subscription',$planDetail['id_auto_debit_subscription'],'auto_debit_subscription');
+		$updSchAc = array(
+					"auto_debit_status"	=>	$status_map[$cf_status],
+					"date_upd"			=>	date('Y-m-d H:i:s')
+					);
+		$upd = $this->scheme_modal->updateData($updSchAc,'id_scheme_account',$planDetail['id_scheme_account'],'scheme_account');
+		return array("status" => ($upd > 0), "message" => "Status changed to ".$cf_status, "time" => date('d-m-Y H:i:s'));
+	}
+
+	/**
+	 * Save the Rs.1 AUTH payment result. SUCCESS is final — a later failed attempt must not switch auto pay off.
+	 */
+	function _cf_record_auth($planDetail, $auth_status, $cf_payment_id)
+	{
+		$cur = $this->db->query("SELECT auth_payment_status FROM auto_debit_subscription WHERE id_auto_debit_subscription=".(int)$planDetail['id_auto_debit_subscription'])->row_array();
+		if(isset($cur['auth_payment_status']) && $cur['auth_payment_status'] == 'SUCCESS'){
+			return array("status" => FALSE, "message" => "Authorization already successful", "time" => date('d-m-Y H:i:s'));
+		}
+		if(isset($cur['auth_payment_status']) && $cur['auth_payment_status'] == $auth_status){
+			return array("status" => FALSE, "message" => "Authorization already ".$auth_status, "time" => date('d-m-Y H:i:s'));
+		}
+		$updAuth = array(
+					"auth_payment_status" => $auth_status,
+					"auth_payment_id"     => $cf_payment_id,
+					"last_update"         => date('Y-m-d H:i:s')
+					);
+		if($auth_status == 'SUCCESS'){
+			$updAuth['auth_paid_on'] = date('Y-m-d H:i:s');
+		}
+		$this->scheme_modal->updateData($updAuth,'id_auto_debit_subscription',$planDetail['id_auto_debit_subscription'],'auto_debit_subscription');
+		return array("status" => TRUE, "message" => "Authorization ".$auth_status, "time" => date('d-m-Y H:i:s'));
+	}
+
+	/**
+	 * Upcoming debit check: cancel this one debit when its installment month is already paid through any
+	 * channel (app, counter, collection agent, ERP sync, advance payment) or all installments are done.
+	 */
+	function _cf_check_upcoming_debit($planDetail, $sub_id, $pay)
+	{
+		$sched  = !empty($pay['payment_schedule_date']) ? strtotime($pay['payment_schedule_date']) : time();
+		$reason = $this->_cf_debit_not_needed($planDetail['id_scheme_account'], (int)date('n', $sched), (int)date('Y', $sched));
+		if($reason == ''){
+			return array("status" => TRUE, "cancelled" => FALSE, "message" => "Debit on ".date('d-m-Y', $sched)." allowed", "time" => date('d-m-Y H:i:s'));
+		}
+		$cancel = $this->_cf_api_call_v2(
+			$this->_cf_base_domain($planDetail['api_url']).'/pg/subscriptions/'.rawurlencode($sub_id).'/payments/'.rawurlencode($pay['payment_id']).'/manage',
+			array('subscription_id' => $sub_id, 'payment_id' => $pay['payment_id'], 'action' => 'CANCEL'),
+			$planDetail['param_3'], $planDetail['param_1']
+		);
+		$cancelled = is_array($cancel) && ((isset($cancel['payment_status']) && strtoupper($cancel['payment_status']) == 'CANCELLED') || (isset($cancel['payment_id']) && !isset($cancel['message'])));
+		return array("status" => $cancelled, "cancelled" => $cancelled, "message" => ($cancelled ? "Debit on ".date('d-m-Y', $sched)." cancelled: " : "Debit cancel FAILED: ").$reason, "cf_response" => $cancel, "time" => date('d-m-Y H:i:s'));
+	}
+
+	/**
+	 * Save one Cashfree CHARGE result (success or failed) as a payment of the plan. Shared by the webhook
+	 * and the daily reconciliation, so both save exactly the same way. Duplicates (same cf_payment_id) are skipped.
+	 */
+	function _cf_record_charge($planDetail, $data, $is_success)
+	{
+		$response = array();
+		// AUTH payments (Re 1 mandate authorization) are not installments, only CHARGE payments are recorded
+		$this->load->model('payment_modal');
+		// $is_success: SUBSCRIPTION_PAYMENT_SUCCESS (true) / SUBSCRIPTION_PAYMENT_FAILED (false)
+		$ref_no     = $data['cf_payment_id'];
+		$amount     = $data['payment_amount'];
+		if($is_success){
+			// A retried charge can carry the same cf_payment_id as its failed attempt, so only a non-failed row is a duplicate
+			$isPaymentAlreadyExist = $this->db->where('payment_ref_number', $ref_no)->where('payment_status !=', $this->payment_status['failure'])->count_all_results('payment') > 0;
+		}else{
+			$isPaymentAlreadyExist = $this->scheme_modal->isPaymentAlreadyExist($ref_no);
+		}
+		if($isPaymentAlreadyExist){
+			$response = array("status" => FALSE, "message" => "Payment_ref_number : ".$ref_no." already exist", "time" => date('d-m-Y H:i:s'));
+		}else{
+			$metal_rate   = NULL;
+			$metal_weight = NULL;
+			if($is_success){
+				$metal_rates = $this->payment_modal->getMetalRate($planDetail['id_branch']);
+				$rate_fields = $this->payment_modal->getRateFields($planDetail['id_metal']);
+				$rate_field  = sizeof($rate_fields) == 1 ? $rate_fields['rate_field'] : NULL;
+				$metal_rate  = (float) ( $rate_field == null ? null : $metal_rates[$rate_field] );
+				if($metal_rate > 0 && ($planDetail['scheme_type'] == 2 || ( $planDetail['scheme_type'] == 4 && ($planDetail['flexible_sch_type'] == 2 || $planDetail['flexible_sch_type'] == 3)))){
+					$weight = $amount/$metal_rate;
+					$decimal = $planDetail['metal_wgt_decimal'];
+					$round_off = $planDetail['metal_wgt_roundoff'];
+					$metal_weight =  ($round_off == 0 ? bcdiv($weight,1,$decimal) : $weight );
+				}
+			}
+			// Create due month and year
+			$dueType = "ND";
+			$dueData = $this->payment_modal->generateDueDate($planDetail['id_scheme_account'],$dueType);
+			$insertData = array(
+							"id_scheme_account"	 => $planDetail['id_scheme_account'],
+							"payment_amount" 	 => $amount,
+							"payment_type" 		 => "Cash Free",
+							"payment_mode" 		 => "Subscription",
+							"gst" 	             => 0,
+							"gst_type" 	   		 => 0,
+							"gst_amount" 	   	 => NULL,
+							"no_of_dues" 	     => 1,
+							"act_amount" 	     => $amount,
+							"actual_trans_amt"   => $amount,
+							"date_payment"   	 => date('Y-m-d H:i:s'),
+							"metal_rate"         => $metal_rate == 0 ? NULL : $metal_rate,
+							"metal_weight"       => $metal_weight,
+							"payment_ref_number" => $ref_no,
+							"remark"             => ($is_success ? "Payment done through cashfree subscription" : (isset($data['failure_details']['failure_reason']) ? $data['failure_details']['failure_reason'] : 'Payment failed')),
+							"added_by"			 => 4, // Cashfree Subscription
+							"add_charges"		 => 0,
+							"payment_status"     => ($is_success ? ($this->config->item('auto_pay_approval') == 1 ||  $this->config->item('auto_pay_approval') == 2 ? $this->payment_status['success']:$this->payment_status['awaiting']) : $this->payment_status['failure']),
+							"id_payGateway"      => (isset($planDetail['id_pg']) ? $planDetail['id_pg']: NULL),
+							"id_branch"          => $planDetail['id_branch'],
+							"due_month"          => $dueData['due_month'],
+							"due_year"           => $dueData['due_year'],
+							"due_type"           => $dueType
+						 );
+			if($is_success){
+				$response = $this->createPayment($insertData,$planDetail);
+			}else{
+				$ins = $this->scheme_modal->insertData($insertData,'payment');
+				if($ins['insertID'] > 0){
+					$serviceID = 7;
+					$service = $this->services_modal->checkService($serviceID);
+					if($service['sms'] == 1)
+					{
+						$smsData = $this->services_modal->get_SMS_data($serviceID,$ins['insertID']);
+						if($this->config->item('sms_gateway') == '1'){
+							$this->sms_model->sendSMS_MSG91($smsData['mobile'],$smsData['message'],'',$service['dlt_te_id']);
+						}
+						elseif($this->config->item('sms_gateway') == '2'){
+							$this->sms_model->sendSMS_Nettyfish($smsData['mobile'],$smsData['message'],'trans');
+						}
+					}
+					$response = array("status" => TRUE, "message" => "Failed payment inserted successfully..", "time" => date('d-m-Y H:i:s'));
+				}else{
+					$response = array("status" => FALSE, "message" => "Unable to create payment", "time" => date('d-m-Y H:i:s'));
+				}
+			}
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Reason why the auto debit of installment month $month/$year is not needed ('' = debit is needed).
+	 * Counts payments from every channel (app, counter, collection agent, ERP sync) — success or awaiting approval.
+	 * Installment month = due_month/due_year (advance payments carry the future month); date_payment when not set.
+	 */
+	function _cf_debit_not_needed($id_scheme_account, $month, $year)
+	{
+		$plan = $this->scheme_modal->get_plan_detail((int)$id_scheme_account);
+		if(!empty($plan) && $plan['total_installments'] > 0 && $plan['paid_installments'] >= $plan['total_installments']){
+			return 'All installments are already paid';
+		}
+		$paid = $this->db->query("SELECT COUNT(id_payment) as cnt FROM payment
+								WHERE id_scheme_account = ".(int)$id_scheme_account." AND payment_status IN (1, 2)
+								AND ( (due_month = ".(int)$month." AND due_year = ".(int)$year.")
+									OR ((due_month IS NULL OR due_month = '' OR due_month = 0) AND MONTH(date_payment) = ".(int)$month." AND YEAR(date_payment) = ".(int)$year.") )")->row()->cnt;
+		if($paid > 0){
+			return 'Installment for '.date('M-Y', mktime(0, 0, 0, $month, 1, $year)).' is already paid';
+		}
+		return '';
+	}
+
+	// https://api.cashfree.com from a gateway api_url such as https://api.cashfree.com/pg/orders/ (scheme added if missing)
+	function _cf_base_domain($api_url)
+	{
+		$api_url = trim($api_url);
+		if(!preg_match('#^https?://#i', $api_url)){
+			$api_url = 'https://'.$api_url;
+		}
+		$parsed_url = parse_url($api_url);
+		return $parsed_url['scheme'].'://'.$parsed_url['host'];
+	}
+
+	// Cashfree subscriptions API (same headers as mobile_api::_cf_api_call)
+	function _cf_api_call_v2($url, $payload, $clientId, $secretKey, $method = 'POST')
+	{
+		$curl = curl_init();
+		$options = array(
+			CURLOPT_URL            => $url,
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_TIMEOUT        => 30,
+			CURLOPT_CUSTOMREQUEST  => $method,
+			CURLOPT_HTTPHEADER     => array(
+				'Content-Type: application/json',
+				'x-client-id: '.$clientId,
+				'x-client-secret: '.$secretKey,
+				'x-api-version: 2025-01-01'
+			)
+		);
+		if($method == 'POST' && !empty($payload)){
+			$options[CURLOPT_POSTFIELDS] = json_encode($payload);
+		}
+		curl_setopt_array($curl, $options);
+		$response = curl_exec($curl);
+		$err = curl_error($curl);
+		curl_close($curl);
+		if($err){
+			return array('status' => false, 'message' => 'cURL Error: '.$err);
+		}
+		return json_decode($response, true);
 	}
 
 	// Cashfree webhook signature: base64( HMAC-SHA256( x-webhook-timestamp + raw body, secret key ) )

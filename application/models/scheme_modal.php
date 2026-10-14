@@ -1891,7 +1891,9 @@ ifnull(p.add_charges,0.00) as add_charges,
 								WHERE ad.status=1 and ad.id_scheme_account=" . $id_sch_ac);
 		return $sql->row_array();
 	}
-	function get_subsDetail($field, $id)
+	// $only_open = false also finds closed subscriptions (cancelled / completed) — for payment webhooks
+	// that arrive after the subscription was closed, so a debit already taken is still recorded.
+	function get_subsDetail($field, $id, $only_open = true)
 	{
 		$sql = $this->db->query("SELECT 
 									sub_reference_id, id_auto_debit_subscription, sa.id_scheme_account, auth_status, ad.auth_link,
@@ -1906,7 +1908,8 @@ ifnull(p.add_charges,0.00) as add_charges,
 									LEFT JOIN scheme s on s.id_scheme = sa.id_scheme
 									LEFT JOIN gateway g on g.id_branch = sa.id_branch and g.is_default=1 and g.pg_code=4
 								JOIN chit_settings cs 
-								WHERE ad.status=1 and  " . $field . "=" . $id);
+								WHERE " . ($only_open ? "ad.status=1 and " : "") . " " . $field . "=" . $id . "
+								ORDER BY ad.id_auto_debit_subscription DESC");
 		//	echo $this->db->last_query();exit;
 		return $sql->row_array();
 	}
