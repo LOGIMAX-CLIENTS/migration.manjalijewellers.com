@@ -1865,7 +1865,7 @@ IF(s.scheme_type =1 and s.max_weight!=s.min_weight,true,false) as is_flexible_wg
                 }
 
                 // Auto debit: block manual payment once auto pay is enabled (see get_autopay_block)
-                $autopay = ($record->auto_debit_status > 0 ? $this->get_autopay_block($record->id_scheme_account) : array('enabled' => false, 'block_msg' => ''));
+                $autopay = ($record->auto_debit_status > 0 ? $this->get_autopay_block($record->id_scheme_account) : array('enabled' => false, 'block_msg' => '', 'on_hold' => false, 'hold_month_paid' => false));
                 if ($autopay['block_msg'] != '') {
                     $allow_pay = 'N';
                     $genAdv_allow_pay = 'N';
@@ -1874,6 +1874,8 @@ IF(s.scheme_type =1 and s.max_weight!=s.min_weight,true,false) as is_flexible_wg
                 $schemeAcc[] = array(
                     'autopay_enabled' => $autopay['enabled'],
                     'autopay_block_msg' => $autopay['block_msg'],
+                    'autopay_on_hold' => !empty($autopay['on_hold']),                 // debit failed: manual payment allowed
+                    'autopay_hold_month_paid' => !empty($autopay['hold_month_paid']), // failed month paid since -> no Retry needed
                     'allow_general_advance' => $record->allow_general_advance,
                     'genAdv_allow_pay' => $genAdv_allow_pay,
                     'min_amount' => $min_amount,
@@ -5379,21 +5381,30 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
     /* PAN required chit_settings and scheme based - Esakkiraja_20260109 ends */
 	/**
 	 * Auto debit manual-payment block for a scheme account.
-	 * Auto pay is "enabled" once the open subscription (auto_debit_subscription.status=1) has its first
-	 * successful auto debit (payment.added_by=4, success/awaiting) - and stays enabled until the customer
-	 * unsubscribes (status set to 0). chit_settings.auto_debit_allow_app_pay:
+	 * Auto pay is "enabled" once the open subscription (auto_debit_subscription.status=1) has its Rs.1
+	 * authorization payment SUCCESS (auth_payment_status, from Cashfree AUTH payment) - and stays enabled
+	 * until the customer unsubscribes (status set to 0). chit_settings.auto_debit_allow_app_pay:
 	 *   0 - Block app payment while auto pay is enabled
 	 *   1 - Allow app payment
 	 *   2 - Block app payment while the subscription is ACTIVE
 	 * Returns array('enabled' => bool, 'block_msg' => '' when manual payment is allowed)
 	 */
+	/**
+	 * Is the installment of $month/$year paid through any channel (app, counter, agent, ERP sync)?
+	 * Same rule as cf_autodebit::_cf_debit_not_needed(): success or awaiting approval; installment month from
+	 * due_month/due_year (advance payments carry the future month), payment date when those are not set.
+	 */
+	function is_installment_month_paid($id_scheme_account, $month, $year)
+	{
+		return $this->db->query("SELECT COUNT(id_payment) as cnt FROM payment
+								WHERE id_scheme_account = " . (int)$id_scheme_account . " AND payment_status IN (1, 2)
+								AND ( (due_month = " . (int)$month . " AND due_year = " . (int)$year . ")
+									OR ((due_month IS NULL OR due_month = '' OR due_month = 0) AND MONTH(date_payment) = " . (int)$month . " AND YEAR(date_payment) = " . (int)$year . ") )")->row()->cnt > 0;
+	}
 	function get_autopay_block($id_scheme_account)
 	{
 		$row = $this->db->query("SELECT IFNULL(sa.auto_debit_status, 0) as auto_debit_status, IFNULL(cs.auto_debit_allow_app_pay, 1) as allow_app_pay,
-									ad.id_auto_debit_subscription,
-									(SELECT COUNT(p.id_payment) FROM payment p
-										WHERE p.id_scheme_account = sa.id_scheme_account AND p.added_by = 4 AND p.payment_status IN (1, 2)
-										AND p.date_payment >= ad.created_on) as autopay_paid
+									ad.id_auto_debit_subscription, ad.auth_payment_status
 								FROM scheme_account sa
 									JOIN chit_settings cs
 									LEFT JOIN auto_debit_subscription ad ON ad.id_scheme_account = sa.id_scheme_account AND ad.status = 1
@@ -5403,7 +5414,26 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
 		if (empty($row)) {
 			return $result;
 		}
-		$result['enabled'] = (!empty($row['id_auto_debit_subscription']) && $row['autopay_paid'] > 0);
+		$result['enabled'] = (!empty($row['id_auto_debit_subscription']) && $row['auth_payment_status'] == 'SUCCESS');
+		// ON_HOLD (4): a debit failed, so that month is unpaid — the customer may pay it manually.
+		// No double payment: a pending retry for a paid month is cancelled by the pre-debit check / daily cron,
+		// and Retry is refused once the month is paid. Auto pay stays enabled for the following months.
+		// Cashfree sets ON_HOLD only for eNACH / card mandates. A failed UPI AutoPay debit can leave the
+		// subscription ACTIVE, so a failed auto debit this month (saved by the webhook / cron as added_by=4,
+		// payment_status=3) counts as on hold too. Debits fall on the 5th, so it is this month's installment.
+		$failed_this_month = ($result['enabled'] && $row['auto_debit_status'] == 3 && $this->db->query("SELECT COUNT(id_payment) as cnt FROM payment
+								WHERE id_scheme_account = " . (int)$id_scheme_account . " AND added_by = 4 AND payment_status = 3
+								AND MONTH(date_payment) = MONTH(CURDATE()) AND YEAR(date_payment) = YEAR(CURDATE())")->row()->cnt > 0);
+		$result['on_hold'] = ($row['auto_debit_status'] == 4 || $failed_this_month);
+		$result['hold_month_paid'] = false;
+		if ($result['on_hold']) {
+			$result['hold_month_paid'] = $this->is_installment_month_paid($id_scheme_account, (int)date('n'), (int)date('Y'));
+			// UPI case: once the month is paid, nothing is on hold any more — back to the normal block
+			if (!($row['auto_debit_status'] != 4 && $result['hold_month_paid'])) {
+				return $result;
+			}
+			$result['on_hold'] = false;
+		}
 		if ($row['allow_app_pay'] == 0 && $result['enabled']) {
 			$result['block_msg'] = 'Auto debit is enabled for this plan. Kindly unsubscribe auto debit to pay manually.';
 		} else if ($row['allow_app_pay'] == 2 && $row['auto_debit_status'] == 3) {
