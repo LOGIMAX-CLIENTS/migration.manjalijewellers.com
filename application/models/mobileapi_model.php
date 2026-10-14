@@ -1864,7 +1864,16 @@ IF(s.scheme_type =1 and s.max_weight!=s.min_weight,true,false) as is_flexible_wg
                     }
                 }
 
+                // Auto debit: block manual payment once auto pay is enabled (see get_autopay_block)
+                $autopay = ($record->auto_debit_status > 0 ? $this->get_autopay_block($record->id_scheme_account) : array('enabled' => false, 'block_msg' => ''));
+                if ($autopay['block_msg'] != '') {
+                    $allow_pay = 'N';
+                    $genAdv_allow_pay = 'N';
+                }
+
                 $schemeAcc[] = array(
+                    'autopay_enabled' => $autopay['enabled'],
+                    'autopay_block_msg' => $autopay['block_msg'],
                     'allow_general_advance' => $record->allow_general_advance,
                     'genAdv_allow_pay' => $genAdv_allow_pay,
                     'min_amount' => $min_amount,
@@ -5368,6 +5377,40 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
         }
     }
     /* PAN required chit_settings and scheme based - Esakkiraja_20260109 ends */
+	/**
+	 * Auto debit manual-payment block for a scheme account.
+	 * Auto pay is "enabled" once the open subscription (auto_debit_subscription.status=1) has its first
+	 * successful auto debit (payment.added_by=4, success/awaiting) - and stays enabled until the customer
+	 * unsubscribes (status set to 0). chit_settings.auto_debit_allow_app_pay:
+	 *   0 - Block app payment while auto pay is enabled
+	 *   1 - Allow app payment
+	 *   2 - Block app payment while the subscription is ACTIVE
+	 * Returns array('enabled' => bool, 'block_msg' => '' when manual payment is allowed)
+	 */
+	function get_autopay_block($id_scheme_account)
+	{
+		$row = $this->db->query("SELECT IFNULL(sa.auto_debit_status, 0) as auto_debit_status, IFNULL(cs.auto_debit_allow_app_pay, 1) as allow_app_pay,
+									ad.id_auto_debit_subscription,
+									(SELECT COUNT(p.id_payment) FROM payment p
+										WHERE p.id_scheme_account = sa.id_scheme_account AND p.added_by = 4 AND p.payment_status IN (1, 2)
+										AND p.date_payment >= ad.created_on) as autopay_paid
+								FROM scheme_account sa
+									JOIN chit_settings cs
+									LEFT JOIN auto_debit_subscription ad ON ad.id_scheme_account = sa.id_scheme_account AND ad.status = 1
+								WHERE sa.id_scheme_account = " . (int)$id_scheme_account . "
+								ORDER BY ad.id_auto_debit_subscription DESC LIMIT 1")->row_array();
+		$result = array('enabled' => false, 'block_msg' => '');
+		if (empty($row)) {
+			return $result;
+		}
+		$result['enabled'] = (!empty($row['id_auto_debit_subscription']) && $row['autopay_paid'] > 0);
+		if ($row['allow_app_pay'] == 0 && $result['enabled']) {
+			$result['block_msg'] = 'Auto debit is enabled for this plan. Kindly unsubscribe auto debit to pay manually.';
+		} else if ($row['allow_app_pay'] == 2 && $row['auto_debit_status'] == 3) {
+			$result['block_msg'] = 'Auto debit is active for this plan. Kindly unsubscribe auto debit to pay manually.';
+		}
+		return $result;
+	}
     	function metalRateDiffCalculation($metal_rates){
 
 		foreach($metal_rates as $key => $value){

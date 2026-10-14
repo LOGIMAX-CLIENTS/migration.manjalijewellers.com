@@ -2406,6 +2406,12 @@ class Mobile_api extends REST_Controller
     function mobile_FullPayredeem_post()
     {
         $payData = $this->get_values();
+        // Auto debit: no manual payment while auto pay is enabled for any of the plans
+        $autopay_msg = $this->_autopay_block_msg(isset($payData['pay_arr']) ? $payData['pay_arr'] : array());
+        if ($autopay_msg != '') {
+            $this->response(array('status' => false, 'message' => $autopay_msg), 200);
+            return;
+        }
         $pay_flag = TRUE;
         $allow_flag = FALSE;
         $submit_pay = FALSE;
@@ -4454,6 +4460,26 @@ class Mobile_api extends REST_Controller
         $result['langData'] = file_get_contents($filename);
         $this->response($result, 200);
     }
+    /**
+     * Auto debit block message for the first plan in a payment request that has auto pay enabled ('' = allowed).
+     * $pay_arr items carry the scheme account id in udf1.
+     */
+    private function _autopay_block_msg($pay_arr)
+    {
+        if (!is_array($pay_arr)) {
+            return '';
+        }
+        foreach ($pay_arr as $pay) {
+            $id_sch_ac = is_object($pay) ? (isset($pay->udf1) ? $pay->udf1 : 0) : (isset($pay['udf1']) ? $pay['udf1'] : 0);
+            if ($id_sch_ac > 0) {
+                $autopay = $this->mobileapi_model->get_autopay_block($id_sch_ac);
+                if ($autopay['block_msg'] != '') {
+                    return $autopay['block_msg'];
+                }
+            }
+        }
+        return '';
+    }
     // Cashfree SDK API's :: START
     function random_strings($length)
     {
@@ -4488,6 +4514,12 @@ class Mobile_api extends REST_Controller
         $ldata = "\n" . date('d-m-Y H:i:s') . " \n Mobile : " . json_encode($postData, true);
         file_put_contents($log_path, $ldata, FILE_APPEND | LOCK_EX);
         $sch_payment = json_decode(urldecode($payData['pay_arr']));
+        // Auto debit: no manual payment while auto pay is enabled for any of the plans
+        $autopay_msg = $this->_autopay_block_msg($sch_payment);
+        if ($autopay_msg != '') {
+            $this->response(array('status' => false, 'message' => $autopay_msg), 200);
+            return;
+        }
         $sum_of_payArr_pay = array_sum(array_column($sch_payment, 'pay_amt'));
         //  echo '<pre>';print_r($sum_of_payArr_pay);exit;
         $sum_of_payArr_dis = array_sum(array_column($sch_payment, 'discount'));
