@@ -8343,6 +8343,11 @@ class Mobile_api extends REST_Controller
 			return array('status' => false, 'msg' => 'You have already paid all your installments...');
 		}
 
+		// Auto debit only for Amount schemes below 15,000 (same rule as admin scheme master)
+		if ($planDetail['scheme_type'] != 0) {
+			return array('status' => false, 'msg' => 'Auto debit is available only for amount based plans.');
+		}
+
 		// Determine plan amount based on scheme_type
 		// scheme_type: 0=Amount, 1=Weight, 2=Amount to Weight, 3=Flexible Amount
 		$plan_amount = 0;
@@ -8357,6 +8362,9 @@ class Mobile_api extends REST_Controller
 
 		if ($plan_amount <= 0) {
 			return array('status' => false, 'msg' => 'Invalid plan amount');
+		}
+		if ($plan_amount >= 15000) {
+			return array('status' => false, 'msg' => 'Auto debit is available only for plans below Rs.15,000 per month.');
 		}
 
 		// auto_debit_plan_type: 0=Not Applicable, 1=Periodic (On Demand option is disabled in scheme master).
