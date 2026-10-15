@@ -16,6 +16,7 @@ class Cf_autodebit_model extends CI_Model
 	const PAY_AWAITING = 2;
 	const PAY_SUCCESS  = 1;
 	const PAY_CANCEL   = 4;
+	const PAY_FAILURE  = 3;
 
 	function __construct()
 	{
@@ -27,7 +28,7 @@ class Cf_autodebit_model extends CI_Model
 	 * $cf_payment_id: Cashfree payment reference; $mode: payment method (UPI / CC / DC / NB).
 	 * Returns array('status' => bool, 'message' => string). Safe to call any number of times.
 	 */
-	function complete_auth_txn($txnid, $cf_payment_id = NULL, $mode = NULL)
+	function complete_auth_txn($txnid, $cf_payment_id = NULL, $mode = NULL, $remark = NULL, $extra = array())
 	{
 		if (empty($txnid)) {
 			return array('status' => FALSE, 'message' => 'No authorization payment');
@@ -44,13 +45,13 @@ class Cf_autodebit_model extends CI_Model
 			return array('status' => FALSE, 'message' => 'Authorization payment is being completed by another request');
 		}
 		try {
-			return $this->_complete_auth_txn($txnid, $cf_payment_id, $mode);
+			return $this->_complete_auth_txn($txnid, $cf_payment_id, $mode, $remark, $extra);
 		} finally {
 			$this->db->query("SELECT RELEASE_LOCK(" . $lock . ")");
 		}
 	}
 
-	private function _complete_auth_txn($id_transaction, $cf_payment_id, $mode)
+	private function _complete_auth_txn($id_transaction, $cf_payment_id, $mode, $remark = NULL, $extra = array())
 	{
 		$pay_status = $this->payment_modal->getStatusByTxnId($id_transaction);
 		if (empty($pay_status)) {
@@ -70,9 +71,13 @@ class Cf_autodebit_model extends CI_Model
 			"card_no"            => NULL,
 			"payu_id"            => $cf_payment_id,
 			"payment_ref_number" => $cf_payment_id,
-			"remark"             => "Auto debit authorization - cashfree subscription",
+			"remark"             => (!empty($remark) ? $remark : "Auto debit authorization - cashfree subscription"),
 			"payment_status"     => ($approval_type == 1 || $approval_type == 2 ? self::PAY_SUCCESS : self::PAY_AWAITING)
 		);
+		// Monthly debit: the row was created when the debit was requested — date it on the debit itself
+		foreach ($extra as $k => $v) {
+			$updateData[$k] = $v;
+		}
 		$payment = $this->payment_modal->updateGatewayResponse($updateData, $id_transaction);
 		$serviceID = 7;
 		$service = $this->services_modal->checkService($serviceID);
@@ -145,6 +150,137 @@ class Cf_autodebit_model extends CI_Model
 			}
 		}
 		return array('status' => TRUE, 'message' => 'Authorization installment completed (transaction ' . $id_transaction . ')');
+	}
+
+	/**
+	 * Monthly auto debit: create the month's PENDING payment before the debit is requested from Cashfree,
+	 * with the same fields mobile_api::mobile_payment_post() writes for one installment of an Amount scheme
+	 * (auto debit is allowed only for Amount schemes below 15,000). Completed by complete_auth_txn() when
+	 * Cashfree reports the debit, or marked failed by fail_installment_txn().
+	 * $schedule: debit date (Y-m-d) — used as date_payment so the month is right even when requested the
+	 * month before (completion re-dates it to the actual debit).
+	 * Returns array('status' => bool, 'txnid' => ..., 'message' => ...).
+	 */
+	function create_installment_txn($id_scheme_account, $amount, $month, $year, $schedule, $id_pg)
+	{
+		$this->load->model('payment_modal');
+		$this->load->model('mobileapi_model');
+
+		$chit = $this->payment_modal->get_schemeByChit($id_scheme_account);
+		if (empty($chit)) {
+			return array('status' => FALSE, 'message' => 'Scheme account not found');
+		}
+		if ($chit['scheme_type'] != 0) {
+			return array('status' => FALSE, 'message' => 'Auto debit is allowed only for Amount schemes');
+		}
+		$sa = $this->db->query("SELECT c.mobile, sa.id_branch FROM scheme_account sa JOIN customer c ON c.id_customer = sa.id_customer
+								WHERE sa.id_scheme_account = " . (int)$id_scheme_account)->row_array();
+		$cusData = !empty($sa) ? $this->payment_modal->get_customer($sa['mobile']) : array();
+		if (empty($cusData)) {
+			return array('status' => FALSE, 'message' => 'Customer not found');
+		}
+
+		// Branch: same rule as mobile_payment (branch-wise registration -> customer branch, else plan branch)
+		if ($cusData['branch_settings'] == 1) {
+			$id_branch = ($cusData['is_branchwise_cus_reg'] == 1 ? $cusData['id_branch'] : $sa['id_branch']);
+		} else {
+			$id_branch = NULL;
+		}
+		$paycred = $this->mobileapi_model->getBranchGatewayData($id_branch, $id_pg);
+		$custom_entry_date = $this->mobileapi_model->get_entrydate($id_branch);
+		$metal_rate = $this->payment_modal->getMetalRate('');
+		$email_regx = "/^([\w\.-]+)@([\w-]+)\.([\w]{2,8})(\.[\w]{2,8})?$/";
+		$pay_email = (!empty($cusData['email']) && preg_match($email_regx, $cusData['email'])) ? str_replace(' ', '', $cusData['email']) : str_replace(' ', '', $cusData['pg_email']);
+
+		$txnid = uniqid(time());
+		$insertData = array(
+			"id_scheme_account"    => $id_scheme_account,
+			"id_scheme"            => (isset($chit['id_scheme']) ? $chit['id_scheme'] : 0),
+			"payment_amount"       => $amount,
+			"gst"                  => (isset($chit['gst']) ? $chit['gst'] : 0),
+			"gst_type"             => (isset($chit['gst_type']) ? $chit['gst_type'] : 0),
+			"payment_type"         => (!empty($paycred['pg_name']) ? $paycred['pg_name'] : ''),
+			"due_type"             => 'ND',
+			"due_month"            => (int)$month,
+			"due_year"             => (int)$year,
+			"no_of_dues"           => 1,
+			"actual_trans_amt"     => $amount,
+			"date_payment"         => $schedule . ' 10:00:00',
+			"custom_entry_date"    => (!empty($custom_entry_date) && $custom_entry_date['edit_custom_entry_date'] == 1 ? $custom_entry_date['custom_entry_date'] : NULL),
+			"metal_rate"           => (isset($metal_rate['goldrate_22ct']) ? $metal_rate['goldrate_22ct'] : 0.00),
+			"metal_weight"         => 0.000,
+			"id_transaction"       => $txnid . '-1',
+			"ref_trans_id"         => $txnid,
+			"remark"               => 'Auto debit for ' . date('M-Y', mktime(0, 0, 0, $month, 1, $year)),
+			"added_by"             => 4, // Cashfree Subscription (auto debit)
+			"add_charges"          => NULL,
+			"discountAmt"          => 0.00,
+			"payment_status"       => self::PAY_PENDING,
+			"id_payGateway"        => $id_pg,
+			"id_branch"            => $id_branch,
+			"receipt_year"         => $this->payment_modal->get_financialYear(),
+			"pay_email"            => $pay_email,
+			"redeemed_amount"      => 0.00,
+			"id_employee"          => NULL,
+			"paidBy_id_customer"   => NULL,
+			"paidBy_mobile"        => NULL,
+			"saved_benefits"       => 0,
+			"benefit_value"        => 0,
+			"benefit_type"         => 0,
+			"saved_benefit_amt"    => 0,
+			"dg_other_benefit_wgt" => NULL,
+			"dg_other_benefit_amt" => NULL,
+		);
+		$payment = $this->payment_modal->addPayment($insertData);
+		if (empty($payment['insertID'])) {
+			return array('status' => FALSE, 'message' => 'Unable to create the payment');
+		}
+		return array('status' => TRUE, 'txnid' => $txnid, 'id_payment' => $payment['insertID'], 'message' => 'Pending payment created');
+	}
+
+	/**
+	 * Monthly debit failed: mark its pending payment failed with the bank's reason (same SMS as before).
+	 * A row already completed (e.g. a SUCCESS that arrived first) is never changed.
+	 */
+	function fail_installment_txn($txnid, $reason)
+	{
+		$this->load->model('payment_modal');
+		$this->load->model('services_modal');
+		$this->load->model('sms_model');
+		$this->db->where('ref_trans_id', $txnid);
+		$this->db->where('payment_status', self::PAY_PENDING);
+		$this->db->update('payment', array('payment_status' => self::PAY_FAILURE, 'remark' => (!empty($reason) ? $reason : 'Auto debit failed')));
+		if ($this->db->affected_rows() < 1) {
+			return array('status' => FALSE, 'message' => 'Already updated');
+		}
+		$serviceID = 7;
+		$service = $this->services_modal->checkService($serviceID);
+		if ($service['sms'] == 1) {
+			foreach ($this->payment_modal->getPayIds($txnid) as $pay) {
+				if (!empty($pay['id_payment'])) {
+					$sms = $this->services_modal->get_SMS_data($serviceID, $pay['id_payment']);
+					$this->send_sms($sms['mobile'], $sms['message'], isset($sms['dlt_te_id']) ? $sms['dlt_te_id'] : '');
+				}
+			}
+		}
+		return array('status' => TRUE, 'message' => 'Failed payment updated');
+	}
+
+	/**
+	 * Debit went through after the plan was closed: keep it visible for refund — no receipt, no SMS.
+	 */
+	function refund_installment_txn($txnid, $cf_payment_id)
+	{
+		$this->db->where('ref_trans_id', $txnid);
+		$this->db->where_in('payment_status', array(self::PAY_PENDING, self::PAY_FAILURE));
+		$this->db->update('payment', array(
+			'payment_status'     => self::PAY_AWAITING,
+			'payment_ref_number' => $cf_payment_id,
+			'payu_id'            => $cf_payment_id,
+			'date_payment'       => date('Y-m-d H:i:s'),
+			'remark'             => 'Auto debit received after the plan was closed - verify and refund'
+		));
+		return array('status' => $this->db->affected_rows() > 0, 'message' => 'Saved for refund (plan closed)');
 	}
 
 	/**

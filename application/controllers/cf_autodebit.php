@@ -514,7 +514,10 @@ class Cf_autodebit extends CI_Controller {
 			$response = $this->_cf_check_upcoming_debit($planDetail, $sub_id, $data);
 		}
 		else if(($type == 'SUBSCRIPTION_PAYMENT_SUCCESS' || $type == 'SUBSCRIPTION_PAYMENT_FAILED') && isset($data['payment_type']) && $data['payment_type'] == 'CHARGE'){
-			$response = $this->_cf_record_charge($planDetail, $data, $type == 'SUBSCRIPTION_PAYMENT_SUCCESS');
+			$response = $this->_cf_record_monthly($planDetail, $data, $type == 'SUBSCRIPTION_PAYMENT_SUCCESS');
+			if($response === NULL){
+				$response = $this->_cf_record_charge($planDetail, $data, $type == 'SUBSCRIPTION_PAYMENT_SUCCESS');
+			}
 		}
 		else{
 			$response = array("status" => TRUE, "message" => "Event ".$type." ignored", "time" => date('d-m-Y H:i:s'));
@@ -721,7 +724,10 @@ class Cf_autodebit extends CI_Controller {
 			}
 			// 3. Debit results not saved yet (duplicates are skipped inside _cf_record_charge)
 			if($pay['payment_status'] == 'SUCCESS' || $pay['payment_status'] == 'FAILED'){
-				$res = $this->_cf_record_charge($planDetail, $pay, $pay['payment_status'] == 'SUCCESS');
+				$res = $this->_cf_record_monthly($planDetail, $pay, $pay['payment_status'] == 'SUCCESS');
+				if($res === NULL){
+					$res = $this->_cf_record_charge($planDetail, $pay, $pay['payment_status'] == 'SUCCESS');
+				}
 				if(!empty($res['status'])){
 					$summary['payments_saved']++;
 					$done['payments'][] = $pay['cf_payment_id'].' '.$pay['payment_status'];
@@ -801,14 +807,21 @@ class Cf_autodebit extends CI_Controller {
 		$id_sub = (int)$row['id_auto_debit_subscription'];
 		$label  = date('M-Y', mktime(0, 0, 0, $target['month'], 1, $target['year']));
 
+		$payment_id = 'CHG_'.$id_sub.'_'.sprintf('%04d%02d', $target['year'], $target['month']);
+		$existing = $this->db->query("SELECT status, txnid FROM auto_debit_charge WHERE id_auto_debit_subscription = ".$id_sub." AND due_year = ".(int)$target['year']." AND due_month = ".(int)$target['month'])->row_array();
+
 		// Already paid through any channel, or all installments done -> nothing to request
+		// (a pending payment made for an earlier, not-yet-sent request is closed)
 		if($this->_cf_debit_not_needed($planDetail['id_scheme_account'], $target['month'], $target['year']) != ''){
+			if(!empty($existing['txnid']) && $existing['status'] != 'REQUESTED'){
+				$this->load->model('cf_autodebit_model');
+				$this->cf_autodebit_model->cancel_auth_txn($existing['txnid'], 'month already paid');
+			}
 			return '';
 		}
 
-		$payment_id = 'CHG_'.$id_sub.'_'.sprintf('%04d%02d', $target['year'], $target['month']);
-		$existing = $this->db->query("SELECT status FROM auto_debit_charge WHERE id_auto_debit_subscription = ".$id_sub." AND due_year = ".(int)$target['year']." AND due_month = ".(int)$target['month'])->row_array();
-		if(!empty($existing) && in_array($existing['status'], array('REQUESTED', 'SKIPPED'))){
+		// REQUESTED: waiting for Cashfree / PAID / DEBIT_FAILED: result known (a failed month is retried by the customer)
+		if(!empty($existing) && in_array($existing['status'], array('REQUESTED', 'SKIPPED', 'PAID', 'DEBIT_FAILED'))){
 			return '';
 		}
 		if(empty($existing)){
@@ -817,6 +830,19 @@ class Cf_autodebit extends CI_Controller {
 			if($this->db->affected_rows() < 1){
 				return ''; // another run inserted it at the same moment
 			}
+		}
+
+		// This month's PENDING payment, created the same way as a manual (mobile_payment) payment, before Cashfree
+		// is asked. Created once per month and reused if the request has to be tried again.
+		if(empty($existing['txnid'])){
+			$this->load->model('cf_autodebit_model');
+			$txn = $this->cf_autodebit_model->create_installment_txn($planDetail['id_scheme_account'], (float)$row['installment_amount'], $target['month'], $target['year'], $target['schedule'], $planDetail['id_pg']);
+			if(!$txn['status']){
+				$this->db->query("UPDATE auto_debit_charge SET status = 'FAILED_REQUEST', message = ".$this->db->escape('Payment not created: '.$txn['message']).", last_update = NOW() WHERE payment_id = ".$this->db->escape($payment_id));
+				$summary['errors']++;
+				return $label.' debit request FAILED: '.$txn['message'];
+			}
+			$this->db->query("UPDATE auto_debit_charge SET txnid = ".$this->db->escape($txn['txnid']).", last_update = NOW() WHERE payment_id = ".$this->db->escape($payment_id));
 		}
 
 		// A previous run may have reached Cashfree and then timed out: the payment is already there
@@ -955,7 +981,52 @@ class Cf_autodebit extends CI_Controller {
 			$planDetail['param_3'], $planDetail['param_1']
 		);
 		$cancelled = is_array($cancel) && ((isset($cancel['payment_status']) && strtoupper($cancel['payment_status']) == 'CANCELLED') || (isset($cancel['payment_id']) && !isset($cancel['message'])));
+		if($cancelled && !empty($pay['payment_id'])){
+			// The month's pending payment (made when the debit was requested) is closed too
+			$chg = $this->db->query("SELECT txnid FROM auto_debit_charge WHERE payment_id = ".$this->db->escape($pay['payment_id']))->row_array();
+			if(!empty($chg['txnid'])){
+				$this->load->model('cf_autodebit_model');
+				$this->cf_autodebit_model->cancel_auth_txn($chg['txnid'], $reason);
+				$this->db->query("UPDATE auto_debit_charge SET status = 'SKIPPED', message = ".$this->db->escape(substr($reason, 0, 250)).", last_update = NOW() WHERE payment_id = ".$this->db->escape($pay['payment_id']));
+			}
+		}
 		return array("status" => $cancelled, "cancelled" => $cancelled, "message" => ($cancelled ? "Debit on ".date('d-m-Y', $sched)." cancelled: " : "Debit cancel FAILED: ").$reason, "cf_response" => $cancel, "time" => date('d-m-Y H:i:s'));
+	}
+
+	/**
+	 * Monthly debit result for a month our daily job requested: update that month's pending payment
+	 * (created like a manual payment) — success: completed like a manual payment; failed: marked failed;
+	 * success after the plan was closed: kept for refund. Returns NULL when the debit has no such payment
+	 * (older PERIODIC subscriptions) so the caller falls back to _cf_record_charge().
+	 */
+	function _cf_record_monthly($planDetail, $data, $is_success)
+	{
+		if(empty($data['payment_id'])){
+			return NULL;
+		}
+		$chg = $this->db->query("SELECT txnid FROM auto_debit_charge WHERE payment_id = ".$this->db->escape($data['payment_id']))->row_array();
+		if(empty($chg['txnid'])){
+			return NULL;
+		}
+		$this->load->model('cf_autodebit_model');
+		$cf_payment_id = isset($data['cf_payment_id']) ? $data['cf_payment_id'] : NULL;
+		if($is_success){
+			if($this->_cf_plan_closed($planDetail['id_scheme_account'])){
+				$res = $this->cf_autodebit_model->refund_installment_txn($chg['txnid'], $cf_payment_id);
+			}else{
+				$res = $this->cf_autodebit_model->complete_auth_txn($chg['txnid'], $cf_payment_id, $this->cf_autodebit_model->cf_payment_mode($data),
+						'Payment done through cashfree subscription', array('date_payment' => date('Y-m-d H:i:s')));
+			}
+			$charge_status = 'PAID';
+		}else{
+			$reason = isset($data['failure_details']['failure_reason']) ? $data['failure_details']['failure_reason'] : 'Auto debit failed';
+			$res = $this->cf_autodebit_model->fail_installment_txn($chg['txnid'], $reason);
+			$charge_status = 'DEBIT_FAILED';
+		}
+		// A late FAILED never overwrites PAID (the payment row itself is protected the same way)
+		$this->db->query("UPDATE auto_debit_charge SET status = '".$charge_status."', message = ".$this->db->escape(substr($res['message'], 0, 250)).", last_update = NOW()
+						WHERE payment_id = ".$this->db->escape($data['payment_id']).($is_success ? "" : " AND status != 'PAID'"));
+		return array("status" => $res['status'], "message" => $res['message'], "time" => date('d-m-Y H:i:s'));
 	}
 
 	/**
