@@ -2272,3 +2272,63 @@ function createChartRowForTopUpScheme() {
 $(document).on("mousedown keydown keypress", "select.locked", function (e) {
 	e.preventDefault(); // prevent dropdown from opening
 });
+
+/* ── Auto debit plan type rules (Cashfree UPI AutoPay / card mandates: below Rs.15,000 per debit) ──
+   Periodic auto debit is allowed only for "Amount" schemes with an amount below 15,000.
+   - Amount scheme + Periodic: show the limit note above Amount.
+   - Amount 15,000 or more, or any other scheme type: set to Not Applicable and lock the select
+     (a disabled select is not posted; the controller saves 0 = Not Applicable).
+   - Back below 15,000 on an Amount scheme: unlock, and restore Periodic if it was set before. */
+$(document).ready(function () {
+	var $adSel = $("select[name='sch[auto_debit_plan_type]']");
+	if (!$adSel.length || !$('#amount').length) {
+		return;
+	}
+	var AD_LIMIT = 15000;
+	var adWasPeriodic = ($adSel.val() == '1');
+
+	function adAmount() {
+		return parseFloat(String($('#amount').val() || '').replace(/[^0-9.]/g, '')) || 0;
+	}
+
+	function syncAutoDebitPlanType() {
+		var isAmountScheme = $("input[name='sch[scheme_type]']:checked").val() == 0;
+		var overLimit = isAmountScheme && adAmount() >= AD_LIMIT;
+		var $warn = $('#ad_limit_warning');
+
+		if (!isAmountScheme || overLimit) {
+			if ($adSel.val() == '1') {
+				adWasPeriodic = true;
+			}
+			$adSel.val('0').prop('disabled', true);
+		} else {
+			$adSel.prop('disabled', false);
+			if (adWasPeriodic) {
+				$adSel.val('1');
+			}
+		}
+
+		if (overLimit) {
+			$warn.html('Auto debit is allowed only below &#8377;15,000. Select Auto Debit Plan Type is set to <b>Not Applicable</b>.')
+				.css({ background: '#fdecea', color: '#a12622', border: '1px solid #f5c2c0' }).show();
+		} else if (isAmountScheme && $adSel.val() == '1') {
+			$warn.html('Auto debit (Periodic): amount must be below &#8377;15,000.')
+				.css({ background: '#fff4e5', color: '#8a5300', border: '1px solid #f7d9a8' }).show();
+		} else {
+			$warn.hide();
+		}
+	}
+
+	// The admin chooses Not Applicable / Periodic: remember the choice
+	$adSel.on('change', function () {
+		adWasPeriodic = ($(this).val() == '1');
+		syncAutoDebitPlanType();
+	});
+	$('#amount').on('input keyup change blur', syncAutoDebitPlanType);
+	$("input[name='sch[scheme_type]']:radio").on('change', function () {
+		// scheme type handlers above may reset the amount — check after they run
+		setTimeout(syncAutoDebitPlanType, 0);
+	});
+	// Initial state (after the page's own load handlers)
+	setTimeout(syncAutoDebitPlanType, 0);
+});
