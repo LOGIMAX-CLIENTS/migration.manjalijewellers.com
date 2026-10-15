@@ -58,6 +58,8 @@ class Cf_autodebit_model extends CI_Model
 			return array('status' => FALSE, 'message' => 'No payment found for transaction ' . $id_transaction);
 		}
 		if ($pay_status['payment_status'] == self::PAY_SUCCESS || $pay_status['payment_status'] == self::PAY_AWAITING) {
+			// Completed earlier without the installment number (before this step existed): fill it now
+			$this->sync_installment($id_transaction);
 			return array('status' => FALSE, 'message' => 'Already completed. Status : ' . $pay_status['payment_status']);
 		}
 
@@ -131,6 +133,9 @@ class Cf_autodebit_model extends CI_Model
 				if (($approval_type == 1 || $approval_type == 2 || $approval_type == 3) && ($pay['firstPayamt_maxpayable'] == 1 || $pay['firstPayamt_as_payamt'] == 1) && ($pay['firstPayment_amt'] == '' || $pay['firstPayment_amt'] == null)) {
 					$this->payment_modal->update_account(array('firstPayment_amt' => $pay['payment_amount']), $pay['id_scheme_account']);
 				}
+				// Installment number + plan's paid installment count (scheme_account.total_paid_ins), same as the other
+				// payment completions (mobile_api old_cashfreeResponse, paymt, adminapp_api)
+				$this->sync_installment($id_transaction, $pay);
 				// Insert Data in Intermediate table (same condition as services::payment_success)
 				if ($approval_type == 2 || $approval_type == 3 && ($this->config->item('integrationType') == 2 || $this->config->item('integrationType') == 3)) {
 					$this->mobileapi_model->insert_common_data($pay['id_payment']);
@@ -150,6 +155,50 @@ class Cf_autodebit_model extends CI_Model
 			}
 		}
 		return array('status' => TRUE, 'message' => 'Authorization installment completed (transaction ' . $id_transaction . ')');
+	}
+
+	/**
+	 * Installment cycle for the completed payment(s) of a transaction, then the plan's paid installment count.
+	 * Same steps as the other completions (mobile_api::old_cashfreeResponse_post, paymt, adminapp_api):
+	 * payment.installment / due_date / due_date_to / grace_date from mobileapi_model::get_due_date(), then
+	 * scheme_account.total_paid_ins from payment_modal::getPaidInsData() (counts DISTINCT payment.installment).
+	 * Rows that already have an installment number are left as they are. $pay: one getPayIds() row, or null for all.
+	 */
+	function sync_installment($txnid, $pay = null)
+	{
+		$this->load->model('payment_modal');
+		$this->load->model('mobileapi_model');
+		$rows = ($pay !== null) ? array($pay) : $this->payment_modal->getPayIds($txnid);
+		$accounts = array();
+		foreach ($rows as $row) {
+			if (empty($row['id_payment'])) {
+				continue;
+			}
+			$cur = $this->db->query("SELECT installment, payment_status FROM payment WHERE id_payment = " . (int)$row['id_payment'])->row_array();
+			if (empty($cur) || !in_array($cur['payment_status'], array(self::PAY_SUCCESS, self::PAY_AWAITING))) {
+				continue;
+			}
+			if ($cur['installment'] === NULL || $cur['installment'] === '') {
+				$dt_pay = date('Y-m-d', strtotime(str_replace("/", "-", $row['date_payment'])));
+				$ins_cycle = $this->mobileapi_model->get_due_date($row['due_type'], $dt_pay, $row['id_scheme_account']);
+				if (!empty($ins_cycle) && !empty($ins_cycle[0])) {
+					$this->mobileapi_model->updData(array(
+						'due_date'        => (isset($ins_cycle[0]['due_date_from']) ? $ins_cycle[0]['due_date_from'] : NULL),
+						'due_date_to'     => (isset($ins_cycle[0]['due_date_to']) ? $ins_cycle[0]['due_date_to'] : NULL),
+						'grace_date'      => (isset($ins_cycle[0]['grace_date']) ? $ins_cycle[0]['grace_date'] : NULL),
+						'installment'     => (isset($ins_cycle[0]['installment']) ? $ins_cycle[0]['installment'] : NULL),
+						'is_limit_exceed' => (isset($ins_cycle[0]['is_limit_exceed']) ? $ins_cycle[0]['is_limit_exceed'] : 0),
+					), 'id_payment', $row['id_payment'], 'payment');
+				}
+			}
+			$accounts[$row['id_scheme_account']] = true;
+		}
+		foreach (array_keys($accounts) as $id_scheme_account) {
+			$paid = $this->payment_modal->getPaidInsData($id_scheme_account);
+			if (!empty($paid)) {
+				$this->payment_modal->updData(array('total_paid_ins' => $paid['paid_installments']), 'id_scheme_account', $id_scheme_account, 'scheme_account');
+			}
+		}
 	}
 
 	/**
