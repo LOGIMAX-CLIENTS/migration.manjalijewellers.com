@@ -953,7 +953,7 @@ IF(s.scheme_type =1 and s.max_weight!=s.min_weight,true,false) as is_flexible_wg
 				if(s.allow_advance=1,s.advance_months,0) as advance_months,
 				if(s.allow_preclose=1,preclose_months,0) as allow_preclose_months,
 				sa.disable_payment,s.charge,s.charge_type,s.charge_head,
-				IFNULL(sa.auto_debit_status, 0) as auto_debit_status,ad.auth_link,
+				IFNULL(sa.auto_debit_status, 0) as auto_debit_status,ad.auth_link,ad.debit_day,ad.first_charge_on as autopay_first_charge_on,
 				cs.currency_name,
 				cs.currency_symbol,s.firstPayamt_maxpayable,s.get_amt_in_schjoin,s.id_metal,s.id_purity,s.max_chance,cs.curr_symb_html,cls.classification_name,s.scheme_name,
 				if(s.display_payable = 0, 'Days', if(s.display_payable = 1 , 'Weeks', if(s.display_payable = 2 , 'Months',if(s.display_payable = 3 , 'Month','-' ) ))) as ins_word,
@@ -1867,6 +1867,17 @@ IF(s.scheme_type =1 and s.max_weight!=s.min_weight,true,false) as is_flexible_wg
 
                 // Auto debit: block manual payment once auto pay is enabled (see get_autopay_block)
                 $autopay = ($record->auto_debit_status > 0 ? $this->get_autopay_block($record->id_scheme_account) : array('enabled' => false, 'block_msg' => '', 'on_hold' => false, 'hold_month_paid' => false));
+                // Arrears: months before this month still unpaid. Auto debit only collects the current month onwards,
+                // so keep manual payment open to clear them (a debit for a month paid this way is cancelled by the
+                // pre-debit check / daily job, so it is never paid twice).
+                $autopay_arrears = false;
+                if ($autopay['block_msg'] != '' && !empty($record->start_date)) {
+                    $months_before = ((int)date('Y') - (int)date('Y', strtotime($record->start_date))) * 12 + ((int)date('n') - (int)date('n', strtotime($record->start_date)));
+                    $autopay_arrears = ($months_before > 0 && (int)$record->paid_installments < $months_before);
+                    if ($autopay_arrears) {
+                        $autopay['block_msg'] = '';
+                    }
+                }
                 if ($autopay['block_msg'] != '') {
                     $allow_pay = 'N';
                     $genAdv_allow_pay = 'N';
@@ -1877,6 +1888,9 @@ IF(s.scheme_type =1 and s.max_weight!=s.min_weight,true,false) as is_flexible_wg
                     'autopay_block_msg' => $autopay['block_msg'],
                     'autopay_on_hold' => !empty($autopay['on_hold']),                 // debit failed: manual payment allowed
                     'autopay_hold_month_paid' => !empty($autopay['hold_month_paid']), // failed month paid since -> no Retry needed
+                    'autopay_arrears' => $autopay_arrears,                                // earlier months unpaid -> manual payment kept open
+                    'autopay_debit_day' => isset($record->debit_day) ? $record->debit_day : null,  // monthly debit day chosen by the customer
+                    'autopay_first_charge_on' => !empty($record->autopay_first_charge_on) ? date('d-m-Y', strtotime($record->autopay_first_charge_on)) : null,
                     'allow_general_advance' => $record->allow_general_advance,
                     'genAdv_allow_pay' => $genAdv_allow_pay,
                     'min_amount' => $min_amount,

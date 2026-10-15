@@ -507,7 +507,7 @@ class Cf_autodebit extends CI_Controller {
 		}
 		else if(in_array($type, array('SUBSCRIPTION_AUTH_STATUS', 'SUBSCRIPTION_PAYMENT_SUCCESS', 'SUBSCRIPTION_PAYMENT_FAILED')) && isset($data['payment_type']) && $data['payment_type'] == 'AUTH'){
 			// Rs.1 authorization result — SUCCESS enables auto pay for the plan (mobileapi_model::get_autopay_block)
-			$response = $this->_cf_record_auth($planDetail, isset($data['payment_status']) ? $data['payment_status'] : '', isset($data['cf_payment_id']) ? $data['cf_payment_id'] : NULL);
+			$response = $this->_cf_record_auth($planDetail, $data);
 		}
 		else if($type == 'SUBSCRIPTION_PAYMENT_NOTIFICATION_INITIATED' && isset($data['payment_type']) && $data['payment_type'] == 'CHARGE'){
 			// Pre-debit notice: the debit happens on payment_schedule_date (~1 day later).
@@ -635,6 +635,27 @@ class Cf_autodebit extends CI_Controller {
 			}
 		}
 
+		// 1b. Plan closed (pre-closed / matured / closed at the showroom, by ERP sync or in billing): stop auto debit.
+		//     Every closing path ends up here and in _cf_debit_not_needed(), so no closing screen needs to know
+		//     about auto debit. Cancelling the mandate also cancels its pending debits at Cashfree.
+		if($is_open && $this->_cf_plan_closed($planDetail['id_scheme_account'])){
+			$already_ended = isset($live['subscription_status']) && in_array($live['subscription_status'], array('CANCELLED', 'CUSTOMER_CANCELLED', 'COMPLETED', 'EXPIRED'));
+			$cancel = $already_ended ? array() : $this->_cf_api_call_v2($base.'/manage', array('subscription_id' => $sub_id, 'action' => 'CANCEL'), $planDetail['param_3'], $planDetail['param_1']);
+			$cancelled = $already_ended || (is_array($cancel) && !isset($cancel['message']) && (isset($cancel['subscription_id']) || isset($cancel['subscription_status'])));
+			if($cancelled){
+				$this->scheme_modal->updateData(array('status' => 0, 'auth_status' => 5, 'message' => 'PLAN_CLOSED', 'last_update' => date('Y-m-d H:i:s')), 'id_auto_debit_subscription', $planDetail['id_auto_debit_subscription'], 'auto_debit_subscription');
+				$this->scheme_modal->updateData(array('auto_debit_status' => 5, 'date_upd' => date('Y-m-d H:i:s')), 'id_scheme_account', $planDetail['id_scheme_account'], 'scheme_account');
+				$summary['plans_closed'] = (isset($summary['plans_closed']) ? $summary['plans_closed'] : 0) + 1;
+				$done['plan_closed'] = 'Auto debit cancelled: plan is closed';
+				$is_open = false; // no debit requests / reactivation for this subscription any more
+			}else{
+				// Still open at Cashfree: _cf_debit_not_needed() now returns "Plan is closed", so no new debit is
+				// requested and pending ones are cancelled below; the cancel is tried again on the next run.
+				$summary['errors']++;
+				$done['plan_closed_error'] = 'Cancel failed: '.(is_array($cancel) && isset($cancel['message']) ? $cancel['message'] : 'no response');
+			}
+		}
+
 		// 2-4. Payments of the subscription
 		$payments = $this->_cf_api_call_v2($base.'/payments', array(), $planDetail['param_3'], $planDetail['param_1'], 'GET');
 		if(!is_array($payments) || isset($payments['message'])){
@@ -655,7 +676,7 @@ class Cf_autodebit extends CI_Controller {
 				}
 			}
 			if($auth != null && in_array($auth['payment_status'], array('SUCCESS', 'FAILED'))){
-				$res = $this->_cf_record_auth($planDetail, $auth['payment_status'], isset($auth['cf_payment_id']) ? $auth['cf_payment_id'] : NULL);
+				$res = $this->_cf_record_auth($planDetail, $auth);
 				if($res['status']){
 					$summary['auth_updated']++;
 					$done['auth'] = $res['message'];
@@ -677,7 +698,9 @@ class Cf_autodebit extends CI_Controller {
 			}
 			$failed_on = ($failed != null ? strtotime(!empty($failed['payment_schedule_date']) ? $failed['payment_schedule_date'] : $failed['payment_initiated_date']) : 0);
 			if($failed_on && $this->_cf_debit_not_needed($planDetail['id_scheme_account'], (int)date('n', $failed_on), (int)date('Y', $failed_on)) != ''){
-				$next_debit = $this->_cf_next_debit_date();
+				// ON_DEMAND subscriptions resume on the customer's own debit day; older PERIODIC ones on the 5th
+				$dd = $this->db->query("SELECT debit_day FROM auto_debit_subscription WHERE id_auto_debit_subscription = ".(int)$planDetail['id_auto_debit_subscription'])->row_array();
+				$next_debit = $this->_cf_next_debit_date(!empty($dd['debit_day']) ? (int)$dd['debit_day'] : 5);
 				$act = $this->_cf_api_call_v2($base.'/manage',
 					array('subscription_id' => $sub_id, 'action' => 'ACTIVATE', 'action_details' => array('next_scheduled_time' => $next_debit.'T10:00:00+05:30')),
 					$planDetail['param_3'], $planDetail['param_1']);
@@ -705,7 +728,7 @@ class Cf_autodebit extends CI_Controller {
 				}
 			}
 			// 4. Upcoming debit (open subscriptions): cancel when that month is already paid
-			else if($is_open && $pay['payment_status'] == 'INITIALIZED' && !empty($pay['payment_schedule_date']) && strtotime($pay['payment_schedule_date']) > time()){
+			else if($is_open && in_array($pay['payment_status'], array('INITIALIZED', 'PENDING')) && !empty($pay['payment_schedule_date']) && strtotime($pay['payment_schedule_date']) > time()){
 				$res = $this->_cf_check_upcoming_debit($planDetail, $sub_id, $pay);
 				if(!empty($res['cancelled'])){
 					$summary['debits_cancelled']++;
@@ -715,16 +738,123 @@ class Cf_autodebit extends CI_Controller {
 				}
 			}
 		}
+
+		// 6. ON_DEMAND subscriptions: request this month's / next month's installment from Cashfree a few days
+		//    before the customer's debit day (Cashfree debits nothing by itself for ON_DEMAND).
+		if($is_open && isset($live['subscription_status']) && $live['subscription_status'] == 'ACTIVE'){
+			$row = $this->db->query("SELECT id_auto_debit_subscription, mandate_type, debit_day, installment_amount, first_charge_on, expires_on, auth_payment_status
+									FROM auto_debit_subscription WHERE id_auto_debit_subscription = ".(int)$planDetail['id_auto_debit_subscription'])->row_array();
+			if(!empty($row) && $row['mandate_type'] == 'ON_DEMAND' && $row['auth_payment_status'] == 'SUCCESS' && $row['debit_day'] > 0 && $row['installment_amount'] > 0){
+				foreach(self::cf_due_debits(date('Y-m-d'), (int)$row['debit_day'], $row['first_charge_on'], $row['expires_on']) as $target){
+					$msg = $this->_cf_raise_debit($planDetail, $row, $target, $payments, $summary);
+					if($msg != ''){
+						$done['requested'][] = $msg;
+					}
+				}
+			}
+		}
 		return $done;
+	}
+
+	/**
+	 * ON_DEMAND schedule rules (pure — $today is a parameter so they can be tested for any date).
+	 * Returns the installment months whose debit should be requested today:
+	 *  - debit date = debit_day of this month and of next month, not before first_charge_on, not after expiry
+	 *  - requested 2-4 days before the debit date (Cashfree: T+2 .. T+14 allowed for every method; UPI needs
+	 *    a 25 hr pre-debit notice). The job runs daily, so a month gets 3 chances.
+	 *  - missed (job did not run): requested for today + 2 days, up to 15 days after the debit date.
+	 */
+	public static function cf_due_debits($today, $debit_day, $first_charge_on, $expires_on)
+	{
+		$out = array();
+		$t = strtotime($today);
+		for($i = 0; $i <= 1; $i++){
+			$m = strtotime(date('Y-m-01', $t).' +'.$i.' month');
+			$d = strtotime(date('Y-m-', $m).sprintf('%02d', $debit_day));
+			if(!empty($first_charge_on) && $d < strtotime(date('Y-m-d', strtotime($first_charge_on)))){
+				continue;
+			}
+			if(!empty($expires_on) && $d > strtotime(date('Y-m-d', strtotime($expires_on)))){
+				continue;
+			}
+			$lead = (int)round(($d - $t) / 86400);
+			if($lead > 4 || $lead < -15){
+				continue;
+			}
+			$out[] = array(
+				'month'    => (int)date('n', $m),
+				'year'     => (int)date('Y', $m),
+				'schedule' => ($lead >= 2 ? date('Y-m-d', $d) : date('Y-m-d', strtotime($today.' +2 days')))
+			);
+		}
+		return $out;
+	}
+
+	/**
+	 * Request one installment month's debit from Cashfree (ON_DEMAND). Never twice for the same month:
+	 * the auto_debit_charge row (UNIQUE subscription + month) is written BEFORE calling Cashfree, and the
+	 * payment_id is fixed per month, so a retry after a timeout is rejected by Cashfree as a duplicate.
+	 * Returns a message for the job summary ('' when nothing was done).
+	 */
+	function _cf_raise_debit($planDetail, $row, $target, $payments, &$summary)
+	{
+		$id_sub = (int)$row['id_auto_debit_subscription'];
+		$label  = date('M-Y', mktime(0, 0, 0, $target['month'], 1, $target['year']));
+
+		// Already paid through any channel, or all installments done -> nothing to request
+		if($this->_cf_debit_not_needed($planDetail['id_scheme_account'], $target['month'], $target['year']) != ''){
+			return '';
+		}
+
+		$payment_id = 'CHG_'.$id_sub.'_'.sprintf('%04d%02d', $target['year'], $target['month']);
+		$existing = $this->db->query("SELECT status FROM auto_debit_charge WHERE id_auto_debit_subscription = ".$id_sub." AND due_year = ".(int)$target['year']." AND due_month = ".(int)$target['month'])->row_array();
+		if(!empty($existing) && in_array($existing['status'], array('REQUESTED', 'SKIPPED'))){
+			return '';
+		}
+		if(empty($existing)){
+			$this->db->query("INSERT IGNORE INTO auto_debit_charge (id_auto_debit_subscription, id_scheme_account, due_month, due_year, payment_id, payment_amount, schedule_date, status, created_on)
+							VALUES (".$id_sub.", ".(int)$planDetail['id_scheme_account'].", ".(int)$target['month'].", ".(int)$target['year'].", ".$this->db->escape($payment_id).", ".(float)$row['installment_amount'].", ".$this->db->escape($target['schedule']).", 'REQUESTING', NOW())");
+			if($this->db->affected_rows() < 1){
+				return ''; // another run inserted it at the same moment
+			}
+		}
+
+		// A previous run may have reached Cashfree and then timed out: the payment is already there
+		foreach($payments as $pay){
+			if(is_array($pay) && isset($pay['payment_id']) && $pay['payment_id'] == $payment_id){
+				$this->db->query("UPDATE auto_debit_charge SET status = 'REQUESTED', message = 'found at Cashfree', last_update = NOW() WHERE payment_id = ".$this->db->escape($payment_id));
+				return '';
+			}
+		}
+
+		$res = $this->_cf_api_call_v2($this->_cf_base_domain($planDetail['api_url']).'/pg/subscriptions/pay', array(
+				'subscription_id'       => $planDetail['sub_reference_id'],
+				'payment_id'            => $payment_id,
+				'payment_amount'        => (float)$row['installment_amount'],
+				'payment_schedule_date' => $target['schedule'].'T10:00:00+05:30',
+				'payment_remarks'       => 'Installment '.$label,
+				'payment_type'          => 'CHARGE'
+			), $planDetail['param_3'], $planDetail['param_1']);
+		$ok  = is_array($res) && (isset($res['cf_payment_id']) || (isset($res['payment_id']) && !isset($res['message'])));
+		$dup = !$ok && is_array($res) && isset($res['message']) && preg_match('/already|duplicate|exist/i', $res['message']);
+		$status = ($ok || $dup) ? 'REQUESTED' : 'FAILED_REQUEST'; // FAILED_REQUEST is tried again on the next run
+		$message = $ok ? 'requested' : (is_array($res) && isset($res['message']) ? $res['message'] : 'no response');
+		$this->db->query("UPDATE auto_debit_charge SET status = '".$status."', message = ".$this->db->escape(substr($message, 0, 250)).", last_update = NOW() WHERE payment_id = ".$this->db->escape($payment_id));
+
+		if($status == 'REQUESTED'){
+			$summary['debits_requested'] = (isset($summary['debits_requested']) ? $summary['debits_requested'] : 0) + 1;
+			return $label.' debit of Rs.'.(0 + $row['installment_amount']).' requested for '.date('d-m-Y', strtotime($target['schedule']));
+		}
+		$summary['errors']++;
+		return $label.' debit request FAILED: '.$message;
 	}
 
 	/**
 	 * Next monthly debit date (Y-m-d): the next debit day (5th — keep same as mobile_api::CF_DEBIT_DAY)
 	 * that is at least 2 days away (Cashfree T+1/T+2 + 25 hr pre-debit notice).
 	 */
-	function _cf_next_debit_date()
+	function _cf_next_debit_date($debit_day = 5)
 	{
-		$debit_day = 5;
 		$earliest = strtotime(date('Y-m-d').' +2 days');
 		$month = strtotime(date('Y-m-01'));
 		for($i = 0; $i < 3; $i++){
@@ -769,11 +899,22 @@ class Cf_autodebit extends CI_Controller {
 	/**
 	 * Save the Rs.1 AUTH payment result. SUCCESS is final — a later failed attempt must not switch auto pay off.
 	 */
-	function _cf_record_auth($planDetail, $auth_status, $cf_payment_id)
+	function _cf_record_auth($planDetail, $pay)
 	{
-		$cur = $this->db->query("SELECT auth_payment_status FROM auto_debit_subscription WHERE id_auto_debit_subscription=".(int)$planDetail['id_auto_debit_subscription'])->row_array();
+		$auth_status   = isset($pay['payment_status']) ? $pay['payment_status'] : '';
+		$cf_payment_id = isset($pay['cf_payment_id']) ? $pay['cf_payment_id'] : NULL;
+		$cur = $this->db->query("SELECT auth_payment_status, auth_is_installment FROM auto_debit_subscription WHERE id_auto_debit_subscription=".(int)$planDetail['id_auto_debit_subscription'])->row_array();
+
+		// ON_DEMAND subscriptions created while this month was unpaid: the authorization payment is this month's
+		// installment — save it as a payment. Runs even if the auth status was already saved (the app's status check
+		// can get there before this webhook / cron); duplicates are skipped inside _cf_record_charge (same cf_payment_id).
+		$installment = array();
+		if($auth_status == 'SUCCESS' && !empty($cur['auth_is_installment']) && !empty($cf_payment_id) && isset($pay['payment_amount']) && $pay['payment_amount'] > 1){
+			$installment = $this->_cf_record_charge($planDetail, $pay, TRUE);
+		}
+
 		if(isset($cur['auth_payment_status']) && $cur['auth_payment_status'] == 'SUCCESS'){
-			return array("status" => FALSE, "message" => "Authorization already successful", "time" => date('d-m-Y H:i:s'));
+			return array("status" => !empty($installment['status']), "message" => "Authorization already successful".(!empty($installment['message']) ? "; installment: ".$installment['message'] : ""), "time" => date('d-m-Y H:i:s'));
 		}
 		if(isset($cur['auth_payment_status']) && $cur['auth_payment_status'] == $auth_status){
 			return array("status" => FALSE, "message" => "Authorization already ".$auth_status, "time" => date('d-m-Y H:i:s'));
@@ -787,7 +928,7 @@ class Cf_autodebit extends CI_Controller {
 			$updAuth['auth_paid_on'] = date('Y-m-d H:i:s');
 		}
 		$this->scheme_modal->updateData($updAuth,'id_auto_debit_subscription',$planDetail['id_auto_debit_subscription'],'auto_debit_subscription');
-		return array("status" => TRUE, "message" => "Authorization ".$auth_status, "time" => date('d-m-Y H:i:s'));
+		return array("status" => TRUE, "message" => "Authorization ".$auth_status.(!empty($installment['message']) ? "; installment: ".$installment['message'] : ""), "time" => date('d-m-Y H:i:s'));
 	}
 
 	/**
@@ -873,7 +1014,14 @@ class Cf_autodebit extends CI_Controller {
 							"due_year"           => $dueData['due_year'],
 							"due_type"           => $dueType
 						 );
-			if($is_success){
+			if($is_success && $this->_cf_plan_closed($planDetail['id_scheme_account'])){
+				// Money taken after the plan was closed (debit was already on its way): keep it visible for staff
+				// to verify and refund — awaiting approval, no receipt / account number / SMS.
+				$insertData['payment_status'] = $this->payment_status['awaiting'];
+				$insertData['remark'] = 'Auto debit received after the plan was closed - verify and refund';
+				$ins = $this->scheme_modal->insertData($insertData,'payment');
+				$response = array("status" => ($ins['insertID'] > 0), "message" => ($ins['insertID'] > 0 ? "Payment for closed plan saved as awaiting (refund)" : "Unable to create payment"), "time" => date('d-m-Y H:i:s'));
+			}else if($is_success){
 				$response = $this->createPayment($insertData,$planDetail);
 			}else{
 				$ins = $this->scheme_modal->insertData($insertData,'payment');
@@ -907,6 +1055,9 @@ class Cf_autodebit extends CI_Controller {
 	 */
 	function _cf_debit_not_needed($id_scheme_account, $month, $year)
 	{
+		if($this->_cf_plan_closed($id_scheme_account)){
+			return 'Plan is closed';
+		}
 		$plan = $this->scheme_modal->get_plan_detail((int)$id_scheme_account);
 		if(!empty($plan) && $plan['total_installments'] > 0 && $plan['paid_installments'] >= $plan['total_installments']){
 			return 'All installments are already paid';
@@ -919,6 +1070,15 @@ class Cf_autodebit extends CI_Controller {
 			return 'Installment for '.date('M-Y', mktime(0, 0, 0, $month, 1, $year)).' is already paid';
 		}
 		return '';
+	}
+
+	/**
+	 * Is the scheme account closed (pre-closed / matured / closed) or no longer active? Auto debit must stop.
+	 */
+	function _cf_plan_closed($id_scheme_account)
+	{
+		$sa = $this->db->query("SELECT is_closed, active FROM scheme_account WHERE id_scheme_account = ".(int)$id_scheme_account)->row_array();
+		return !empty($sa) && ((string)$sa['is_closed'] === '1' || (isset($sa['active']) && (string)$sa['active'] === '0'));
 	}
 
 	// https://api.cashfree.com from a gateway api_url such as https://api.cashfree.com/pg/orders/ (scheme added if missing)

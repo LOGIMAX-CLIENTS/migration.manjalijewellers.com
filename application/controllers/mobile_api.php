@@ -8043,36 +8043,45 @@ class Mobile_api extends REST_Controller
 
 				// Before opening authorization, make sure the subscription created at Subscribe is still right:
 				// 1. Cashfree's session is valid for 2 hours — an expired one cannot be authorized.
-				// 2. No double payment: if the installment month of the first debit has been paid manually since
-				//    Subscribe (customer paid before authorizing), Cashfree would collect that month again.
-				// Either way cancel it and create a fresh subscription, which recalculates the first debit date.
-				$sub_row = $this->db->query("SELECT created_on, first_charge_on FROM auto_debit_subscription WHERE id_auto_debit_subscription = " . (int)$planDetail['id_auto_debit_subscription'])->row_array();
+				// 2. No double payment: the month the authorization (ON_DEMAND) or first debit (older PERIODIC) would
+				//    collect has been paid manually since Subscribe (customer paid before authorizing).
+				// Either way cancel it and create a fresh subscription with the same debit day; it recalculates what the
+				// authorization collects (this month's installment, or Rs.1 refunded when this month is now paid).
+				$sub_row = $this->db->query("SELECT created_on, first_charge_on, mandate_type, debit_day, auth_amount, auth_is_installment FROM auto_debit_subscription WHERE id_auto_debit_subscription = " . (int)$planDetail['id_auto_debit_subscription'])->row_array();
 				$session_expired = (!empty($sub_row['created_on']) && (time() - strtotime($sub_row['created_on'])) > (115 * 60));
-				$fcd_month_paid  = false;
-				if (!empty($sub_row['first_charge_on'])) {
+				$month_paid = false;
+				if (isset($sub_row['mandate_type']) && $sub_row['mandate_type'] == 'ON_DEMAND') {
+					if (!empty($sub_row['auth_is_installment'])) {
+						$sub_on = strtotime($sub_row['created_on']);
+						$month_paid = $this->mobileapi_model->is_installment_month_paid($id_sch_ac, (int)date('n', $sub_on), (int)date('Y', $sub_on));
+					}
+				} else if (!empty($sub_row['first_charge_on'])) {
 					$fcd = strtotime($sub_row['first_charge_on']);
-					$fcd_month_paid = $this->db->query("SELECT COUNT(id_payment) as cnt FROM payment
-											WHERE id_scheme_account = " . (int)$id_sch_ac . " AND payment_status IN (1, 2)
-											AND MONTH(date_payment) = " . (int)date('n', $fcd) . " AND YEAR(date_payment) = " . (int)date('Y', $fcd))->row()->cnt > 0;
+					$month_paid = $this->mobileapi_model->is_installment_month_paid($id_sch_ac, (int)date('n', $fcd), (int)date('Y', $fcd));
 				}
-				if ($session_expired || $fcd_month_paid) {
-					$reason = $fcd_month_paid ? 'FIRST_DEBIT_MONTH_PAID' : 'SESSION_EXPIRED';
+				if ($session_expired || $month_paid) {
+					$reason = $month_paid ? 'AUTH_MONTH_PAID' : 'SESSION_EXPIRED';
 					$cancel = $this->_cf_api_call($this->_cf_base_domain($planDetail['api_url']) . '/pg/subscriptions/' . rawurlencode($planDetail['sub_reference_id']) . '/manage', array('subscription_id' => $planDetail['sub_reference_id'], 'action' => 'CANCEL'), $planDetail['param_3'], $planDetail['param_1']);
 					$this->_cf_logToFile('cf_subscription', array('action' => 'recreate_before_authorize', 'reason' => $reason, 'id_sch_ac' => $id_sch_ac, 'old_subscription' => $planDetail['sub_reference_id'], 'cancel_response' => $cancel));
 					$this->scheme_modal->updateData(array('status' => 0, 'auth_status' => 5, 'message' => $reason, 'last_update' => date('Y-m-d H:i:s')), 'id_auto_debit_subscription', $planDetail['id_auto_debit_subscription'], 'auto_debit_subscription');
+					// Keep the debit day the customer chose (older PERIODIC rows have none: the app asks again)
+					$post_data['debit_day'] = !empty($sub_row['debit_day']) ? (int)$sub_row['debit_day'] : 0;
 					$fresh = $this->_cf_create_subscription($id_sch_ac, $post_data);
 					if (!$fresh['status']) {
-						// Could not recreate (e.g. Subscribe window for next month not open yet) — show the plan as not subscribed
+						// Could not recreate — show the plan as not subscribed; the customer subscribes again
 						$this->scheme_modal->updateData(array('auto_debit_status' => 0, 'date_upd' => date('Y-m-d H:i:s')), 'id_scheme_account', $id_sch_ac, 'scheme_account');
 						echo json_encode(array('status' => true, 'authorized' => true, 'auto_debit_status' => 0, 'autopay_enabled' => false,
-							'msg' => ($fcd_month_paid ? '' : 'Authorization session expired. ') . $fresh['msg']));
+							'msg' => ($month_paid ? '' : 'Authorization session expired. ') . $fresh['msg']));
 						return;
 					}
 					echo json_encode(array(
 						'status'                  => true,
 						'subscription_id'         => $fresh['subscription_id'],
 						'subscription_session_id' => $fresh['subscription_session_id'],
-						'environment'             => $fresh['environment']
+						'environment'             => $fresh['environment'],
+						'debit_day'               => $fresh['debit_day'],
+						'auth_amount'             => $fresh['auth_amount'],
+						'auth_is_installment'     => $fresh['auth_is_installment']
 					));
 					return;
 				}
@@ -8081,7 +8090,10 @@ class Mobile_api extends REST_Controller
 					'status'                  => true,
 					'subscription_id'         => $planDetail['sub_reference_id'],
 					'subscription_session_id' => $planDetail['auth_link'],
-					'environment'             => $cf_env
+					'environment'             => $cf_env,
+					'debit_day'               => isset($sub_row['debit_day']) ? $sub_row['debit_day'] : null,
+					'auth_amount'             => isset($sub_row['auth_amount']) ? $sub_row['auth_amount'] : 1,
+					'auth_is_installment'     => !empty($sub_row['auth_is_installment'])
 				));
 				break;
 
@@ -8271,6 +8283,12 @@ class Mobile_api extends REST_Controller
 			);
 		}
 
+		// Monthly debit day chosen by the customer in the app calendar (1-28: exists in every month)
+		$debit_day = isset($post_data['debit_day']) ? (int)$post_data['debit_day'] : 0;
+		if ($debit_day < 1 || $debit_day > 28) {
+			return array('status' => false, 'msg' => 'Kindly select a debit date between 1 and 28.');
+		}
+
 		$pendingIns = $planDetail['total_installments'] - $planDetail['paid_installments'];
 
 		if ($pendingIns <= 0) {
@@ -8293,27 +8311,35 @@ class Mobile_api extends REST_Controller
 			return array('status' => false, 'msg' => 'Invalid plan amount');
 		}
 
-		// auto_debit_plan_type: 0=Not Applicable, 1=Periodic (On Demand option is disabled in scheme master)
-		// $plan_type = ($planDetail['auto_debit_plan_type'] == 1) ? 'ON_DEMAND' : 'PERIODIC';
+		// auto_debit_plan_type: 0=Not Applicable, 1=Periodic (On Demand option is disabled in scheme master).
+		// The scheme setting only says "auto debit allowed". The Cashfree mandate is ON_DEMAND so the customer can
+		// subscribe on any day: each month's debit is requested by our daily job (cf_autodebit/cron_reconcile),
+		// so Cashfree's 14-day limit applies to each debit request, not to the subscription date.
 		if ($planDetail['auto_debit_plan_type'] != 1) {
 			return array('status' => false, 'msg' => 'Auto debit is not applicable for this plan');
 		}
-		$plan_type = 'PERIODIC';
 
 		$planDetail = $this->_cf_gateway($planDetail, $id_sch_ac);
 		if ($planDetail === false) {
 			return array('status' => false, 'msg' => 'Auto debit gateway is not configured. Kindly contact the branch.');
 		}
 
-		// Debit schedule: first installment debit .. last installment debit
-		$first_charge_date = $this->_cf_first_charge_date($id_sch_ac);
-		if (is_array($first_charge_date)) {
-			return array('status' => false, 'msg' => $first_charge_date['error']);
+		// This month unpaid -> the authorization payment IS this month's installment (UPI / card only:
+		// eNACH cannot collect an amount at authorization). This month paid -> Rs.1, refunded, all methods.
+		$cur_paid = $this->mobileapi_model->is_installment_month_paid($id_sch_ac, (int)date('n'), (int)date('Y'));
+		$auth_is_installment = !$cur_paid;
+		$charges = $auth_is_installment ? $pendingIns - 1 : $pendingIns; // debits our job will request
+		if ($charges <= 0) {
+			return array('status' => false, 'msg' => "Only this month's installment is pending. Kindly pay it manually.");
 		}
-		// One debit per pending installment; last debit = first + (pending - 1) months.
-		// Expiry one month after the last debit leaves room for retries of the final installment.
-		$last_charge_date = date('Y-m-d', strtotime($first_charge_date . ' +' . ($pendingIns - 1) . ' months'));
-		$expiry_date      = date('Y-m-d', strtotime($last_charge_date . ' +1 month'));
+
+		// Debit schedule: debit_day of next month, one debit per remaining installment
+		$first_charge_date = date('Y-m-', strtotime(date('Y-m-01') . ' +1 month')) . sprintf('%02d', $debit_day);
+		$last_charge_date  = date('Y-m-d', strtotime($first_charge_date . ' +' . ($charges - 1) . ' months'));
+		// Expiry 3 months after the last debit: room for a skipped / retried month (mandate must outlive the plan)
+		$expiry_date       = date('Y-m-d', strtotime($last_charge_date . ' +3 months'));
+		// Per-debit ceiling: flexible schemes may pay up to their maximum amount
+		$max_amount = ($planDetail['scheme_type'] == 3 && floatval($planDetail['max_amount']) > $plan_amount) ? floatval($planDetail['max_amount']) : $plan_amount;
 
 		// Generate unique subscription_id
 		$subscription_id = 'SUB_' . $id_sch_ac . '_' . time();
@@ -8322,6 +8348,10 @@ class Mobile_api extends REST_Controller
 		$return_url = $this->config->item('base_url') . 'index.php/cf_autodebit/autoDebitRURL/M/' . $id_sch_ac;
 
 		$gen_email  = $this->_cf_random_strings(8) . '@noemail.com';
+
+		$authorization = $auth_is_installment
+			? array('authorization_amount' => $plan_amount, 'authorization_amount_refund' => false, 'payment_methods' => array('upi', 'card'))
+			: array('authorization_amount' => 1, 'authorization_amount_refund' => true);
 
 		// Build new Cashfree API payload (v2025-01-01 format)
 		$cf_payload = array(
@@ -8332,37 +8362,35 @@ class Mobile_api extends REST_Controller
 				'customer_phone' => $planDetail['mobile']
 			),
 			'plan_details' => array(
-				'plan_name'          => substr($planDetail['scheme_name'] . ' - ' . $planDetail['code'], 0, 40), // Cashfree max 40 chars
-				'plan_type'          => $plan_type,
-				'plan_currency'      => 'INR',
-				'plan_amount'        => $plan_amount, // per-cycle amount (plan_recurring_amount is a response-only field)
-				'plan_max_amount'    => $plan_amount,
-				'plan_max_cycles'    => intval($pendingIns), // stops after the final installment
-				'plan_intervals'     => 1,
-				'plan_interval_type' => 'MONTH'
+				'plan_name'       => substr($planDetail['scheme_name'] . ' - ' . $planDetail['code'], 0, 40), // Cashfree max 40 chars
+				'plan_type'       => 'ON_DEMAND',
+				'plan_currency'   => 'INR',
+				'plan_max_amount' => $max_amount,
+				'plan_max_cycles' => intval($charges) + 2 // our job is the real limit; +2 leaves room for a retried month
 			),
 			'subscription_meta' => array(
 				'return_url' => $return_url
 			),
-			'authorization_details' => array(
-				'authorization_amount'        => 1,   // Re 1 mandate authorization
-				'authorization_amount_refund' => true // refunded to the customer after authorization
-			),
-			'subscription_first_charge_time' => $first_charge_date . 'T10:00:00+05:30',
-			'subscription_expiry_time'       => $expiry_date . 'T23:59:59+05:30'
+			'authorization_details'    => $authorization,
+			'subscription_expiry_time' => $expiry_date . 'T23:59:59+05:30'
 		);
 
 		// Insert local subscription record
 		$insSubscription = array(
-			'id_scheme_account' => $id_sch_ac,
-			'subscription_id'   => $subscription_id,
-			'plan_id'           => $planDetail['sync_scheme_code'],
-			'first_charge_delay' => 1,
-			'first_charge_on'   => $first_charge_date,
-			'expires_on'        => $expiry_date . ' 23:59:59',
-			'status'            => 0,
-			'created_on'        => date('Y-m-d H:i:s'),
-			'added_by'          => 1,  // 1 = Mobile App
+			'id_scheme_account'   => $id_sch_ac,
+			'subscription_id'     => $subscription_id,
+			'plan_id'             => $planDetail['sync_scheme_code'],
+			'first_charge_delay'  => 1,
+			'first_charge_on'     => $first_charge_date,
+			'mandate_type'        => 'ON_DEMAND',
+			'debit_day'           => $debit_day,
+			'installment_amount'  => $plan_amount,
+			'auth_amount'         => $authorization['authorization_amount'],
+			'auth_is_installment' => $auth_is_installment ? 1 : 0,
+			'expires_on'          => $expiry_date . ' 23:59:59',
+			'status'              => 0,
+			'created_on'          => date('Y-m-d H:i:s'),
+			'added_by'            => 1,  // 1 = Mobile App
 		);
 		$ins = $this->scheme_modal->insertData($insSubscription, 'auto_debit_subscription');
 
@@ -8423,6 +8451,9 @@ class Mobile_api extends REST_Controller
 				'cf_environment'          => $cf_env,
 				'environment'             => strtoupper($cf_env), // For consistency with plan
 				'sub_status'              => isset($res['subscription_status']) ? $res['subscription_status'] : 'INITIALIZED',
+				'debit_day'               => $debit_day,
+				'auth_amount'             => $authorization['authorization_amount'],
+				'auth_is_installment'     => $auth_is_installment,
 				'first_charge_on'         => date('d-m-Y', strtotime($first_charge_date)),
 				'last_charge_on'          => date('d-m-Y', strtotime($last_charge_date))
 			);
@@ -8664,11 +8695,22 @@ class Mobile_api extends REST_Controller
 			// 4. Rs.1 authorization result — decides auto pay (SUCCESS) or manual payment
 			$auth_payment = $this->_cf_sync_auth($planDetail);
 			$autopay = $this->mobileapi_model->get_autopay_block($planDetail['id_scheme_account']);
+			$msg = $this->_cf_auth_msg($auth_payment);
+			if ($auth_payment == 'SUCCESS') {
+				// ON_DEMAND: say what was paid now and when the next debit is
+				$sub_row = $this->db->query("SELECT mandate_type, debit_day, auth_amount, auth_is_installment, first_charge_on FROM auto_debit_subscription WHERE id_auto_debit_subscription = " . (int)$planDetail['id_auto_debit_subscription'])->row_array();
+				if (isset($sub_row['mandate_type']) && $sub_row['mandate_type'] == 'ON_DEMAND' && !empty($sub_row['first_charge_on'])) {
+					$msg = (!empty($sub_row['auth_is_installment'])
+							? 'Rs.' . (0 + $sub_row['auth_amount']) . " paid for this month's installment (it appears in Payment History shortly). "
+							: 'Authorization successful. ')
+						. 'Auto pay is ON: every ' . $sub_row['debit_day'] . ' from ' . date('d-m-Y', strtotime($sub_row['first_charge_on'])) . '.';
+				}
+			}
 
 			echo json_encode(array(
 				'status'            => true,
 				'title'             => 'Auto Debit',
-				'msg'               => $this->_cf_auth_msg($auth_payment),
+				'msg'               => $msg,
 				'auto_debit_status' => $status_code,
 				'auth_payment'      => $auth_payment,
 				'autopay_enabled'   => $autopay['enabled']
