@@ -960,7 +960,7 @@ class Mobile_api extends REST_Controller
                 'id_village' => (isset($data['id_village']) && $data['id_village'] != '' ? $data['id_village'] : NULL),
                 'id_branch' => (isset($data['id_branch']) ? $data['id_branch'] : NULL),
                 'date_of_birth' => (isset($data['dob']) ? $data['dob'] : NULL),
-                "custom_entry_date"   => ($custom_entry_date['edit_custom_entry_date'] == 1 ? $custom_entry_date['custom_entry_date'] : NULL),
+                "custom_entry_date"   => (!empty($custom_entry_date) && $custom_entry_date['edit_custom_entry_date'] == 1 ? $custom_entry_date['custom_entry_date'] : NULL),
                 //	'cus_type' =>(isset($data['custype'])?$data['custype']:1),    //
                 'gender' => (isset($data['gender']) ? $data['gender'] : null),
                 'nominee_name' => (!empty($data['nominee_name']) ? $data['nominee_name'] : NULL),
@@ -1157,7 +1157,7 @@ class Mobile_api extends REST_Controller
             'pan_no' => ($data['pan_no'] != null ? strtoupper($data['pan_no']) : NULL),
             'issue_self_giftBonus' => (isset($data['issue_self_giftBonus']) ? $data['issue_self_giftBonus'] : '2'),
             'start_year' => $start_year,
-            "custom_entry_date"   => ($custom_entry_date['edit_custom_entry_date'] == 1 ? $custom_entry_date['custom_entry_date'] : NULL),
+            "custom_entry_date"   => (!empty($custom_entry_date) && $custom_entry_date['edit_custom_entry_date'] == 1 ? $custom_entry_date['custom_entry_date'] : NULL),
             //rk lump scheme fields 
             'lump_joined_weight' => ($schDetail['is_lumpSum'] == 1 && $data['lump_joined_weight'] > 0 ? $data['lump_joined_weight'] : '0.000'),
             'lump_payable_weight' => ($schDetail['is_lumpSum'] == 1 && $data['lump_joined_weight'] > 0 ? ($data['lump_joined_weight'] / $schDetail['total_installments']) : '0.000'),
@@ -4770,7 +4770,7 @@ class Mobile_api extends REST_Controller
                             "no_of_dues" => 1,
                             "actual_trans_amt" => (isset($actAmount) ? $actAmount : 0.00),
                             "date_payment" => date('Y-m-d H:i:s'),
-                            "custom_entry_date" => ($custom_entry_date['edit_custom_entry_date'] == 1 ? $custom_entry_date['custom_entry_date'] : NULL),
+                            "custom_entry_date" => (!empty($custom_entry_date) && $custom_entry_date['edit_custom_entry_date'] == 1 ? $custom_entry_date['custom_entry_date'] : NULL),
                             "metal_rate" => (isset($pay->udf3) && $pay->udf3 != '' ? $pay->udf3 : 0.00),
                             "metal_weight" => !empty($metal_wgt) ? $metal_wgt : 0.000,
                             "id_transaction" => (isset($txnid) ? $txnid . '-' . $i : NULL),
