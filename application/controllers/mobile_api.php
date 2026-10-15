@@ -8872,7 +8872,7 @@ class Mobile_api extends REST_Controller
 					$msg = (!empty($sub_row['auth_is_installment'])
 							? 'Rs.' . (0 + $sub_row['auth_amount']) . " paid for this month's installment (it appears in Payment History shortly). "
 							: 'Authorization successful. ')
-						. 'Auto pay is ON: every ' . $sub_row['debit_day'] . ' from ' . date('d-m-Y', strtotime($sub_row['first_charge_on'])) . '.';
+						. 'Auto pay is ON: every ' . $sub_row['debit_day'] . self::cf_ordinal((int)$sub_row['debit_day']) . ' of the month from ' . date('d-m-Y', strtotime($sub_row['first_charge_on'])) . '.';
 				}
 			}
 
