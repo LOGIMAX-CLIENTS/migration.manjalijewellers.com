@@ -240,6 +240,8 @@
 										<div class="col-md-3">
 											<div class="form-group">
 												<label for="scheme_code" class="">Amount</label>
+												<!-- Auto debit limit message (scheme.js syncAutoDebitPlanType) -->
+												<p id="ad_limit_warning" style="display:none;margin:0 0 6px;padding:6px 8px;border-radius:4px;font-size:12px;line-height:1.35;"></p>
 												<div class="input-group ">
 													<span class="input-group-addon input-sm"><?php echo $this->session->userdata('currency_symbol') ?></span>
 													<input type="text" class="form-control input_currency" id="amount" name="sch[amount]" value="<?php echo set_value('sch[amount]', $sch['amount']); ?>" <?php if ($sch['scheme_type'] == 0) { ?>

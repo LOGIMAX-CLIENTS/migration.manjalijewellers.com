@@ -321,7 +321,8 @@ class Admin_scheme extends CI_Controller
 					'has_gift'				=> (isset($sch_data['has_gift']) ? $sch_data['has_gift'] : 0),
 					'is_enquiry'				=> (isset($sch_data['is_enquiry']) ? $sch_data['is_enquiry'] : 0),
 					'closing_maturity_days' => (isset($sch_data['closing_maturity_days']) ? ($sch_data['closing_maturity_days'] > 0 ? $sch_data['closing_maturity_days'] : NULL) : NULL),
-					'auto_debit_plan_type'    	  => (isset($sch_data['auto_debit_plan_type']) ? $sch_data['auto_debit_plan_type'] : 0),
+					// Auto debit (Periodic) only for Amount schemes below 15,000 (Cashfree UPI / card limit) — same rule as scheme.js
+					'auto_debit_plan_type'    	  => ((isset($sch_data['auto_debit_plan_type']) && $sch_data['auto_debit_plan_type'] == 1 && isset($sch_data['scheme_type']) && $sch_data['scheme_type'] == 0 && (float)str_replace(',', '', isset($sch_data['amount']) ? $sch_data['amount'] : 0) < 15000) ? 1 : 0),
 					'set_as_min_from'		  	=> (isset($sch_data['set_as_min_from']) ? ($sch_data['set_as_min_from'] != '' ? $sch_data['set_as_min_from'] : NULL) : NULL),
 					'set_as_max_from'		  	=> (isset($sch_data['set_as_max_from']) ? ($sch_data['set_as_max_from'] != '' ? $sch_data['set_as_max_from'] : NULL) : NULL),
 					'interest_type'	        => (isset($sch_data['interest_type']) ? $sch_data['interest_type'] : NULL),
@@ -716,7 +717,8 @@ class Admin_scheme extends CI_Controller
 					'has_gift'				=> (isset($sch_data['has_gift']) ? $sch_data['has_gift'] : 0),
 					'is_enquiry'				=> (isset($sch_data['is_enquiry']) ? $sch_data['is_enquiry'] : 0),
 					'closing_maturity_days' => (isset($sch_data['closing_maturity_days']) ? ($sch_data['closing_maturity_days'] > 0 ? $sch_data['closing_maturity_days'] : NULL) : NULL),
-					'auto_debit_plan_type'    	  => (isset($sch_data['auto_debit_plan_type']) ? $sch_data['auto_debit_plan_type'] : 0),
+					// Auto debit (Periodic) only for Amount schemes below 15,000 (Cashfree UPI / card limit) — same rule as scheme.js
+					'auto_debit_plan_type'    	  => ((isset($sch_data['auto_debit_plan_type']) && $sch_data['auto_debit_plan_type'] == 1 && isset($sch_data['scheme_type']) && $sch_data['scheme_type'] == 0 && (float)str_replace(',', '', isset($sch_data['amount']) ? $sch_data['amount'] : 0) < 15000) ? 1 : 0),
 					'set_as_min_from'		  	=> (isset($sch_data['set_as_min_from']) ? ($sch_data['set_as_min_from'] != '' ? $sch_data['set_as_min_from'] : NULL) : NULL),
 					'set_as_max_from'		  	=> (isset($sch_data['set_as_max_from']) ? ($sch_data['set_as_max_from'] != '' ? $sch_data['set_as_max_from'] : NULL) : NULL),
 					'interest_type'	        => (isset($sch_data['interest_type']) ? $sch_data['interest_type'] : NULL),
