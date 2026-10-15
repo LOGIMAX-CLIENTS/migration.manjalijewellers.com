@@ -4490,6 +4490,23 @@ class Mobile_api extends REST_Controller
     {
         $postData = $this->get_values();
         $id_employee = isset($postData['id_employee'])?$postData['id_employee']:NULL;
+        // Auto debit: the authorization of an ON_DEMAND subscription collects this month's installment.
+        // The app sends only cf_subscription_id; the request is built here exactly like a Pay Dues payment of one
+        // installment, so this manual payment flow saves it (pending now, completed when Cashfree confirms it).
+        $cf_auth_sub = null;
+        if (!empty($postData['cf_subscription_id'])) {
+            $built = $this->_cf_auth_payment_request($postData['cf_subscription_id']);
+            if (!$built['status']) {
+                $this->response(array('status' => false, 'message' => $built['msg']), 200);
+                return;
+            }
+            if (!empty($built['txnid'])) { // retry of the same authorization: the pending payment already exists
+                $this->response(array('status' => true, 'autodebit' => true, 'txnid' => $built['txnid'], 'amount' => $built['amount']), 200);
+                return;
+            }
+            $postData = $built['postData'];
+            $cf_auth_sub = $built['sub'];
+        }
         $payData = array(
             'firstname' => $postData['firstname'],
             'lastname' => $postData['lastname'],
@@ -4813,7 +4830,26 @@ class Mobile_api extends REST_Controller
                         $updData = array("last_payment_on" => date("Y-m-d H:i:s"));
                         $this->payment_modal->updData($updData, 'id_customer', $cusData['id_customer'], 'customer');
                     }
-                    $secretKey = $paycred['param_1']; //Shared by Cashfree  
+                    // Auto debit authorization: no Cashfree order — the subscription authorization collects the amount.
+                    // Link the pending payment to the subscription; it is completed when the authorization succeeds.
+                    if ($cf_auth_sub !== null) {
+                        $this->load->model('cf_autodebit_model');
+                        $cur = $this->db->query("SELECT auth_txnid FROM auto_debit_subscription WHERE id_auto_debit_subscription = " . (int)$cf_auth_sub['id_auto_debit_subscription'])->row_array();
+                        if (!empty($cur['auth_txnid']) && $cur['auth_txnid'] != $txnid) {
+                            $st = $this->payment_modal->getStatusByTxnId($cur['auth_txnid']);
+                            if (!empty($st) && $st['payment_status'] == $this->payment_status['pending']) {
+                                // Another request created it at the same moment: keep that one, drop this duplicate
+                                $this->cf_autodebit_model->cancel_auth_txn($txnid, 'duplicate request');
+                                $this->response(array('status' => true, 'autodebit' => true, 'txnid' => $cur['auth_txnid'], 'amount' => $actAmount), 200);
+                                return;
+                            }
+                        }
+                        $this->scheme_modal->updateData(array('auth_txnid' => $txnid, 'last_update' => date('Y-m-d H:i:s')), 'id_auto_debit_subscription', $cf_auth_sub['id_auto_debit_subscription'], 'auto_debit_subscription');
+                        $this->_cf_logToFile('cf_subscription', array('action' => 'auth_payment_created', 'subscription' => $cf_auth_sub['sub_reference_id'], 'txnid' => $txnid, 'id_payments' => $id_payments, 'amount' => $actAmount));
+                        $this->response(array('status' => true, 'autodebit' => true, 'txnid' => $txnid, 'amount' => $actAmount), 200);
+                        return;
+                    }
+                    $secretKey = $paycred['param_1']; //Shared by Cashfree
                     $appId = $paycred['param_3'];
                     //set data for hash generation
                     $data['pay'] = array(
@@ -7987,6 +8023,13 @@ class Mobile_api extends REST_Controller
 						'scheme_account'
 					);
 
+					// Authorization never completed: close its pending installment payment
+					$auth_row = $this->db->query("SELECT auth_txnid, auth_payment_status FROM auto_debit_subscription WHERE id_auto_debit_subscription = " . (int)$planDetail['id_auto_debit_subscription'])->row_array();
+					if (!empty($auth_row['auth_txnid']) && $auth_row['auth_payment_status'] != 'SUCCESS') {
+						$this->load->model('cf_autodebit_model');
+						$this->cf_autodebit_model->cancel_auth_txn($auth_row['auth_txnid'], 'UNSUBSCRIBED');
+					}
+
 					echo json_encode(array(
 						'status' => true,
 						'msg'    => 'You are successfully unsubscribed from cashfree auto-debit process.'
@@ -8047,7 +8090,7 @@ class Mobile_api extends REST_Controller
 				//    collect has been paid manually since Subscribe (customer paid before authorizing).
 				// Either way cancel it and create a fresh subscription with the same debit day; it recalculates what the
 				// authorization collects (this month's installment, or Rs.1 refunded when this month is now paid).
-				$sub_row = $this->db->query("SELECT created_on, first_charge_on, mandate_type, debit_day, auth_amount, auth_is_installment FROM auto_debit_subscription WHERE id_auto_debit_subscription = " . (int)$planDetail['id_auto_debit_subscription'])->row_array();
+				$sub_row = $this->db->query("SELECT created_on, first_charge_on, mandate_type, debit_day, auth_amount, auth_is_installment, auth_txnid FROM auto_debit_subscription WHERE id_auto_debit_subscription = " . (int)$planDetail['id_auto_debit_subscription'])->row_array();
 				$session_expired = (!empty($sub_row['created_on']) && (time() - strtotime($sub_row['created_on'])) > (115 * 60));
 				$month_paid = false;
 				if (isset($sub_row['mandate_type']) && $sub_row['mandate_type'] == 'ON_DEMAND') {
@@ -8064,6 +8107,11 @@ class Mobile_api extends REST_Controller
 					$cancel = $this->_cf_api_call($this->_cf_base_domain($planDetail['api_url']) . '/pg/subscriptions/' . rawurlencode($planDetail['sub_reference_id']) . '/manage', array('subscription_id' => $planDetail['sub_reference_id'], 'action' => 'CANCEL'), $planDetail['param_3'], $planDetail['param_1']);
 					$this->_cf_logToFile('cf_subscription', array('action' => 'recreate_before_authorize', 'reason' => $reason, 'id_sch_ac' => $id_sch_ac, 'old_subscription' => $planDetail['sub_reference_id'], 'cancel_response' => $cancel));
 					$this->scheme_modal->updateData(array('status' => 0, 'auth_status' => 5, 'message' => $reason, 'last_update' => date('Y-m-d H:i:s')), 'id_auto_debit_subscription', $planDetail['id_auto_debit_subscription'], 'auto_debit_subscription');
+					// Its authorization was never completed: close the pending installment payment (a new one is created for the new subscription)
+					if (!empty($sub_row['auth_txnid'])) {
+						$this->load->model('cf_autodebit_model');
+						$this->cf_autodebit_model->cancel_auth_txn($sub_row['auth_txnid'], $reason);
+					}
 					// Keep the debit day the customer chose (older PERIODIC rows have none: the app asks again)
 					$post_data['debit_day'] = !empty($sub_row['debit_day']) ? (int)$sub_row['debit_day'] : 0;
 					$fresh = $this->_cf_create_subscription($id_sch_ac, $post_data);
@@ -8338,6 +8386,11 @@ class Mobile_api extends REST_Controller
 		$last_charge_date  = date('Y-m-d', strtotime($first_charge_date . ' +' . ($charges - 1) . ' months'));
 		// Expiry 3 months after the last debit: room for a skipped / retried month (mandate must outlive the plan)
 		$expiry_date       = date('Y-m-d', strtotime($last_charge_date . ' +3 months'));
+		// Exclusive GST: the customer pays the plan amount + GST (same as the Pay Dues payment)
+		$sch_gst = $this->db->query("SELECT IFNULL(s.gst, 0) as gst, IFNULL(s.gst_type, 0) as gst_type FROM scheme_account sa JOIN scheme s ON s.id_scheme = sa.id_scheme WHERE sa.id_scheme_account = " . (int)$id_sch_ac)->row_array();
+		if (!empty($sch_gst) && $sch_gst['gst_type'] == 1 && $sch_gst['gst'] > 0) {
+			$plan_amount = round($plan_amount * (100 + $sch_gst['gst']) / 100, 2);
+		}
 		// Per-debit ceiling: flexible schemes may pay up to their maximum amount
 		$max_amount = ($planDetail['scheme_type'] == 3 && floatval($planDetail['max_amount']) > $plan_amount) ? floatval($planDetail['max_amount']) : $plan_amount;
 
@@ -8483,6 +8536,7 @@ class Mobile_api extends REST_Controller
 	{
 		$row = $this->db->query("SELECT auth_payment_status FROM auto_debit_subscription WHERE id_auto_debit_subscription = " . (int)$planDetail['id_auto_debit_subscription'])->row_array();
 		if (isset($row['auth_payment_status']) && $row['auth_payment_status'] == 'SUCCESS') {
+			$this->_cf_complete_auth_installment($planDetail['id_auto_debit_subscription'], null); // no-op once completed
 			return 'SUCCESS'; // only one AUTH is allowed per mandate — success is final
 		}
 		$payments = $this->_cf_api_call($this->_cf_base_domain($planDetail['api_url']) . '/pg/subscriptions/' . rawurlencode($planDetail['sub_reference_id']) . '/payments', array(), $planDetail['param_3'], $planDetail['param_1'], 'GET');
@@ -8510,7 +8564,114 @@ class Mobile_api extends REST_Controller
 			$upd['auth_paid_on'] = date('Y-m-d H:i:s');
 		}
 		$this->scheme_modal->updateData($upd, 'id_auto_debit_subscription', $planDetail['id_auto_debit_subscription'], 'auto_debit_subscription');
+		if ($auth['payment_status'] == 'SUCCESS') {
+			$this->_cf_complete_auth_installment($planDetail['id_auto_debit_subscription'], $auth);
+		}
 		return $auth['payment_status'];
+	}
+
+	/**
+	 * Authorization collected this month's installment: complete its pending mobile_payment rows
+	 * (cf_autodebit_model::complete_auth_txn — same completion as a manual payment). $auth: Cashfree AUTH
+	 * payment, or null to use the saved payment id. Safe to call repeatedly; nothing is completed twice.
+	 */
+	private function _cf_complete_auth_installment($id_auto_debit_subscription, $auth)
+	{
+		$row = $this->db->query("SELECT auth_is_installment, auth_txnid, auth_payment_id FROM auto_debit_subscription WHERE id_auto_debit_subscription = " . (int)$id_auto_debit_subscription)->row_array();
+		if (empty($row['auth_is_installment']) || empty($row['auth_txnid'])) {
+			return;
+		}
+		$this->load->model('cf_autodebit_model');
+		$cf_payment_id = ($auth != null && !empty($auth['cf_payment_id'])) ? $auth['cf_payment_id'] : $row['auth_payment_id'];
+		$res = $this->cf_autodebit_model->complete_auth_txn($row['auth_txnid'], $cf_payment_id, $this->cf_autodebit_model->cf_payment_mode($auth));
+		$this->_cf_logToFile('cf_subscription', array('action' => 'auth_payment_complete', 'txnid' => $row['auth_txnid'], 'result' => $res));
+	}
+
+	/**
+	 * mobile_payment request for an authorization installment, built from the subscription — the same fields the
+	 * app's Pay Dues payment sends for one installment of one plan (pay_arr line: udf1 plan, udf3 metal rate,
+	 * udf5 months, due_type ND). Returns array('status', 'msg', 'postData', 'sub') or ('status', 'txnid', 'amount')
+	 * when the pending payment already exists (customer retried the authorization).
+	 */
+	private function _cf_auth_payment_request($sub_reference_id)
+	{
+		$err = function ($msg) { return array('status' => false, 'msg' => $msg); };
+		$sub = $this->db->query("SELECT ad.id_auto_debit_subscription, ad.sub_reference_id, ad.id_scheme_account, ad.mandate_type, ad.auth_is_installment, ad.auth_amount,
+										ad.auth_payment_status, ad.auth_txnid, ad.status, sa.id_customer
+									FROM auto_debit_subscription ad
+									JOIN scheme_account sa ON sa.id_scheme_account = ad.id_scheme_account
+									WHERE ad.sub_reference_id = " . $this->db->escape($sub_reference_id) . "
+									ORDER BY ad.id_auto_debit_subscription DESC LIMIT 1")->row_array();
+		if (empty($sub) || $sub['status'] != 1) {
+			return $err('Subscription not found. Kindly subscribe again.');
+		}
+		if ($sub['mandate_type'] != 'ON_DEMAND' || $sub['auth_is_installment'] != 1) {
+			return $err('No installment is collected with this authorization.');
+		}
+		if ($sub['auth_payment_status'] == 'SUCCESS') {
+			return $err('Authorization is already completed.');
+		}
+		if (!empty($sub['auth_txnid'])) {
+			$st = $this->payment_modal->getStatusByTxnId($sub['auth_txnid']);
+			if (!empty($st) && $st['payment_status'] == $this->payment_status['pending']) {
+				return array('status' => true, 'txnid' => $sub['auth_txnid'], 'amount' => (float)$sub['auth_amount']);
+			}
+			if (!empty($st) && ($st['payment_status'] == $this->payment_status['success'] || $st['payment_status'] == $this->payment_status['awaiting'])) {
+				return $err("This month's installment is already paid.");
+			}
+		}
+		$id_sch_ac = (int)$sub['id_scheme_account'];
+		if ($this->mobileapi_model->is_installment_month_paid($id_sch_ac, (int)date('n'), (int)date('Y'))) {
+			return $err("This month's installment is already paid. Kindly tap Authorize again.");
+		}
+		$plan = $this->db->query("SELECT s.scheme_type, s.code, IFNULL(s.gst, 0) as gst, IFNULL(s.gst_type, 0) as gst_type, sa.scheme_acc_number, sa.id_branch
+									FROM scheme_account sa JOIN scheme s ON s.id_scheme = sa.id_scheme
+									WHERE sa.id_scheme_account = " . $id_sch_ac)->row_array();
+		$cus = $this->db->query("SELECT firstname, lastname, mobile, email, id_branch FROM customer WHERE id_customer = " . (int)$sub['id_customer'])->row_array();
+		$gw = $this->_cf_gateway(array(), $id_sch_ac);
+		if (empty($plan) || empty($cus) || $gw === false) {
+			return $err('Unable to prepare the payment. Kindly try again.');
+		}
+		$total = (float)$sub['auth_amount'];
+		// Exclusive GST: the plan amount + GST is collected, like the Pay Dues payment (amount = without GST, pay_amt = with GST)
+		$amount = ($plan['gst_type'] == 1 && $plan['gst'] > 0) ? round($total * 100 / (100 + $plan['gst']), 2) : $total;
+		$metal = $this->payment_modal->getMetalRate('');
+		$pay = array(
+			'scheme_type'  => $plan['scheme_type'],
+			'chit_number'  => $plan['code'] . '-' . (!empty($plan['scheme_acc_number']) ? $plan['scheme_acc_number'] : 'Not Allocated'),
+			'amount'       => $amount,
+			'pay_amt'      => $total,
+			'max_amt'      => $total,
+			'min_amt'      => $total,
+			'udf1'         => $id_sch_ac,
+			'udf2'         => '',
+			'udf3'         => isset($metal['goldrate_22ct']) ? $metal['goldrate_22ct'] : 0,
+			'udf4'         => $amount,
+			'udf5'         => 1,
+			'charge'       => NULL,
+			'charge_head'  => NULL,
+			'due_type'     => 'ND',
+			'discount'     => 0,
+			'gst_amt'      => round($total - $amount, 2),
+			'allowed_dues' => 1,
+			'id_branch'    => $plan['id_branch']
+		);
+		$postData = array(
+			'firstname'          => $cus['firstname'],
+			'lastname'           => $cus['lastname'],
+			'phone'              => $cus['mobile'],
+			'id_branch'          => $cus['id_branch'],
+			'amount'             => $total,
+			'redeemed_amount'    => 0,
+			'productinfo'        => 'Auto debit authorization',
+			'email'              => $cus['email'],
+			'gateway'            => $gw['id_pg'],
+			'pg_code'            => 4,
+			'pay_arr'            => rawurlencode(json_encode(array($pay))),
+			'paidBy_id_customer' => NULL,
+			'paidBy_mobile'      => NULL
+		);
+		return array('status' => true, 'postData' => $postData, 'sub' => $sub);
 	}
 
 	/**

@@ -903,14 +903,21 @@ class Cf_autodebit extends CI_Controller {
 	{
 		$auth_status   = isset($pay['payment_status']) ? $pay['payment_status'] : '';
 		$cf_payment_id = isset($pay['cf_payment_id']) ? $pay['cf_payment_id'] : NULL;
-		$cur = $this->db->query("SELECT auth_payment_status, auth_is_installment FROM auto_debit_subscription WHERE id_auto_debit_subscription=".(int)$planDetail['id_auto_debit_subscription'])->row_array();
+		$cur = $this->db->query("SELECT auth_payment_status, auth_is_installment, auth_txnid FROM auto_debit_subscription WHERE id_auto_debit_subscription=".(int)$planDetail['id_auto_debit_subscription'])->row_array();
 
 		// ON_DEMAND subscriptions created while this month was unpaid: the authorization payment is this month's
-		// installment — save it as a payment. Runs even if the auth status was already saved (the app's status check
-		// can get there before this webhook / cron); duplicates are skipped inside _cf_record_charge (same cf_payment_id).
+		// installment. The app created it through mobile_api/mobile_payment (pending rows, ref_trans_id = auth_txnid):
+		// complete those like a manual payment. Runs even if the auth status was already saved (the app's status check
+		// can get there first); nothing is completed twice. Without auth_txnid (older app) it is saved directly.
 		$installment = array();
-		if($auth_status == 'SUCCESS' && !empty($cur['auth_is_installment']) && !empty($cf_payment_id) && isset($pay['payment_amount']) && $pay['payment_amount'] > 1){
-			$installment = $this->_cf_record_charge($planDetail, $pay, TRUE);
+		if($auth_status == 'SUCCESS' && !empty($cur['auth_is_installment'])){
+			if(!empty($cur['auth_txnid'])){
+				$this->load->model('cf_autodebit_model');
+				$installment = $this->cf_autodebit_model->complete_auth_txn($cur['auth_txnid'], $cf_payment_id, $this->cf_autodebit_model->cf_payment_mode($pay));
+			}
+			else if(!empty($cf_payment_id) && isset($pay['payment_amount']) && $pay['payment_amount'] > 1){
+				$installment = $this->_cf_record_charge($planDetail, $pay, TRUE);
+			}
 		}
 
 		if(isset($cur['auth_payment_status']) && $cur['auth_payment_status'] == 'SUCCESS'){
