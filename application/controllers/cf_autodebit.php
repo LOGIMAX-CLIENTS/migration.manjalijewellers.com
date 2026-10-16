@@ -548,6 +548,15 @@ class Cf_autodebit extends CI_Controller {
 		@set_time_limit(0);
 		$started = microtime(true);
 		$log_path = $this->log_dir.'/'.date("Y-m-d").'_cron_reconcile.txt';
+		// A PHP fatal error would end the run with an empty HTTP 500: log it and show where it happened
+		register_shutdown_function(function () use ($log_path) {
+			$e = error_get_last();
+			if ($e && in_array($e['type'], array(E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR))) {
+				$msg = $e['message'].' in '.basename($e['file']).' line '.$e['line'];
+				file_put_contents($log_path, "\n".date('d-m-Y H:i:s')." \nFATAL: ".$msg, FILE_APPEND | LOCK_EX);
+				echo json_encode(array('status' => FALSE, 'message' => 'Fatal error: '.$msg));
+			}
+		});
 		$summary = array(
 			'status' => TRUE, 'started' => date('d-m-Y H:i:s'), 'subscriptions' => 0,
 			'status_updated' => 0, 'auth_updated' => 0, 'payments_saved' => 0, 'debits_cancelled' => 0, 'errors' => 0, 'details' => array()
@@ -607,8 +616,16 @@ class Cf_autodebit extends CI_Controller {
 			foreach($missing as $m){
 				$ids[] = (int)$m['id_payment'];
 			}
-			$this->cf_autodebit_model->sync_installment_ids($ids);
-			$summary['installments_fixed'] = count($ids);
+			try{
+				$this->cf_autodebit_model->sync_installment_ids($ids);
+				$summary['installments_fixed'] = count($ids);
+			}catch(Exception $e){
+				$summary['errors']++;
+				$summary['installments_error'] = $e->getMessage();
+			}catch(Error $e){
+				$summary['errors']++;
+				$summary['installments_error'] = $e->getMessage().' ('.basename($e->getFile()).' line '.$e->getLine().')';
+			}
 		}catch(Exception $e){
 			$summary['status'] = FALSE;
 			$summary['errors']++;
