@@ -599,39 +599,6 @@ class Cf_autodebit extends CI_Controller {
 				$summary['details'][] = $detail;
 			}
 
-			// Completed auto debit payments without an installment number (whatever their subscription's state,
-			// e.g. paid at authorization and then unsubscribed): set it and refresh the plan's paid installments
-			$this->load->model('cf_autodebit_model');
-			// Auto debit payments = saved by auto debit (added_by 4, also the older path without a transaction id)
-			// or created through mobile_payment for an authorization / monthly debit (linked transaction id)
-			$missing_q = $this->db->query("SELECT p.id_payment
-										FROM payment p
-										WHERE p.payment_status IN (1, 2) AND (p.installment IS NULL OR p.installment = '')
-										  AND p.id_scheme_account IN (SELECT id_scheme_account FROM auto_debit_subscription)
-										  AND (p.added_by = 4
-										       OR p.ref_trans_id IN (SELECT auth_txnid FROM auto_debit_subscription WHERE auth_txnid IS NOT NULL
-										                             UNION SELECT txnid FROM auto_debit_charge WHERE txnid IS NOT NULL))
-										LIMIT 500");
-			// A failed query (e.g. a missing column when an SQL patch was not run) is reported, not fatal
-			$missing = ($missing_q !== FALSE) ? $missing_q->result_array() : array();
-			if ($missing_q === FALSE) {
-				$summary['errors']++;
-				$summary['installments_error'] = 'Query failed: '.$this->db->_error_message().' (run sql_patches/auto_debit_charge_txnid.sql?)';
-			}
-			$ids = array();
-			foreach($missing as $m){
-				$ids[] = (int)$m['id_payment'];
-			}
-			try{
-				$this->cf_autodebit_model->sync_installment_ids($ids);
-				$summary['installments_fixed'] = count($ids);
-			}catch(Exception $e){
-				$summary['errors']++;
-				$summary['installments_error'] = $e->getMessage();
-			}catch(Error $e){
-				$summary['errors']++;
-				$summary['installments_error'] = $e->getMessage().' ('.basename($e->getFile()).' line '.$e->getLine().')';
-			}
 		}catch(Exception $e){
 			$summary['status'] = FALSE;
 			$summary['errors']++;
@@ -1144,12 +1111,6 @@ class Cf_autodebit extends CI_Controller {
 				$response = array("status" => ($ins['insertID'] > 0), "message" => ($ins['insertID'] > 0 ? "Payment for closed plan saved as awaiting (refund)" : "Unable to create payment"), "time" => date('d-m-Y H:i:s'));
 			}else if($is_success){
 				$response = $this->createPayment($insertData,$planDetail);
-				// Installment number + plan's paid installment count (same as the other payment completions)
-				$saved = $this->db->query("SELECT id_payment FROM payment WHERE payment_ref_number = ".$this->db->escape($ref_no)." AND id_scheme_account = ".(int)$planDetail['id_scheme_account']." AND payment_status IN (1, 2)")->result_array();
-				if(!empty($saved)){
-					$this->load->model('cf_autodebit_model');
-					$this->cf_autodebit_model->sync_installment_ids(array_map(function ($r) { return (int)$r['id_payment']; }, $saved));
-				}
 			}else{
 				$ins = $this->scheme_modal->insertData($insertData,'payment');
 				if($ins['insertID'] > 0){
