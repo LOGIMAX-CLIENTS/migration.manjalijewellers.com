@@ -593,17 +593,22 @@ class Cf_autodebit extends CI_Controller {
 			// Completed auto debit payments without an installment number (whatever their subscription's state,
 			// e.g. paid at authorization and then unsubscribed): set it and refresh the plan's paid installments
 			$this->load->model('cf_autodebit_model');
-			$missing = $this->db->query("SELECT DISTINCT p.ref_trans_id
+			// Auto debit payments = saved by auto debit (added_by 4, also the older path without a transaction id)
+			// or created through mobile_payment for an authorization / monthly debit (linked transaction id)
+			$missing = $this->db->query("SELECT p.id_payment
 										FROM payment p
 										WHERE p.payment_status IN (1, 2) AND (p.installment IS NULL OR p.installment = '')
-										  AND p.ref_trans_id IN (SELECT auth_txnid FROM auto_debit_subscription WHERE auth_txnid IS NOT NULL
-										                         UNION SELECT txnid FROM auto_debit_charge WHERE txnid IS NOT NULL)
+										  AND p.id_scheme_account IN (SELECT id_scheme_account FROM auto_debit_subscription)
+										  AND (p.added_by = 4
+										       OR p.ref_trans_id IN (SELECT auth_txnid FROM auto_debit_subscription WHERE auth_txnid IS NOT NULL
+										                             UNION SELECT txnid FROM auto_debit_charge WHERE txnid IS NOT NULL))
 										LIMIT 500")->result_array();
-			$summary['installments_fixed'] = 0;
+			$ids = array();
 			foreach($missing as $m){
-				$this->cf_autodebit_model->sync_installment($m['ref_trans_id']);
-				$summary['installments_fixed']++;
+				$ids[] = (int)$m['id_payment'];
 			}
+			$this->cf_autodebit_model->sync_installment_ids($ids);
+			$summary['installments_fixed'] = count($ids);
 		}catch(Exception $e){
 			$summary['status'] = FALSE;
 			$summary['errors']++;
@@ -1116,6 +1121,12 @@ class Cf_autodebit extends CI_Controller {
 				$response = array("status" => ($ins['insertID'] > 0), "message" => ($ins['insertID'] > 0 ? "Payment for closed plan saved as awaiting (refund)" : "Unable to create payment"), "time" => date('d-m-Y H:i:s'));
 			}else if($is_success){
 				$response = $this->createPayment($insertData,$planDetail);
+				// Installment number + plan's paid installment count (same as the other payment completions)
+				$saved = $this->db->query("SELECT id_payment FROM payment WHERE payment_ref_number = ".$this->db->escape($ref_no)." AND id_scheme_account = ".(int)$planDetail['id_scheme_account']." AND payment_status IN (1, 2)")->result_array();
+				if(!empty($saved)){
+					$this->load->model('cf_autodebit_model');
+					$this->cf_autodebit_model->sync_installment_ids(array_map(function ($r) { return (int)$r['id_payment']; }, $saved));
+				}
 			}else{
 				$ins = $this->scheme_modal->insertData($insertData,'payment');
 				if($ins['insertID'] > 0){
