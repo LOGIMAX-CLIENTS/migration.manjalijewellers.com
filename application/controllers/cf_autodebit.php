@@ -604,14 +604,20 @@ class Cf_autodebit extends CI_Controller {
 			$this->load->model('cf_autodebit_model');
 			// Auto debit payments = saved by auto debit (added_by 4, also the older path without a transaction id)
 			// or created through mobile_payment for an authorization / monthly debit (linked transaction id)
-			$missing = $this->db->query("SELECT p.id_payment
+			$missing_q = $this->db->query("SELECT p.id_payment
 										FROM payment p
 										WHERE p.payment_status IN (1, 2) AND (p.installment IS NULL OR p.installment = '')
 										  AND p.id_scheme_account IN (SELECT id_scheme_account FROM auto_debit_subscription)
 										  AND (p.added_by = 4
 										       OR p.ref_trans_id IN (SELECT auth_txnid FROM auto_debit_subscription WHERE auth_txnid IS NOT NULL
 										                             UNION SELECT txnid FROM auto_debit_charge WHERE txnid IS NOT NULL))
-										LIMIT 500")->result_array();
+										LIMIT 500");
+			// A failed query (e.g. a missing column when an SQL patch was not run) is reported, not fatal
+			$missing = ($missing_q !== FALSE) ? $missing_q->result_array() : array();
+			if ($missing_q === FALSE) {
+				$summary['errors']++;
+				$summary['installments_error'] = 'Query failed: '.$this->db->_error_message().' (run sql_patches/auto_debit_charge_txnid.sql?)';
+			}
 			$ids = array();
 			foreach($missing as $m){
 				$ids[] = (int)$m['id_payment'];
