@@ -589,6 +589,21 @@ class Cf_autodebit extends CI_Controller {
 				}
 				$summary['details'][] = $detail;
 			}
+
+			// Completed auto debit payments without an installment number (whatever their subscription's state,
+			// e.g. paid at authorization and then unsubscribed): set it and refresh the plan's paid installments
+			$this->load->model('cf_autodebit_model');
+			$missing = $this->db->query("SELECT DISTINCT p.ref_trans_id
+										FROM payment p
+										WHERE p.payment_status IN (1, 2) AND (p.installment IS NULL OR p.installment = '')
+										  AND p.ref_trans_id IN (SELECT auth_txnid FROM auto_debit_subscription WHERE auth_txnid IS NOT NULL
+										                         UNION SELECT txnid FROM auto_debit_charge WHERE txnid IS NOT NULL)
+										LIMIT 500")->result_array();
+			$summary['installments_fixed'] = 0;
+			foreach($missing as $m){
+				$this->cf_autodebit_model->sync_installment($m['ref_trans_id']);
+				$summary['installments_fixed']++;
+			}
 		}catch(Exception $e){
 			$summary['status'] = FALSE;
 			$summary['errors']++;
