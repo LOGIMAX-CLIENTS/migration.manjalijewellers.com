@@ -167,18 +167,31 @@ class Cf_autodebit_model extends CI_Model
 	function sync_installment($txnid, $pay = null)
 	{
 		$this->load->model('payment_modal');
-		$this->load->model('mobileapi_model');
 		$rows = ($pay !== null) ? array($pay) : $this->payment_modal->getPayIds($txnid);
-		$accounts = array();
+		$ids = array();
 		foreach ($rows as $row) {
-			if (empty($row['id_payment'])) {
+			if (!empty($row['id_payment'])) {
+				$ids[] = (int)$row['id_payment'];
+			}
+		}
+		$this->sync_installment_ids($ids);
+	}
+
+	/**
+	 * Same as sync_installment() for payment ids — also covers auto debit payments saved without a transaction
+	 * id by the older path (cf_autodebit::_cf_record_charge, added_by = 4).
+	 */
+	function sync_installment_ids($ids)
+	{
+		$this->load->model('payment_modal');
+		$this->load->model('mobileapi_model');
+		$accounts = array();
+		foreach ($ids as $id_payment) {
+			$row = $this->db->query("SELECT id_payment, id_scheme_account, installment, payment_status, due_type, date_payment FROM payment WHERE id_payment = " . (int)$id_payment)->row_array();
+			if (empty($row) || !in_array($row['payment_status'], array(self::PAY_SUCCESS, self::PAY_AWAITING))) {
 				continue;
 			}
-			$cur = $this->db->query("SELECT installment, payment_status FROM payment WHERE id_payment = " . (int)$row['id_payment'])->row_array();
-			if (empty($cur) || !in_array($cur['payment_status'], array(self::PAY_SUCCESS, self::PAY_AWAITING))) {
-				continue;
-			}
-			if ($cur['installment'] === NULL || $cur['installment'] === '') {
+			if ($row['installment'] === NULL || $row['installment'] === '') {
 				$dt_pay = date('Y-m-d', strtotime(str_replace("/", "-", $row['date_payment'])));
 				$ins_cycle = $this->mobileapi_model->get_due_date($row['due_type'], $dt_pay, $row['id_scheme_account']);
 				if (!empty($ins_cycle) && !empty($ins_cycle[0])) {
