@@ -45,10 +45,96 @@ class Cf_autodebit_model extends CI_Model
 			return array('status' => FALSE, 'message' => 'Authorization payment is being completed by another request');
 		}
 		try {
+			// Same completion as a manual app payment: the manual Cashfree webhook handler
+			// (services/cf_webhook -> update_cf_order_status: status, payment mode details, incentive, receipt,
+			// client id, account no, first payment, offline sync, SMS — all in one transaction)
+			$res = $this->_complete_via_manual($txnid, $cf_payment_id, $mode, $remark, $extra, 'SUCCESS');
+			if ($res !== NULL) {
+				return $res;
+			}
+			// Manual handler not reachable from this server: local equivalent (logged)
 			return $this->_complete_auth_txn($txnid, $cf_payment_id, $mode, $remark, $extra);
 		} finally {
 			$this->db->query("SELECT RELEASE_LOCK(" . $lock . ")");
 		}
+	}
+
+	/**
+	 * Complete (SUCCESS) or fail (FAILED) the pending rows of $txnid with the manual payment code itself:
+	 * the same signed request Cashfree sends to services/cf_webhook/{id_pg} for a manual app payment
+	 * (PAYMENT_SUCCESS_WEBHOOK / PAYMENT_FAILED_WEBHOOK, order_id = ref_trans_id). That handler checks the
+	 * status first, so a payment is never completed twice and a SUCCESS is never turned into FAILED.
+	 * Returns the result, or NULL when the handler could not be reached (caller uses the local fallback).
+	 */
+	private function _complete_via_manual($txnid, $cf_payment_id, $mode, $remark, $extra, $target)
+	{
+		$this->load->model('payment_modal');
+		$st = $this->payment_modal->getStatusByTxnId($txnid);
+		if (empty($st)) {
+			return array('status' => FALSE, 'message' => 'No payment found for transaction ' . $txnid);
+		}
+		if ($st['payment_status'] == self::PAY_SUCCESS || $st['payment_status'] == self::PAY_AWAITING) {
+			return array('status' => FALSE, 'message' => 'Already completed. Status : ' . $st['payment_status']);
+		}
+		if ($target == 'FAILED' && $st['payment_status'] != self::PAY_PENDING) {
+			return array('status' => FALSE, 'message' => 'Already updated. Status : ' . $st['payment_status']);
+		}
+		$row = $this->db->query("SELECT id_payGateway FROM payment WHERE ref_trans_id = " . $this->db->escape($txnid) . " LIMIT 1")->row_array();
+		$id_pg = !empty($row['id_payGateway']) ? (int)$row['id_payGateway'] : 0;
+		$gw = $id_pg > 0 ? $this->db->query("SELECT param_1 FROM gateway WHERE id_pg = " . $id_pg)->row_array() : array();
+		if (empty($gw['param_1'])) {
+			log_message('error', 'cf_autodebit: no gateway secret for id_pg ' . $id_pg . ' (txn ' . $txnid . '), local completion used');
+			return NULL;
+		}
+		// Monthly debit: the row is dated on the debit itself before it is completed
+		if (!empty($extra)) {
+			$this->db->where('ref_trans_id', $txnid);
+			$this->db->where_in('payment_status', array(self::PAY_PENDING, self::PAY_FAILURE));
+			$this->db->update('payment', $extra);
+		}
+		$groups = array('UPI' => 'upi', 'CC' => 'credit_card', 'DC' => 'debit_card', 'NB' => 'net_banking');
+		$body = json_encode(array(
+			'type' => ($target == 'SUCCESS' ? 'PAYMENT_SUCCESS_WEBHOOK' : 'PAYMENT_FAILED_WEBHOOK'),
+			'data' => array(
+				'order'   => array('order_id' => $txnid),
+				'payment' => array(
+					'cf_payment_id'   => $cf_payment_id,
+					'payment_status'  => $target,
+					'payment_group'   => (isset($groups[$mode]) ? $groups[$mode] : 'upi'),
+					'payment_message' => (!empty($remark) ? $remark : 'Auto debit - cashfree subscription'),
+					'bank_reference'  => $cf_payment_id
+				)
+			)
+		));
+		$ts  = (string)time();
+		$sig = base64_encode(hash_hmac('sha256', $ts . $body, $gw['param_1'], true)); // = services::computeSignature()
+		$url = rtrim($this->config->item('base_url'), '/') . '/index.php/services/cf_webhook/' . $id_pg;
+		$curl = curl_init();
+		curl_setopt_array($curl, array(
+			CURLOPT_URL            => $url,
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_TIMEOUT        => 60,
+			CURLOPT_CUSTOMREQUEST  => 'POST',
+			CURLOPT_POSTFIELDS     => $body,
+			CURLOPT_HTTPHEADER     => array('Content-Type: application/json', 'X-Webhook-Signature: ' . $sig, 'X-Webhook-Timestamp: ' . $ts)
+		));
+		curl_exec($curl);
+		$http = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+		$err  = curl_error($curl);
+		curl_close($curl);
+
+		$after = $this->payment_modal->getStatusByTxnId($txnid);
+		$done = ($target == 'SUCCESS')
+			? (isset($after['payment_status']) && in_array($after['payment_status'], array(self::PAY_SUCCESS, self::PAY_AWAITING)))
+			: (isset($after['payment_status']) && $after['payment_status'] == self::PAY_FAILURE);
+		if ($done) {
+			return array('status' => TRUE, 'message' => ($target == 'SUCCESS' ? 'Completed' : 'Marked failed') . ' by the manual payment flow (transaction ' . $txnid . ')');
+		}
+		if ($err != '' || $http < 200 || $http >= 300) {
+			log_message('error', 'cf_autodebit: manual webhook not reachable (' . $url . ' HTTP ' . $http . ' ' . $err . '), local completion used for ' . $txnid);
+			return NULL;
+		}
+		return array('status' => FALSE, 'message' => 'Manual payment flow did not update the payment (status ' . (isset($after['payment_status']) ? $after['payment_status'] : '-') . '), see log/<date>/cashfree/webhook.txt');
 	}
 
 	private function _complete_auth_txn($id_transaction, $cf_payment_id, $mode, $remark = NULL, $extra = array())
@@ -58,8 +144,6 @@ class Cf_autodebit_model extends CI_Model
 			return array('status' => FALSE, 'message' => 'No payment found for transaction ' . $id_transaction);
 		}
 		if ($pay_status['payment_status'] == self::PAY_SUCCESS || $pay_status['payment_status'] == self::PAY_AWAITING) {
-			// Completed earlier without the installment number (before this step existed): fill it now
-			$this->sync_installment($id_transaction);
 			return array('status' => FALSE, 'message' => 'Already completed. Status : ' . $pay_status['payment_status']);
 		}
 
@@ -133,9 +217,6 @@ class Cf_autodebit_model extends CI_Model
 				if (($approval_type == 1 || $approval_type == 2 || $approval_type == 3) && ($pay['firstPayamt_maxpayable'] == 1 || $pay['firstPayamt_as_payamt'] == 1) && ($pay['firstPayment_amt'] == '' || $pay['firstPayment_amt'] == null)) {
 					$this->payment_modal->update_account(array('firstPayment_amt' => $pay['payment_amount']), $pay['id_scheme_account']);
 				}
-				// Installment number + plan's paid installment count (scheme_account.total_paid_ins), same as the other
-				// payment completions (mobile_api old_cashfreeResponse, paymt, adminapp_api)
-				$this->sync_installment($id_transaction, $pay);
 				// Insert Data in Intermediate table (same condition as services::payment_success)
 				if ($approval_type == 2 || $approval_type == 3 && ($this->config->item('integrationType') == 2 || $this->config->item('integrationType') == 3)) {
 					$this->mobileapi_model->insert_common_data($pay['id_payment']);
@@ -155,63 +236,6 @@ class Cf_autodebit_model extends CI_Model
 			}
 		}
 		return array('status' => TRUE, 'message' => 'Authorization installment completed (transaction ' . $id_transaction . ')');
-	}
-
-	/**
-	 * Installment cycle for the completed payment(s) of a transaction, then the plan's paid installment count.
-	 * Same steps as the other completions (mobile_api::old_cashfreeResponse_post, paymt, adminapp_api):
-	 * payment.installment / due_date / due_date_to / grace_date from mobileapi_model::get_due_date(), then
-	 * scheme_account.total_paid_ins from payment_modal::getPaidInsData() (counts DISTINCT payment.installment).
-	 * Rows that already have an installment number are left as they are. $pay: one getPayIds() row, or null for all.
-	 */
-	function sync_installment($txnid, $pay = null)
-	{
-		$this->load->model('payment_modal');
-		$rows = ($pay !== null) ? array($pay) : $this->payment_modal->getPayIds($txnid);
-		$ids = array();
-		foreach ($rows as $row) {
-			if (!empty($row['id_payment'])) {
-				$ids[] = (int)$row['id_payment'];
-			}
-		}
-		$this->sync_installment_ids($ids);
-	}
-
-	/**
-	 * Same as sync_installment() for payment ids — also covers auto debit payments saved without a transaction
-	 * id by the older path (cf_autodebit::_cf_record_charge, added_by = 4).
-	 */
-	function sync_installment_ids($ids)
-	{
-		$this->load->model('payment_modal');
-		$this->load->model('mobileapi_model');
-		$accounts = array();
-		foreach ($ids as $id_payment) {
-			$row = $this->db->query("SELECT id_payment, id_scheme_account, installment, payment_status, due_type, date_payment FROM payment WHERE id_payment = " . (int)$id_payment)->row_array();
-			if (empty($row) || !in_array($row['payment_status'], array(self::PAY_SUCCESS, self::PAY_AWAITING))) {
-				continue;
-			}
-			if ($row['installment'] === NULL || $row['installment'] === '') {
-				$dt_pay = date('Y-m-d', strtotime(str_replace("/", "-", $row['date_payment'])));
-				$ins_cycle = $this->mobileapi_model->get_due_date($row['due_type'], $dt_pay, $row['id_scheme_account']);
-				if (!empty($ins_cycle) && !empty($ins_cycle[0])) {
-					$this->mobileapi_model->updData(array(
-						'due_date'        => (isset($ins_cycle[0]['due_date_from']) ? $ins_cycle[0]['due_date_from'] : NULL),
-						'due_date_to'     => (isset($ins_cycle[0]['due_date_to']) ? $ins_cycle[0]['due_date_to'] : NULL),
-						'grace_date'      => (isset($ins_cycle[0]['grace_date']) ? $ins_cycle[0]['grace_date'] : NULL),
-						'installment'     => (isset($ins_cycle[0]['installment']) ? $ins_cycle[0]['installment'] : NULL),
-						'is_limit_exceed' => (isset($ins_cycle[0]['is_limit_exceed']) ? $ins_cycle[0]['is_limit_exceed'] : 0),
-					), 'id_payment', $row['id_payment'], 'payment');
-				}
-			}
-			$accounts[$row['id_scheme_account']] = true;
-		}
-		foreach (array_keys($accounts) as $id_scheme_account) {
-			$paid = $this->payment_modal->getPaidInsData($id_scheme_account);
-			if (!empty($paid)) {
-				$this->payment_modal->updData(array('total_paid_ins' => $paid['paid_installments']), 'id_scheme_account', $id_scheme_account, 'scheme_account');
-			}
-		}
 	}
 
 	/**
@@ -306,6 +330,11 @@ class Cf_autodebit_model extends CI_Model
 	 */
 	function fail_installment_txn($txnid, $reason)
 	{
+		// Same as a failed manual payment (manual webhook handler, PAYMENT_FAILED_WEBHOOK)
+		$res = $this->_complete_via_manual($txnid, NULL, NULL, $reason, array(), 'FAILED');
+		if ($res !== NULL) {
+			return $res;
+		}
 		$this->load->model('payment_modal');
 		$this->load->model('services_modal');
 		$this->load->model('sms_model');
