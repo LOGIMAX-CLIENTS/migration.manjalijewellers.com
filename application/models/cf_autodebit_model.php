@@ -118,7 +118,7 @@ class Cf_autodebit_model extends CI_Model
 			CURLOPT_POSTFIELDS     => $body,
 			CURLOPT_HTTPHEADER     => array('Content-Type: application/json', 'X-Webhook-Signature: ' . $sig, 'X-Webhook-Timestamp: ' . $ts)
 		));
-		curl_exec($curl);
+		$reply = curl_exec($curl);
 		$http = curl_getinfo($curl, CURLINFO_HTTP_CODE);
 		$err  = curl_error($curl);
 		curl_close($curl);
@@ -130,11 +130,23 @@ class Cf_autodebit_model extends CI_Model
 		if ($done) {
 			return array('status' => TRUE, 'message' => ($target == 'SUCCESS' ? 'Completed' : 'Marked failed') . ' by the manual payment flow (transaction ' . $txnid . ')');
 		}
-		if ($err != '' || $http < 200 || $http >= 300) {
-			log_message('error', 'cf_autodebit: manual webhook not reachable (' . $url . ' HTTP ' . $http . ' ' . $err . '), local completion used for ' . $txnid);
-			return NULL;
+		// Not updated (handler unreachable, blocked, rejected or failed): never leave the payment pending —
+		// the caller completes it locally. The handler's reply is logged to find the cause.
+		$this->_log_manual_route(array('txnid' => $txnid, 'target' => $target, 'url' => $url, 'http' => $http, 'curl_error' => $err,
+			'status_after' => (isset($after['payment_status']) ? $after['payment_status'] : NULL), 'reply' => substr((string)$reply, 0, 1500)));
+		return NULL;
+	}
+
+	/**
+	 * log/cf_subscription/<date>_manual_route.txt — why the manual handler did not update a payment
+	 */
+	private function _log_manual_route($data)
+	{
+		$dir = 'log/cf_subscription';
+		if (!is_dir($dir)) {
+			@mkdir($dir, 0777, true);
 		}
-		return array('status' => FALSE, 'message' => 'Manual payment flow did not update the payment (status ' . (isset($after['payment_status']) ? $after['payment_status'] : '-') . '), see log/<date>/cashfree/webhook.txt');
+		@file_put_contents($dir . '/' . date('Y-m-d') . '_manual_route.txt', date('Y-m-d H:i:s') . ' | ' . json_encode($data) . "\n", FILE_APPEND | LOCK_EX);
 	}
 
 	private function _complete_auth_txn($id_transaction, $cf_payment_id, $mode, $remark = NULL, $extra = array())
