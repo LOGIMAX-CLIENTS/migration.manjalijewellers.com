@@ -599,6 +599,10 @@ class Cf_autodebit extends CI_Controller {
 				$summary['details'][] = $detail;
 			}
 
+			// Auto debit payments completed without an installment no (before the manual-flow port): set it now
+			$this->load->model('cf_autodebit_model');
+			$summary['installments_repaired'] = $this->cf_autodebit_model->repair_missing_installments();
+
 		}catch(Exception $e){
 			$summary['status'] = FALSE;
 			$summary['errors']++;

@@ -5,10 +5,10 @@
  * Flow:  app -> mobile_api/mobile_payment (cf_subscription_id) / daily job -> pending payment rows (ref_trans_id = txnid)
  *        Cashfree SUCCESS -> complete_auth_txn() / FAILED -> fail_installment_txn()
  *        Both run the same steps as a manual app payment completed by the Cashfree webhook
- *        (services::update_cf_order_status): status, payment mode details, employee incentive, receipt no,
- *        account no, first payment amount, intermediate table, SMS — in one DB transaction, on this request
- *        (no HTTP call), so a payment is never left pending. Installments are then updated by the offline sync,
- *        exactly as for a manual payment.
+ *        (admin chit_transaction::webhook -> chit_transaction_model::onPayTranStream): status, payment mode details,
+ *        receipt no, start / maturity date, account no, client id, first payable, installment no + due dates +
+ *        total paid installments, intermediate table, referral incentive, SMS — on this request (no HTTP call),
+ *        so a payment is never left pending.
  *
  * Used by mobile_api (status check right after authorization), cf_autodebit (webhook + daily job),
  * so the payment is completed by whichever sees the result first — exactly once.
@@ -85,189 +85,638 @@ class Cf_autodebit_model extends CI_Model
 	}
 
 	/**
-	 * Same steps as services::update_cf_order_status() (manual app payment, Cashfree webhook).
-	 * Differences, all because that code reads variables it never sets:
-	 *  - payment_mode_details gets this payment's status / reference (manual writes PENDING with an empty reference);
-	 *  - receipt number uses payment_modal (manual calls a non-loaded payment_model);
-	 *  - client ID is not generated here, same as manual in practice (it reads $scheme_acc_number before it is set).
+	 * Same as a manual app payment completed by the Cashfree webhook:
+	 * admin chit_transaction::webhook() -> chit_transaction_model::updateGatewayResponse() -> payment_update()
+	 * (onPayTranStream() for every successful row, then SMS 3 on success / 7 on failure).
 	 */
 	private function _update_order_status($trans_id, $payStatus, $cf_payment_id, $mode, $remark, $extra)
 	{
-		$approval_type = $this->config->item('auto_pay_approval');
-		$paymentMode   = (!empty($mode) ? $mode : 'UPI');
-		$updateData = array(
-			"payment_mode"       => $paymentMode,
-			"payu_id"            => $cf_payment_id,
-			"remark"             => (!empty($remark) ? $remark : 'Auto debit - cashfree subscription') . " :: CF Subscription",
-			"payment_ref_number" => $cf_payment_id,
-			"payment_status"     => ($payStatus === "SUCCESS" ? ($approval_type == 1 || $approval_type == 2 ? self::PAY_SUCCESS : self::PAY_AWAITING) : self::PAY_FAILURE)
+		$this->chit = $this->db->query("SELECT * From chit_settings")->row_array();
+
+		// chit_transaction::checkTransExist(): rows of this transaction not yet successful
+		$rows = $this->db->query("SELECT id_payment, payu_id, ref_trans_id FROM payment WHERE ref_trans_id = ? AND payment_status != 1", array($trans_id))->result_array();
+		if (empty($rows)) {
+			return array('status' => FALSE, 'message' => 'No payment to update for transaction ' . $trans_id);
+		}
+		$includeIds = array_column($rows, 'id_payment');
+
+		// chit_transaction::prepareGatewayResponse()
+		$gatewayResponse = array(
+			"remark"         => (!empty($remark) ? $remark : 'Auto debit - cashfree subscription') . " on " . date('Y-m-d H:i:s'),
+			"payment_status" => ($payStatus === "SUCCESS" ? self::PAY_SUCCESS : self::PAY_FAILURE)
 		);
-		if ($payStatus !== "SUCCESS") {
-			unset($updateData['payment_mode'], $updateData['payu_id'], $updateData['payment_ref_number']);
+		if ($payStatus === "SUCCESS") {
+			$gatewayResponse["payment_mode"]       = (!empty($mode) ? $mode : 'UPI');
+			$gatewayResponse["payu_id"]            = $cf_payment_id;
+			$gatewayResponse["payment_ref_number"] = $cf_payment_id;
 		}
 		// Monthly debit: the row is dated on the debit itself
 		foreach ($extra as $k => $v) {
-			$updateData[$k] = $v;
+			$gatewayResponse[$k] = $v;
 		}
 
-		$this->db->trans_begin();
-		$payment = $this->payment_modal->updateGatewayResponse($updateData, $trans_id);
-		$error = '';
-		if ($payment['status'] == true) {
-			if ($payStatus == "SUCCESS") {
-				$payIds = $this->payment_modal->getPayIds($trans_id);
-				if (sizeof($payIds) > 0) {
-					$this->payment_modal->updData(array("last_payment_on" => NULL), 'id_customer', $payIds[0]['id_customer'], 'customer');
-					foreach ($payIds as $pay) {
-						if (empty($pay['id_payment'])) {
-							continue; // general advance rows are not part of an auto debit
-						}
-						// Multi mode payment
-						$this->payment_modal->insertData(array(
-							'id_payment'         => $pay['id_payment'],
-							'payment_amount'     => (isset($pay['payment_amount']) ? $pay['payment_amount'] : NULL),
-							'payment_date'       => date("Y-m-d H:i:s"),
-							'created_time'       => date("Y-m-d H:i:s"),
-							'payment_mode'       => $paymentMode,
-							'remark'             => $updateData['remark'],
-							'payment_ref_number' => $cf_payment_id,
-							'payment_status'     => $updateData['payment_status']
-						), 'payment_mode_details');
+		// chit_transaction_model::updateGatewayResponse()
+		$this->db->where('ref_trans_id', $trans_id);
+		$this->db->where_in('id_payment', $includeIds);
+		$status = $this->db->update('payment', $gatewayResponse);
+		if (!$status) {
+			return array('status' => FALSE, 'message' => 'Error updating ref_trans_id : ' . $trans_id . ' ' . $this->db->_error_message());
+		}
+		$this->db->select('id_payment, payu_id, payment_status');
+		$this->db->from('payment');
+		$this->db->where('ref_trans_id', $trans_id);
+		$this->db->where_in('id_payment', $includeIds);
+		$payids = $this->db->get()->result_array();
 
-						$schData = array();
-						$cusRegData = array();
-						// Employee incentive credits based on installment settings
-						if ($pay['referal_code'] != '' && $pay['emp_refferal'] == 1) {
-							$type = 1; // 1- employee 2- agent
-							$emp_refral = $this->payment_modal->get_Incentivedata($pay['id_scheme'], $pay['id_scheme_account'], $type, $pay['id_payment']);
-							if (!empty($emp_refral)) {
-								$this->insertEmployeeIncentive($emp_refral, $pay['id_scheme_account'], $pay['id_payment']);
-								foreach ($emp_refral as $emp) {
-									if ($emp['referal_amount'] > 0 && $emp['credit_for'] == 1) {
-										$this->customerIncentive($emp, $pay['id_scheme_account'], $pay['id_payment']);
-									}
-								}
-							}
-						}
-						// Generate receipt number
-						if ($pay['receipt_no_set'] == 1 && ($approval_type == 1 || $approval_type == 2)) {
-							$receipt = array('receipt_no' => $this->payment_modal->generate_receipt_no($pay['id_scheme'], $pay['branch']));
-							$this->payment_modal->update_receipt($pay['id_payment'], $receipt);
-						}
-						// Generate account number
-						if ($pay['schemeacc_no_set'] == 0 || $pay['schemeacc_no_set'] == 3) {
-							if ($pay['scheme_acc_number'] == '' || $pay['scheme_acc_number'] == null || $pay['scheme_acc_number'] == 0) {
-								$ac_group_code = NULL;
-								if ($pay['is_lucky_draw'] == 1) { // Lucky draw: group code in scheme_account
-									$updCode = $this->payment_modal->updateGroupCode($pay);
-									$ac_group_code = ($updCode['status'] ? $updCode['group_code'] : NULL);
-								}
-								$scheme_acc_number = $this->payment_modal->account_number_generator($pay['id_scheme'], $pay['branch'], $ac_group_code);
-								if ($scheme_acc_number != NULL && $pay['id_scheme_account'] > 0) {
-									$schData['scheme_acc_number'] = $scheme_acc_number;
-									$cusRegData['scheme_acc_number'] = $scheme_acc_number;
-								}
-							}
-						}
-						if ($pay['id_scheme_account'] > 0) {
-							if (sizeof($schData) > 0) {
-								$this->payment_modal->update_account($schData, $pay['id_scheme_account']);
-							}
-							if (sizeof($cusRegData) > 0 && ($this->config->item('integrationType') == 2 || $this->config->item('integrationType') == 3)) {
-								$this->payment_modal->update_cusreg($cusRegData, $pay['id_scheme_account']); // Customer reg - Ac No
-							}
-						}
-						// Update First Payment Amount In Scheme Account
-						if (($approval_type == 1 || $approval_type == 2 || $approval_type == 3) && ($pay['firstPayamt_maxpayable'] == 1 || $pay['firstPayamt_as_payamt'] == 1) && ($pay['firstPayment_amt'] == '' || $pay['firstPayment_amt'] == null || $pay['firstPayment_amt'] == 0)) {
-							if ($pay['flexible_sch_type'] == 4 && empty($pay['firstpayment_wgt'])) { // Fix First payable as weight
-								$fixPayable = array('firstPayment_wgt' => $pay['metal_weight']);
-							} else {
-								$fixPayable = array('firstPayment_amt' => $pay['payment_amount']);
-							}
-							$this->payment_modal->update_account($fixPayable, $pay['id_scheme_account']);
-						}
-						if ($approval_type == 2 && $this->config->item('integrationType') == 2) {
-							$this->mobileapi_model->insert_common_data($pay['id_payment']);
-						}
-					}
-				}
+		// chit_transaction::payment_update()
+		foreach ($payids as $payid) {
+			if ($payid['payment_status'] == 1) {
+				$this->onPayTranStream($payid['id_payment']);
+				$serviceID = 3;
+			} else {
+				$serviceID = 7;
 			}
-		} else {
-			$error = $this->db->_error_message();
-		}
-
-		if ($payment['status'] == true && $this->db->trans_status() === TRUE) {
-			$this->db->trans_commit();
-			$serviceID = ($payStatus == "SUCCESS" ? 3 : 7); // 3 payment success (as manual), 7 auto debit failed
 			$service = $this->services_modal->checkService($serviceID);
-			if (!empty($service) && $service['sms'] == 1 && !empty($payment['id_payment'])) {
-				$data = $this->services_modal->get_SMS_data($serviceID, $payment['id_payment']);
+			if (!empty($service) && $service['sms'] == 1) {
+				$data = $this->services_modal->get_SMS_data($serviceID, $payid['id_payment']);
 				if (!empty($data['mobile'])) {
 					$this->mobileapi_model->send_sms($data['mobile'], $data['message'], '', (isset($service['dlt_te_id']) ? $service['dlt_te_id'] : ''));
 				}
 			}
-			return array('status' => TRUE, 'message' => ($payStatus == "SUCCESS" ? 'Payment completed' : 'Failed payment updated') . ' (transaction ' . $trans_id . ')');
 		}
-		$this->db->trans_rollback();
-		return array('status' => FALSE, 'message' => 'Error updating ref_trans_id : ' . $trans_id . ' ' . $error . ' ' . $this->db->_error_message() . ' - transaction rolled back');
+		return array('status' => TRUE, 'message' => ($payStatus == "SUCCESS" ? 'Payment completed' : 'Failed payment updated') . ' (transaction ' . $trans_id . ')');
 	}
 
 	/**
-	 * Same as mobile_api::insertEmployeeIncentive() (manual flow calls it from services).
+	 * Successful auto debit payments completed before installments were set here (installment still empty):
+	 * set installment no / due dates / total paid installments only — receipt, incentive, SMS were already done.
+	 * Returns the number of payments repaired.
 	 */
-	private function insertEmployeeIncentive($refdata, $id_scheme_account, $id_payment)
+	function repair_missing_installments($limit = 100)
+	{
+		$rows = $this->db->query("SELECT p.id_payment FROM payment p
+								WHERE p.payment_status = 1 AND p.installment IS NULL AND p.ref_trans_id IS NOT NULL
+								  AND (p.ref_trans_id IN (SELECT auth_txnid FROM auto_debit_subscription WHERE auth_txnid IS NOT NULL)
+								    OR p.ref_trans_id IN (SELECT txnid FROM auto_debit_charge WHERE txnid IS NOT NULL))
+								ORDER BY p.id_scheme_account, p.date_payment
+								LIMIT " . (int)$limit);
+		if ($rows === FALSE) {
+			return 0;
+		}
+		$fixed = 0;
+		foreach ($rows->result_array() as $row) {
+			$payment = $this->_get_payment_details($row['id_payment']);
+			if (!empty($payment)) {
+				$this->_updatedue_details($payment);
+				$fixed++;
+			}
+		}
+		return $fixed;
+	}
+
+	/* ── Port of admin chit_transaction_model (manual webhook completion) ── */
+
+	/**
+	 * chit_transaction_model::onPayTranStream(): payment mode details, receipt no, start / maturity date,
+	 * account no, client id, first payable, installment no + due dates + total paid installments,
+	 * intermediate table, employee / customer referral.
+	 */
+	private function onPayTranStream($id_payment)
+	{
+		$payment = $this->_get_payment_details($id_payment);
+
+		// Payment mode details table [Except admin payment]
+		if (!empty($payment['id_payGateway'])) {
+			$this->_updData(array('payment_status' => 9, "updated_time" => date('Y-m-d H:i:s'), "remark" => "Removed while webhook update " . date('Y-m-d H:i:s')), 'id_payment', $id_payment, 'payment_mode_details');
+			$this->_insert_pay_mode_details($payment);
+		}
+
+		// Receipt no generate
+		if ($this->chit['receipt_no_set'] == 1 && empty($payment['receipt_no'])) {
+			$this->_generate_receipt_no($payment);
+		}
+
+		if (empty($payment['scheme_acc_number'])) {
+			// Only update start_date and maturity on first successful payment
+			$existing_success = $this->db->query(
+				"SELECT COUNT(*) as cnt FROM payment WHERE payment_status = 1 AND id_scheme_account = " . (int)$payment['id_scheme_account'] . " AND id_payment != " . (int)$payment['id_payment']
+			)->row_array();
+			if ($existing_success['cnt'] == 0) {
+				$join_date = array('start_date' => $payment['date_payment']);
+				if (!empty($payment['start_year'])) {
+					$join_date['start_year'] = $payment['start_year'];
+				}
+				$this->_updData($join_date, 'id_scheme_account', $payment['id_scheme_account'], 'scheme_account');
+
+				$payment = $this->_get_payment_details($payment['id_payment']);
+				if ($payment['maturity_type'] > 0 && $payment['maturity_days'] != null && $payment['maturity_days'] > 0) {
+					$this->_updData(array('maturity_date' => date('Y-m-d', strtotime("+" . $payment['maturity_days'] . " days", strtotime($payment['start_date'])))), 'id_scheme_account', $payment['id_scheme_account'], 'scheme_account');
+				}
+			}
+			// Account no generate
+			if ($this->chit['schemeacc_no_set'] == 0) {
+				$this->_generate_account_no($payment);
+			}
+			// Internal client id
+			if ($this->chit['gent_clientid'] == 1) {
+				$this->_updData(array('ref_no' => $this->config->item('cliIDcode') . "/" . $payment['id_scheme_account']), 'id_scheme_account', $payment['id_scheme_account'], 'scheme_account');
+			}
+			// First payment amount / weight
+			$this->_fix_payable($payment);
+		}
+
+		// Installment no, due date, due date to, total paid installments
+		$this->_updatedue_details($payment);
+
+		// Inter-tool integration insert
+		if ($this->config->item('auto_pay_approval') == 2 && $this->config->item('integrationType') == 2) {
+			$this->mobileapi_model->insert_common_data($id_payment);
+		}
+
+		if ($payment['referal_code'] != '' && $payment['is_refferal_by'] == 1) { // Employee Referal
+			$emp_refral = $this->_get_Incentivedata($payment['id_scheme'], $payment['id_scheme_account'], 1, $payment['id_payment'], 0);
+			foreach ($emp_refral as $emp) {
+				if ($emp['is_refferal_by'] == 1 && $emp['referal_amount'] > 0) {
+					$this->_insertEmployeeIncentive($emp, $payment['id_scheme_account'], $payment['id_payment']);
+					if ($emp['credit_for'] == 1) {
+						$this->_customerIncentive($emp, $payment['id_scheme_account'], $payment['id_payment']);
+					}
+				}
+			}
+		}
+		if ($payment['referal_code'] != '' && $payment['is_refferal_by'] == 0) { // Customer Referal
+			$emp_refral = $this->_get_Incentivedata($payment['id_scheme'], $payment['id_scheme_account'], 1, $payment['id_payment'], 1);
+			foreach ($emp_refral as $emp) {
+				if ($emp['is_refferal_by'] == 0 && $emp['referal_amount'] > 0 && $emp['credit_for'] == 1) {
+					$this->_customerIncentive($emp, $payment['id_scheme_account'], $payment['id_payment']);
+				}
+			}
+		}
+	}
+
+	private function _updData($data, $id_field, $id_value, $table)
+	{
+		$this->db->where($id_field, $id_value);
+		return ($this->db->update($table, $data) == 1 ? TRUE : FALSE);
+	}
+
+	private function _get_payment_details($id_payment)
+	{
+		return $this->db->query("SELECT p.id_payment,p.id_scheme_account,p.id_branch as pay_branch,p.payment_mode,p.payment_ref_number,
+	                                sa.id_branch as join_branch,sa.id_scheme,sa.start_date,sa.maturity_date, p.metal_weight,
+	                                s.maturity_type,s.maturity_days, c.id_company, sa.group_code, p.receipt_year,s.is_lucky_draw,s.max_members,
+	                                s.flexible_sch_type,s.firstPayamt_maxpayable,s.firstPayamt_as_payamt,
+                                    sa.firstPayment_wgt,sa.firstPayment_amt,sa.scheme_acc_number,p.date_payment,p.payment_amount,p.payment_status,p.added_by,
+                                    s.maturity_type,s.maturity_days,p.id_payGateway,p.due_type,sa.referal_code,sa.is_refferal_by,
+                                    IFNULL(p.actual_trans_amt,0) as actual_trans_amt,p.redeemed_amount,
+                                    IFNULL(p.gst_amount,0) as gst_amount,IFNULL(p.discountAmt,0) as discountAmt,
+                                    p.gst_type,p.ref_trans_id, wa.id_wallet_account,p.receipt_no,sa.start_year
+	                             FROM payment p
+	                             LEFT JOIN scheme_account sa on sa.id_scheme_account = p.id_scheme_account
+	                             LEFT JOIN scheme s on s.id_scheme = sa.id_scheme
+	                             LEFT JOIN customer c on c.id_customer = sa.id_customer
+                                 LEFT JOIN wallet_account wa ON wa.id_customer=sa.id_customer
+	                             WHERE p.id_payment = " . (int)$id_payment)->row_array();
+	}
+
+	private function _insert_pay_mode_details($payment)
+	{
+		$tax = 0;
+		$remaining_amt = 0;
+		if ($payment['added_by'] == 2) {
+			$actual_trans_amt = $payment['actual_trans_amt'];
+			$act_wal_redeemed = $payment['redeemed_amount'];
+			if ($payment['gst_type'] == 1) { // Exclusive
+				$tax = $payment['gst_amount'];
+			}
+			$pay_amount = ($payment['payment_amount'] - $payment['discountAmt'] + $tax);
+			$mode_amount = $pay_amount;
+			if ($act_wal_redeemed > 0) {
+				$this->db->where('ref_trans_id', $payment['ref_trans_id']);
+				$this->db->update('payment', array("payment_mode" => 'MULTI'));
+			}
+			if ($actual_trans_amt > 0) { // Having Gateway balance, add gateway mode
+				if ($actual_trans_amt > $pay_amount) {
+					$actual_trans_amt -= $pay_amount;
+				} else if ($actual_trans_amt == $pay_amount) {
+					$actual_trans_amt -= $pay_amount;
+				} else if ($actual_trans_amt < $pay_amount) {
+					$mode_amount = $actual_trans_amt;
+					$remaining_amt = abs($actual_trans_amt - $pay_amount);
+					$actual_trans_amt = 0;
+					$pay_amount = $remaining_amt;
+				}
+				$this->db->insert('payment_mode_details', array(
+					'payment_amount'     => $mode_amount,
+					'payment_date'       => $payment['date_payment'],
+					'created_time'       => date("Y-m-d H:i:s"),
+					"payment_mode"       => $payment['payment_mode'],
+					"remark"             => "WebHook update on " . date('Y-m-d H:i:s'),
+					"payment_ref_number" => $payment['payment_ref_number'],
+					"payment_status"     => $payment['payment_status'],
+					"id_payment"         => $payment['id_payment']
+				));
+			}
+			if (($remaining_amt > 0 || $actual_trans_amt == 0) && $act_wal_redeemed > 0) { // Wallet redemption: wallet mode + debit transaction
+				$this->db->insert('payment_mode_details', array(
+					'payment_amount'     => $pay_amount,
+					'payment_date'       => date("Y-m-d H:i:s"),
+					'created_time'       => date("Y-m-d H:i:s"),
+					"payment_mode"       => "REF_WALLET",
+					"remark"             => "Wallet Utilized",
+					"payment_ref_number" => NULL,
+					"payment_status"     => 1,
+					"id_payment"         => $payment['id_payment']
+				));
+				$this->db->insert('wallet_transaction', array(
+					'id_wallet_account' => $payment['id_wallet_account'],
+					'transaction_type'  => 1, //0-Credit,1-Debit
+					'type'              => 0, //CRM
+					'id_sch_ac'         => $payment['id_scheme_account'],
+					'value'             => $pay_amount,
+					'description'       => 'Chit Redeem',
+					'date_transaction'  => date("Y-m-d H:i:s"),
+					'id_employee'       => NULL,
+					'date_add'          => date("Y-m-d H:i:s"),
+					'credit_for'        => 'Redeem',
+					'id_payment'        => $payment['id_payment']
+				));
+			}
+		} else {
+			$this->db->insert('payment_mode_details', array(
+				'payment_amount'     => $payment['payment_amount'],
+				'payment_date'       => $payment['date_payment'],
+				'created_time'       => date("Y-m-d H:i:s"),
+				"payment_mode"       => $payment['payment_mode'],
+				"remark"             => "WebHook update on " . date('Y-m-d H:i:s'),
+				"payment_ref_number" => $payment['payment_ref_number'],
+				"payment_status"     => $payment['payment_status'],
+				"id_payment"         => $payment['id_payment']
+			));
+		}
+		return true;
+	}
+
+	private function _sanitize($payment)
+	{
+		$cleaned = array();
+		foreach ($payment as $key => $value) {
+			$cleaned[$key] = $this->db->escape_str($value);
+		}
+		return $cleaned;
+	}
+
+	private function _generate_receipt_no($payment)
+	{
+		$payment = $this->_sanitize($payment);
+		$sql = "SELECT IFNULL(MAX(p.receipt_no), 0) + 1 as next_receipt
+                FROM payment p
+                LEFT JOIN scheme_account sa ON sa.id_scheme_account = p.id_scheme_account
+                LEFT JOIN customer c ON c.id_customer = sa.id_customer";
+		$where = array();
+		if ($this->chit['company_settings'] == 1 && !empty($payment['id_company'])) {
+			$where[] = "c.id_company = '{$payment['id_company']}'";
+		}
+		if ($this->chit['group_wise_receipt'] == 1 && !empty($payment['group_code'])) {
+			$where[] = "sa.group_code = '{$payment['group_code']}'";
+		}
+		if (in_array($this->chit['scheme_wise_receipt'], array(2, 4, 6, 7)) && !empty($payment['pay_branch'])) {
+			$where[] = "p.id_branch = '{$payment['pay_branch']}'";
+		}
+		if (in_array($this->chit['scheme_wise_receipt'], array(3, 4, 6)) && !empty($payment['id_scheme'])) {
+			$where[] = "p.id_scheme = '{$payment['id_scheme']}'";
+		}
+		if (in_array($this->chit['scheme_wise_receipt'], array(5, 6, 7)) && !empty($payment['receipt_year'])) {
+			$where[] = "p.receipt_year = '{$payment['receipt_year']}'";
+		}
+		if (!empty($where)) {
+			$sql .= " WHERE " . implode(" AND ", $where);
+		}
+		$row = $this->db->query($sql)->row_array();
+		return $this->_updData(array('receipt_no' => (isset($row['next_receipt']) ? $row['next_receipt'] : null)), 'id_payment', $payment['id_payment'], 'payment');
+	}
+
+	private function _generate_account_no($payment)
+	{
+		$payment = $this->_sanitize($payment);
+		$sql = "SELECT IFNULL(MAX(sa.scheme_acc_number), 0) + 1 as next_account
+                FROM scheme_account sa
+                LEFT JOIN customer c ON c.id_customer = sa.id_customer";
+		$where = array();
+		if ($this->chit['company_settings'] == 1 && !empty($payment['id_company'])) {
+			$where[] = "c.id_company = '{$payment['id_company']}'";
+		}
+		if (in_array($this->chit['scheme_wise_acc_no'], array(1, 3, 6)) && !empty($payment['join_branch'])) {
+			$where[] = "sa.id_branch = '{$payment['join_branch']}'";
+		}
+		if (in_array($this->chit['scheme_wise_acc_no'], array(2, 3, 5, 6)) && !empty($payment['id_scheme'])) {
+			$where[] = "sa.id_scheme = '{$payment['id_scheme']}'";
+		}
+		if ($this->chit['is_lucky_draw'] == 1 && !empty($payment['group_code'])) {
+			$where[] = "sa.group_code = '{$payment['group_code']}'";
+		}
+		if (in_array($this->chit['scheme_wise_acc_no'], array(4, 5, 6)) && !empty($payment['start_year'])) {
+			$where[] = "sa.start_year = '{$payment['start_year']}'";
+		}
+		if (!empty($where)) {
+			$sql .= " WHERE " . implode(" AND ", $where);
+		}
+		$row = $this->db->query($sql)->row_array();
+		return $this->_updData(array('scheme_acc_number' => (isset($row['next_account']) ? $row['next_account'] : null)), 'id_scheme_account', $payment['id_scheme_account'], 'scheme_account');
+	}
+
+	private function _fix_payable($payment)
+	{
+		$fixPayable = array();
+		if (($payment['flexible_sch_type'] == 4 || $payment['flexible_sch_type'] == 8) && ($payment['firstPayment_wgt'] == null || $payment['firstPayment_wgt'] == "")) {
+			$fixPayable = array('firstPayment_wgt' => $payment['metal_weight']);
+		} else if (($payment['firstPayamt_maxpayable'] == 1 || $payment['firstPayamt_as_payamt'] == 1) && ($payment['firstPayment_amt'] == '' || $payment['firstPayment_amt'] == null || $payment['firstPayment_amt'] == 0)) {
+			$fixPayable = array('firstPayment_amt' => $payment['payment_amount']);
+		}
+		if (!empty($fixPayable)) {
+			return $this->_updData($fixPayable, 'id_scheme_account', $payment['id_scheme_account'], 'scheme_account');
+		}
+		return TRUE;
+	}
+
+	/**
+	 * chit_transaction_model::updatedue_details() — installment no + due dates of the payment, total_paid_ins of the plan
+	 */
+	private function _updatedue_details($pay)
+	{
+		$dt_pay = date('Y-m-d', strtotime(str_replace("/", "-", $pay['date_payment'])));
+		$ins_cycle = $this->_get_due_date($pay['due_type'], $dt_pay, $pay['id_scheme_account']);
+		if (!empty($ins_cycle[0]) && sizeof($ins_cycle[0]) > 0) {
+			$this->_updData(array(
+				'due_date'        => (isset($ins_cycle[0]['due_date_from']) ? $ins_cycle[0]['due_date_from'] : NULL),
+				'due_date_to'     => (isset($ins_cycle[0]['due_date_to']) ? $ins_cycle[0]['due_date_to'] : NULL),
+				'grace_date'      => (isset($ins_cycle[0]['grace_date']) ? $ins_cycle[0]['grace_date'] : NULL),
+				'installment'     => (isset($ins_cycle[0]['installment']) ? $ins_cycle[0]['installment'] : NULL),
+				'is_limit_exceed' => (isset($ins_cycle[0]['is_limit_exceed']) ? $ins_cycle[0]['is_limit_exceed'] : 0),
+			), 'id_payment', $pay['id_payment'], 'payment');
+		} else {
+			// Same-day multiple payments: reuse the earlier same-day payment's installment / due dates
+			$sameday_pay = $this->db->query(
+				"SELECT p.installment, p.due_date, p.due_date_to, p.grace_date
+                 FROM payment p
+                 WHERE p.id_scheme_account = " . (int)$pay['id_scheme_account'] . "
+                   AND p.payment_status = 1
+                   AND p.installment IS NOT NULL
+                   AND p.installment > 0
+                   AND DATE(p.due_date) = '" . $this->db->escape_str($dt_pay) . "'
+                   AND p.id_payment != " . (int)$pay['id_payment'] . "
+                 ORDER BY p.id_payment ASC
+                 LIMIT 1"
+			)->row_array();
+			if (!empty($sameday_pay) && !empty($sameday_pay['installment'])) {
+				$this->_updData(array(
+					'due_date'    => $sameday_pay['due_date'],
+					'due_date_to' => $sameday_pay['due_date_to'],
+					'grace_date'  => $sameday_pay['grace_date'],
+					'installment' => $sameday_pay['installment'],
+				), 'id_payment', $pay['id_payment'], 'payment');
+			}
+		}
+		// update paid installments against account
+		$paid = $this->_getPaidInsData($pay['id_scheme_account']);
+		if (!empty($paid)) {
+			$this->_updData(array('total_paid_ins' => $paid['paid_installments']), 'id_scheme_account', $pay['id_scheme_account'], 'scheme_account');
+		}
+	}
+
+	/**
+	 * admin payment_model::get_due_date() (used by the manual webhook completion)
+	 */
+	private function _get_due_date($due_type, $date_payment, $id_scheme_account)
+	{
+		$result = array();
+		$pay = array();
+		$sch = $this->_get_scheme_details($id_scheme_account);
+		if (empty($sch)) {
+			return array();
+		}
+		$now = date('Y-m-d');
+		$date_payment = date('Y-m-d', strtotime($date_payment));
+		$first_payment_date = (!empty($sch['first_payment_date']) ? $sch['first_payment_date'] : $date_payment);
+		if ($sch['maturity_type'] != 2 && ($now > $sch['maturity_date'] || $now > $sch['due_cycle_end']) && $due_type == 'current_range' && $sch['total_paid_ins'] > 0) {
+			$sch['total_installments'] = max(1, intval($sch['till_days_ins']) - 1);
+		}
+		// Ensure total_installments is always positive to avoid invalid LIMIT clause
+		if (empty($sch['total_installments']) || $sch['total_installments'] < 1) {
+			$sch['total_installments'] = 1;
+		}
+		$c_wh = "and  dt.due_date_from NOT IN (SELECT p.due_date from payment p where p.payment_status = 1 and p.due_date is not null and p.id_scheme_account = sa.id_scheme_account) limit 1";
+		if ($due_type == 'ND' || $due_type == '') {
+			$where = "and  date('" . $date_payment . "') BETWEEN dt.due_date_from and dt.due_date_to " . $c_wh . " ";
+		} else if ($due_type == 'AD') {
+			$where = "and dt.due_date_from >= date('" . $date_payment . "')  " . $c_wh . " ";
+		} else if ($due_type == 'PD') {
+			$where = "and dt.due_date_from <= date('" . $date_payment . "') " . $c_wh . " ";
+		} else if ($due_type == 'MND') {
+			$where = "and '" . $date_payment . "' BETWEEN dt.due_date_from AND dt.due_date_to ";
+		} else {
+			$where = $c_wh;
+		}
+		if ($sch['installment_cycle'] == 2) {  //by days duration cycle
+			$days_duration = $sch['ins_days_duration'] - 1;
+			$grace_days = $sch['grace_days'] - 1;
+			$sql = "SELECT if(dt.due_date_to < '" . $date_payment . "', 'PD',
+    				if('" . $date_payment . "' BETWEEN dt.due_date_from AND dt.due_date_to, 'ND',
+    				if(dt.due_date_to >= '" . $date_payment . "', 'AD', '-'))) as due_type,
+    		dt.installment,dt.due_date_from,dt.due_date_to,dt.grace_date,
+    		if((('" . $due_type . "' = 'ND' OR '" . $due_type . "' = '') AND date('" . $date_payment . "') BETWEEN dt.due_date_from and dt.grace_date) OR ('" . $due_type . "' = 'AD'), '0','1') as is_limit_exceed
+    		FROM scheme_account sa
+    		JOIN (SELECT @sno := @sno + 1 as installment,
+    			@due_Date_from := if(@sno = 1, '" . $first_payment_date . "',date_add(@pay_date ,INTERVAL " . $sch['ins_days_duration'] . " day )) as due_date_from,
+    			@due_Date_to := if(@sno = 1, date_add('" . $first_payment_date . "',INTERVAL " . $days_duration . " day ),date_add(@due_Date_from,INTERVAL " . $days_duration . " day )) as due_date_to,
+    			@grace_date := if(@sno = 1, date_add('" . $first_payment_date . "',INTERVAL " . $grace_days . " day ),date_add(@due_Date_from,INTERVAL " . $grace_days . " day )) as grace_date,
+    			@pay_date := if(@sno = 1,'" . $first_payment_date . "',@due_Date_from) as due_pay_date
+    			FROM access
+    			join (SELECT @pay_date := if(@sno = 1,'" . $first_payment_date . "',@due_Date_from), @sno := 0 ) as t
+    			limit " . $sch['total_installments'] . "
+    		) as dt
+    		WHERE  sa.id_scheme_account = " . (int)$id_scheme_account . "  " . $where . " ";
+			$pay = $this->db->query($sql)->result_array();
+		} else if ($sch['installment_cycle'] == 1 || $sch['installment_cycle'] == 3) { //daily payment cycle
+			$sql = "SELECT if(dt.due_date_to < '" . $date_payment . "', 'PD',
+        			if('" . $date_payment . "' = dt.due_date_from, 'ND',
+        			if(dt.due_date_to > '" . $date_payment . "', 'AD', '-'))) as due_type,
+        	dt.installment,dt.due_date_from,dt.due_date_to
+        	FROM scheme_account sa
+        	JOIN (SELECT @sno := @sno + 1 as installment,
+        		@due_Date_from := if(@sno = 1, '" . $first_payment_date . "',date_add(@pay_date ,INTERVAL 1 day )) as due_date_from,
+        		@due_Date_to := @due_Date_from  as due_date_to,
+        		@pay_date := if(@sno = 1,'" . $first_payment_date . "',@due_Date_from) as due_pay_date
+        		FROM access
+        		join (SELECT @pay_date := if(@sno = 1,'" . $first_payment_date . "',@due_Date_from), @sno := 0 ) as t
+        		limit " . $sch['total_installments'] . "
+        	) as dt
+        	WHERE  sa.id_scheme_account = " . (int)$id_scheme_account . "  " . $where . " ";
+			$pay = $this->db->query($sql)->result_array();
+		} else if ($sch['installment_cycle'] == 0) { //monthly cycle
+			$sql = "SELECT if(dt.due_date_to < '" . $date_payment . "', 'PD',
+            				if('" . $date_payment . "' BETWEEN dt.due_date_from AND dt.due_date_to, 'ND',
+            				if(dt.due_date_to >= '" . $date_payment . "', 'AD', '-'))) as due_type,
+                    dt.installment,
+                    dt.due_date_from,
+                    dt.due_date_to
+                    FROM scheme_account sa
+                    JOIN (SELECT @sno := @sno + 1 as installment,
+                          @due_Date_from := if(@sno = 1, date_format('" . $first_payment_date . "','%Y-%m-01'),date_add(@pay_date ,INTERVAL 1 month )) as due_date_from,
+                          @due_Date_to := LAST_DAY(@due_Date_from) as due_date_to,
+                          @pay_date := if(@sno = 1,date_format('" . $first_payment_date . "','%Y-%m-01'),@due_Date_from) as due_pay_date
+                          FROM access
+                          join (SELECT @pay_date := if(@sno = 1,date_format('" . $first_payment_date . "','%Y-%m-01'),@due_Date_from), @sno := 0 ) as t limit " . $sch['total_installments'] . "
+                         ) as dt
+                    WHERE sa.id_scheme_account = " . (int)$id_scheme_account . "  " . $where . " ";
+			$pay = $this->db->query($sql)->result_array();
+		}
+		// (custom payable cycle 4 is not used by auto debit — Amount schemes only)
+		return $pay;
+	}
+
+	/**
+	 * admin payment_model::get_scheme_details()
+	 */
+	private function _get_scheme_details($id_scheme_account)
+	{
+		return $this->db->query("SELECT s.topup_store_slab,s.total_installments,s.grace_days,s.installment_cycle,s.ins_days_duration,
+		(SELECT MIN(date(p.date_payment)) FROM payment p WHERE p.payment_status = 1 and p.id_scheme_account = sa.id_scheme_account) as first_payment_date,p.payment_mode,sa.maturity_date,s.maturity_installment,s.maturity_days,s.closing_maturity_days,s.maturity_type,
+	    sa.firstPayment_amt,s.firstPayamt_as_payamt,
+        IFNULL(IF(sa.is_opening=1,IFNULL(sa.balance_amount,0)+IFNULL(SUM(p.payment_amount * p.no_of_dues),0),IFNULL(SUM(p.payment_amount * p.no_of_dues),0)) ,0) as total_paid_amount,
+        if(s.installment_cycle = 0 || s.installment_cycle = 3,
+                               PERIOD_DIFF(date_format(CURDATE(),'%Y%m'),date_format(sa.start_date,'%Y%m'))+1,
+                               if(s.installment_cycle = 1,
+                                  DATEDIFF(date_format(CURDATE(),'%Y%m%d'),date_format(sa.start_date,'%Y%m%d'))+1,
+                                  if(s.installment_cycle = 2,
+                                  CEIL((DATEDIFF(date_format(CURDATE(),'%Y%m%d'),date_format(sa.start_date,'%Y%m%d'))+1) /s.ins_days_duration),'-'
+                                    )
+                                 )
+                              ) as till_days_ins,
+        DATE_FORMAT(
+            IF(s.installment_cycle = 0, LAST_DAY(DATE_ADD(sa.start_date, INTERVAL (s.total_installments - 1) MONTH)),
+            IF(s.installment_cycle = 1, DATE_ADD(sa.start_date, INTERVAL (s.total_installments - 1) DAY),
+            IF(s.installment_cycle = 2, DATE_ADD(sa.start_date, INTERVAL ((s.ins_days_duration * s.total_installments) - 1) DAY), NULL))),
+            '%Y-%m-%d') AS due_cycle_end, sa.total_paid_ins
+        FROM scheme_account sa
+        LEFT JOIN scheme s ON s.id_scheme=sa.id_scheme
+        LEFT JOIN customer c ON c.id_customer=sa.id_customer
+        LEFT JOIN payment p on p.id_scheme_account = sa.id_scheme_account AND p.payment_status IN (1,2)
+        WHERE sa.id_scheme_account=" . (int)$id_scheme_account)->row_array();
+	}
+
+	/**
+	 * chit_transaction_model::getPaidInsData() — paid_installments = distinct installment numbers paid
+	 */
+	private function _getPaidInsData($id_scheme_account)
+	{
+		return $this->db->query("select sa.id_scheme_account, IFNULL(COUNT(Distinct pay.installment),0) as paid_installments
+                    from payment pay
+					left join scheme_account sa on sa.id_scheme_account = pay.id_scheme_account
+                    where pay.payment_status=1 and sa.id_scheme_account = " . (int)$id_scheme_account . "
+                    group by sa.id_scheme_account")->row_array();
+	}
+
+	/**
+	 * chit_transaction_model::get_Incentivedata()
+	 */
+	private function _get_Incentivedata($id_scheme, $id_scheme_account, $type, $id_payment, $credit_for)
+	{
+		$data = array();
+		$sql = $this->db->query("SELECT * FROM scheme_incentive_settings where credit_to = " . (int)$type . " and id_scheme=" . (int)$id_scheme . " AND credit_for = '" . $this->db->escape_str($credit_for) . "'");
+		if ($sql->num_rows() == 0) {
+			return $data;
+		}
+		$acc_data = $this->db->query("SELECT sa.agent_code,sa.id_agent,sa.id_customer as cus_loyal_cus_id,is_refferal_by,sa.id_scheme,p.payment_amount,p.due_type,
+					(select IFNULL(IF(sa.is_opening=1,IFNULL(sa.paid_installments,0)+ IFNULL(if(s.scheme_type = 1 and s.min_weight != s.max_weight, COUNT(Distinct Date_Format(pay.date_payment,'%Y%m')), sum(pay.no_of_dues)),0),
+					if(s.scheme_type = 1 and s.min_weight != s.max_weight or (s.scheme_type=3 AND s.firstPayamt_as_payamt = 0), COUNT(Distinct Date_Format(pay.date_payment,'%Y%m')), sum(pay.no_of_dues))) ,0)
+					from payment pay where pay.payment_status=1 and pay.id_scheme_account=sa.id_scheme_account group by pay.id_scheme_account) as paid_installments,date(p.date_payment) as payment_date
+				     FROM scheme_account sa
+				    left join scheme s on (s.id_scheme=sa.id_scheme)
+				    left join payment p on (sa.id_scheme_account=p.id_scheme_account)
+					where sa.id_scheme_account=" . (int)$id_scheme_account . "  and  p.payment_status=1 and p.id_payment=" . (int)$id_payment . " group by sa.id_scheme_account")->row_array();
+		if (empty($acc_data) || $acc_data['payment_amount'] == '' || $acc_data['payment_amount'] <= 0) {
+			return $data;
+		}
+		foreach ($sql->result_array() as $ref) {
+			if (($ref['credit_for'] == 0 || $ref['credit_for'] == 1) && ($acc_data['due_type'] == 'ND') && ($ref['from_range'] <= $acc_data['paid_installments'] && $ref['to_range'] >= $acc_data['paid_installments'])) {
+				$cash_point = $this->_calcIncentiveAmt($ref['credit_type'], $acc_data['payment_amount'], $ref['credit_value']);
+				$data[] = array('referal_amount' => $cash_point, 'credit_for' => $ref['credit_for'], 'id_customer' => $acc_data['cus_loyal_cus_id'], 'credit_remark' => 'New Scheme Join', 'id_payment' => $id_payment, 'is_refferal_by' => $acc_data['is_refferal_by']);
+			} else if ($ref['credit_for'] == 3) { // credit based on no of days (Collection App)
+				$no_of_days = round((strtotime($acc_data['payment_date']) - strtotime(date('Y-m-01'))) / 86400);
+				if ($no_of_days == 0) {
+					$no_of_days = 1;
+				}
+				if ($ref['from_range'] <= $no_of_days && $ref['to_range'] >= $no_of_days) {
+					$cash_point = $this->_calcIncentiveAmt($ref['credit_type'], $acc_data['payment_amount'], $ref['credit_value']);
+					$data[] = array('referal_amount' => $cash_point, 'credit_for' => $ref['credit_for'], 'id_customer' => $acc_data['cus_loyal_cus_id'], 'credit_remark' => 'Credits between date ' . $ref['from_range'] . ' to ' . $ref['to_range'], 'id_payment' => $id_payment, 'is_refferal_by' => $acc_data['is_refferal_by']);
+				}
+			} else if ($ref['credit_for'] == 2) { // day wise credits (Collection App)
+				$nameOfDay = date('l', strtotime($acc_data['payment_date']));
+				if ($nameOfDay == $ref['from_range'] || $nameOfDay == $ref['to_range']) {
+					$cash_point = $this->_calcIncentiveAmt($ref['credit_type'], $acc_data['payment_amount'], $ref['credit_value']);
+					$data[] = array('referal_amount' => $cash_point, 'credit_for' => $ref['credit_for'], 'id_customer' => $acc_data['cus_loyal_cus_id'], 'credit_remark' => $nameOfDay . ' Collection', 'id_payment' => $id_payment, 'is_refferal_by' => $acc_data['is_refferal_by']);
+				}
+			}
+		}
+		return $data;
+	}
+
+	private function _calcIncentiveAmt($type, $pay_amt, $ref_val)
+	{
+		return ($type == 1 ? ($pay_amt * $ref_val) / 100 : $ref_val);
+	}
+
+	/**
+	 * chit_transaction_model::insertEmployeeIncentive()
+	 */
+	private function _insertEmployeeIncentive($refdata, $id_scheme_account, $id_payment)
 	{
 		$chkreferral = $this->payment_modal->get_referral_code($id_scheme_account);
 		$data = array();
-		foreach ($refdata as $ref) {
-			$checkCreditExist = $this->payment_modal->checkCreditTransExist($id_scheme_account, $id_payment);
-			if ($checkCreditExist == 0) {
-				if ($chkreferral['referal_code'] != '' && $chkreferral['is_refferal_by'] == 1) {
-					$data = $this->payment_modal->get_empreferrals_datas($id_scheme_account);
-				}
-			}
-			if (!empty($data) && $chkreferral['is_refferal_by'] == 1 && $checkCreditExist == 0) {
-				if ($data['referal_code'] != '' && $ref['referal_amount'] != '' && $data['id_wallet_account'] != '' && $data['id_wallet_account'] > 0) {
-					$this->payment_modal->wallet_transactionDB(array(
-						'id_wallet_account' => $data['id_wallet_account'],
-						'id_sch_ac'         => $id_scheme_account,
-						'date_transaction'  => date("Y-m-d H:i:s"),
-						'id_employee'       => $data['idemployee'],
-						'transaction_type'  => 0,
-						'value'             => $ref['referal_amount'],
-						'id_payment'        => $id_payment,
-						'credit_for'        => $ref['credit_remark'],
-						'description'       => 'Referral Benefits - ' . $data['cusname'] . ''
-					));
-				}
+		$checkCreditExist = $this->payment_modal->checkCreditTransExist($id_scheme_account, $id_payment);
+		if ($checkCreditExist == 0 && $chkreferral['referal_code'] != '' && $chkreferral['is_refferal_by'] == 1) {
+			$data = $this->payment_modal->get_empreferrals_datas($id_scheme_account);
+		}
+		if (!empty($data) && $chkreferral['is_refferal_by'] == 1 && $checkCreditExist == 0) {
+			if ($data['referal_code'] != '' && $refdata['referal_amount'] != '' && $data['id_wallet_account'] != '' && $data['id_wallet_account'] > 0) {
+				$this->payment_modal->wallet_transactionDB(array(
+					'id_wallet_account' => $data['id_wallet_account'],
+					'id_sch_ac'         => $id_scheme_account,
+					'date_transaction'  => date("Y-m-d H:i:s"),
+					'id_employee'       => $data['idemployee'],
+					'transaction_type'  => 0,
+					'value'             => $refdata['referal_amount'],
+					'id_payment'        => $id_payment,
+					'credit_for'        => $refdata['credit_remark'],
+					'description'       => 'Referral Benefits - ' . $data['cusname'] . ''
+				));
 			}
 		}
 		return true;
 	}
 
 	/**
-	 * Same as mobile_api::customerIncentive().
+	 * chit_transaction_model::customerIncentive() (no admin session here: id_employee NULL)
 	 */
-	private function customerIncentive($refdata, $id_scheme_account, $id_payment)
+	private function _customerIncentive($refdata, $id_scheme_account, $id_payment)
 	{
 		$chkreferral = $this->payment_modal->get_referral_code($id_scheme_account);
-		if ($chkreferral['is_refferal_by'] == 0) { // credit customer introduce staff incentive
+		if ($chkreferral['is_refferal_by'] == 0) {
 			$this->payment_modal->update_customer_only(array('is_refbenefit_crt_cus' => 1), $chkreferral['id_customer']);
 			$isEmpRef = $this->payment_modal->get_empRefExist_datas($id_scheme_account);
-			if (sizeof($isEmpRef) > 0) {
-				if ($refdata['referal_amount'] != '' && $isEmpRef['id_wallet_account'] != null) {
-					$this->payment_modal->wallet_transactionDB(array(
-						'id_wallet_account' => $isEmpRef['id_wallet_account'],
-						'id_sch_ac'         => NULL,
-						'date_transaction'  => date("Y-m-d H:i:s"),
-						'id_employee'       => null,
-						'transaction_type'  => 0,
-						'value'             => $refdata['referal_amount'],
-						'id_payment'        => $id_payment,
-						'credit_for'        => 'Customer Intro Scheme Incentive',
-						'description'       => 'Customer Intro Referral Benefits - ' . $isEmpRef['cusname'] . ''
-					));
-				}
+			if (!empty($isEmpRef) && $refdata['referal_amount'] != '' && $isEmpRef['id_wallet_account'] != null) {
+				$this->payment_modal->wallet_transactionDB(array(
+					'id_wallet_account' => $isEmpRef['id_wallet_account'],
+					'id_sch_ac'         => $id_scheme_account,
+					'date_transaction'  => date("Y-m-d H:i:s"),
+					'id_employee'       => NULL,
+					'transaction_type'  => 0,
+					'value'             => $refdata['referal_amount'],
+					'id_payment'        => $id_payment,
+					'credit_for'        => 'Customer Intro Scheme Incentive',
+					'description'       => 'Customer Intro Referral Benefits - ' . $isEmpRef['cusname'] . ''
+				));
 			}
 		}
 	}
