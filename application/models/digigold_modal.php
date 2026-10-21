@@ -81,7 +81,7 @@ class Digigold_modal extends CI_Model
 			: "sa.id_customer =" . $id_customer;
 		$sql = $this->db->query("SELECT s.is_digi,s.min_chance,s.max_chance,sa.id_scheme_account,sa.id_scheme,date_format(sa.start_date, '%d-%b-%Y') as start_date,sa.id_branch,
 	                            IF(CURDATE() = date(sa.start_date), 1, DATEDIFF(CURDATE(),date(sa.start_date))) as date_difference,CURDATE() as cur_date,
-		                        DATE_ADD(date(sa.start_date), INTERVAL s.total_days_to_pay DAY) as allow_pay_till,IFNULL(sa.account_name,c.firstname) as account_name,
+		                        DATE_ADD(date(sa.start_date), INTERVAL s.total_days_to_pay DAY) as allow_pay_till,IFNULL(sa.account_name,c.firstname) as account_name,IFNULL((SELECT sum(p.payment_amount) FROM payment p WHERE p.id_scheme_account = sa.id_scheme_account AND p.payment_status = 1 AND date(p.date_payment) = curdate()),0) as curday_total_paid,
 								IFNULL((SELECT count(p.id_payment) FROM payment p WHERE p.id_scheme_account = sa.id_scheme_account AND p.payment_status = 1 AND date(p.date_payment) = curdate()),0) as curday_total_paid_count,
 		                        CONCAT(sa.start_year,'-',s.code,'-',IFNULL(sa.scheme_acc_number,'Not Allocated')) as scheme_acc_number,
 		                        COUNT(p.id_payment) as pay_count,sa.id_branch as joined_branch,sa.active, sa.is_closed,
