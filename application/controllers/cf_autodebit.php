@@ -705,7 +705,38 @@ class Cf_autodebit extends CI_Controller {
 		//    succeed for that month, so ask Cashfree to resume debits from the next debit day.
 		//    Needs sandbox confirmation that ACTIVATE is accepted from ON_HOLD; if refused, it is only logged —
 		//    the plan stays On Hold and the customer keeps paying manually (never a double payment).
-		if($is_open && isset($live['subscription_status']) && $live['subscription_status'] == 'ON_HOLD'){
+		$sub_freq = $this->db->query("SELECT debit_frequency FROM auto_debit_subscription WHERE id_auto_debit_subscription = ".(int)$planDetail['id_auto_debit_subscription'])->row_array();
+		$is_daily = (!empty($sub_freq) && $sub_freq['debit_frequency'] == 'DAILY');
+		// 5d. DigiGold daily auto save on hold: a failed day is not retried — resume from the day after tomorrow.
+		//     After 3 failed days in a row it stays On Hold; the customer resumes it from the app (Retry).
+		if($is_daily && $is_open && isset($live['subscription_status']) && $live['subscription_status'] == 'ON_HOLD'){
+			$last3 = $this->db->query("SELECT status FROM auto_debit_charge WHERE id_auto_debit_subscription = ".(int)$planDetail['id_auto_debit_subscription']."
+										AND status IN ('PAID', 'DEBIT_FAILED') ORDER BY due_year DESC, due_month DESC, due_day DESC LIMIT 3")->result_array();
+			$fails = 0;
+			foreach($last3 as $c){
+				if($c['status'] != 'DEBIT_FAILED'){ break; }
+				$fails++;
+			}
+			if($fails < 3){
+				$next = date('Y-m-d', strtotime('+2 days'));
+				$act = $this->_cf_api_call_v2($base.'/manage',
+					array('subscription_id' => $sub_id, 'action' => 'ACTIVATE', 'action_details' => array('next_scheduled_time' => $next.'T10:00:00+05:30')),
+					$planDetail['param_3'], $planDetail['param_1']);
+				if(is_array($act) && isset($act['subscription_status']) && !isset($act['message'])){
+					$this->_cf_apply_status($planDetail, $act['subscription_status']);
+					$live['subscription_status'] = $act['subscription_status'];
+					$summary['reactivated'] = (isset($summary['reactivated']) ? $summary['reactivated'] : 0) + 1;
+					$done['reactivated'] = 'Daily auto save resumed from '.date('d-m-Y', strtotime($next));
+				}else{
+					$summary['errors']++;
+					$done['reactivate_error'] = is_array($act) && isset($act['message']) ? $act['message'] : 'no response';
+				}
+			}else{
+				$done['on_hold'] = 'Daily auto save on hold after 3 failed days — customer resumes from the app';
+			}
+		}
+
+		if(!$is_daily && $is_open && isset($live['subscription_status']) && $live['subscription_status'] == 'ON_HOLD'){
 			$failed = null;
 			foreach($payments as $pay){
 				if(is_array($pay) && isset($pay['payment_type'], $pay['payment_status']) && $pay['payment_type'] == 'CHARGE' && $pay['payment_status'] == 'FAILED'
@@ -762,9 +793,30 @@ class Cf_autodebit extends CI_Controller {
 		// 6. ON_DEMAND subscriptions: request this month's / next month's installment from Cashfree a few days
 		//    before the customer's debit day (Cashfree debits nothing by itself for ON_DEMAND).
 		if($is_open && isset($live['subscription_status']) && $live['subscription_status'] == 'ACTIVE'){
-			$row = $this->db->query("SELECT id_auto_debit_subscription, mandate_type, debit_day, installment_amount, first_charge_on, expires_on, auth_payment_status
+			$row = $this->db->query("SELECT id_auto_debit_subscription, mandate_type, debit_day, debit_frequency, debit_end_on, installment_amount, first_charge_on, expires_on, auth_payment_status
 									FROM auto_debit_subscription WHERE id_auto_debit_subscription = ".(int)$planDetail['id_auto_debit_subscription'])->row_array();
-			if(!empty($row) && $row['mandate_type'] == 'ON_DEMAND' && $row['auth_payment_status'] == 'SUCCESS' && $row['debit_day'] > 0 && $row['installment_amount'] > 0){
+			// DigiGold daily auto save finished (3 days after the last debit day, so late results are in): close the mandate
+			if(!empty($row) && $row['debit_frequency'] == 'DAILY' && !empty($row['debit_end_on']) && date('Y-m-d') > date('Y-m-d', strtotime($row['debit_end_on'].' +3 days'))){
+				$cancel = $this->_cf_api_call_v2($base.'/manage', array('subscription_id' => $sub_id, 'action' => 'CANCEL'), $planDetail['param_3'], $planDetail['param_1']);
+				if(is_array($cancel) && !isset($cancel['message'])){
+					$this->scheme_modal->updateData(array('status' => 0, 'auth_status' => 6, 'message' => 'DAILY_COMPLETED', 'last_update' => date('Y-m-d H:i:s')), 'id_auto_debit_subscription', $planDetail['id_auto_debit_subscription'], 'auto_debit_subscription');
+					$this->scheme_modal->updateData(array('auto_debit_status' => 6, 'date_upd' => date('Y-m-d H:i:s')), 'id_scheme_account', $planDetail['id_scheme_account'], 'scheme_account');
+					$done['completed'] = 'Daily auto save completed (pay period ended)';
+				}else{
+					$summary['errors']++;
+					$done['complete_error'] = is_array($cancel) && isset($cancel['message']) ? $cancel['message'] : 'no response';
+				}
+			}
+			// DigiGold daily auto save: one debit per day, requested 2-3 days ahead
+			else if(!empty($row) && $row['debit_frequency'] == 'DAILY' && $row['mandate_type'] == 'ON_DEMAND' && $row['auth_payment_status'] == 'SUCCESS' && $row['installment_amount'] > 0){
+				foreach(self::cf_due_daily_debits(date('Y-m-d'), $row['first_charge_on'], $row['debit_end_on']) as $day){
+					$msg = $this->_cf_raise_daily_debit($planDetail, $row, $day, $payments, $summary);
+					if($msg != ''){
+						$done['requested'][] = $msg;
+					}
+				}
+			}
+			else if(!empty($row) && $row['mandate_type'] == 'ON_DEMAND' && $row['auth_payment_status'] == 'SUCCESS' && $row['debit_day'] > 0 && $row['installment_amount'] > 0){
 				foreach(self::cf_due_debits(date('Y-m-d'), (int)$row['debit_day'], $row['first_charge_on'], $row['expires_on']) as $target){
 					$msg = $this->_cf_raise_debit($planDetail, $row, $target, $payments, $summary);
 					if($msg != ''){
@@ -890,6 +942,167 @@ class Cf_autodebit extends CI_Controller {
 	}
 
 	/**
+	 * DigiGold daily auto save schedule (pure — $today is a parameter so it can be tested for any date).
+	 * Each day is requested 2-3 days ahead (Cashfree: earliest T+2 with the pre-debit notice), so a day gets
+	 * two chances if the job misses a run. Never before first_charge_on, never after the plan's last debit day.
+	 */
+	public static function cf_due_daily_debits($today, $first_charge_on, $debit_end_on)
+	{
+		$out = array();
+		for($i = 2; $i <= 3; $i++){
+			$d = date('Y-m-d', strtotime($today.' +'.$i.' days'));
+			if(!empty($first_charge_on) && $d < date('Y-m-d', strtotime($first_charge_on))){
+				continue;
+			}
+			if(!empty($debit_end_on) && $d > date('Y-m-d', strtotime($debit_end_on))){
+				continue;
+			}
+			$out[] = $d;
+		}
+		return $out;
+	}
+
+	/**
+	 * Reason why the DigiGold daily debit of $date is not needed ('' = debit is needed).
+	 * Manual purchases never cancel it: today's chance and amount are reserved for it.
+	 */
+	function _cf_daily_not_needed($id_scheme_account, $id_auto_debit_subscription, $date)
+	{
+		if($this->_cf_plan_closed($id_scheme_account)){
+			return 'Plan is closed';
+		}
+		$sub = $this->db->query("SELECT debit_end_on FROM auto_debit_subscription WHERE id_auto_debit_subscription = ".(int)$id_auto_debit_subscription)->row_array();
+		$this->load->model('cf_autodebit_model');
+		$plan = $this->cf_autodebit_model->digi_daily_plan($id_scheme_account);
+		$end = (!empty($sub['debit_end_on']) ? $sub['debit_end_on'] : (!empty($plan['end_date']) ? $plan['end_date'] : ''));
+		if($end != '' && $date > $end){
+			return 'Payment period of the plan has ended';
+		}
+		return '';
+	}
+
+	/**
+	 * Request one day's DigiGold auto save debit from Cashfree (ON_DEMAND). Never twice for the same day:
+	 * the auto_debit_charge row (UNIQUE subscription + year + month + day) is written BEFORE calling Cashfree,
+	 * and the payment_id is fixed per day. The payment itself is created when Cashfree reports the result,
+	 * with that day's rate, weight and benefit (_cf_record_daily).
+	 */
+	function _cf_raise_daily_debit($planDetail, $row, $date, $payments, &$summary)
+	{
+		$id_sub = (int)$row['id_auto_debit_subscription'];
+		$ts = strtotime($date);
+		$label = date('d-m-Y', $ts);
+		$payment_id = 'CHG_'.$id_sub.'_'.date('Ymd', $ts);
+		$existing = $this->db->query("SELECT status FROM auto_debit_charge WHERE id_auto_debit_subscription = ".$id_sub."
+										AND due_year = ".(int)date('Y', $ts)." AND due_month = ".(int)date('n', $ts)." AND due_day = ".(int)date('j', $ts))->row_array();
+		if($this->_cf_daily_not_needed($planDetail['id_scheme_account'], $id_sub, $date) != ''){
+			return '';
+		}
+		if(!empty($existing) && in_array($existing['status'], array('REQUESTED', 'SKIPPED', 'PAID', 'DEBIT_FAILED'))){
+			return '';
+		}
+		if(empty($existing)){
+			$this->db->query("INSERT IGNORE INTO auto_debit_charge (id_auto_debit_subscription, id_scheme_account, due_month, due_day, due_year, payment_id, payment_amount, schedule_date, status, created_on)
+							VALUES (".$id_sub.", ".(int)$planDetail['id_scheme_account'].", ".(int)date('n', $ts).", ".(int)date('j', $ts).", ".(int)date('Y', $ts).", ".$this->db->escape($payment_id).", ".(float)$row['installment_amount'].", ".$this->db->escape($date).", 'REQUESTING', NOW())");
+			if($this->db->affected_rows() < 1){
+				return ''; // another run inserted it at the same moment
+			}
+		}
+		// A previous run may have reached Cashfree and then timed out: the payment is already there
+		foreach($payments as $pay){
+			if(is_array($pay) && isset($pay['payment_id']) && $pay['payment_id'] == $payment_id){
+				$this->db->query("UPDATE auto_debit_charge SET status = 'REQUESTED', message = 'found at Cashfree', last_update = NOW() WHERE payment_id = ".$this->db->escape($payment_id));
+				return '';
+			}
+		}
+		$res = $this->_cf_api_call_v2($this->_cf_base_domain($planDetail['api_url']).'/pg/subscriptions/pay', array(
+				'subscription_id'       => $planDetail['sub_reference_id'],
+				'payment_id'            => $payment_id,
+				'payment_amount'        => (float)$row['installment_amount'],
+				'payment_schedule_date' => $date.'T10:00:00+05:30',
+				'payment_remarks'       => 'DigiGold daily save '.$label,
+				'payment_type'          => 'CHARGE'
+			), $planDetail['param_3'], $planDetail['param_1']);
+		$ok  = is_array($res) && (isset($res['cf_payment_id']) || (isset($res['payment_id']) && !isset($res['message'])));
+		$dup = !$ok && is_array($res) && isset($res['message']) && preg_match('/already|duplicate|exist/i', $res['message']);
+		$status = ($ok || $dup) ? 'REQUESTED' : 'FAILED_REQUEST'; // FAILED_REQUEST is tried again on the next run
+		$message = $ok ? 'requested' : (is_array($res) && isset($res['message']) ? $res['message'] : 'no response');
+		$this->db->query("UPDATE auto_debit_charge SET status = '".$status."', message = ".$this->db->escape(substr($message, 0, 250)).", last_update = NOW() WHERE payment_id = ".$this->db->escape($payment_id));
+		if($status == 'REQUESTED'){
+			$summary['debits_requested'] = (isset($summary['debits_requested']) ? $summary['debits_requested'] : 0) + 1;
+			return 'Daily debit of Rs.'.(0 + $row['installment_amount']).' requested for '.$label;
+		}
+		$summary['errors']++;
+		return 'Daily debit '.$label.' request FAILED: '.$message;
+	}
+
+	/**
+	 * DigiGold daily debit result: the day's payment is created now (that day's rate, weight and benefit, same
+	 * fields as a manual DigiGold payment), then completed like a manual payment or marked failed.
+	 * One at a time per debit (webhook and daily job can arrive together); nothing is saved twice.
+	 */
+	function _cf_record_daily($planDetail, $data, $is_success, $payment_id)
+	{
+		// The daily job sees every past debit of the plan on each run: skip saved days without taking a lock
+		$seen = $this->db->query("SELECT status FROM auto_debit_charge WHERE payment_id = ".$this->db->escape($payment_id))->row_array();
+		if(!empty($seen) && ($seen['status'] == 'PAID' || (!$is_success && $seen['status'] == 'DEBIT_FAILED'))){
+			return array("status" => FALSE, "message" => "Daily debit ".$payment_id." already saved", "time" => date('d-m-Y H:i:s'));
+		}
+		$lock = $this->db->escape('cf_daily_'.md5($payment_id));
+		$got = $this->db->query("SELECT GET_LOCK(".$lock.", 10) as got")->row();
+		if(empty($got) || $got->got != 1){
+			return array("status" => FALSE, "message" => "Daily debit ".$payment_id." is being saved by another request", "time" => date('d-m-Y H:i:s'));
+		}
+		try{
+			$chg = $this->db->query("SELECT * FROM auto_debit_charge WHERE payment_id = ".$this->db->escape($payment_id))->row_array();
+			if(empty($chg) || $chg['status'] == 'PAID' || (!$is_success && $chg['status'] == 'DEBIT_FAILED')){
+				return array("status" => FALSE, "message" => "Daily debit ".$payment_id." already saved", "time" => date('d-m-Y H:i:s'));
+			}
+			$this->load->model('cf_autodebit_model');
+			$day = sprintf('%04d-%02d-%02d', $chg['due_year'], $chg['due_month'], $chg['due_day']);
+			$amount = (isset($data['payment_amount']) && $data['payment_amount'] > 0) ? (float)$data['payment_amount'] : (float)$chg['payment_amount'];
+			$cf_payment_id = isset($data['cf_payment_id']) ? $data['cf_payment_id'] : NULL;
+			$txnid = $chg['txnid'];
+			if(empty($txnid)){
+				$txn = $this->cf_autodebit_model->create_digi_daily_txn($chg['id_scheme_account'], $amount, $planDetail['id_pg'], $day);
+				if(!$txn['status']){
+					$this->db->query("UPDATE auto_debit_charge SET message = ".$this->db->escape('Payment not created: '.$txn['message']).", last_update = NOW() WHERE payment_id = ".$this->db->escape($payment_id));
+					return array("status" => FALSE, "message" => 'Payment not created: '.$txn['message'], "time" => date('d-m-Y H:i:s'));
+				}
+				$txnid = $txn['txnid'];
+				$this->db->query("UPDATE auto_debit_charge SET txnid = ".$this->db->escape($txnid).", last_update = NOW() WHERE payment_id = ".$this->db->escape($payment_id));
+			}
+			if($is_success){
+				if($this->_cf_plan_closed($chg['id_scheme_account'])){
+					$res = $this->cf_autodebit_model->refund_installment_txn($txnid, $cf_payment_id);
+				}else{
+					// Rate / weight / benefit of the day the money was taken (a row from an earlier failed attempt is refreshed)
+					$digi = $this->cf_autodebit_model->digi_payment_fields($chg['id_scheme_account'], $amount);
+					$extra = array('date_payment' => date('Y-m-d H:i:s'));
+					if($digi['metal_rate'] > 0){
+						foreach(array('metal_rate', 'metal_weight', 'saved_benefits', 'saved_benefit_amt', 'benefit_value', 'benefit_type') as $f){
+							$extra[$f] = $digi[$f];
+						}
+						$extra['dg_other_benefit_wgt'] = (!empty($digi['dg_other_benefit_wgt']) ? $digi['dg_other_benefit_wgt'] : NULL);
+						$extra['dg_other_benefit_amt'] = (!empty($digi['dg_other_benefit_amt']) ? $digi['dg_other_benefit_amt'] : NULL);
+					}
+					$res = $this->cf_autodebit_model->complete_auth_txn($txnid, $cf_payment_id, $this->cf_autodebit_model->cf_payment_mode($data), 'DigiGold daily auto save '.date('d-m-Y', strtotime($day)), $extra);
+				}
+				$charge_status = 'PAID';
+			}else{
+				$reason = isset($data['failure_details']['failure_reason']) ? $data['failure_details']['failure_reason'] : 'Auto debit failed';
+				$res = $this->cf_autodebit_model->fail_installment_txn($txnid, $reason);
+				$charge_status = 'DEBIT_FAILED';
+			}
+			$this->db->query("UPDATE auto_debit_charge SET status = '".$charge_status."', message = ".$this->db->escape(substr($res['message'], 0, 250)).", last_update = NOW()
+							WHERE payment_id = ".$this->db->escape($payment_id).($is_success ? "" : " AND status != 'PAID'"));
+			return array("status" => $res['status'], "message" => $res['message'], "time" => date('d-m-Y H:i:s'));
+		} finally {
+			$this->db->query("SELECT RELEASE_LOCK(".$lock.")");
+		}
+	}
+
+	/**
 	 * Next monthly debit date (Y-m-d): the next debit day (5th — keep same as mobile_api::CF_DEBIT_DAY)
 	 * that is at least 2 days away (Cashfree T+1/T+2 + 25 hr pre-debit notice).
 	 */
@@ -985,7 +1198,13 @@ class Cf_autodebit extends CI_Controller {
 	function _cf_check_upcoming_debit($planDetail, $sub_id, $pay)
 	{
 		$sched  = !empty($pay['payment_schedule_date']) ? strtotime($pay['payment_schedule_date']) : time();
-		$reason = $this->_cf_debit_not_needed($planDetail['id_scheme_account'], (int)date('n', $sched), (int)date('Y', $sched));
+		$chg_day = !empty($pay['payment_id']) ? $this->db->query("SELECT due_day FROM auto_debit_charge WHERE payment_id = ".$this->db->escape($pay['payment_id']))->row_array() : array();
+		if(!empty($chg_day) && $chg_day['due_day'] > 0){
+			// DigiGold daily debit: only a closed plan / ended pay period stops it (manual purchases are reserved around it)
+			$reason = $this->_cf_daily_not_needed($planDetail['id_scheme_account'], $planDetail['id_auto_debit_subscription'], date('Y-m-d', $sched));
+		}else{
+			$reason = $this->_cf_debit_not_needed($planDetail['id_scheme_account'], (int)date('n', $sched), (int)date('Y', $sched));
+		}
 		if($reason == ''){
 			return array("status" => TRUE, "cancelled" => FALSE, "message" => "Debit on ".date('d-m-Y', $sched)." allowed", "time" => date('d-m-Y H:i:s'));
 		}
@@ -997,10 +1216,13 @@ class Cf_autodebit extends CI_Controller {
 		$cancelled = is_array($cancel) && ((isset($cancel['payment_status']) && strtoupper($cancel['payment_status']) == 'CANCELLED') || (isset($cancel['payment_id']) && !isset($cancel['message'])));
 		if($cancelled && !empty($pay['payment_id'])){
 			// The month's pending payment (made when the debit was requested) is closed too
-			$chg = $this->db->query("SELECT txnid FROM auto_debit_charge WHERE payment_id = ".$this->db->escape($pay['payment_id']))->row_array();
+			$chg = $this->db->query("SELECT txnid, due_day FROM auto_debit_charge WHERE payment_id = ".$this->db->escape($pay['payment_id']))->row_array();
 			if(!empty($chg['txnid'])){
 				$this->load->model('cf_autodebit_model');
 				$this->cf_autodebit_model->cancel_auth_txn($chg['txnid'], $reason);
+				$this->db->query("UPDATE auto_debit_charge SET status = 'SKIPPED', message = ".$this->db->escape(substr($reason, 0, 250)).", last_update = NOW() WHERE payment_id = ".$this->db->escape($pay['payment_id']));
+			}else if(!empty($chg) && $chg['due_day'] > 0){
+				// Daily debit: no payment exists yet, just mark the day skipped
 				$this->db->query("UPDATE auto_debit_charge SET status = 'SKIPPED', message = ".$this->db->escape(substr($reason, 0, 250)).", last_update = NOW() WHERE payment_id = ".$this->db->escape($pay['payment_id']));
 			}
 		}
@@ -1018,7 +1240,11 @@ class Cf_autodebit extends CI_Controller {
 		if(empty($data['payment_id'])){
 			return NULL;
 		}
-		$chg = $this->db->query("SELECT txnid FROM auto_debit_charge WHERE payment_id = ".$this->db->escape($data['payment_id']))->row_array();
+		$chg = $this->db->query("SELECT txnid, due_day FROM auto_debit_charge WHERE payment_id = ".$this->db->escape($data['payment_id']))->row_array();
+		// DigiGold daily auto save debit: its payment is created now (no pending row was made in advance)
+		if(!empty($chg) && $chg['due_day'] > 0){
+			return $this->_cf_record_daily($planDetail, $data, $is_success, $data['payment_id']);
+		}
 		if(empty($chg['txnid'])){
 			return NULL;
 		}

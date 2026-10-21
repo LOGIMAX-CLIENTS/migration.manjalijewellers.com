@@ -2274,7 +2274,9 @@ $(document).on("mousedown keydown keypress", "select.locked", function (e) {
 });
 
 /* ── Auto debit plan type rules (Cashfree UPI AutoPay / card mandates: below Rs.15,000 per debit) ──
-   Periodic auto debit is allowed only for "Amount" schemes with an amount below 15,000.
+   Periodic auto debit is allowed for "Amount" schemes with an amount below 15,000 (monthly debit), and for
+   DigiGold schemes: Is Digi + Flexible + "Amount to Weight (based on Amount)" (daily auto save; the app keeps
+   the customer's daily amount below 15,000, so no amount check here).
    - Amount scheme + Periodic: show the limit note above Amount.
    - Amount 15,000 or more, or any other scheme type: set to Not Applicable and lock the select
      (a disabled select is not posted; the controller saves 0 = Not Applicable).
@@ -2293,10 +2295,12 @@ $(document).ready(function () {
 
 	function syncAutoDebitPlanType() {
 		var isAmountScheme = $("input[name='sch[scheme_type]']:checked").val() == 0;
+		var isDigiDaily = $('#is_digi').is(':checked') && $("input[name='sch[scheme_type]']:checked").val() == 3
+			&& ($('#pay_type').val() || $('#flexible_sch_type').val()) == 2;
 		var overLimit = isAmountScheme && adAmount() >= AD_LIMIT;
 		var $warn = $('#ad_limit_warning');
 
-		if (!isAmountScheme || overLimit) {
+		if ((!isAmountScheme && !isDigiDaily) || overLimit) {
 			if ($adSel.val() == '1') {
 				adWasPeriodic = true;
 			}
@@ -2314,6 +2318,9 @@ $(document).ready(function () {
 		} else if (isAmountScheme && $adSel.val() == '1') {
 			$warn.html('Auto debit (Periodic): amount must be below &#8377;15,000.')
 				.css({ background: '#fff4e5', color: '#8a5300', border: '1px solid #f7d9a8' }).show();
+		} else if (isDigiDaily && $adSel.val() == '1') {
+			$warn.html('Daily auto debit: the customer picks a daily amount between Min and Max amount (below &#8377;15,000).')
+				.css({ background: '#fff4e5', color: '#8a5300', border: '1px solid #f7d9a8' }).show();
 		} else {
 			$warn.hide();
 		}
@@ -2327,6 +2334,10 @@ $(document).ready(function () {
 	$('#amount').on('input keyup change blur', syncAutoDebitPlanType);
 	$("input[name='sch[scheme_type]']:radio").on('change', function () {
 		// scheme type handlers above may reset the amount — check after they run
+		setTimeout(syncAutoDebitPlanType, 0);
+	});
+	// DigiGold daily auto save: Is Digi and Flexible Scheme Type decide it too
+	$('#is_digi, #pay_type').on('change', function () {
 		setTimeout(syncAutoDebitPlanType, 0);
 	});
 	// Initial state (after the page's own load handlers)

@@ -4480,6 +4480,42 @@ class Mobile_api extends REST_Controller
         }
         return '';
     }
+    /**
+     * Manual DigiGold purchase while daily auto save is Active: one payment chance and the daily amount are
+     * reserved for today's auto debit (released when today's debit failed or auto save is not active).
+     * Returns the reason the purchase is refused, '' when allowed.
+     */
+    private function _digi_daily_limit_msg($pay_arr)
+    {
+        if (!is_array($pay_arr)) {
+            return '';
+        }
+        $this->load->model('cf_autodebit_model');
+        foreach ($pay_arr as $pay) {
+            $id_sch_ac = is_object($pay) ? (isset($pay->udf1) ? $pay->udf1 : 0) : (isset($pay['udf1']) ? $pay['udf1'] : 0);
+            if ($id_sch_ac <= 0) {
+                continue;
+            }
+            // Only DigiGold daily auto save plans (other plans never reach the auto debit tables here)
+            $plan = $this->cf_autodebit_model->digi_daily_plan($id_sch_ac);
+            if (empty($plan) || !$plan['allowed'] || empty($this->cf_autodebit_model->digi_daily_sub($id_sch_ac))) {
+                continue;
+            }
+            $limits = $this->cf_autodebit_model->digi_daily_limits($id_sch_ac, $plan);
+            if (!$limits['active']) {
+                continue;
+            }
+            $amount = (float)(is_object($pay) ? (isset($pay->amount) ? $pay->amount : 0) : (isset($pay['amount']) ? $pay['amount'] : 0));
+            $kept = ($limits['reserve'] ? ' (1 purchase of Rs.' . (0 + $limits['daily_amount']) . ' is kept for your daily auto save)' : '');
+            if ($limits['manual_chances_left'] !== NULL && $limits['manual_chances_left'] < 1) {
+                return "Today's purchase limit is reached" . $kept . '. Kindly buy again tomorrow.';
+            }
+            if ($amount > $limits['manual_amount_left']) {
+                return 'You can buy up to Rs.' . (0 + $limits['manual_amount_left']) . ' more today' . $kept . '.';
+            }
+        }
+        return '';
+    }
     // Cashfree SDK API's :: START
     function random_strings($length)
     {
@@ -4536,6 +4572,14 @@ class Mobile_api extends REST_Controller
         if ($autopay_msg != '') {
             $this->response(array('status' => false, 'message' => $autopay_msg), 200);
             return;
+        }
+        // DigiGold daily auto save: today's chance and amount are kept for the auto debit (manual purchases only)
+        if ($cf_auth_sub === null) {
+            $digi_msg = $this->_digi_daily_limit_msg($sch_payment);
+            if ($digi_msg != '') {
+                $this->response(array('status' => false, 'message' => $digi_msg), 200);
+                return;
+            }
         }
         $sum_of_payArr_pay = array_sum(array_column($sch_payment, 'pay_amt'));
         //  echo '<pre>';print_r($sum_of_payArr_pay);exit;
@@ -8090,10 +8134,15 @@ class Mobile_api extends REST_Controller
 				//    collect has been paid manually since Subscribe (customer paid before authorizing).
 				// Either way cancel it and create a fresh subscription with the same debit day; it recalculates what the
 				// authorization collects (this month's installment, or Rs.1 refunded when this month is now paid).
-				$sub_row = $this->db->query("SELECT created_on, first_charge_on, mandate_type, debit_day, auth_amount, auth_is_installment, auth_txnid FROM auto_debit_subscription WHERE id_auto_debit_subscription = " . (int)$planDetail['id_auto_debit_subscription'])->row_array();
+				$sub_row = $this->db->query("SELECT created_on, first_charge_on, mandate_type, debit_day, debit_frequency, installment_amount, auth_amount, auth_is_installment, auth_txnid FROM auto_debit_subscription WHERE id_auto_debit_subscription = " . (int)$planDetail['id_auto_debit_subscription'])->row_array();
 				$session_expired = (!empty($sub_row['created_on']) && (time() - strtotime($sub_row['created_on'])) > (115 * 60));
 				$month_paid = false;
-				if (isset($sub_row['mandate_type']) && $sub_row['mandate_type'] == 'ON_DEMAND') {
+				$is_daily = (isset($sub_row['debit_frequency']) && $sub_row['debit_frequency'] == 'DAILY');
+				if ($is_daily) {
+					// DigiGold daily auto save: manual purchases this month don't matter; only an expired session is recreated
+					// (today's limit is checked when the authorization payment is created)
+					$post_data['daily_amount'] = $sub_row['installment_amount'];
+				} else if (isset($sub_row['mandate_type']) && $sub_row['mandate_type'] == 'ON_DEMAND') {
 					if (!empty($sub_row['auth_is_installment'])) {
 						$sub_on = strtotime($sub_row['created_on']);
 						$month_paid = $this->mobileapi_model->is_installment_month_paid($id_sch_ac, (int)date('n', $sub_on), (int)date('Y', $sub_on));
@@ -8127,7 +8176,7 @@ class Mobile_api extends REST_Controller
 						'subscription_id'         => $fresh['subscription_id'],
 						'subscription_session_id' => $fresh['subscription_session_id'],
 						'environment'             => $fresh['environment'],
-						'debit_day'               => $fresh['debit_day'],
+						'debit_day'               => isset($fresh['debit_day']) ? $fresh['debit_day'] : null,
 						'auth_amount'             => $fresh['auth_amount'],
 						'auth_is_installment'     => $fresh['auth_is_installment']
 					));
@@ -8160,6 +8209,29 @@ class Mobile_api extends REST_Controller
 
 				$base_domain = $this->_cf_base_domain($planDetail['api_url']);
 				$sub_id      = $planDetail['sub_reference_id'];
+
+				// DigiGold daily auto save: a failed day is not retried (the next day's debit follows).
+				// On Hold -> resume the daily debits; otherwise nothing to retry.
+				$freq = $this->db->query("SELECT debit_frequency FROM auto_debit_subscription WHERE id_auto_debit_subscription = " . (int)$planDetail['id_auto_debit_subscription'])->row_array();
+				if (!empty($freq) && $freq['debit_frequency'] == 'DAILY') {
+					$live = $this->_cf_api_call($base_domain . '/pg/subscriptions/' . rawurlencode($sub_id), array(), $planDetail['param_3'], $planDetail['param_1'], 'GET');
+					if (!isset($live['subscription_status']) || $live['subscription_status'] != 'ON_HOLD') {
+						echo json_encode(array('status' => false, 'msg' => 'Daily auto save continues automatically. The next debit will be requested by tomorrow.'));
+						return;
+					}
+					$next = date('Y-m-d', strtotime('+2 days'));
+					$act = $this->_cf_api_call($base_domain . '/pg/subscriptions/' . rawurlencode($sub_id) . '/manage',
+						array('subscription_id' => $sub_id, 'action' => 'ACTIVATE', 'action_details' => array('next_scheduled_time' => $next . 'T10:00:00+05:30')),
+						$planDetail['param_3'], $planDetail['param_1']);
+					$this->_cf_logToFile('cf_subscription', array('action' => 'resume_daily', 'id_sch_ac' => $id_sch_ac, 'response' => $act));
+					if (isset($act['subscription_status']) && !isset($act['message'])) {
+						$code = $this->_cf_save_status($planDetail, $act['subscription_status']);
+						echo json_encode(array('status' => true, 'msg' => 'Daily auto save resumed from ' . date('d-m-Y', strtotime($next)) . '.', 'auto_debit_status' => $code));
+					} else {
+						echo json_encode(array('status' => false, 'msg' => isset($act['message']) ? $act['message'] : 'Unable to resume daily auto save, try again later...'));
+					}
+					return;
+				}
 
 				// 1. Find the latest failed CHARGE payment of this subscription
 				$payments = $this->_cf_api_call($base_domain . '/pg/subscriptions/' . rawurlencode($sub_id) . '/payments', array(), $planDetail['param_3'], $planDetail['param_1'], 'GET');
@@ -8329,6 +8401,13 @@ class Mobile_api extends REST_Controller
 				'status' => false,
 				'msg'    => 'Already subscription created, Kindly check the authorization status...'
 			);
+		}
+
+		// DigiGold (Is Digi + Flexible + Amount to Weight based on Amount): daily auto save, not monthly
+		$this->load->model('cf_autodebit_model');
+		$digi_plan = $this->cf_autodebit_model->digi_daily_plan($id_sch_ac);
+		if (!empty($digi_plan) && $digi_plan['is_digi'] == 1) {
+			return $this->_cf_create_daily_subscription($id_sch_ac, $post_data, $planDetail, $digi_plan);
 		}
 
 		// Monthly debit day chosen by the customer in the app calendar (1-28: exists in every month)
@@ -8537,6 +8616,135 @@ class Mobile_api extends REST_Controller
 	}
 
 	/**
+	 * DigiGold daily auto save (type 1): ON_DEMAND mandate for a fixed daily amount chosen by the customer.
+	 * The authorization collects today's amount (UPI / card); from the day after tomorrow (Cashfree needs
+	 * T+2 for a debit request with its pre-debit notice) the daily job requests one debit per day until the
+	 * plan's pay window ends (start date + total days to pay).
+	 */
+	private function _cf_create_daily_subscription($id_sch_ac, $post_data, $planDetail, $plan)
+	{
+		if (!$plan['eligible']) {
+			return array('status' => false, 'msg' => 'Daily auto save is available only for DigiGold plans (Amount to Weight).');
+		}
+		if (!$plan['allowed']) {
+			return array('status' => false, 'msg' => 'Auto debit is not applicable for this plan');
+		}
+		if ($plan['active'] != 1 || $plan['is_closed'] == 1) {
+			return array('status' => false, 'msg' => 'This plan is not active.');
+		}
+		$amount = isset($post_data['daily_amount']) ? round((float)$post_data['daily_amount'], 2) : 0;
+		if ($amount < $plan['daily_min'] || $amount > $plan['daily_max'] || $amount <= 0) {
+			return array('status' => false, 'msg' => 'Kindly enter a daily amount between Rs.' . (0 + $plan['daily_min']) . ' and Rs.' . (0 + $plan['daily_max']) . '.');
+		}
+		$today = date('Y-m-d');
+		if ($today > $plan['end_date']) {
+			return array('status' => false, 'msg' => 'The payment period of this plan has ended.');
+		}
+		$first_charge_date = date('Y-m-d', strtotime($today . ' +2 days'));
+		$last_charge_date  = $plan['end_date'];
+		if ($first_charge_date > $last_charge_date) {
+			return array('status' => false, 'msg' => 'Only a few days are left in this plan. Kindly continue to buy manually.');
+		}
+		// Today's amount is collected at authorization: it must fit in today's limits
+		$limits = $this->cf_autodebit_model->digi_daily_limits($id_sch_ac, $plan);
+		if (($limits['manual_chances_left'] !== NULL && $limits['manual_chances_left'] < 1) || $limits['manual_amount_left'] < $amount) {
+			return array('status' => false, 'msg' => "Today's purchase limit is reached. Kindly start daily auto save tomorrow.");
+		}
+		$charges = (int)round((strtotime($last_charge_date) - strtotime($first_charge_date)) / 86400) + 1;
+		$expiry_date = date('Y-m-d', strtotime($last_charge_date . ' +5 days'));
+
+		$planDetail = $this->_cf_gateway($planDetail, $id_sch_ac);
+		if ($planDetail === false) {
+			return array('status' => false, 'msg' => 'Auto debit gateway is not configured. Kindly contact the branch.');
+		}
+
+		$subscription_id = 'SUB_' . $id_sch_ac . '_' . time();
+		$return_url = $this->config->item('base_url') . 'index.php/cf_autodebit/autoDebitRURL/M/' . $id_sch_ac;
+		$gen_email  = $this->_cf_random_strings(8) . '@noemail.com';
+		$authorization = array('authorization_amount' => $amount, 'authorization_amount_refund' => false, 'payment_methods' => array('upi', 'card'));
+
+		$cf_payload = array(
+			'subscription_id'     => $subscription_id,
+			'customer_details'    => array(
+				'customer_name'  => trim($planDetail['cus_name']),
+				'customer_email' => !empty($planDetail['email']) ? $planDetail['email'] : $gen_email,
+				'customer_phone' => $planDetail['mobile']
+			),
+			'plan_details' => array(
+				'plan_name'       => substr('Daily ' . $planDetail['scheme_name'] . ' - ' . $planDetail['code'], 0, 40), // Cashfree max 40 chars
+				'plan_type'       => 'ON_DEMAND',
+				'plan_currency'   => 'INR',
+				'plan_max_amount' => $amount,
+				'plan_max_cycles' => $charges + 5 // our job is the real limit; room for retried days
+			),
+			'subscription_meta' => array(
+				'return_url' => $return_url
+			),
+			'authorization_details'    => $authorization,
+			'subscription_expiry_time' => $expiry_date . 'T23:59:59+05:30'
+		);
+
+		$ins = $this->scheme_modal->insertData(array(
+			'id_scheme_account'   => $id_sch_ac,
+			'subscription_id'     => $subscription_id,
+			'plan_id'             => $planDetail['sync_scheme_code'],
+			'first_charge_delay'  => 1,
+			'first_charge_on'     => $first_charge_date,
+			'mandate_type'        => 'ON_DEMAND',
+			'debit_day'           => NULL,
+			'debit_frequency'     => 'DAILY',
+			'debit_end_on'        => $last_charge_date,
+			'installment_amount'  => $amount,
+			'auth_amount'         => $amount,
+			'auth_is_installment' => 1,
+			'expires_on'          => $expiry_date . ' 23:59:59',
+			'status'              => 0,
+			'created_on'          => date('Y-m-d H:i:s'),
+			'added_by'            => 1,  // 1 = Mobile App
+		), 'auto_debit_subscription');
+		if (!$ins['status']) {
+			return array('status' => false, 'msg' => 'Error in subscription process, try again later...');
+		}
+
+		$api_url = $this->_cf_base_domain($planDetail['api_url']) . '/pg/subscriptions';
+		$res = $this->_cf_api_call($api_url, $cf_payload, $planDetail['param_3'], $planDetail['param_1']);
+		$this->_cf_logToFile('cf_subscription', array('action' => 'subscribe_daily', 'id_sch_ac' => $id_sch_ac, 'api_url' => $api_url, 'request' => $cf_payload, 'response' => $res));
+
+		if (isset($res['cf_subscription_id'])) {
+			$session_id = isset($res['subscription_session_id']) ? $res['subscription_session_id'] : null;
+			$this->scheme_modal->updateData(array(
+				'sub_reference_id' => isset($res['subscription_id']) ? $res['subscription_id'] : null,
+				'auth_status'      => 1, // INITIALIZED
+				'auth_link'        => $session_id,
+				'message'          => isset($res['subscription_status']) ? $res['subscription_status'] : 'INITIALIZED',
+				'status'           => 1,
+				'last_update'      => date('Y-m-d H:i:s')
+			), 'id_auto_debit_subscription', $ins['insertID'], 'auto_debit_subscription');
+			$this->scheme_modal->updateData(array('auto_debit_status' => 1, 'date_upd' => date('Y-m-d H:i:s')), 'id_scheme_account', $id_sch_ac, 'scheme_account');
+			$cf_env = (strpos($planDetail['api_url'], 'sandbox') !== false || strpos($planDetail['api_url'], 'test') !== false) ? 'sandbox' : 'production';
+			return array(
+				'status'                  => true,
+				'msg'                     => 'Subscription created successfully. Kindly do the authorization process.',
+				'subscription_id'         => isset($res['subscription_id']) ? $res['subscription_id'] : null,
+				'subscription_session_id' => $session_id ? $session_id : '',
+				'cf_environment'          => $cf_env,
+				'environment'             => strtoupper($cf_env),
+				'sub_status'              => isset($res['subscription_status']) ? $res['subscription_status'] : 'INITIALIZED',
+				'frequency'               => 'DAILY',
+				'daily_amount'            => $amount,
+				'auth_amount'             => $amount,
+				'auth_is_installment'     => true,
+				'first_charge_on'         => date('d-m-Y', strtotime($first_charge_date)),
+				'last_charge_on'          => date('d-m-Y', strtotime($last_charge_date))
+			);
+		}
+
+		$error_msg = isset($res['message']) ? $res['message'] : 'Failed to create subscription';
+		$this->scheme_modal->updateData(array('message' => 'FAILED: ' . substr($error_msg, 0, 200), 'last_update' => date('Y-m-d H:i:s')), 'id_auto_debit_subscription', $ins['insertID'], 'auto_debit_subscription');
+		return array('status' => false, 'msg' => $error_msg, 'data' => $res);
+	}
+
+	/**
 	 * Rs.1 authorization (AUTH payment) result from Cashfree's payment list, saved on auto_debit_subscription.
 	 * Auto pay is enabled only when this is SUCCESS. Returns SUCCESS / FAILED / PENDING / '' (no attempt yet).
 	 */
@@ -8605,7 +8813,7 @@ class Mobile_api extends REST_Controller
 	{
 		$err = function ($msg) { return array('status' => false, 'msg' => $msg); };
 		$sub = $this->db->query("SELECT ad.id_auto_debit_subscription, ad.sub_reference_id, ad.id_scheme_account, ad.mandate_type, ad.auth_is_installment, ad.auth_amount,
-										ad.auth_payment_status, ad.auth_txnid, ad.status, sa.id_customer
+										ad.auth_payment_status, ad.auth_txnid, ad.status, ad.debit_frequency, sa.id_customer
 									FROM auto_debit_subscription ad
 									JOIN scheme_account sa ON sa.id_scheme_account = ad.id_scheme_account
 									WHERE ad.sub_reference_id = " . $this->db->escape($sub_reference_id) . "
@@ -8629,7 +8837,16 @@ class Mobile_api extends REST_Controller
 			}
 		}
 		$id_sch_ac = (int)$sub['id_scheme_account'];
-		if ($this->mobileapi_model->is_installment_month_paid($id_sch_ac, (int)date('n'), (int)date('Y'))) {
+		$is_daily = ($sub['debit_frequency'] == 'DAILY');
+		if ($is_daily) {
+			// DigiGold daily auto save: the authorization is today's purchase — it must fit in today's limits
+			$this->load->model('cf_autodebit_model');
+			$digi_plan = $this->cf_autodebit_model->digi_daily_plan($id_sch_ac);
+			$limits = $this->cf_autodebit_model->digi_daily_limits($id_sch_ac, $digi_plan);
+			if (($limits['manual_chances_left'] !== NULL && $limits['manual_chances_left'] < 1) || $limits['manual_amount_left'] < (float)$sub['auth_amount']) {
+				return $err("Today's purchase limit is reached. Kindly authorize daily auto save tomorrow.");
+			}
+		} else if ($this->mobileapi_model->is_installment_month_paid($id_sch_ac, (int)date('n'), (int)date('Y'))) {
 			return $err("This month's installment is already paid. Kindly tap Authorize again.");
 		}
 		$plan = $this->db->query("SELECT s.scheme_type, s.code, IFNULL(s.gst, 0) as gst, IFNULL(s.gst_type, 0) as gst_type, sa.scheme_acc_number, sa.id_branch
@@ -8644,6 +8861,14 @@ class Mobile_api extends REST_Controller
 		// Exclusive GST: the plan amount + GST is collected, like the Pay Dues payment (amount = without GST, pay_amt = with GST)
 		$amount = ($plan['gst_type'] == 1 && $plan['gst'] > 0) ? round($total * 100 / (100 + $plan['gst']), 2) : $total;
 		$metal = $this->payment_modal->getMetalRate('');
+		if ($is_daily) {
+			// DigiGold: rate of the scheme's metal and purity, as the DigiGold page sends it (weight = amount / rate)
+			$digi = $this->cf_autodebit_model->digi_payment_fields($id_sch_ac, $amount, $digi_plan);
+			if ($digi['metal_rate'] <= 0) {
+				return $err('Metal rate not available currently. Kindly try again later.');
+			}
+			$metal = array('goldrate_22ct' => $digi['metal_rate']);
+		}
 		$pay = array(
 			'scheme_type'  => $plan['scheme_type'],
 			'chit_number'  => $plan['code'] . '-' . (!empty($plan['scheme_acc_number']) ? $plan['scheme_acc_number'] : 'Not Allocated'),
@@ -8658,7 +8883,7 @@ class Mobile_api extends REST_Controller
 			'udf5'         => 1,
 			'charge'       => NULL,
 			'charge_head'  => NULL,
-			'due_type'     => 'ND',
+			'due_type'     => ($is_daily ? '' : 'ND'), // DigiGold app payments carry no due type
 			'discount'     => 0,
 			'gst_amt'      => round($total - $amount, 2),
 			'allowed_dues' => 1,
@@ -8867,8 +9092,12 @@ class Mobile_api extends REST_Controller
 			$msg = $this->_cf_auth_msg($auth_payment);
 			if ($auth_payment == 'SUCCESS') {
 				// ON_DEMAND: say what was paid now and when the next debit is
-				$sub_row = $this->db->query("SELECT mandate_type, debit_day, auth_amount, auth_is_installment, first_charge_on FROM auto_debit_subscription WHERE id_auto_debit_subscription = " . (int)$planDetail['id_auto_debit_subscription'])->row_array();
-				if (isset($sub_row['mandate_type']) && $sub_row['mandate_type'] == 'ON_DEMAND' && !empty($sub_row['first_charge_on'])) {
+				$sub_row = $this->db->query("SELECT mandate_type, debit_day, debit_frequency, debit_end_on, installment_amount, auth_amount, auth_is_installment, first_charge_on FROM auto_debit_subscription WHERE id_auto_debit_subscription = " . (int)$planDetail['id_auto_debit_subscription'])->row_array();
+				if (isset($sub_row['debit_frequency']) && $sub_row['debit_frequency'] == 'DAILY') {
+					$msg = 'Rs.' . (0 + $sub_row['auth_amount']) . " saved today (it appears in your Passbook shortly). Daily auto save is ON: Rs."
+						. (0 + $sub_row['installment_amount']) . ' every day from ' . date('d-m-Y', strtotime($sub_row['first_charge_on']))
+						. (!empty($sub_row['debit_end_on']) ? ' till ' . date('d-m-Y', strtotime($sub_row['debit_end_on'])) : '') . '.';
+				} else if (isset($sub_row['mandate_type']) && $sub_row['mandate_type'] == 'ON_DEMAND' && !empty($sub_row['first_charge_on'])) {
 					$msg = (!empty($sub_row['auth_is_installment'])
 							? 'Rs.' . (0 + $sub_row['auth_amount']) . " paid for this month's installment (it appears in Payment History shortly). "
 							: 'Authorization successful. ')

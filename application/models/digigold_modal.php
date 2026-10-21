@@ -167,6 +167,50 @@ class Digigold_modal extends CI_Model
 		}
 		return $result;
 	}
+	/**
+	 * Daily auto save details for the DigiGold page (acc_data['autodebit']), only for plans that allow it
+	 * (Is Digi + Flexible + Amount to Weight based on Amount, Auto Debit Plan Type = Periodic).
+	 * While it is Active, one chance and the daily amount are reserved for today's auto debit:
+	 * curday_total_paid includes the reserved amount (the page compares it with the daily maximum) and
+	 * Pay Now is hidden when no manual purchase is left today.
+	 */
+	function digi_autodebit_data(&$digi_account)
+	{
+		$this->load->model('cf_autodebit_model');
+		$plan = $this->cf_autodebit_model->digi_daily_plan($digi_account['id_scheme_account']);
+		if (empty($plan) || !$plan['allowed']) {
+			return;
+		}
+		$limits = $this->cf_autodebit_model->digi_daily_limits($digi_account['id_scheme_account'], $plan);
+		$sub = $this->cf_autodebit_model->digi_daily_sub($digi_account['id_scheme_account']);
+		$status = $this->db->query("SELECT IFNULL(auto_debit_status, 0) as s FROM scheme_account WHERE id_scheme_account = " . (int)$digi_account['id_scheme_account'])->row()->s;
+		if (empty($sub) && in_array((int)$status, array(1, 2, 3, 4))) {
+			$status = 0; // no open daily subscription (e.g. monthly leftover) — offer Subscribe
+		}
+		$today = date('Y-m-d');
+		$digi_account['autodebit'] = array(
+			'available'           => TRUE,
+			'status'              => (int)$status, // 0 None, 1 Pending authorization, 2 Bank approval, 3 Active, 4 On hold, 5 Cancelled, 6 Completed
+			'enabled'             => $limits['active'],
+			'can_subscribe'       => (in_array((int)$status, array(0, 5, 6)) && $digi_account['active'] == 1 && date('Y-m-d', strtotime($today . ' +2 days')) <= $plan['end_date']),
+			'daily_amount'        => (!empty($sub) ? 0 + $sub['installment_amount'] : 0),
+			'daily_min'           => $plan['daily_min'],
+			'daily_max'           => $plan['daily_max'],
+			'first_charge_on'     => (!empty($sub['first_charge_on']) ? date('d-m-Y', strtotime($sub['first_charge_on'])) : date('d-m-Y', strtotime($today . ' +2 days'))),
+			'end_on'              => (!empty($sub['debit_end_on']) ? date('d-m-Y', strtotime($sub['debit_end_on'])) : date('d-m-Y', strtotime($plan['end_date']))),
+			'reserved_today'      => $limits['reserve'],
+			'failed_today'        => $limits['failed_today'],
+			'manual_chances_left' => $limits['manual_chances_left'],
+			'manual_amount_left'  => $limits['manual_amount_left']
+		);
+		if ($limits['active']) {
+			$digi_account['curday_total_paid'] = $limits['curday_total_paid'];
+			if (!empty($digi_account['paydues']) && $digi_account['paydues']['digi_allow_pay'] == 'Y'
+				&& (($limits['manual_chances_left'] !== NULL && $limits['manual_chances_left'] < 1) || $limits['manual_amount_left'] < (float)$plan['min_amount'])) {
+				$digi_account['paydues']['digi_allow_pay'] = 'N';
+			}
+		}
+	}
 	function get_digi_benefit($res)
 	{
 		$sql_int = $this->db->query("SELECT interest_type,interest_value, IF(interest_type = 0,'%','INR') as int_symbol, commodity 
@@ -292,6 +336,8 @@ class Digigold_modal extends CI_Model
 				}
 				//get payduesdata
 					$digi_account['paydues'] = $this->digi_payDues($digi_account, $digi['id_scheme']);
+					// Daily auto save (Cashfree auto debit) for this plan, and today's manual purchase limits
+					$this->digi_autodebit_data($digi_account);
 					//get benefit calc data
 				if ($digi['interest'] == 1) {
 					$digi_account['benefit_calc'] = $this->get_digi_benefit($digi_account);

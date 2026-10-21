@@ -875,4 +875,246 @@ class Cf_autodebit_model extends CI_Model
 		$this->db->update('payment', array('payment_status' => self::PAY_CANCEL, 'remark' => 'Auto debit authorization not completed - ' . $reason));
 		return $this->db->affected_rows();
 	}
+
+	/* ═══════════════════════════════════════════════════════════════
+	 * DigiGold daily auto save
+	 *
+	 * Allowed for DigiGold plans set up as Is Digi + Flexible + "Amount to Weight (based on Amount)" with
+	 * Auto Debit Plan Type = Periodic. The customer picks a fixed daily amount; the authorization collects
+	 * today's amount, then the daily job requests one debit per day until the plan's pay window ends.
+	 * While it is Active, one payment chance and the daily amount are reserved every day, so manual
+	 * purchases get (max chances - 1) and (daily max amount - daily amount). Released when today's debit
+	 * failed or the auto save is not Active.
+	 * ═══════════════════════════════════════════════════════════════ */
+
+	const DIGI_UPI_LIMIT = 14999; // Cashfree UPI AutoPay / card mandate: below Rs.15,000 per debit
+
+	/**
+	 * DigiGold scheme set up for daily auto save (is_digi + Flexible + Amount to Weight (based on Amount)).
+	 */
+	static function is_digi_daily_scheme($row)
+	{
+		return !empty($row) && isset($row['is_digi'], $row['scheme_type'], $row['flexible_sch_type'])
+			&& $row['is_digi'] == 1 && $row['scheme_type'] == 3 && $row['flexible_sch_type'] == 2;
+	}
+
+	/**
+	 * Plan + scheme settings for DigiGold daily auto save, with the pay window end and the daily amount range.
+	 * Returns array() when the account does not exist.
+	 */
+	function digi_daily_plan($id_scheme_account)
+	{
+		$plan = $this->db->query("SELECT sa.id_scheme_account, sa.id_customer, sa.id_branch, sa.start_date, sa.active, sa.is_closed,
+										s.id_scheme, s.scheme_name, s.code, s.is_digi, s.scheme_type, s.flexible_sch_type, IFNULL(s.auto_debit_plan_type, 0) as auto_debit_plan_type,
+										IFNULL(s.min_amount, 0) as min_amount, IFNULL(s.max_amount, 0) as max_amount, IFNULL(s.daily_pay_limit, 0) as daily_pay_limit,
+										IFNULL(s.max_chance, 0) as max_chance, IFNULL(s.total_days_to_pay, 0) as total_days_to_pay,
+										s.id_metal, s.id_purity, s.interest, IFNULL(s.gst, 0) as gst, IFNULL(s.gst_type, 0) as gst_type, cs.is_branchwise_rate
+									FROM scheme_account sa
+									JOIN scheme s ON s.id_scheme = sa.id_scheme
+									JOIN chit_settings cs
+									WHERE sa.id_scheme_account = " . (int)$id_scheme_account)->row_array();
+		if (empty($plan)) {
+			return array();
+		}
+		$plan['eligible'] = self::is_digi_daily_scheme($plan);
+		$plan['allowed']  = ($plan['eligible'] && $plan['auto_debit_plan_type'] == 1);
+		// Pay window: start date + total days to pay (same as digigold_modal::digiGold_account allow_pay_till)
+		$start = !empty($plan['start_date']) ? date('Y-m-d', strtotime($plan['start_date'])) : date('Y-m-d');
+		$plan['end_date'] = date('Y-m-d', strtotime($start . ' +' . (int)$plan['total_days_to_pay'] . ' days'));
+		// Daily amount: scheme minimum .. lowest of scheme maximum, daily payment limit and the UPI limit
+		$cap = (float)$plan['max_amount'] > 0 ? (float)$plan['max_amount'] : self::DIGI_UPI_LIMIT;
+		if ((float)$plan['daily_pay_limit'] > 0) {
+			$cap = min($cap, (float)$plan['daily_pay_limit']);
+		}
+		$plan['daily_min'] = (float)$plan['min_amount'];
+		$plan['daily_max'] = min($cap, self::DIGI_UPI_LIMIT);
+		return $plan;
+	}
+
+	/**
+	 * Open daily auto save subscription of the plan (status 1), or array().
+	 */
+	function digi_daily_sub($id_scheme_account)
+	{
+		return $this->db->query("SELECT * FROM auto_debit_subscription
+								WHERE id_scheme_account = " . (int)$id_scheme_account . " AND status = 1 AND debit_frequency = 'DAILY'
+								ORDER BY id_auto_debit_subscription DESC LIMIT 1")->row_array();
+	}
+
+	/**
+	 * Today's DigiGold limits with the daily auto save reservation.
+	 *  active             : auto save authorized, Active and within its debit period
+	 *  reserve            : 1 when today's chance + amount are kept for the auto debit (not yet debited, not failed)
+	 *  manual_chances_left: payments the customer may still make today (NULL = no chance limit)
+	 *  manual_amount_left : amount the customer may still pay today
+	 *  curday_total_paid  : today's paid amount + reserved amount (what the app compares with the daily maximum)
+	 */
+	function digi_daily_limits($id_scheme_account, $plan = NULL)
+	{
+		if ($plan === NULL) {
+			$plan = $this->digi_daily_plan($id_scheme_account);
+		}
+		$out = array('active' => FALSE, 'reserve' => 0, 'daily_amount' => 0, 'auto_done_today' => FALSE, 'failed_today' => FALSE,
+					'today_count' => 0, 'today_amount' => 0, 'manual_chances_left' => NULL, 'manual_amount_left' => NULL, 'curday_total_paid' => 0);
+		if (empty($plan)) {
+			return $out;
+		}
+		$today = $this->db->query("SELECT COUNT(id_payment) as cnt, IFNULL(SUM(payment_amount), 0) as amt FROM payment
+								WHERE id_scheme_account = " . (int)$id_scheme_account . " AND payment_status = 1 AND DATE(date_payment) = CURDATE()")->row_array();
+		$out['today_count']  = (int)$today['cnt'];
+		$out['today_amount'] = (float)$today['amt'];
+
+		$sub = $this->digi_daily_sub($id_scheme_account);
+		$status = $this->db->query("SELECT IFNULL(auto_debit_status, 0) as s FROM scheme_account WHERE id_scheme_account = " . (int)$id_scheme_account)->row_array();
+		if (!empty($sub)) {
+			$out['daily_amount'] = (float)$sub['installment_amount'];
+			$out['active'] = ($sub['auth_payment_status'] == 'SUCCESS' && isset($status['s']) && $status['s'] == 3
+							&& (empty($sub['debit_end_on']) || date('Y-m-d') <= $sub['debit_end_on']));
+		}
+		if ($out['active']) {
+			$id_sub = (int)$sub['id_auto_debit_subscription'];
+			$auto_txn = "SELECT txnid FROM auto_debit_charge WHERE id_auto_debit_subscription = " . $id_sub . " AND txnid IS NOT NULL";
+			$out['auto_done_today'] = $this->db->query("SELECT COUNT(id_payment) as cnt FROM payment
+								WHERE id_scheme_account = " . (int)$id_scheme_account . " AND payment_status = 1 AND DATE(date_payment) = CURDATE()
+								AND (ref_trans_id = " . $this->db->escape((string)$sub['auth_txnid']) . " OR ref_trans_id IN (" . $auto_txn . "))")->row()->cnt > 0;
+			$out['failed_today'] = $this->db->query("SELECT COUNT(*) as cnt FROM auto_debit_charge
+								WHERE id_auto_debit_subscription = " . $id_sub . " AND status = 'DEBIT_FAILED'
+								AND due_year = " . (int)date('Y') . " AND due_month = " . (int)date('n') . " AND due_day = " . (int)date('j'))->row()->cnt > 0;
+			$out['reserve'] = (!$out['auto_done_today'] && !$out['failed_today']) ? 1 : 0;
+		}
+		if ((int)$plan['max_chance'] > 0) {
+			$out['manual_chances_left'] = max(0, (int)$plan['max_chance'] - $out['today_count'] - $out['reserve']);
+		}
+		$out['manual_amount_left'] = max(0, round((float)$plan['max_amount'] - $out['today_amount'] - $out['reserve'] * $out['daily_amount'], 2));
+		$out['curday_total_paid'] = round($out['today_amount'] + $out['reserve'] * $out['daily_amount'], 2);
+		return $out;
+	}
+
+	/**
+	 * Metal rate, weight and DigiGold benefit of a DigiGold payment of $amount made now — the same calculation
+	 * mobile_api::mobile_payment_post() does for a manual DigiGold payment (rate of the scheme's metal and purity,
+	 * as the DigiGold page sends it; benefit slab by the plan's day number today).
+	 */
+	function digi_payment_fields($id_scheme_account, $amount, $plan = NULL)
+	{
+		$this->load->model('digigold_modal'); // loads mobileapi_model and the metal weight helper
+		if ($plan === NULL) {
+			$plan = $this->digi_daily_plan($id_scheme_account);
+		}
+		$out = array('metal_rate' => 0, 'metal_weight' => 0, 'saved_benefits' => 0, 'saved_benefit_amt' => 0, 'benefit_value' => 0, 'benefit_type' => 0,
+					'dg_other_benefit_wgt' => NULL, 'dg_other_benefit_amt' => NULL);
+		if (empty($plan)) {
+			return $out;
+		}
+		$rates = $this->mobileapi_model->get_metalrate($plan['id_branch'], $plan['is_branchwise_rate']);
+		$rateName = $this->mobileapi_model->get_rate_name($plan['id_metal'], $plan['id_purity']);
+		$rate = (!empty($rateName['rate_field']) && isset($rates[$rateName['rate_field']])) ? (float)$rates[$rateName['rate_field']] : 0;
+		if ($rate <= 0) {
+			return $out;
+		}
+		$out['metal_rate'] = $rate;
+		$out['metal_weight'] = formatMetalWeight($amount / $rate);
+		if ($plan['interest'] == 1) {
+			$acc = $this->digigold_modal->digiGold_account($plan['id_customer'], $plan['id_scheme'], $id_scheme_account);
+			$benefits = !empty($acc) ? $this->digigold_modal->get_digi_benefit($acc) : array();
+			foreach ($benefits as $b) {
+				if ($b['commodity'] == $plan['id_metal']) {
+					$ben = ($b['interest_type'] == 0 ? $amount * ($b['interest_value'] / 100) : $b['interest_value']);
+					$out['saved_benefit_amt'] = $ben;
+					$out['saved_benefits'] = formatMetalWeight($ben / $rate);
+					$out['benefit_value'] = $b['interest_value'];
+					$out['benefit_type'] = $b['interest_type']; // 0-percent, 1- amount
+				} else {
+					// Benefit in another metal (e.g. silver on a gold plan) at that metal's rate
+					$other_rate = isset($rates[$b['commodity'] == 2 ? 'silverrate_1gm' : 'goldrate_22ct']) ? (float)$rates[$b['commodity'] == 2 ? 'silverrate_1gm' : 'goldrate_22ct'] : 0;
+					if ($b['interest_type'] == 0) {
+						$wgt = $out['metal_weight'] * ($b['interest_value'] / 100);
+						$out['dg_other_benefit_amt'] = $wgt * $other_rate;
+					} else {
+						$out['dg_other_benefit_amt'] = $b['interest_value'];
+						$wgt = ($other_rate > 0 ? $b['interest_value'] / $other_rate : 0);
+					}
+					$out['dg_other_benefit_wgt'] = formatMetalWeight($wgt);
+				}
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * One day's DigiGold auto debit payment, created when Cashfree reports the debit result (pending; then
+	 * completed by complete_auth_txn() or failed by fail_installment_txn()). Same fields mobile_api::mobile_payment_post()
+	 * writes for a manual DigiGold payment, with that day's rate, weight and benefit.
+	 * Returns array('status' => bool, 'txnid' => ..., 'message' => ...).
+	 */
+	function create_digi_daily_txn($id_scheme_account, $amount, $id_pg, $for_date)
+	{
+		$this->load->model('payment_modal');
+		$this->load->model('mobileapi_model');
+		$plan = $this->digi_daily_plan($id_scheme_account);
+		if (empty($plan) || !$plan['eligible']) {
+			return array('status' => FALSE, 'message' => 'Not a DigiGold daily auto save plan');
+		}
+		$sa = $this->db->query("SELECT c.mobile FROM scheme_account sa JOIN customer c ON c.id_customer = sa.id_customer WHERE sa.id_scheme_account = " . (int)$id_scheme_account)->row_array();
+		$cusData = !empty($sa) ? $this->payment_modal->get_customer($sa['mobile']) : array();
+		if (empty($cusData)) {
+			return array('status' => FALSE, 'message' => 'Customer not found');
+		}
+		// Branch: same rule as mobile_payment (branch-wise registration -> customer branch, else plan branch)
+		if ($cusData['branch_settings'] == 1) {
+			$id_branch = ($cusData['is_branchwise_cus_reg'] == 1 ? $cusData['id_branch'] : $plan['id_branch']);
+		} else {
+			$id_branch = NULL;
+		}
+		$paycred = $this->mobileapi_model->getBranchGatewayData($id_branch, $id_pg);
+		$custom_entry_date = $this->mobileapi_model->get_entrydate($id_branch);
+		$email_regx = "/^([\w\.-]+)@([\w-]+)\.([\w]{2,8})(\.[\w]{2,8})?$/";
+		$pay_email = (!empty($cusData['email']) && preg_match($email_regx, $cusData['email'])) ? str_replace(' ', '', $cusData['email']) : str_replace(' ', '', $cusData['pg_email']);
+		$digi = $this->digi_payment_fields($id_scheme_account, $amount, $plan);
+		if ($digi['metal_rate'] <= 0) {
+			return array('status' => FALSE, 'message' => 'Metal rate not available');
+		}
+
+		$txnid = uniqid(time());
+		$payment = $this->payment_modal->addPayment(array(
+			"id_scheme_account"    => $id_scheme_account,
+			"id_scheme"            => $plan['id_scheme'],
+			"payment_amount"       => $amount,
+			"gst"                  => $plan['gst'],
+			"gst_type"             => $plan['gst_type'],
+			"payment_type"         => (!empty($paycred['pg_name']) ? $paycred['pg_name'] : ''),
+			"due_type"             => '', // DigiGold app payments carry no due type
+			"no_of_dues"           => 1,
+			"actual_trans_amt"     => $amount,
+			"date_payment"         => date('Y-m-d H:i:s'),
+			"custom_entry_date"    => (!empty($custom_entry_date) && $custom_entry_date['edit_custom_entry_date'] == 1 ? $custom_entry_date['custom_entry_date'] : NULL),
+			"metal_rate"           => $digi['metal_rate'],
+			"metal_weight"         => $digi['metal_weight'],
+			"id_transaction"       => $txnid . '-1',
+			"ref_trans_id"         => $txnid,
+			"remark"               => 'DigiGold daily auto save ' . date('d-m-Y', strtotime($for_date)),
+			"added_by"             => 4, // Cashfree Subscription (auto debit)
+			"add_charges"          => NULL,
+			"discountAmt"          => 0.00,
+			"payment_status"       => self::PAY_PENDING,
+			"id_payGateway"        => $id_pg,
+			"id_branch"            => $id_branch,
+			"receipt_year"         => $this->payment_modal->get_financialYear(),
+			"pay_email"            => $pay_email,
+			"redeemed_amount"      => 0.00,
+			"id_employee"          => NULL,
+			"paidBy_id_customer"   => NULL,
+			"paidBy_mobile"        => NULL,
+			"saved_benefits"       => $digi['saved_benefits'],
+			"benefit_value"        => $digi['benefit_value'],
+			"benefit_type"         => $digi['benefit_type'],
+			"saved_benefit_amt"    => $digi['saved_benefit_amt'],
+			"dg_other_benefit_wgt" => (!empty($digi['dg_other_benefit_wgt']) ? $digi['dg_other_benefit_wgt'] : NULL),
+			"dg_other_benefit_amt" => (!empty($digi['dg_other_benefit_amt']) ? $digi['dg_other_benefit_amt'] : NULL),
+		));
+		if (empty($payment['insertID'])) {
+			return array('status' => FALSE, 'message' => 'Unable to create the payment');
+		}
+		return array('status' => TRUE, 'txnid' => $txnid, 'id_payment' => $payment['insertID'], 'message' => 'Pending payment created');
+	}
 }
