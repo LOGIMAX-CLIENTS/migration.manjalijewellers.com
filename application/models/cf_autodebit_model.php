@@ -942,6 +942,20 @@ class Cf_autodebit_model extends CI_Model
 	}
 
 	/**
+	 * Is a daily auto save payment of the plan already successful on $date (Y-m-d)? Counts every daily
+	 * subscription of the plan — the authorization's purchase and the daily debits — so a subscription
+	 * stopped and started again the same day never saves twice that day.
+	 */
+	function digi_auto_paid_on($id_scheme_account, $date)
+	{
+		$id = (int)$id_scheme_account;
+		return $this->db->query("SELECT COUNT(id_payment) as cnt FROM payment
+								WHERE id_scheme_account = " . $id . " AND payment_status = 1 AND DATE(date_payment) = " . $this->db->escape($date) . "
+								AND (ref_trans_id IN (SELECT auth_txnid FROM auto_debit_subscription WHERE id_scheme_account = " . $id . " AND debit_frequency = 'DAILY' AND auth_is_installment = 1 AND auth_txnid IS NOT NULL)
+									OR ref_trans_id IN (SELECT txnid FROM auto_debit_charge WHERE id_scheme_account = " . $id . " AND due_day > 0 AND txnid IS NOT NULL))")->row()->cnt > 0;
+	}
+
+	/**
 	 * Today's DigiGold limits with the daily auto save reservation.
 	 *  active             : auto save authorized, Active and within its debit period
 	 *  reserve            : 1 when today's chance + amount are kept for the auto debit (not yet debited, not failed)
@@ -971,16 +985,16 @@ class Cf_autodebit_model extends CI_Model
 			$out['active'] = ($sub['auth_payment_status'] == 'SUCCESS' && isset($status['s']) && $status['s'] == 3
 							&& (empty($sub['debit_end_on']) || date('Y-m-d') <= $sub['debit_end_on']));
 		}
+		// Today's auto save done by any subscription of the plan (also one stopped later today)
+		$out['auto_done_today'] = $this->digi_auto_paid_on($id_scheme_account, date('Y-m-d'));
 		if ($out['active']) {
 			$id_sub = (int)$sub['id_auto_debit_subscription'];
-			$auto_txn = "SELECT txnid FROM auto_debit_charge WHERE id_auto_debit_subscription = " . $id_sub . " AND txnid IS NOT NULL";
-			$out['auto_done_today'] = $this->db->query("SELECT COUNT(id_payment) as cnt FROM payment
-								WHERE id_scheme_account = " . (int)$id_scheme_account . " AND payment_status = 1 AND DATE(date_payment) = CURDATE()
-								AND (ref_trans_id = " . $this->db->escape((string)$sub['auth_txnid']) . " OR ref_trans_id IN (" . $auto_txn . "))")->row()->cnt > 0;
 			$out['failed_today'] = $this->db->query("SELECT COUNT(*) as cnt FROM auto_debit_charge
 								WHERE id_auto_debit_subscription = " . $id_sub . " AND status = 'DEBIT_FAILED'
 								AND due_year = " . (int)date('Y') . " AND due_month = " . (int)date('n') . " AND due_day = " . (int)date('j'))->row()->cnt > 0;
-			$out['reserve'] = (!$out['auto_done_today'] && !$out['failed_today']) ? 1 : 0;
+			// Kept only on days a debit is due (from the first debit date; the day after authorization has none)
+			$debit_due_today = (empty($sub['first_charge_on']) || date('Y-m-d') >= date('Y-m-d', strtotime($sub['first_charge_on'])));
+			$out['reserve'] = ($debit_due_today && !$out['auto_done_today'] && !$out['failed_today']) ? 1 : 0;
 		}
 		if ((int)$plan['max_chance'] > 0) {
 			$out['manual_chances_left'] = max(0, (int)$plan['max_chance'] - $out['today_count'] - $out['reserve']);
