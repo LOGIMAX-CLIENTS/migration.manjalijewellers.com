@@ -8139,9 +8139,14 @@ class Mobile_api extends REST_Controller
 				$month_paid = false;
 				$is_daily = (isset($sub_row['debit_frequency']) && $sub_row['debit_frequency'] == 'DAILY');
 				if ($is_daily) {
-					// DigiGold daily auto save: manual purchases this month don't matter; only an expired session is recreated
-					// (today's limit is checked when the authorization payment is created)
+					// DigiGold daily auto save: manual purchases this month don't matter. Recreated when the session
+					// expired, or when it would collect today's amount but today's auto save is already done / today's
+					// limit is used up since Subscribe (the new one authorizes with Rs.1, refunded).
 					$post_data['daily_amount'] = $sub_row['installment_amount'];
+					$this->load->model('cf_autodebit_model');
+					if (!empty($sub_row['auth_is_installment']) && !$this->_cf_daily_auth_collects_today($id_sch_ac, $this->cf_autodebit_model->digi_daily_plan($id_sch_ac), (float)$sub_row['installment_amount'])) {
+						$month_paid = true; // reason: AUTH_TODAY_DONE
+					}
 				} else if (isset($sub_row['mandate_type']) && $sub_row['mandate_type'] == 'ON_DEMAND') {
 					if (!empty($sub_row['auth_is_installment'])) {
 						$sub_on = strtotime($sub_row['created_on']);
@@ -8152,7 +8157,7 @@ class Mobile_api extends REST_Controller
 					$month_paid = $this->mobileapi_model->is_installment_month_paid($id_sch_ac, (int)date('n', $fcd), (int)date('Y', $fcd));
 				}
 				if ($session_expired || $month_paid) {
-					$reason = $month_paid ? 'AUTH_MONTH_PAID' : 'SESSION_EXPIRED';
+					$reason = $month_paid ? ($is_daily ? 'AUTH_TODAY_DONE' : 'AUTH_MONTH_PAID') : 'SESSION_EXPIRED';
 					$cancel = $this->_cf_api_call($this->_cf_base_domain($planDetail['api_url']) . '/pg/subscriptions/' . rawurlencode($planDetail['sub_reference_id']) . '/manage', array('subscription_id' => $planDetail['sub_reference_id'], 'action' => 'CANCEL'), $planDetail['param_3'], $planDetail['param_1']);
 					$this->_cf_logToFile('cf_subscription', array('action' => 'recreate_before_authorize', 'reason' => $reason, 'id_sch_ac' => $id_sch_ac, 'old_subscription' => $planDetail['sub_reference_id'], 'cancel_response' => $cancel));
 					$this->scheme_modal->updateData(array('status' => 0, 'auth_status' => 5, 'message' => $reason, 'last_update' => date('Y-m-d H:i:s')), 'id_auto_debit_subscription', $planDetail['id_auto_debit_subscription'], 'auto_debit_subscription');
@@ -8621,6 +8626,21 @@ class Mobile_api extends REST_Controller
 	 * T+2 for a debit request with its pre-debit notice) the daily job requests one debit per day until the
 	 * plan's pay window ends (start date + total days to pay).
 	 */
+	/**
+	 * DigiGold daily auto save: does the authorization collect today's amount as today's auto save?
+	 * No when today's auto save is already done (a subscription stopped and started again today) or the
+	 * amount no longer fits in today's purchase limits — then the authorization is Rs.1, refunded.
+	 */
+	private function _cf_daily_auth_collects_today($id_sch_ac, $plan, $amount)
+	{
+		$this->load->model('cf_autodebit_model');
+		if ($this->cf_autodebit_model->digi_auto_paid_on($id_sch_ac, date('Y-m-d'))) {
+			return false;
+		}
+		$limits = $this->cf_autodebit_model->digi_daily_limits($id_sch_ac, $plan);
+		return !(($limits['manual_chances_left'] !== NULL && $limits['manual_chances_left'] < 1) || $limits['manual_amount_left'] < $amount);
+	}
+
 	private function _cf_create_daily_subscription($id_sch_ac, $post_data, $planDetail, $plan)
 	{
 		if (!$plan['eligible']) {
@@ -8645,11 +8665,9 @@ class Mobile_api extends REST_Controller
 		if ($first_charge_date > $last_charge_date) {
 			return array('status' => false, 'msg' => 'Only a few days are left in this plan. Kindly continue to buy manually.');
 		}
-		// Today's amount is collected at authorization: it must fit in today's limits
-		$limits = $this->cf_autodebit_model->digi_daily_limits($id_sch_ac, $plan);
-		if (($limits['manual_chances_left'] !== NULL && $limits['manual_chances_left'] < 1) || $limits['manual_amount_left'] < $amount) {
-			return array('status' => false, 'msg' => "Today's purchase limit is reached. Kindly start daily auto save tomorrow.");
-		}
+		// The authorization collects today's amount, unless today's auto save is already done (subscription
+		// stopped and started again today) or today's purchase limit is used up: then Rs.1, refunded
+		$auth_is_installment = $this->_cf_daily_auth_collects_today($id_sch_ac, $plan, $amount);
 		$charges = (int)round((strtotime($last_charge_date) - strtotime($first_charge_date)) / 86400) + 1;
 		$expiry_date = date('Y-m-d', strtotime($last_charge_date . ' +5 days'));
 
@@ -8661,7 +8679,9 @@ class Mobile_api extends REST_Controller
 		$subscription_id = 'SUB_' . $id_sch_ac . '_' . time();
 		$return_url = $this->config->item('base_url') . 'index.php/cf_autodebit/autoDebitRURL/M/' . $id_sch_ac;
 		$gen_email  = $this->_cf_random_strings(8) . '@noemail.com';
-		$authorization = array('authorization_amount' => $amount, 'authorization_amount_refund' => false, 'payment_methods' => array('upi', 'card'));
+		$authorization = $auth_is_installment
+			? array('authorization_amount' => $amount, 'authorization_amount_refund' => false, 'payment_methods' => array('upi', 'card'))
+			: array('authorization_amount' => 1, 'authorization_amount_refund' => true);
 
 		$cf_payload = array(
 			'subscription_id'     => $subscription_id,
@@ -8695,8 +8715,8 @@ class Mobile_api extends REST_Controller
 			'debit_frequency'     => 'DAILY',
 			'debit_end_on'        => $last_charge_date,
 			'installment_amount'  => $amount,
-			'auth_amount'         => $amount,
-			'auth_is_installment' => 1,
+			'auth_amount'         => $authorization['authorization_amount'],
+			'auth_is_installment' => $auth_is_installment ? 1 : 0,
 			'expires_on'          => $expiry_date . ' 23:59:59',
 			'status'              => 0,
 			'created_on'          => date('Y-m-d H:i:s'),
@@ -8732,8 +8752,8 @@ class Mobile_api extends REST_Controller
 				'sub_status'              => isset($res['subscription_status']) ? $res['subscription_status'] : 'INITIALIZED',
 				'frequency'               => 'DAILY',
 				'daily_amount'            => $amount,
-				'auth_amount'             => $amount,
-				'auth_is_installment'     => true,
+				'auth_amount'             => $authorization['authorization_amount'],
+				'auth_is_installment'     => $auth_is_installment,
 				'first_charge_on'         => date('d-m-Y', strtotime($first_charge_date)),
 				'last_charge_on'          => date('d-m-Y', strtotime($last_charge_date))
 			);
@@ -8843,8 +8863,9 @@ class Mobile_api extends REST_Controller
 			$this->load->model('cf_autodebit_model');
 			$digi_plan = $this->cf_autodebit_model->digi_daily_plan($id_sch_ac);
 			$limits = $this->cf_autodebit_model->digi_daily_limits($id_sch_ac, $digi_plan);
-			if (($limits['manual_chances_left'] !== NULL && $limits['manual_chances_left'] < 1) || $limits['manual_amount_left'] < (float)$sub['auth_amount']) {
-				return $err("Today's purchase limit is reached. Kindly authorize daily auto save tomorrow.");
+			if ($this->cf_autodebit_model->digi_auto_paid_on($id_sch_ac, date('Y-m-d'))
+				|| ($limits['manual_chances_left'] !== NULL && $limits['manual_chances_left'] < 1) || $limits['manual_amount_left'] < (float)$sub['auth_amount']) {
+				return $err("Today's auto save is already done. Kindly tap Authorize again.");
 			}
 		} else if ($this->mobileapi_model->is_installment_month_paid($id_sch_ac, (int)date('n'), (int)date('Y'))) {
 			return $err("This month's installment is already paid. Kindly tap Authorize again.");
@@ -9094,7 +9115,10 @@ class Mobile_api extends REST_Controller
 				// ON_DEMAND: say what was paid now and when the next debit is
 				$sub_row = $this->db->query("SELECT mandate_type, debit_day, debit_frequency, debit_end_on, installment_amount, auth_amount, auth_is_installment, first_charge_on FROM auto_debit_subscription WHERE id_auto_debit_subscription = " . (int)$planDetail['id_auto_debit_subscription'])->row_array();
 				if (isset($sub_row['debit_frequency']) && $sub_row['debit_frequency'] == 'DAILY') {
-					$msg = 'Rs.' . (0 + $sub_row['auth_amount']) . " saved today (it appears in your Passbook shortly). Daily auto save is ON: Rs."
+					$msg = (!empty($sub_row['auth_is_installment'])
+							? 'Rs.' . (0 + $sub_row['auth_amount']) . " saved today (it appears in your Passbook shortly). "
+							: "Authorization successful (Rs.1 is refunded). ")
+						. "Daily auto save is ON: Rs."
 						. (0 + $sub_row['installment_amount']) . ' every day from ' . date('d-m-Y', strtotime($sub_row['first_charge_on']))
 						. (!empty($sub_row['debit_end_on']) ? ' till ' . date('d-m-Y', strtotime($sub_row['debit_end_on'])) : '') . '.';
 				} else if (isset($sub_row['mandate_type']) && $sub_row['mandate_type'] == 'ON_DEMAND' && !empty($sub_row['first_charge_on'])) {

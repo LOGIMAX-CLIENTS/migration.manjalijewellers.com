@@ -978,6 +978,10 @@ class Cf_autodebit extends CI_Controller {
 		if($end != '' && $date > $end){
 			return 'Payment period of the plan has ended';
 		}
+		// That day's auto save already done (e.g. by a subscription stopped and started again)
+		if($this->cf_autodebit_model->digi_auto_paid_on($id_scheme_account, $date)){
+			return 'Auto save for '.date('d-m-Y', strtotime($date)).' is already done';
+		}
 		return '';
 	}
 
