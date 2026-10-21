@@ -5419,7 +5419,7 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
 	function get_autopay_block($id_scheme_account)
 	{
 		$row = $this->db->query("SELECT IFNULL(sa.auto_debit_status, 0) as auto_debit_status, IFNULL(cs.auto_debit_allow_app_pay, 1) as allow_app_pay,
-									ad.id_auto_debit_subscription, ad.auth_payment_status
+									ad.id_auto_debit_subscription, ad.auth_payment_status, ad.debit_frequency
 								FROM scheme_account sa
 									JOIN chit_settings cs
 									LEFT JOIN auto_debit_subscription ad ON ad.id_scheme_account = sa.id_scheme_account AND ad.status = 1
@@ -5430,6 +5430,13 @@ where pa.id_payment<='" . $payment_no . "' and pa.id_scheme_account='" . $id_sch
 			return $result;
 		}
 		$result['enabled'] = (!empty($row['id_auto_debit_subscription']) && $row['auth_payment_status'] == 'SUCCESS');
+		// DigiGold daily auto save: manual purchases stay allowed within the day's limits
+		// (cf_autodebit_model::digi_daily_limits), never blocked like a monthly plan
+		if (isset($row['debit_frequency']) && $row['debit_frequency'] == 'DAILY') {
+			$result['on_hold'] = false;
+			$result['hold_month_paid'] = false;
+			return $result;
+		}
 		// ON_HOLD (4): a debit failed, so that month is unpaid — the customer may pay it manually.
 		// No double payment: a pending retry for a paid month is cancelled by the pre-debit check / daily cron,
 		// and Retry is refused once the month is paid. Auto pay stays enabled for the following months.
