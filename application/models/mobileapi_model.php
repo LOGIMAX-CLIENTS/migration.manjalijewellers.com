@@ -1568,7 +1568,7 @@ IF(s.scheme_type =1 and s.max_weight!=s.min_weight,true,false) as is_flexible_wg
                         $cur_advance = ($remaining_advance_due > 0 ? ($sch_advance < $remaining_advance_due && $remaining_advance_due > 0 && $paid_advance_due < $sch_advance ? $sch_advance : abs($sch_advance - $paid_advance_due)) : 0);
                         $canPay_advance = ($remaining_advance_due < $cur_advance ? $remaining_advance_due : $cur_advance);
                         //pending
-                        if ((in_array('2', $allow_unpaid_in) || in_array('3', $allow_unpaid_in))) {
+                        if ($record->allow_unpaid == 1 && (in_array('1', $allow_unpaid_in))) {
                             $record->allow_unpaid_months = $record->allow_unpaid_months;
                         } else {
                             $record->allow_unpaid_months = 0;

@@ -2326,6 +2326,48 @@ Left Join customer c on (c.id_customer=sa.id_customer)
             } else {
                 $allow_pay = 'N';
             }
+
+            // PM-KAJP-0143 (#8368): Flexible maturity (type 1) schemes must still allow payment after the
+            // maturity date passes. Ported from etail_development_src admin/application/models/payment_model.php.
+            if ($allow_pay == 'N' && $record->disable_payment != 1 && $record->maturity_type == 1 && $record->maturity_date != NULL && $record->maturity_date != '') {
+                $today = date('Y-m-d');
+                if ($record->paid_installments < $record->total_installments) {
+                    $max_chance_limit = (!empty($record->max_chance) && $record->max_chance > 0) ? (int)$record->max_chance : 1;
+                    // For monthly schemes: check if multiple payment chances remain or if advance/unpaid is enabled
+                    if ($record->installment_cycle == 0 && $record->currentmonthpaycount > 0 && $record->allow_advance == 0 && $record->allow_unpaid == 0) {
+                        if ($max_chance_limit > 1 && $record->currentmonthpaycount < $max_chance_limit) {
+                            $allow_pay = 'Y';
+                        } else {
+                            $allow_pay = 'N';
+                        }
+                    } else if ($record->installment_cycle == 0 && $record->currentmonthpaycount > 0) {
+                        // Monthly, paid, but advance/unpaid or multiple payment chances enabled — allow if chances remain or gate found eligible dues
+                        if ($max_chance_limit > 1 && $record->currentmonthpaycount < $max_chance_limit) {
+                            $allow_pay = 'Y';
+                        } else {
+                            $allow_pay = ($allowed_due > 0) ? 'Y' : 'N';
+                        }
+                    } else if ($record->installment_cycle == 0 && $max_chance_limit == 1 && $allowed_due == 0 && $remaining_normal_due == 0
+                        && !(date('Y-m-d') > $record->maturity_date || date('Y-m-d') > $record->due_cycle_end)) {
+                        // PM-KAJP-0143 (#8368): one payment a month, still inside the cycle, nothing paid yet, but this
+                        // month's slot is already taken (e.g. by an earlier advance) and nothing is payable through
+                        // admin - keep 'N'. Re-opening here saved the payment with no installment or due date.
+                        // Matured / past-cycle accounts are left to the existing behaviour.
+                        $allow_pay = 'N';
+                    } else {
+                        $allow_pay = 'Y';
+                    }
+                } else {
+                    // Final installment already paid — still allow another payment this month
+                    // when the scheme's multiple-payment-per-month setting (max_chance) permits it.
+                    $max_chance_limit = (!empty($record->max_chance) && $record->max_chance > 0) ? (int)$record->max_chance : 1;
+                    if ($record->installment_cycle == 0 && $record->currentmonthpaycount > 0 && $max_chance_limit > 1 && $record->currentmonthpaycount < $max_chance_limit) {
+                        $allow_pay = 'Y';
+                    } else {
+                        $allow_pay = 'N';
+                    }
+                }
+            }
             $kyc_settings = $this->db->get('kyc_settings')->row_array();
             if (isset($kyc_settings['kyc_required']) && $kyc_settings['kyc_required'] == 1 &&
                 isset($kyc_settings['kyc_allow_type']) && $kyc_settings['kyc_allow_type'] == 1) {
