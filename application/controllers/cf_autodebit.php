@@ -3,6 +3,8 @@ ob_start();
 class Cf_autodebit extends CI_Controller {
 	const VIEW_FOLDER = 'cashsfree/';
 	const SERV_MODEL = 'services_modal';
+	public $cf_catchup = false; // cron_reconcile ?id_sch_ac=..&catchup=1: request this month's missed installment now
+	public $cf_explain = false; // cron_reconcile ?id_sch_ac=..: show why a debit is / is not requested
 	public function __construct()
     {
         parent::__construct();
@@ -577,12 +579,30 @@ class Cf_autodebit extends CI_Controller {
 			return;
 		}
 
+		// Testing / support for one plan:
+		//   ?id_sch_ac=123            -> run only that plan and show why a debit is or is not requested ("check")
+		//   ?id_sch_ac=123&catchup=1  -> also request this month's unpaid installment now (debit 2 days later),
+		//                               even when the normal window around the debit day was missed
+		$only_plan = (int)$this->input->get('id_sch_ac');
+		$this->cf_catchup = ($only_plan > 0 && $this->input->get('catchup') == '1');
+		$this->cf_explain = ($only_plan > 0);
+		if($only_plan > 0){
+			$summary['plan'] = $only_plan;
+			$summary['catchup'] = $this->cf_catchup;
+		}
+
 		try{
 			$subs = $this->db->query("SELECT id_auto_debit_subscription, sub_reference_id, status
 									FROM auto_debit_subscription
 									WHERE sub_reference_id LIKE 'SUB\\_%' /* new API (mobile) subscriptions only — old web v1 ones are not on this API */
 									  AND (status = 1 OR (status = 0 AND auth_status IN (5, 6) AND last_update >= DATE_SUB(NOW(), INTERVAL 7 DAY)))
+									  ".($only_plan > 0 ? "AND id_scheme_account = ".$only_plan : "")."
 									ORDER BY id_auto_debit_subscription")->result_array();
+			if($only_plan > 0 && empty($subs)){
+				$last = $this->db->query("SELECT sub_reference_id, status, auth_status, auth_payment_status, message, last_update FROM auto_debit_subscription
+										WHERE id_scheme_account = ".$only_plan." ORDER BY id_auto_debit_subscription DESC LIMIT 1")->row_array();
+				$summary['check'] = empty($last) ? 'No auto debit subscription for this plan' : array('reason' => 'No open subscription (cancelled / completed / never created on the new API)', 'latest' => $last);
+			}
 			$summary['subscriptions'] = count($subs);
 
 			foreach($subs as $sub){
@@ -817,13 +837,29 @@ class Cf_autodebit extends CI_Controller {
 				}
 			}
 			else if(!empty($row) && $row['mandate_type'] == 'ON_DEMAND' && $row['auth_payment_status'] == 'SUCCESS' && $row['debit_day'] > 0 && $row['installment_amount'] > 0){
-				foreach(self::cf_due_debits(date('Y-m-d'), (int)$row['debit_day'], $row['first_charge_on'], $row['expires_on']) as $target){
+				$targets = self::cf_due_debits(date('Y-m-d'), (int)$row['debit_day'], $row['first_charge_on'], $row['expires_on']);
+				if($this->cf_catchup){
+					$catch = self::cf_catchup_debit(date('Y-m-d'), (int)$row['debit_day'], $row['first_charge_on'], $row['expires_on']);
+					$has_month = false;
+					foreach($targets as $t){
+						if($catch && $t['month'] == $catch['month'] && $t['year'] == $catch['year']){
+							$has_month = true;
+						}
+					}
+					if($catch && !$has_month){
+						$targets[] = $catch;
+					}
+				}
+				foreach($targets as $target){
 					$msg = $this->_cf_raise_debit($planDetail, $row, $target, $payments, $summary);
 					if($msg != ''){
 						$done['requested'][] = $msg;
 					}
 				}
 			}
+		}
+		if($this->cf_explain){
+			$done['check'] = $this->_cf_explain($planDetail, isset($live) ? $live : array());
 		}
 		return $done;
 	}
@@ -860,6 +896,82 @@ class Cf_autodebit extends CI_Controller {
 			);
 		}
 		return $out;
+	}
+
+	/**
+	 * Catch-up (cron_reconcile ?id_sch_ac=..&catchup=1): this month's installment whose debit day has already
+	 * passed, requested for today + 2 days (Cashfree's earliest). NULL when this month's debit day is still ahead
+	 * (the normal schedule requests it), before the first debit date, or after expiry.
+	 * Whether the month is already paid is checked when the debit is requested (_cf_debit_not_needed).
+	 */
+	public static function cf_catchup_debit($today, $debit_day, $first_charge_on, $expires_on)
+	{
+		$t = strtotime($today);
+		$d = strtotime(date('Y-m-', $t).sprintf('%02d', min($debit_day, (int)date('t', $t))));
+		if($d > $t){
+			return NULL;
+		}
+		if(!empty($first_charge_on) && $d < strtotime(date('Y-m-01', strtotime($first_charge_on)))){
+			return NULL;
+		}
+		$schedule = date('Y-m-d', strtotime($today.' +2 days'));
+		if(!empty($expires_on) && strtotime($schedule) > strtotime(date('Y-m-d', strtotime($expires_on)))){
+			return NULL;
+		}
+		return array('month' => (int)date('n', $t), 'year' => (int)date('Y', $t), 'schedule' => $schedule);
+	}
+
+	/**
+	 * cron_reconcile ?id_sch_ac=..: why a debit is or is not requested for this subscription (support / testing).
+	 */
+	function _cf_explain($planDetail, $live)
+	{
+		$row = $this->db->query("SELECT mandate_type, debit_frequency, debit_day, installment_amount, first_charge_on, debit_end_on, expires_on, auth_payment_status, auth_is_installment, created_on
+								FROM auto_debit_subscription WHERE id_auto_debit_subscription = ".(int)$planDetail['id_auto_debit_subscription'])->row_array();
+		$today = date('Y-m-d');
+		$check = array(
+			'cashfree_status'  => (isset($live['subscription_status']) ? $live['subscription_status'] : 'unknown'),
+			'authorization'    => (isset($row['auth_payment_status']) ? $row['auth_payment_status'] : ''),
+			'frequency'        => (isset($row['debit_frequency']) ? $row['debit_frequency'] : 'MONTHLY'),
+			'amount'           => (isset($row['installment_amount']) ? 0 + $row['installment_amount'] : 0),
+			'debit_day'        => (isset($row['debit_day']) ? $row['debit_day'] : NULL),
+			'first_charge_on'  => (isset($row['first_charge_on']) ? $row['first_charge_on'] : NULL),
+			'expires_on'       => (isset($row['expires_on']) ? $row['expires_on'] : NULL)
+		);
+		if(empty($row) || $row['mandate_type'] != 'ON_DEMAND'){
+			$check['result'] = 'Older PERIODIC subscription: Cashfree debits it by itself on its schedule';
+		}else if(!isset($live['subscription_status']) || $live['subscription_status'] != 'ACTIVE'){
+			$check['result'] = 'No debit requested: the subscription is not ACTIVE at Cashfree';
+		}else if($row['auth_payment_status'] != 'SUCCESS'){
+			$check['result'] = 'No debit requested: authorization is not successful';
+		}else if($row['debit_frequency'] == 'DAILY'){
+			$days = self::cf_due_daily_debits($today, $row['first_charge_on'], $row['debit_end_on']);
+			$check['result'] = empty($days) ? 'No daily debit due in the next 3 days (first debit '.$row['first_charge_on'].', last '.$row['debit_end_on'].')' : 'Daily debits due: '.implode(', ', $days);
+		}else{
+			$m = (int)date('n'); $y = (int)date('Y');
+			$check['this_month'] = date('M-Y');
+			$check['this_month_paid'] = ($this->_cf_debit_not_needed($planDetail['id_scheme_account'], $m, $y) != '');
+			$check['this_month_debit_date'] = date('Y-m-', strtotime($today)).sprintf('%02d', min((int)$row['debit_day'], (int)date('t')));
+			$chg = $this->db->query("SELECT status, schedule_date, message FROM auto_debit_charge WHERE id_auto_debit_subscription = ".(int)$planDetail['id_auto_debit_subscription']." AND due_year = ".$y." AND due_month = ".$m." AND due_day = 0")->row_array();
+			$check['this_month_request'] = (!empty($chg) ? $chg : 'not requested');
+			$targets = self::cf_due_debits($today, (int)$row['debit_day'], $row['first_charge_on'], $row['expires_on']);
+			if(!empty($targets)){
+				$list = array();
+				foreach($targets as $t){
+					$list[] = date('M-Y', mktime(0, 0, 0, $t['month'], 1, $t['year'])).' on '.$t['schedule'];
+				}
+				$check['result'] = 'In the request window today: '.implode(', ', $list);
+			}else if($check['this_month_paid']){
+				$check['result'] = 'Nothing to request: '.$this->_cf_debit_not_needed($planDetail['id_scheme_account'], $m, $y);
+			}else if(!empty($row['first_charge_on']) && $today < date('Y-m-d', strtotime($row['first_charge_on'].' -4 days'))){
+				$check['result'] = 'Auto debit starts on '.$row['first_charge_on'].' (requested 2-4 days before)';
+			}else if(strtotime($check['this_month_debit_date']) > strtotime($today)){
+				$check['result'] = 'This month is requested 2-4 days before '.$check['this_month_debit_date'];
+			}else{
+				$check['result'] = 'This month\'s debit day ('.$check['this_month_debit_date'].') was missed by more than 15 days. Run again with &catchup=1 to request it now (debited 2 days later).';
+			}
+		}
+		return $check;
 	}
 
 	/**
@@ -1436,11 +1548,20 @@ class Cf_autodebit extends CI_Controller {
 		curl_setopt_array($curl, $options);
 		$response = curl_exec($curl);
 		$err = curl_error($curl);
+		$http = (int)curl_getinfo($curl, CURLINFO_HTTP_CODE);
 		curl_close($curl);
 		if($err){
 			return array('status' => false, 'message' => 'cURL Error: '.$err);
 		}
-		return json_decode($response, true);
+		$data = json_decode($response, true);
+		if(!is_array($data)){
+			// Successful call with an empty body (e.g. a subscription that never had a payment): nothing to list
+			if($http >= 200 && $http < 300 && trim((string)$response) == ''){
+				return array();
+			}
+			return array('status' => false, 'message' => 'HTTP '.$http.': '.(trim((string)$response) == '' ? 'empty response' : substr(strip_tags($response), 0, 200)));
+		}
+		return $data;
 	}
 
 	// Cashfree webhook signature: base64( HMAC-SHA256( x-webhook-timestamp + raw body, secret key ) )
