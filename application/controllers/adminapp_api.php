@@ -3950,8 +3950,63 @@ class Adminapp_api extends REST_Controller
 						//inserting pay_data before gateway process
 						//echo "<pre>"; print_r($insertData);exit; 
 						$this->db->trans_begin();
-                         $payment = $this->payment_modal->addPayment($insertData);	
+                         $payment = $this->payment_modal->addPayment($insertData);
                         // print_r($payment);exit;
+
+                        // Calculate due date range & installment number for this offline payment.
+                        // Always recompute per due_type — 'AD'/'PD' are, by definition, multiple
+                        // DIFFERENT installments synced on the same calendar day (e.g. an advance
+                        // payment covering several months at once), so each one must get its own
+                        // fresh slot from get_due_date() rather than being left unset (NULL) or
+                        // reusing a prior installment's slot.
+                        //
+                        // $dueType (built above from $pay['due_type']) is NOT trusted for this decision —
+                        // the collection-app source tags these 'ND' regardless of whether a given
+                        // installment is actually advance/pending. get_sync_due_type() re-derives the
+                        // real due type from the scheme's rules + payment history (including rows
+                        // already inserted earlier in this same batch), so a second advance installment
+                        // synced right after the first correctly resolves to 'AD'.
+                        if (!empty($payment['insertID'])) {
+                            $this->load->model('registration_model');
+                            $resolved_due_type = $this->registration_model->get_sync_due_type($pay['udf1'], $insertData['date_payment']);
+                            $samecycle_pay = null;
+                            if ($resolved_due_type == 'ND') {
+                                $samecycle_pay = $this->db->query(
+                                    "SELECT p.installment, p.due_date, p.due_date_to, p.grace_date, p.due_type, p.is_limit_exceed
+                                     FROM payment p
+                                     WHERE p.id_scheme_account = " . (int)$pay['udf1'] . "
+                                       AND p.payment_status = 1
+                                       AND p.installment IS NOT NULL
+                                       AND p.installment > 0
+                                       AND DATE(p.date_payment) = DATE('" . $this->db->escape_str($insertData['date_payment']) . "')
+                                       AND p.id_payment != " . (int)$payment['insertID'] . "
+                                     ORDER BY p.id_payment ASC
+                                     LIMIT 1"
+                                )->row_array();
+                            }
+                            if (!empty($samecycle_pay) && !empty($samecycle_pay['installment'])) {
+                                $cycle_data = array(
+                                    'due_date'        => $samecycle_pay['due_date'],
+                                    'due_date_to'      => $samecycle_pay['due_date_to'],
+                                    'grace_date'       => $samecycle_pay['grace_date'],
+                                    'installment'      => $samecycle_pay['installment'],
+                                    'is_limit_exceed'  => (isset($samecycle_pay['is_limit_exceed']) ? $samecycle_pay['is_limit_exceed'] : 0),
+                                );
+                                $this->payment_modal->updData($cycle_data, 'id_payment', $payment['insertID'], 'payment');
+                            } else {
+                                $ins_cycle = $this->payment_modal->get_due_date($resolved_due_type, $insertData['date_payment'], $pay['udf1']);
+                                if (!empty($ins_cycle) && isset($ins_cycle[0]) && sizeof($ins_cycle[0]) > 0) {
+                                    $cycle_data = array(
+                                        'due_date'        => (isset($ins_cycle[0]['due_date_from']) ? $ins_cycle[0]['due_date_from'] : NULL),
+                                        'due_date_to'      => (isset($ins_cycle[0]['due_date_to']) ? $ins_cycle[0]['due_date_to'] : NULL),
+                                        'grace_date'       => (isset($ins_cycle[0]['grace_date']) ? $ins_cycle[0]['grace_date'] : NULL),
+                                        'installment'      => (isset($ins_cycle[0]['installment']) ? $ins_cycle[0]['installment'] : NULL),
+                                        'is_limit_exceed'  => (isset($ins_cycle[0]['is_limit_exceed']) ? $ins_cycle[0]['is_limit_exceed'] : 0),
+                                    );
+                                    $this->payment_modal->updData($cycle_data, 'id_payment', $payment['insertID'], 'payment');
+                                }
+                            }
+                        }
                         $pay_data = $this->adminappapi_model->getPayGenData($payment['insertID']);
 					// Generate receipt number
 					if($pay_data['receipt_no_set'] == 1)
