@@ -992,8 +992,11 @@ class Cf_autodebit_model extends CI_Model
 			$out['failed_today'] = $this->db->query("SELECT COUNT(*) as cnt FROM auto_debit_charge
 								WHERE id_auto_debit_subscription = " . $id_sub . " AND status = 'DEBIT_FAILED'
 								AND due_year = " . (int)date('Y') . " AND due_month = " . (int)date('n') . " AND due_day = " . (int)date('j'))->row()->cnt > 0;
-			// Kept only on days a debit is due (from the first debit date; the day after authorization has none)
-			$debit_due_today = (empty($sub['first_charge_on']) || date('Y-m-d') >= date('Y-m-d', strtotime($sub['first_charge_on'])));
+			// Kept only on days a debit was actually requested from Cashfree for today (none on the day after
+			// authorization, nor on a day the daily job did not request); released once it is saved or fails
+			$debit_due_today = $this->db->query("SELECT COUNT(*) as cnt FROM auto_debit_charge
+								WHERE id_auto_debit_subscription = " . $id_sub . " AND status IN ('REQUESTING', 'REQUESTED')
+								AND due_year = " . (int)date('Y') . " AND due_month = " . (int)date('n') . " AND due_day = " . (int)date('j'))->row()->cnt > 0;
 			$out['reserve'] = ($debit_due_today && !$out['auto_done_today'] && !$out['failed_today']) ? 1 : 0;
 		}
 		if ((int)$plan['max_chance'] > 0) {
