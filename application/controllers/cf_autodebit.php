@@ -697,7 +697,11 @@ class Cf_autodebit extends CI_Controller {
 		$payments = $this->_cf_api_call_v2($base.'/payments', array(), $planDetail['param_3'], $planDetail['param_1'], 'GET');
 		if(!is_array($payments) || isset($payments['message'])){
 			$summary['errors']++;
-			$done['error'] = 'payments fetch failed: '.(is_array($payments) && isset($payments['message']) ? $payments['message'] : 'no response');
+			$done['error'] = 'payments fetch failed: '.(is_array($payments) && isset($payments['message']) ? preg_replace('/\s+/', ' ', $payments['message']) : 'no response');
+			if($this->cf_explain){
+				$done['check'] = $this->_cf_explain($planDetail, isset($live) ? $live : array());
+				$done['check']['note'] = 'Cashfree did not return the payment list, so nothing was requested in this run. Run the URL again in a few minutes.';
+			}
 			return $done;
 		}
 
@@ -1549,6 +1553,13 @@ class Cf_autodebit extends CI_Controller {
 		$response = curl_exec($curl);
 		$err = curl_error($curl);
 		$http = (int)curl_getinfo($curl, CURLINFO_HTTP_CODE);
+		// Cashfree gateway busy (502 / 503 / 504): a read is safe to try once more
+		if($method == 'GET' && !$err && $http >= 502 && $http <= 504){
+			sleep(2);
+			$response = curl_exec($curl);
+			$err = curl_error($curl);
+			$http = (int)curl_getinfo($curl, CURLINFO_HTTP_CODE);
+		}
 		curl_close($curl);
 		if($err){
 			return array('status' => false, 'message' => 'cURL Error: '.$err);
