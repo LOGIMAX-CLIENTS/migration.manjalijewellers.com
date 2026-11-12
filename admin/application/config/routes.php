@@ -1621,6 +1621,10 @@ $route['reports/inter_table/list']          = 'admin_reports/inter_table';
 
 $route['reports/intertable_translist']          = 'admin_reports/intertable_translist';
 
+$route['reports/delete_cusreg_record']          = 'admin_reports/delete_cusreg_record';
+
+$route['reports/delete_transaction_record']     = 'admin_reports/delete_transaction_record';
+
 //Terms and conditions
 
 $route['settings/terms_and_conditions/list'] 				= 'admin_settings/terms_conditions/List';

@@ -1279,48 +1279,67 @@ function upload_img__($field,$img_path,$filename)
 
                                $samecycle_pay = null;
 
-                               if (!empty($sch_info) && $sch_info['installment_cycle'] == 1) {
-                                   // 1. Daily Cycle: Check for earlier payment on the SAME DAY
-                                   $samecycle_pay = $this->db->query(
-                                       "SELECT p.installment, p.due_date, p.due_date_to, p.grace_date, p.due_type, p.is_limit_exceed
-                                        FROM payment p
-                                        WHERE p.id_scheme_account = " . (int)$data['id_sch_ac'] . "
-                                          AND p.payment_status = 1
-                                          AND p.installment IS NOT NULL
-                                          AND p.installment > 0
-                                          AND (DATE(p.date_payment) = '" . $this->db->escape_str($pay_date_only) . "' OR DATE(p.due_date) = '" . $this->db->escape_str($pay_date_only) . "')
-                                          AND p.id_payment != " . (int)$id_payment . "
-                                        ORDER BY p.id_payment ASC
-                                        LIMIT 1"
-                                   )->row_array();
-                               } else if ($is_multi_chance && (!empty($sch_info) && $sch_info['installment_cycle'] == 0)) {
-                                   // 2. Monthly Cycle with Multiple Payment Chance (Digi Gold / flexible): Check for earlier payment in the SAME MONTH
-                                   $samecycle_pay = $this->db->query(
-                                       "SELECT p.installment, p.due_date, p.due_date_to, p.grace_date, p.due_type, p.is_limit_exceed
-                                        FROM payment p
-                                        WHERE p.id_scheme_account = " . (int)$data['id_sch_ac'] . "
-                                          AND p.payment_status = 1
-                                          AND p.installment IS NOT NULL
-                                          AND p.installment > 0
-                                          AND (DATE_FORMAT(p.date_payment, '%Y-%m') = '" . $this->db->escape_str($pay_month_only) . "' OR DATE_FORMAT(p.due_date, '%Y-%m') = '" . $this->db->escape_str($pay_month_only) . "')
-                                          AND p.id_payment != " . (int)$id_payment . "
-                                        ORDER BY p.id_payment ASC
-                                        LIMIT 1"
-                                   )->row_array();
-                               } else {
-                                   // 3. Fallback: Check for same exact payment date
-                                   $samecycle_pay = $this->db->query(
-                                       "SELECT p.installment, p.due_date, p.due_date_to, p.grace_date, p.due_type, p.is_limit_exceed
-                                        FROM payment p
-                                        WHERE p.id_scheme_account = " . (int)$data['id_sch_ac'] . "
-                                          AND p.payment_status = 1
-                                          AND p.installment IS NOT NULL
-                                          AND p.installment > 0
-                                          AND DATE(p.date_payment) = '" . $this->db->escape_str($pay_date_only) . "'
-                                          AND p.id_payment != " . (int)$id_payment . "
-                                        ORDER BY p.id_payment ASC
-                                        LIMIT 1"
-                                   )->row_array();
+                               // Same-day reuse only makes sense for a plain 'ND' (normal/current) payment —
+                               // it exists to merge split payment-modes recorded as separate rows for ONE
+                               // installment. Advance ('AD') and pending/catch-up ('PD') payments are, by
+                               // definition, multiple DIFFERENT installments paid on the same calendar day
+                               // (e.g. an offline advance payment covering several months at once), so they
+                               // must always get a fresh installment slot from get_due_date() below instead
+                               // of collapsing onto whichever installment happened to sync first.
+                               //
+                               // The synced row's own due_type ($row->due_type) is NOT trusted here: the
+                               // offline/collection-app source tags almost everything 'ND' regardless of
+                               // whether it is actually an advance/pending installment (that distinction is
+                               // only meaningful once compared against what's already paid). get_sync_due_type()
+                               // re-derives the real due type from the scheme's rules + payment history —
+                               // including rows already inserted earlier in this same sync batch — so a
+                               // second advance installment synced right after the first correctly resolves
+                               // to 'AD' even though the source data says 'ND' for both.
+                               $actual_due_type = $this->get_sync_due_type($data['id_sch_ac'], $dt_pay);
+                               if ($actual_due_type == 'ND') {
+                                   if (!empty($sch_info) && $sch_info['installment_cycle'] == 1) {
+                                       // 1. Daily Cycle: Check for earlier payment on the SAME DAY
+                                       $samecycle_pay = $this->db->query(
+                                           "SELECT p.installment, p.due_date, p.due_date_to, p.grace_date, p.due_type, p.is_limit_exceed
+                                            FROM payment p
+                                            WHERE p.id_scheme_account = " . (int)$data['id_sch_ac'] . "
+                                              AND p.payment_status = 1
+                                              AND p.installment IS NOT NULL
+                                              AND p.installment > 0
+                                              AND (DATE(p.date_payment) = '" . $this->db->escape_str($pay_date_only) . "' OR DATE(p.due_date) = '" . $this->db->escape_str($pay_date_only) . "')
+                                              AND p.id_payment != " . (int)$id_payment . "
+                                            ORDER BY p.id_payment ASC
+                                            LIMIT 1"
+                                       )->row_array();
+                                   } else if ($is_multi_chance && (!empty($sch_info) && $sch_info['installment_cycle'] == 0)) {
+                                       // 2. Monthly Cycle with Multiple Payment Chance (Digi Gold / flexible): Check for earlier payment in the SAME MONTH
+                                       $samecycle_pay = $this->db->query(
+                                           "SELECT p.installment, p.due_date, p.due_date_to, p.grace_date, p.due_type, p.is_limit_exceed
+                                            FROM payment p
+                                            WHERE p.id_scheme_account = " . (int)$data['id_sch_ac'] . "
+                                              AND p.payment_status = 1
+                                              AND p.installment IS NOT NULL
+                                              AND p.installment > 0
+                                              AND (DATE_FORMAT(p.date_payment, '%Y-%m') = '" . $this->db->escape_str($pay_month_only) . "' OR DATE_FORMAT(p.due_date, '%Y-%m') = '" . $this->db->escape_str($pay_month_only) . "')
+                                              AND p.id_payment != " . (int)$id_payment . "
+                                            ORDER BY p.id_payment ASC
+                                            LIMIT 1"
+                                       )->row_array();
+                                   } else {
+                                       // 3. Fallback: Check for same exact payment date
+                                       $samecycle_pay = $this->db->query(
+                                           "SELECT p.installment, p.due_date, p.due_date_to, p.grace_date, p.due_type, p.is_limit_exceed
+                                            FROM payment p
+                                            WHERE p.id_scheme_account = " . (int)$data['id_sch_ac'] . "
+                                              AND p.payment_status = 1
+                                              AND p.installment IS NOT NULL
+                                              AND p.installment > 0
+                                              AND DATE(p.date_payment) = '" . $this->db->escape_str($pay_date_only) . "'
+                                              AND p.id_payment != " . (int)$id_payment . "
+                                            ORDER BY p.id_payment ASC
+                                            LIMIT 1"
+                                       )->row_array();
+                                   }
                                }
 
                                if (!empty($samecycle_pay) && !empty($samecycle_pay['installment'])) {
@@ -1335,8 +1354,7 @@ function upload_img__($field,$img_path,$filename)
                                    );
                                    $this->payment_modal->updData($cycle_data, 'id_payment', $id_payment, 'payment');
                                } else {
-                                   // First payment for this cycle: calculate due type and due date range
-                                   $actual_due_type = (!empty($row->due_type) && $row->due_type != '') ? $row->due_type : $this->get_sync_due_type($data['id_sch_ac'], $dt_pay);
+                                   // First payment for this cycle (or AD/PD, which always get a fresh slot): calculate due date range
                                    $ins_cycle = $this->payment_modal->get_due_date($actual_due_type, $dt_pay, $data['id_sch_ac']);
 
                                    if (!empty($ins_cycle) && isset($ins_cycle[0]) && sizeof($ins_cycle[0]) > 0) {

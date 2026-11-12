@@ -5679,13 +5679,34 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
     }
     function get_intertable_translist($client_id, $ref_no, $cus = "", $id_scheme_account = "")
     {
-        $sql = "SELECT * FROM `transaction` where 1=1 " .
-            ($client_id != '' ? " AND client_id = '" . $client_id . "' " : "") .
-            ($ref_no != '' ? " AND ref_no = '" . $ref_no . "' " : "") .
-            ($id_scheme_account != '' ? " AND id_scheme_account = " . intval($id_scheme_account) . " " : "");
+        $sql = "SELECT t.*, t.payment_status as id_status, psm.payment_status as payment_status, psm.color as status_color
+            FROM `transaction` t
+            LEFT JOIN payment_status_message psm ON (t.payment_status = psm.id_status_msg)
+            where 1=1 " .
+            ($client_id != '' ? " AND t.client_id = '" . $client_id . "' " : "") .
+            ($ref_no != '' ? " AND t.ref_no = '" . $ref_no . "' " : "") .
+            ($id_scheme_account != '' ? " AND t.id_scheme_account = " . intval($id_scheme_account) . " " : "");
         $this->load->database('default', true);
-        //print_r($sql);exit;  
+        //print_r($sql);exit;
         return $this->db->query($sql)->result_array();
+    }
+    function delete_cusreg($id)
+    {
+        $row = $this->db->select('is_transferred')->where('id_customer_reg', $id)->get(self::CUS_REG_TABLE)->row_array();
+        if (!$row || $row['is_transferred'] != 'N') {
+            return FALSE;
+        }
+        $this->db->where('id_customer_reg', $id);
+        return $this->db->delete(self::CUS_REG_TABLE);
+    }
+    function delete_transaction($id)
+    {
+        $row = $this->db->select('is_transferred')->where('id_transaction', $id)->get(self::TRANS_TABLE)->row_array();
+        if (!$row || $row['is_transferred'] != 'N') {
+            return FALSE;
+        }
+        $this->db->where('id_transaction', $id);
+        return $this->db->delete(self::TRANS_TABLE);
     }
     function update_cusdata($id, $mobile, $scheme_ac_no, $group_code, $is_transferred)
     {
