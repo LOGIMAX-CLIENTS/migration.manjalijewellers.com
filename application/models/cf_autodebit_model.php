@@ -1009,7 +1009,7 @@ class Cf_autodebit_model extends CI_Model
 	 * mobile_api::mobile_payment_post() does for a manual DigiGold payment (rate of the scheme's metal and purity,
 	 * as the DigiGold page sends it; benefit slab by the plan's day number today).
 	 */
-	function digi_payment_fields($id_scheme_account, $amount, $plan = NULL)
+	function digi_payment_fields($id_scheme_account, $amount, $plan = NULL, $on_date = NULL)
 	{
 		$this->load->model('digigold_modal'); // loads mobileapi_model and the metal weight helper
 		if ($plan === NULL) {
@@ -1020,7 +1020,12 @@ class Cf_autodebit_model extends CI_Model
 		if (empty($plan)) {
 			return $out;
 		}
-		$rates = $this->mobileapi_model->get_metalrate($plan['id_branch'], $plan['is_branchwise_rate']);
+		$past = (!empty($on_date) && date('Y-m-d', strtotime($on_date)) < date('Y-m-d'));
+		// A debit saved after its day (result came late): that day's rate, else today's
+		$rates = $past ? $this->_metal_rates_on($plan['id_branch'], $plan['is_branchwise_rate'], date('Y-m-d', strtotime($on_date))) : array();
+		if (empty($rates)) {
+			$rates = $this->mobileapi_model->get_metalrate($plan['id_branch'], $plan['is_branchwise_rate']);
+		}
 		$rateName = $this->mobileapi_model->get_rate_name($plan['id_metal'], $plan['id_purity']);
 		$rate = (!empty($rateName['rate_field']) && isset($rates[$rateName['rate_field']])) ? (float)$rates[$rateName['rate_field']] : 0;
 		if ($rate <= 0) {
@@ -1030,6 +1035,12 @@ class Cf_autodebit_model extends CI_Model
 		$out['metal_weight'] = formatMetalWeight($amount / $rate);
 		if ($plan['interest'] == 1) {
 			$acc = $this->digigold_modal->digiGold_account($plan['id_customer'], $plan['id_scheme'], $id_scheme_account);
+			if (!empty($acc) && $past && !empty($plan['start_date'])) {
+				// Benefit slab by the plan's day number on the debit day (same formula as digiGold_account)
+				$d = strtotime(date('Y-m-d', strtotime($on_date)));
+				$s = strtotime(date('Y-m-d', strtotime($plan['start_date'])));
+				$acc['date_difference'] = ($d == $s ? 1 : (int)round(($d - $s) / 86400));
+			}
 			$benefits = !empty($acc) ? $this->digigold_modal->get_digi_benefit($acc) : array();
 			foreach ($benefits as $b) {
 				if ($b['commodity'] == $plan['id_metal']) {
@@ -1053,6 +1064,39 @@ class Cf_autodebit_model extends CI_Model
 			}
 		}
 		return $out;
+	}
+
+	/**
+	 * Metal rate row in force on $date (latest rate added on or before that day), same branch rule as
+	 * mobileapi_model::get_metalrate(). array() when none.
+	 */
+	private function _metal_rates_on($id_branch, $is_branchwise_rate, $date)
+	{
+		if ($is_branchwise_rate == 1 && $id_branch != '' && $id_branch != NULL) {
+			$sql = "SELECT m.* FROM metal_rates m LEFT JOIN branch_rate br ON m.id_metalrates = br.id_metalrate
+					WHERE br.id_branch = " . (int)$id_branch . " AND DATE(m.add_date) <= " . $this->db->escape($date) . " ORDER BY br.id_metalrate DESC LIMIT 1";
+		} else {
+			$sql = "SELECT * FROM metal_rates WHERE DATE(add_date) <= " . $this->db->escape($date) . " ORDER BY id_metalrates DESC LIMIT 1";
+		}
+		$q = $this->db->query($sql);
+		return ($q === FALSE) ? array() : $q->row_array();
+	}
+
+	/**
+	 * Date and time a daily debit was taken: its debit day, at the time Cashfree reports when it was that day,
+	 * else 10:00 (the time it is scheduled for); never later than now.
+	 */
+	static function digi_debit_datetime($day, $cf_payment = array())
+	{
+		$at = $day . ' 10:00:00';
+		foreach (array('payment_completed_date', 'payment_initiated_date') as $f) {
+			// Cashfree sends IST with its offset (2026-11-02T11:42:10+05:30): keep that local date and time as is
+			if (!empty($cf_payment[$f]) && preg_match('/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})/', $cf_payment[$f], $m) && $m[1] == $day) {
+				$at = $m[1] . ' ' . $m[2];
+				break;
+			}
+		}
+		return (strtotime($at) > time() ? date('Y-m-d H:i:s') : $at);
 	}
 
 	/**
@@ -1084,7 +1128,7 @@ class Cf_autodebit_model extends CI_Model
 		$custom_entry_date = $this->mobileapi_model->get_entrydate($id_branch);
 		$email_regx = "/^([\w\.-]+)@([\w-]+)\.([\w]{2,8})(\.[\w]{2,8})?$/";
 		$pay_email = (!empty($cusData['email']) && preg_match($email_regx, $cusData['email'])) ? str_replace(' ', '', $cusData['email']) : str_replace(' ', '', $cusData['pg_email']);
-		$digi = $this->digi_payment_fields($id_scheme_account, $amount, $plan);
+		$digi = $this->digi_payment_fields($id_scheme_account, $amount, $plan, $for_date);
 		if ($digi['metal_rate'] <= 0) {
 			return array('status' => FALSE, 'message' => 'Metal rate not available');
 		}
@@ -1100,7 +1144,7 @@ class Cf_autodebit_model extends CI_Model
 			"due_type"             => '', // DigiGold app payments carry no due type
 			"no_of_dues"           => 1,
 			"actual_trans_amt"     => $amount,
-			"date_payment"         => date('Y-m-d H:i:s'),
+			"date_payment"         => self::digi_debit_datetime(date('Y-m-d', strtotime($for_date))), // the debit day, not the day the result was saved
 			"custom_entry_date"    => (!empty($custom_entry_date) && $custom_entry_date['edit_custom_entry_date'] == 1 ? $custom_entry_date['custom_entry_date'] : NULL),
 			"metal_rate"           => $digi['metal_rate'],
 			"metal_weight"         => $digi['metal_weight'],
