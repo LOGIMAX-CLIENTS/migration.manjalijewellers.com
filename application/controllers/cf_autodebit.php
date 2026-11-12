@@ -1196,9 +1196,10 @@ class Cf_autodebit extends CI_Controller {
 				if($this->_cf_plan_closed($chg['id_scheme_account'])){
 					$res = $this->cf_autodebit_model->refund_installment_txn($txnid, $cf_payment_id);
 				}else{
-					// Rate / weight / benefit of the day the money was taken (a row from an earlier failed attempt is refreshed)
-					$digi = $this->cf_autodebit_model->digi_payment_fields($chg['id_scheme_account'], $amount);
-					$extra = array('date_payment' => date('Y-m-d H:i:s'));
+					// Date, rate, weight and benefit of the day the money was taken — also when the result is saved
+					// days later (webhook missed, picked up by the daily job). A row from an earlier failed attempt is refreshed.
+					$digi = $this->cf_autodebit_model->digi_payment_fields($chg['id_scheme_account'], $amount, NULL, $day);
+					$extra = array('date_payment' => Cf_autodebit_model::digi_debit_datetime($day, $data));
 					if($digi['metal_rate'] > 0){
 						foreach(array('metal_rate', 'metal_weight', 'saved_benefits', 'saved_benefit_amt', 'benefit_value', 'benefit_type') as $f){
 							$extra[$f] = $digi[$f];
