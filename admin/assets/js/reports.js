@@ -7170,7 +7170,17 @@ function get_intertable_cusdata(mobile, clientid, ref_no, group_code, cus = "", 
         { "mDataProp": "transfer_date" },
         { "mDataProp": "date_update" },
         { "mDataProp": "date_add" },
-        { "mDataProp": "is_registered_online" }
+        { "mDataProp": "is_registered_online" },
+        {
+          "mDataProp": function (row, type, val, meta) {
+            if (row.is_transferred == 'N') {
+              return '<button type="button" class="btn btn-xs btn-danger btn-delete-cusreg" data-id="' + row.id_customer_reg + '"><i class="fa fa-trash"></i></button>';
+            }
+            else {
+              return '<i class="fa fa-info-circle" style="color:#2563eb;font-size:20px;cursor:pointer;vertical-align:middle;" title="Synced Data can\'t be deleted"></i>';
+            }
+          }
+        }
         ],
       });
       $("div.overlay").css("display", "none");
@@ -7239,14 +7249,28 @@ function get_intertable_transdata(client_id, ref_no, cus = "", id_scheme_account
         { "mDataProp": "new_customer" },
         { "mDataProp": "id_scheme_account" },
         { "mDataProp": "id_branch" },
-        { "mDataProp": "payment_status" },
+        {
+          "mDataProp": function (row, type, val, meta) {
+            return row.payment_status ? "<span class='label bg-" + row.status_color + "-active'>" + row.payment_status + "</span>" : row.id_status;
+          }
+        },
         { "mDataProp": "payment_type" },
         { "mDataProp": "due_type" },
         { "mDataProp": "receipt_no" },
         { "mDataProp": "date_add" },
         { "mDataProp": "date_upd" },
         { "mDataProp": "installment_no" },
-        { "mDataProp": "emp_code" }
+        { "mDataProp": "emp_code" },
+        {
+          "mDataProp": function (row, type, val, meta) {
+            if (row.is_transferred == 'N') {
+              return '<button type="button" class="btn btn-xs btn-danger btn-delete-transaction" data-id="' + row.id_transaction + '"><i class="fa fa-trash"></i></button>';
+            }
+            else {
+              return '<i class="fa fa-info-circle" style="color:#2563eb;font-size:20px;cursor:pointer;vertical-align:middle;" title="Synced Data can\'t be deleted"></i>';
+            }
+          }
+        }
         ],
       });
       $("div.overlay").css("display", "none");
@@ -7256,6 +7280,69 @@ function get_intertable_transdata(client_id, ref_no, cus = "", id_scheme_account
     }
   });
 }
+
+var pendingDeleteRecord = null;
+
+$(document).on('click', '.btn-delete-cusreg', function () {
+  pendingDeleteRecord = {
+    url: base_url + 'index.php/reports/delete_cusreg_record',
+    id: $(this).data('id'),
+    $row: $(this).closest('tr'),
+    table: '#intertable_list'
+  };
+  $('#deleteRecordModal').modal('show');
+});
+
+$(document).on('click', '.btn-delete-transaction', function () {
+  pendingDeleteRecord = {
+    url: base_url + 'index.php/reports/delete_transaction_record',
+    id: $(this).data('id'),
+    $row: $(this).closest('tr'),
+    table: '#intertable_translist'
+  };
+  $('#deleteRecordModal').modal('show');
+});
+
+$(document).on('click', '#confirmDeleteRecordBtn', function () {
+  if (!pendingDeleteRecord) {
+    return;
+  }
+  var record = pendingDeleteRecord;
+  var $confirmBtn = $(this);
+  $confirmBtn.prop('disabled', true);
+  $.ajax({
+    type: 'POST',
+    url: record.url,
+    data: { id: record.id },
+    dataType: 'json',
+    success: function (data) {
+      if (data.status == 1) {
+        $(record.table).DataTable().row(record.$row).remove().draw(false);
+        if (typeof toastr !== 'undefined') {
+          toastr.success('Record deleted successfully');
+        }
+      } else {
+        if (typeof toastr !== 'undefined') {
+          toastr.error("Synced Data can't be deleted");
+        } else {
+          alert("Synced Data can't be deleted");
+        }
+      }
+    },
+    error: function () {
+      if (typeof toastr !== 'undefined') {
+        toastr.error('Something went wrong, please try again.');
+      } else {
+        alert('Something went wrong, please try again.');
+      }
+    },
+    complete: function () {
+      $confirmBtn.prop('disabled', false);
+      $('#deleteRecordModal').modal('hide');
+      pendingDeleteRecord = null;
+    }
+  });
+});
 
 // Inter-table Date Range Picker initialization
 $(document).ready(function() {

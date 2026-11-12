@@ -199,6 +199,11 @@
     white-space: nowrap;
     flex-shrink: 0;
 }
+#intertable_list td:last-child,
+#intertable_translist td:last-child {
+    vertical-align: middle;
+    text-align: center;
+}
 </style>
 
 <div class="sync-toolbar">
@@ -323,11 +328,12 @@
                         <th>Date Upd</th>
                         <th>Date Add</th>
                        <th>Is Reg Online</th>
-            
+                       <th>Action</th>
+
                       </tr>
                     </thead>
                   </table>
-               
+
 				</div>  	<div class="overlay" style="display: none;">
                    <i class="fa fa-refresh fa-spin"></i>
                 	</div>
@@ -362,19 +368,39 @@
                         <th>Date Upd</th>
                         <th>Install No</th>
                         <th>Emp Code</th>
-            
+                        <th>Action</th>
+
                       </tr>
                     </thead>
                   </table>
-               
+
 				</div>
 			      <div class="overlay" style="display: none;">
                    <i class="fa fa-refresh fa-spin"></i>
                 	</div>
                 </div><!-- /.box-body -->
-                
+
               </div><!-- /.box -->
             </div><!-- /.col -->
+
+            <!-- Delete confirmation modal (shared by both tables) -->
+            <div class="modal fade" id="deleteRecordModal" tabindex="-1" role="dialog" aria-hidden="true">
+              <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title"><i class="fa fa-exclamation-triangle" style="color:#d9534f;"></i> Confirm Delete</h4>
+                  </div>
+                  <div class="modal-body">
+                    <p>Are you sure you want to delete this record? This action cannot be undone.</p>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteRecordBtn">Delete</button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div><!-- /.row -->
         </section><!-- /.content -->
       </div><!-- /.content-wrapper -->

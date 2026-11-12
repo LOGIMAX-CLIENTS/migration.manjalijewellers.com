@@ -769,6 +769,20 @@ class Admin_reports extends CI_Controller
 		//echo"<pre>";	print_r($data);exit;
 		echo json_encode($data);
 	}
+	function delete_cusreg_record()
+	{
+		$model = self::PAY_MODEL;
+		$id = $this->input->post('id');
+		$status = $this->$model->delete_cusreg($id);
+		echo json_encode(array('status' => $status ? 1 : 0));
+	}
+	function delete_transaction_record()
+	{
+		$model = self::PAY_MODEL;
+		$id = $this->input->post('id');
+		$status = $this->$model->delete_transaction($id);
+		echo json_encode(array('status' => $status ? 1 : 0));
+	}
 	function update_cusdatas()
 	{
 		$model = self::PAY_MODEL;
