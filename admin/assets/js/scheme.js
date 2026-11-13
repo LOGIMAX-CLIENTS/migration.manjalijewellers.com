@@ -1406,6 +1406,11 @@ function set_scheme_list(data) {
 			{ "mDataProp": "code" },
 			{
 				"mDataProp": function (row, type, val, meta) {
+					return row.branch_names ? row.branch_names : "-";
+				}
+			},
+			{
+				"mDataProp": function (row, type, val, meta) {
 					var type = (row.scheme_type == '0' ? "Amount" : (row.scheme_type == '1' ? "Weight" : row.scheme_type == '3' ? "FLXIBLE_AMOUNT" : "Amount to Weight"));
 					return type;
 				}
@@ -2016,6 +2021,11 @@ function set_scheme_list(data) {
 			"aoColumns": [{ "mDataProp": "id_scheme" },
 			{ "mDataProp": "scheme_name" },
 			{ "mDataProp": "code" },
+			{
+				"mDataProp": function (row, type, val, meta) {
+					return row.branch_names ? row.branch_names : "-";
+				}
+			},
 			{
 				"mDataProp": function (row, type, val, meta) {
 					var type = (row.scheme_type == '0' ? "Amount" : (row.scheme_type == '1' ? "Weight" : row.scheme_type == '3' ? "FLXIBLE_AMOUNT" : "Amount to Weight"));

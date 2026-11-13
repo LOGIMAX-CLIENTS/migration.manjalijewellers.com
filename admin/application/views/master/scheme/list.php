@@ -90,7 +90,9 @@
 
                         <th>Code</th>
 
-                        <th>Type</th>                        
+                        <th>Branch</th>
+
+                        <th>Type</th>                      
 
                         <th>Amount (<?php echo $this->session->userdata('currency_symbol')?>)</th>
 
