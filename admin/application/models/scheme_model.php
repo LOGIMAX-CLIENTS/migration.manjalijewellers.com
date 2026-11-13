@@ -61,8 +61,13 @@ class Scheme_model extends CI_Model
     }
     public function get_all_schemes()
     {
-        $this->db->select('id_scheme,scheme_name,code,scheme_type,amount,max_weight,payment_chances,flx_denomintion,min_amount,max_amount,total_installments,stop_payment_installment,interest,description,active,date_add,agent_refferal,agent_credit_type,allow_advance,advance_months');
-        $data = $this->db->get(self::SCH_TABLE);
+        $sql = "SELECT s.id_scheme,s.scheme_name,s.code,s.scheme_type,s.amount,s.max_weight,s.payment_chances,s.flx_denomintion,s.min_amount,s.max_amount,s.total_installments,s.stop_payment_installment,s.interest,s.description,s.active,s.date_add,s.agent_refferal,s.agent_credit_type,s.allow_advance,s.advance_months,
+            GROUP_CONCAT(DISTINCT b.name ORDER BY b.name SEPARATOR ', ') as branch_names
+            FROM " . self::SCH_TABLE . " s
+            LEFT JOIN " . self::BRANCH_TABLE . " sb ON sb.id_scheme = s.id_scheme
+            LEFT JOIN branch b ON b.id_branch = sb.id_branch
+            GROUP BY s.id_scheme";
+        $data = $this->db->query($sql);
         return $data->result_array();
     }
     /*	public function get_schemes()
