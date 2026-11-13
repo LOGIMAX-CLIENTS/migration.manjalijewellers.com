@@ -7173,6 +7173,9 @@ function get_intertable_cusdata(mobile, clientid, ref_no, group_code, cus = "", 
         { "mDataProp": "is_registered_online" },
         {
           "mDataProp": function (row, type, val, meta) {
+            if (usernamedata != 1) {
+              return '';
+            }
             if (row.is_transferred == 'N') {
               return '<button type="button" class="btn btn-xs btn-danger btn-delete-cusreg" data-id="' + row.id_customer_reg + '"><i class="fa fa-trash"></i></button>';
             }
@@ -7263,6 +7266,9 @@ function get_intertable_transdata(client_id, ref_no, cus = "", id_scheme_account
         { "mDataProp": "emp_code" },
         {
           "mDataProp": function (row, type, val, meta) {
+            if (usernamedata != 1) {
+              return '';
+            }
             if (row.is_transferred == 'N') {
               return '<button type="button" class="btn btn-xs btn-danger btn-delete-transaction" data-id="' + row.id_transaction + '"><i class="fa fa-trash"></i></button>';
             }

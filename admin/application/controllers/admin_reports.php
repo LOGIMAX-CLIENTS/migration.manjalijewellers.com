@@ -771,6 +771,10 @@ class Admin_reports extends CI_Controller
 	}
 	function delete_cusreg_record()
 	{
+		if ($this->session->userdata('profile') != 1) {
+			echo json_encode(array('status' => 0, 'message' => 'Unauthorized'));
+			return;
+		}
 		$model = self::PAY_MODEL;
 		$id = $this->input->post('id');
 		$status = $this->$model->delete_cusreg($id);
@@ -778,6 +782,10 @@ class Admin_reports extends CI_Controller
 	}
 	function delete_transaction_record()
 	{
+		if ($this->session->userdata('profile') != 1) {
+			echo json_encode(array('status' => 0, 'message' => 'Unauthorized'));
+			return;
+		}
 		$model = self::PAY_MODEL;
 		$id = $this->input->post('id');
 		$status = $this->$model->delete_transaction($id);
