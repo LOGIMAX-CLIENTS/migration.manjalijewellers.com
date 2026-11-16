@@ -7792,6 +7792,11 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
      *   scheme_account.maturity_date -> customer_reg.maturity_date
      *   edited mobile                -> customer_reg.mobile
      * (scheme_account itself never stores the mobile, it only re-maps id_customer)
+     *
+     * scheme_account and customer_reg are not linked by id_scheme_account alone -
+     * customer_reg.id_scheme_account is null on some rows. The real join key is
+     * scheme_account.ref_no == customer_reg.clientid; id_scheme_account is only an
+     * extra cross-check, applied when the customer_reg row actually has one.
      */
     public function syncCustomerRegOnAccEdit($id_scheme_account, $reg_data)
     {
@@ -7799,13 +7804,21 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
         if ($id_scheme_account <= 0 || empty($reg_data)) {
             return false;
         }
-        $exist = $this->db->query("SELECT id_customer_reg FROM " . self::CUS_REG_TABLE . "
-            WHERE id_scheme_account = " . $id_scheme_account);
-        if ($exist->num_rows() == 0) {
+        $acc = $this->db->query("SELECT ref_no FROM scheme_account WHERE id_scheme_account = " . $id_scheme_account)->row();
+        if (empty($acc) || trim((string) $acc->ref_no) === '') {
             return false; // account was never pushed to the intermediate table
         }
+        $ref_no = trim($acc->ref_no);
+
+        $this->db->where('clientid', $ref_no);
+        $this->db->where("(id_scheme_account IS NULL OR id_scheme_account = " . $id_scheme_account . ")", null, false);
+        $exist = $this->db->get(self::CUS_REG_TABLE);
+        if ($exist->num_rows() == 0) {
+            return false; // no matching customer_reg row
+        }
         $reg_data['date_update'] = date('Y-m-d H:i:s');
-        $this->db->where('id_scheme_account', $id_scheme_account);
+        $this->db->where('clientid', $ref_no);
+        $this->db->where("(id_scheme_account IS NULL OR id_scheme_account = " . $id_scheme_account . ")", null, false);
         $this->db->update(self::CUS_REG_TABLE, $reg_data);
         return ($this->db->affected_rows() > 0);
     }
@@ -7884,7 +7897,16 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
      * Both conditions are always applied. transaction.ref_no on its own is not selective
      * enough - numeric ref_no values collide with other accounts' rows.
      */
-    public function findMirrorTransaction($id_payment, $id_scheme_account, $payment_ref_number)
+    /**
+     * payment.payment_type == 'Offline' (a manually typed external reference number, distinct
+     * from id_payment) -> transaction.ref_no mirrors payment.payment_ref_number.
+     * Every other payment_type (gateway payments like 'Cash Free', counter entries like
+     * 'Manual'/'CSH') carries payment_ref_number as a copy of its own id_payment, and that is
+     * what transaction.ref_no mirrors. Verified against live data: 'Offline' rows match
+     * transaction.ref_no via payment_ref_number ~100% of the time and via id_payment <0.01% of
+     * the time (coincidental); every other payment_type is the reverse.
+     */
+    public function findMirrorTransaction($id_payment, $id_scheme_account, $payment_type, $payment_ref_number)
     {
         $id_payment = intval($id_payment);
         if ($id_payment <= 0) {
@@ -7895,9 +7917,10 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
         if (empty($src) || empty($src->ref_no)) {
             return null;
         }
-        $ref = trim((string) $payment_ref_number);
+        $is_offline = (strcasecmp(trim((string) $payment_type), 'Offline') === 0);
+        $ref = $is_offline ? trim((string) $payment_ref_number) : (string) $id_payment;
         if ($ref === '') {
-            $ref = (string) $id_payment;
+            return null;
         }
         return $this->db->query("SELECT id_transaction FROM " . self::TRANS_TABLE . "
             WHERE client_id = " . $this->db->escape($src->ref_no) . "
@@ -7921,22 +7944,19 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
         $trans = $this->findMirrorTransaction(
             isset($pay_data['id_payment']) ? $pay_data['id_payment'] : 0,
             $pay_data['id_scheme_account'],
+            isset($pay_data['payment_type']) ? $pay_data['payment_type'] : '',
             isset($pay_data['payment_ref_number']) ? $pay_data['payment_ref_number'] : ''
         );
         if (empty($trans)) {
             return array("status" => TRUE); // nothing mirrored, so nothing to keep consistent
         }
 
-        $tgt = $this->db->query("SELECT clientid FROM " . self::CUS_REG_TABLE . "
+        $tgt = $this->db->query("SELECT ref_no FROM " . self::ACC_TABLE . "
             WHERE id_scheme_account = " . intval($target_sch_acc))->row();
 
-        if (empty($tgt)) {
+        if (empty($tgt) || trim((string) $tgt->ref_no) === '') {
             return array("status" => FALSE, "msg" => "Scheme account " . intval($target_sch_acc)
-                . " has no customer registration record in the sync table (customer_reg), so this payment cannot be transferred to it. No changes have been made.");
-        }
-        if (trim((string) $tgt->clientid) === '') {
-            return array("status" => FALSE, "msg" => "Scheme account " . intval($target_sch_acc)
-                . " has no client id in the sync table (customer_reg), so this payment cannot be transferred to it. No changes have been made.");
+                . " has no ref_no, so this payment cannot be transferred to it. No changes have been made.");
         }
         return array("status" => TRUE);
     }
@@ -7947,10 +7967,10 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
      * keys. $old_id_scheme_account is the account the payment belonged to BEFORE the edit,
      * because that is the account whose ref_no the transaction row still carries.
      */
-    public function syncTransactionOnPaymentEdit($id_payment, $old_id_scheme_account, $payment_ref_number)
+    public function syncTransactionOnPaymentEdit($id_payment, $old_id_scheme_account, $payment_type, $payment_ref_number)
     {
         $id_payment = intval($id_payment);
-        $trans = $this->findMirrorTransaction($id_payment, $old_id_scheme_account, $payment_ref_number);
+        $trans = $this->findMirrorTransaction($id_payment, $old_id_scheme_account, $payment_type, $payment_ref_number);
         if (empty($trans)) {
             return false; // this payment has no mirrored transaction row
         }
@@ -7987,17 +8007,17 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
         // Payment was transferred to another scheme account. id_scheme_account maps the
         // payment across on the payment side; client_id is what maps it across on the
         // transaction side, so both have to move together. The target account's client id
-        // is taken from customer_reg, which is where the sync tool holds it.
+        // is its own ref_no (scheme_account.ref_no == transaction.client_id by convention).
         if (intval($pay->id_scheme_account) != intval($old_id_scheme_account)) {
             $upd['id_scheme_account'] = $pay->id_scheme_account;
-            $tgt = $this->db->query("SELECT clientid FROM " . self::CUS_REG_TABLE . "
+            $tgt = $this->db->query("SELECT ref_no FROM " . self::ACC_TABLE . "
                 WHERE id_scheme_account = " . intval($pay->id_scheme_account))->row();
-            $tgt_clientid = (!empty($tgt) && isset($tgt->clientid)) ? trim($tgt->clientid) : '';
-            if ($tgt_clientid !== '') {
-                $upd['client_id'] = $tgt_clientid;
+            $tgt_ref_no = (!empty($tgt) && isset($tgt->ref_no)) ? trim($tgt->ref_no) : '';
+            if ($tgt_ref_no !== '') {
+                $upd['client_id'] = $tgt_ref_no;
             }
             // Defence in depth only - checkTransactionSyncTarget() already refuses a transfer
-            // whose target has no customer_reg client id, so this branch is not reached in
+            // whose target has no sync client id, so this branch is not reached in
             // normal operation. Leaving client_id alone still beats blanking it.
         }
 
@@ -8353,6 +8373,7 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
                 $this->syncTransactionOnPaymentEdit(
                     $postdata['id_payment'],
                     $pay_data['id_scheme_account'],
+                    isset($pay_data['payment_type']) ? $pay_data['payment_type'] : '',
                     isset($pay_data['payment_ref_number']) ? $pay_data['payment_ref_number'] : ''
                 );
             }
@@ -8420,12 +8441,25 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
         $payments = $this->db->query("SELECT id_payment, date_payment FROM payment WHERE id_scheme_account = " . $id_scheme_account . " AND payment_status IN (1, 2) ORDER BY date_payment ASC, id_payment ASC")->result_array();
         if (empty($payments)) return;
 
+        $date_shifted_payment_ids = array();
         if (!empty($new_start_date)) {
             $first_orig_date = date('Y-m-d', strtotime($payments[0]['date_payment']));
+            // Payments that took place on the initial start date (normally just the first
+            // payment) - captured before the update so the sync below knows exactly which
+            // payment rows actually moved.
+            foreach ($payments as $p) {
+                if (date('Y-m-d', strtotime($p['date_payment'])) === $first_orig_date) {
+                    $date_shifted_payment_ids[] = $p['id_payment'];
+                }
+            }
+
             // Update date_payment for all payments that took place on the initial start date to the new start date
             $this->db->where('id_scheme_account', $id_scheme_account)
                      ->where("DATE(date_payment) = '" . $this->db->escape_str($first_orig_date) . "'")
                      ->update('payment', array('date_payment' => $acc_start_date));
+            if ($this->db->affected_rows() <= 0) {
+                $date_shifted_payment_ids = array(); // nothing actually changed in the payment table
+            }
 
             // Update in-memory array so chronological recalculation processes all initial payments on the new start date
             foreach ($payments as &$p) {
@@ -8512,6 +8546,24 @@ IF(s.scheme_type =1 and s.max_weight !=s.min_weight,true,false) as is_flexible_w
         }
         
         $this->update_dueMonYear($id_scheme_account);
+
+        // Sync tool integration : the Edit Account start-date change above shifted the
+        // date_payment of the account's first payment(s) directly in the payment table -
+        // mirror that onto the transaction table too, same as a regular Edit Payment date
+        // change. Runs last so installment/due_type are already final.
+        if (!empty($date_shifted_payment_ids) && $this->config->item('integrationType') == 2) {
+            foreach ($date_shifted_payment_ids as $shifted_pay_id) {
+                $shifted_pay = $this->getPaymentDataByID($shifted_pay_id);
+                if (!empty($shifted_pay)) {
+                    $this->syncTransactionOnPaymentEdit(
+                        $shifted_pay_id,
+                        $shifted_pay['id_scheme_account'],
+                        isset($shifted_pay['payment_type']) ? $shifted_pay['payment_type'] : '',
+                        isset($shifted_pay['payment_ref_number']) ? $shifted_pay['payment_ref_number'] : ''
+                    );
+                }
+            }
+        }
     }
     /*ends*/
     function update_dueMonYear($id_scheme_account)

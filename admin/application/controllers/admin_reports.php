@@ -1861,18 +1861,26 @@ class Admin_reports extends CI_Controller
 					}
 
 					// Sync tool integration : mirror the same edit on the intermediate
-					// customer_reg row of this scheme account (start_date -> reg_date, mobile -> mobile)
+					// customer_reg row of this scheme account (start_date -> reg_date, mobile -> mobile).
+					// Only fields whose scheme_account update actually succeeded are pushed -
+					// a failed mobile/id_customer update must not drag the dates along, and
+					// vice versa.
 					if ($this->config->item('integrationType') == 2) {
-						$reg_data = array('mobile' => $_POST['mobile']);
+						$reg_data = array();
+						if ($data) {
+							$reg_data['mobile'] = $_POST['mobile'];
+						}
 						if ($date_updated) {
 							$reg_data['reg_date'] = $new_start_date;
 							if (!empty($new_maturity_date)) {
 								$reg_data['maturity_date'] = $new_maturity_date;
 							}
 						}
-						$reg_synced = $this->$model->syncCustomerRegOnAccEdit($_POST['id_scheme_account'], $reg_data);
-						$ldata = "\n" . date('d-m-Y H:i:s') . " \n customer_reg sync (id_scheme_account : " . $_POST['id_scheme_account'] . ") : " . ($reg_synced ? 'updated ' . json_encode($reg_data, true) : 'no matching customer_reg row / no change');
-						file_put_contents($log_path, $ldata, FILE_APPEND | LOCK_EX);
+						if (!empty($reg_data)) {
+							$reg_synced = $this->$model->syncCustomerRegOnAccEdit($_POST['id_scheme_account'], $reg_data);
+							$ldata = "\n" . date('d-m-Y H:i:s') . " \n customer_reg sync (id_scheme_account : " . $_POST['id_scheme_account'] . ") : " . ($reg_synced ? 'updated ' . json_encode($reg_data, true) : 'no matching customer_reg row / no change');
+							file_put_contents($log_path, $ldata, FILE_APPEND | LOCK_EX);
+						}
 					}
 
 					if ($data == true || $date_updated) {
