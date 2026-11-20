@@ -1247,7 +1247,7 @@ function set_payment_list(data) {
                     var edit_pay =
                         access.edit == 1 ?
                             (row.added_by == 0 || row.added_by == 3) &&
-                                row.id_payGateway == null &&
+                                !(row.id_payGateway > 0) &&
                                 row.active == 1 &&
                                 row.is_closed == 0 ?
                                 (row.payment_mode != "FP" ? '<li><a href="#" class="btn-edit" onclick="edit_2(' +
@@ -1543,7 +1543,7 @@ function set_payment_list(data) {
                     }
                     //<li><a href="'+edit_url+'" class="btn-edit"><i class="fa fa-edit" ></i> Edit</a></li>
                     // esakki 18-09
-                    var edit_pay = (access.edit == 1 ? ((row.added_by == 0 || row.added_by == 3) && row.id_payGateway == null && row.active == 1 && row.is_closed == 0 && row.payment_mode != "FP" ? '<li><a href="#" class="btn-edit" onclick="edit_2(' + id + ')"><i class="fa fa-edit" ></i> Edit</a></li>' : '') : '');
+                    var edit_pay = (access.edit == 1 ? ((row.added_by == 0 || row.added_by == 3) && !(row.id_payGateway > 0) && row.active == 1 && row.is_closed == 0 && row.payment_mode != "FP" ? '<li><a href="#" class="btn-edit" onclick="edit_2(' + id + ')"><i class="fa fa-edit" ></i> Edit</a></li>' : '') : '');
                     action_content = '<div class="btn-group"><button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action <span class="caret"></span></button><ul class="dropdown-menu">' +
                         edit_pay +
                         // (access.edit == 1  ? '<li><a href="#" class="btn-edit" onclick="edit_2('+id+')"><i class="fa fa-edit" ></i> Edit</a></li>' : '')
