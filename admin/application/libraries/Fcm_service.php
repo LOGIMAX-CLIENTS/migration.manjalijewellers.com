@@ -31,6 +31,9 @@ class Fcm_service
     /** Never write more than this many per-token failures to the log. */
     const MAX_LOGGED_FAILURES  = 5;
 
+    /** Report rows (notification_send_log) written per INSERT, small enough to stay far below max_allowed_packet. */
+    const LOG_BATCH = 50;
+
     const DEFAULT_OAUTH2_URL   = 'https://oauth2.googleapis.com/token';
     const DEFAULT_SEND_URL_BASE = 'https://fcm.googleapis.com/v1/projects/';
 
@@ -50,6 +53,9 @@ class Fcm_service
 
     /** @var string Last error slug, '' when fine */
     private $last_error = '';
+
+    /** @var array Queued notification_send_log rows, flushed every LOG_BATCH rows */
+    private $pending_log = array();
 
     public function __construct($params = array())
     {
@@ -132,6 +138,12 @@ class Fcm_service
             'Content-Type: application/json; charset=utf-8',
         );
 
+        // Report log (notification_send_log): one batch_ref per call to sendToTokens() --
+        // one admin single-send, one broadcast, or one scheduled run -- so the Notification
+        // Report can group these rows back into one push.
+        $batch_ref  = uniqid('', TRUE);
+        $token_meta = $this->load_token_meta($tokens);
+
         $delivered = 0;
         $failures  = array();
         $last_id   = '';
@@ -166,12 +178,17 @@ class Fcm_service
                 curl_multi_remove_handle($multi, $h['ch']);
                 curl_close($h['ch']);
 
+                $meta = isset($token_meta[$h['token']]) ? $token_meta[$h['token']] : array();
+
                 if ($code === 200) {
                     $delivered++;
                     $decoded = json_decode((string) $raw, TRUE);
+                    $message_id = '';
                     if (isset($decoded['name'])) {
-                        $last_id = $decoded['name'];
+                        $last_id    = $decoded['name'];
+                        $message_id = $decoded['name'];
                     }
+                    $this->queue_log($batch_ref, $meta, $h['token'], $title, $body, TRUE, $message_id, NULL);
                 } else {
                     $reason = ($err !== '') ? $err : $this->extract_error($raw, $code);
                     if ($logged < self::MAX_LOGGED_FAILURES) {
@@ -179,11 +196,14 @@ class Fcm_service
                         $logged++;
                     }
                     $failures[] = $reason;
+                    $this->queue_log($batch_ref, $meta, $h['token'], $title, $body, FALSE, NULL, substr($reason, 0, 100));
                 }
             }
 
             curl_multi_close($multi);
         }
+
+        $this->flush_log();
 
         $failed = count($failures);
         if ($failed > self::MAX_LOGGED_FAILURES) {
@@ -264,6 +284,115 @@ class Fcm_service
     }
 
     // --------------------------------------------------------------- private
+
+    /**
+     * id_customer + device_type for a list of tokens, resolved from registered_devices.
+     * Looking this up here (rather than threading it through every call site) means every
+     * caller's send gets logged correctly, including the ~10 dispatchers that only ever
+     * pass bare token strings.
+     *
+     * @param  array $tokens Flat list of token strings
+     * @return array token => array('id_customer' => int|null, 'device_type' => int|null)
+     */
+    private function load_token_meta($tokens)
+    {
+        $meta = array();
+        if (empty($tokens)) {
+            return $meta;
+        }
+
+        $db   = $this->CI->db;
+        $list = implode(',', array_map(array($db, 'escape'), array_unique($tokens)));
+        $res  = $db->query("SELECT token, id_customer, device_type FROM registered_devices WHERE token IN ($list)");
+        if ($res) {
+            foreach ($res->result_array() as $row) {
+                $meta[$row['token']] = array(
+                    'id_customer' => $row['id_customer'],
+                    'device_type' => $row['device_type'],
+                );
+            }
+        }
+
+        return $meta;
+    }
+
+    /**
+     * Queue one notification_send_log row, flushing every LOG_BATCH rows.
+     *
+     * @param  string      $batch_ref
+     * @param  array       $meta       array('id_customer' => ..., 'device_type' => ...)
+     * @param  string      $token
+     * @param  string      $title
+     * @param  string      $body
+     * @param  bool        $is_sent
+     * @param  string|null $message_id
+     * @param  string|null $error_code
+     * @return void
+     */
+    private function queue_log($batch_ref, $meta, $token, $title, $body, $is_sent, $message_id, $error_code)
+    {
+        $this->pending_log[] = array(
+            'batch_ref'      => $batch_ref,
+            'id_customer'    => isset($meta['id_customer']) ? $meta['id_customer'] : NULL,
+            'device_ref'     => substr((string) $token, -8),
+            'device_type'    => isset($meta['device_type']) ? $meta['device_type'] : NULL,
+            'noti_title'     => (string) $title,
+            'noti_body'      => (string) $body,
+            'sent_at'        => date('Y-m-d H:i:s'),
+            'is_sent'        => $is_sent ? 1 : 0,
+            'fcm_message_id' => $message_id,
+            'error_code'     => $error_code,
+        );
+
+        if (count($this->pending_log) >= self::LOG_BATCH) {
+            $this->flush_log();
+        }
+    }
+
+    /**
+     * Writes queued report rows, LOG_BATCH per INSERT. If a batch is refused, its rows are
+     * retried one by one so only a bad row is lost. A logging problem must never reach the
+     * caller, so this uses simple_query(): a failed $db->query() would mark any transaction
+     * the caller has open as failed, rolling back its work (e.g. on a client where the
+     * migration creating notification_send_log has not run yet).
+     *
+     * @return void
+     */
+    private function flush_log()
+    {
+        if (empty($this->pending_log)) {
+            return;
+        }
+
+        $db   = $this->CI->db;
+        $rows = $this->pending_log;
+        $this->pending_log = array();
+
+        $columns = array_keys($rows[0]);
+        $prefix  = 'INSERT INTO notification_send_log (' . implode(',', $columns) . ') VALUES ';
+        $values  = array();
+        foreach ($rows as $row) {
+            $escaped = array();
+            foreach ($columns as $col) {
+                $escaped[] = $db->escape($row[$col]);
+            }
+            $values[] = '(' . implode(',', $escaped) . ')';
+        }
+
+        if ($db->simple_query($prefix . implode(',', $values))) {
+            return;
+        }
+
+        $lost = 0;
+        foreach ($values as $one) {
+            if (!$db->simple_query($prefix . $one)) {
+                $lost++;
+            }
+        }
+        if ($lost > 0) {
+            log_message('error', 'Fcm_service: report log FAILED: could not write ' . $lost . ' of ' . count($values) . ' row(s) to notification_send_log, has the migration run?');
+        }
+    }
 
     /**
      * Flatten rows to strings, drop duplicates, drop anything that cannot be a

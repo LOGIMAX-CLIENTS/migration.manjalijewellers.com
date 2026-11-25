@@ -61,6 +61,8 @@ Before implementing code, verify that the target client's database has the follo
   - `dg_other_benefit_amt` (DECIMAL)
   - `gst_amount` (DECIMAL)
   - `offline_tran_uniqueid` (VARCHAR)
+  - `payment_type` (VARCHAR: e.g. `'Offline'` for a manually-keyed external reference, vs gateway/counter values like `'Cash Free'`/`'Manual'`/`'CSH'` — read by `findMirrorTransaction()` to pick which column to key the `transaction` join on)
+  - `payment_ref_number` (VARCHAR: external reference number when `payment_type == 'Offline'`; otherwise a copy of the row's own `id_payment`)
 - **`scheme`**:
   - `id_scheme` (PRIMARY KEY, INT)
   - `code` (VARCHAR)
@@ -99,7 +101,7 @@ Before implementing code, verify that the target client's database has the follo
 
 ### Additional Tables & Columns Required by Shared Dependencies (Step 4b)
 These are NOT optional even though the page never displays them directly — they are read by generic helper methods (`checkCommonSettings`, `getPaidInsData`, `get_due_date`, `get_scheme_details`) that `updateAccountDetails()`/`updatePaymentdata()` call internally:
-- **`scheme_account`** (additional): `is_opening`, `paid_installments`, `lapse_date`, `is_topup_scheme` *(on `scheme`, see below)*, `balance_amount`, `fixed_metal_rate`, `fixed_wgt`, `fixed_rate_on`, `received_wgt`, `firstPayment_amt`, `id_branch`
+- **`scheme_account`** (additional): `is_opening`, `paid_installments`, `lapse_date`, `is_topup_scheme` *(on `scheme`, see below)*, `balance_amount`, `fixed_metal_rate`, `fixed_wgt`, `fixed_rate_on`, `received_wgt`, `firstPayment_amt`, `id_branch`, `ref_no` *(the sync-tool client id — `scheme_account.ref_no` is now the join key against both `customer_reg.clientid` and `transaction.client_id`; see Business Rule #7 below)*
 - **`scheme`** (additional): `min_chance`, `max_chance`, `is_topup_scheme`, `maturity_type`, `maturity_installment`, `closing_maturity_days`, `grace_days`, `topup_store_slab`, `otp_price_fix_type`, `one_time_premium`, `emp_refferal`, `emp_incentive_closing`, `ref_benifitadd_ins_type`, `ref_benifitadd_ins`, `firstPayamt_as_payamt`, `emp_refferal_value`
 - **`chit_settings`**: `branchwise_scheme`, `is_branchwise_cus_reg`
 - **`scheme_branch`** (new table if it doesn't exist): `id_scheme`, `id_branch` — maps schemes to the branches they're allotted to; an empty/missing table for a scheme is treated as "open to all branches"
@@ -511,18 +513,27 @@ public function updateAccountDetails()
                     }
                 }
 
-                // Sync tool integration (config integrationType == 2)
+                // Sync tool integration : mirror the same edit on the intermediate
+                // customer_reg row of this scheme account (start_date -> reg_date, mobile -> mobile).
+                // Only fields whose scheme_account update actually succeeded are pushed -
+                // a failed mobile/id_customer update must not drag the dates along, and
+                // vice versa.
                 if ($this->config->item('integrationType') == 2) {
-                    $reg_data = array('mobile' => $_POST['mobile']);
+                    $reg_data = array();
+                    if ($data) {
+                        $reg_data['mobile'] = $_POST['mobile'];
+                    }
                     if ($date_updated) {
                         $reg_data['reg_date'] = $new_start_date;
                         if (!empty($new_maturity_date)) {
                             $reg_data['maturity_date'] = $new_maturity_date;
                         }
                     }
-                    $reg_synced = $this->$model->syncCustomerRegOnAccEdit($_POST['id_scheme_account'], $reg_data);
-                    $ldata = "\n" . date('d-m-Y H:i:s') . " \n customer_reg sync (id_scheme_account : " . $_POST['id_scheme_account'] . ") : " . ($reg_synced ? 'updated ' . json_encode($reg_data, true) : 'no matching customer_reg row / no change');
-                    file_put_contents($log_path, $ldata, FILE_APPEND | LOCK_EX);
+                    if (!empty($reg_data)) {
+                        $reg_synced = $this->$model->syncCustomerRegOnAccEdit($_POST['id_scheme_account'], $reg_data);
+                        $ldata = "\n" . date('d-m-Y H:i:s') . " \n customer_reg sync (id_scheme_account : " . $_POST['id_scheme_account'] . ") : " . ($reg_synced ? 'updated ' . json_encode($reg_data, true) : 'no matching customer_reg row / no change');
+                        file_put_contents($log_path, $ldata, FILE_APPEND | LOCK_EX);
+                    }
                 }
 
                 if ($data == true || $date_updated) {
@@ -764,14 +775,37 @@ public function checkTransferTargetAccount($id_scheme_account)
     return array("status" => TRUE);
 }
 
+/**
+ * Sync tool integration (config integrationType = 2)
+ * Mirrors Edit Account changes onto the intermediate customer_reg row that belongs
+ * to the same scheme account. Column mapping:
+ *   scheme_account.start_date    -> customer_reg.reg_date
+ *   scheme_account.maturity_date -> customer_reg.maturity_date
+ *   edited mobile                -> customer_reg.mobile
+ * (scheme_account itself never stores the mobile, it only re-maps id_customer)
+ *
+ * scheme_account and customer_reg are not linked by id_scheme_account alone -
+ * customer_reg.id_scheme_account is null on some rows. The real join key is
+ * scheme_account.ref_no == customer_reg.clientid; id_scheme_account is only an
+ * extra cross-check, applied when the customer_reg row actually has one.
+ */
 public function syncCustomerRegOnAccEdit($id_scheme_account, $reg_data)
 {
     $id_scheme_account = intval($id_scheme_account);
     if ($id_scheme_account <= 0 || empty($reg_data)) return false;
-    $exist = $this->db->query("SELECT id_customer_reg FROM customer_reg WHERE id_scheme_account = " . $id_scheme_account);
-    if ($exist->num_rows() == 0) return false;
+    $acc = $this->db->query("SELECT ref_no FROM scheme_account WHERE id_scheme_account = " . $id_scheme_account)->row();
+    if (empty($acc) || trim((string) $acc->ref_no) === '') return false; // account was never pushed to the intermediate table
+    $ref_no = trim($acc->ref_no);
+
+    $this->db->where('clientid', $ref_no);
+    $this->db->where("(id_scheme_account IS NULL OR id_scheme_account = " . $id_scheme_account . ")", null, false);
+    $exist = $this->db->get('customer_reg');
+    if ($exist->num_rows() == 0) return false; // no matching customer_reg row
+
     $reg_data['date_update'] = date('Y-m-d H:i:s');
-    $this->db->where('id_scheme_account', $id_scheme_account)->update('customer_reg', $reg_data);
+    $this->db->where('clientid', $ref_no);
+    $this->db->where("(id_scheme_account IS NULL OR id_scheme_account = " . $id_scheme_account . ")", null, false);
+    $this->db->update('customer_reg', $reg_data);
     return ($this->db->affected_rows() > 0);
 }
 
@@ -785,39 +819,77 @@ public function updateAccountPaidInstallments($id_scheme_account)
     return $total_paid_ins;
 }
 
-public function checkTransactionSyncTarget($pay_data, $target_sch_acc)
-{
-    $trans = $this->findMirrorTransaction(
-        isset($pay_data['id_payment']) ? $pay_data['id_payment'] : 0,
-        $pay_data['id_scheme_account'],
-        isset($pay_data['payment_ref_number']) ? $pay_data['payment_ref_number'] : ''
-    );
-    if (empty($trans)) return array("status" => TRUE);
-
-    $tgt = $this->db->query("SELECT clientid FROM customer_reg WHERE id_scheme_account = " . intval($target_sch_acc))->row();
-    if (empty($tgt) || trim((string)$tgt->clientid) === '') {
-        return array("status" => FALSE, "msg" => "Scheme account " . intval($target_sch_acc) . " has no client id in sync table (customer_reg), so payment cannot be transferred.");
-    }
-    return array("status" => TRUE);
-}
-
-public function findMirrorTransaction($id_payment, $id_scheme_account, $payment_ref_number)
+/**
+ * Sync tool integration (config integrationType = 2)
+ * Locates the intermediate `transaction` row that mirrors a payment, on both conditions:
+ *   scheme_account.ref_no = transaction.client_id   (account the payment belongs to)
+ *   payment reference     = transaction.ref_no
+ *
+ * payment.payment_type == 'Offline' (a manually typed external reference number, distinct
+ * from id_payment) -> transaction.ref_no mirrors payment.payment_ref_number.
+ * Every other payment_type (gateway payments like 'Cash Free', counter entries like
+ * 'Manual'/'CSH') carries payment_ref_number as a copy of its own id_payment, and that is
+ * what transaction.ref_no mirrors. Verified against live data: 'Offline' rows match
+ * transaction.ref_no via payment_ref_number ~100% of the time and via id_payment <0.01% of
+ * the time (coincidental); every other payment_type is the reverse.
+ *
+ * Both conditions are always applied. transaction.ref_no on its own is not selective
+ * enough - numeric ref_no values collide with other accounts' rows.
+ */
+public function findMirrorTransaction($id_payment, $id_scheme_account, $payment_type, $payment_ref_number)
 {
     $id_payment = intval($id_payment);
     if ($id_payment <= 0) return null;
     $src = $this->db->query("SELECT ref_no FROM scheme_account WHERE id_scheme_account = " . intval($id_scheme_account))->row();
     if (empty($src) || empty($src->ref_no)) return null;
-    $ref = trim((string)$payment_ref_number);
-    if ($ref === '') $ref = (string)$id_payment;
+    $is_offline = (strcasecmp(trim((string)$payment_type), 'Offline') === 0);
+    $ref = $is_offline ? trim((string)$payment_ref_number) : (string)$id_payment;
+    if ($ref === '') return null;
     return $this->db->query("SELECT id_transaction FROM transaction WHERE client_id = " . $this->db->escape($src->ref_no) . " AND ref_no = " . $this->db->escape($ref))->row();
 }
 
-public function syncTransactionOnPaymentEdit($id_payment, $old_id_scheme_account, $payment_ref_number)
+/**
+ * Sync tool integration (config integrationType = 2)
+ * Pre-flight guard for transferring a payment to another scheme account.
+ *
+ * The transaction row mirroring this payment carries a client_id, and that client id has
+ * to move to the target account alongside id_scheme_account. The target's client id is its
+ * own scheme_account.ref_no - if it is missing the mirror cannot be completed, so the
+ * transfer is refused up front and nothing is written to either table.
+ */
+public function checkTransactionSyncTarget($pay_data, $target_sch_acc)
+{
+    // Only guard when this payment actually has a mirrored transaction row
+    $trans = $this->findMirrorTransaction(
+        isset($pay_data['id_payment']) ? $pay_data['id_payment'] : 0,
+        $pay_data['id_scheme_account'],
+        isset($pay_data['payment_type']) ? $pay_data['payment_type'] : '',
+        isset($pay_data['payment_ref_number']) ? $pay_data['payment_ref_number'] : ''
+    );
+    if (empty($trans)) return array("status" => TRUE); // nothing mirrored, so nothing to keep consistent
+
+    $tgt = $this->db->query("SELECT ref_no FROM scheme_account WHERE id_scheme_account = " . intval($target_sch_acc))->row();
+    if (empty($tgt) || trim((string)$tgt->ref_no) === '') {
+        return array("status" => FALSE, "msg" => "Scheme account " . intval($target_sch_acc) . " has no ref_no, so this payment cannot be transferred to it. No changes have been made.");
+    }
+    return array("status" => TRUE);
+}
+
+/**
+ * Sync tool integration (config integrationType = 2)
+ * Mirrors an Edit Payment change onto the intermediate `transaction` row of the same
+ * payment. The row is located by findMirrorTransaction() on both of the sync tool's
+ * keys. $old_id_scheme_account is the account the payment belonged to BEFORE the edit,
+ * because that is the account whose ref_no the transaction row still carries.
+ */
+public function syncTransactionOnPaymentEdit($id_payment, $old_id_scheme_account, $payment_type, $payment_ref_number)
 {
     $id_payment = intval($id_payment);
-    $trans = $this->findMirrorTransaction($id_payment, $old_id_scheme_account, $payment_ref_number);
-    if (empty($trans)) return false;
+    $trans = $this->findMirrorTransaction($id_payment, $old_id_scheme_account, $payment_type, $payment_ref_number);
+    if (empty($trans)) return false; // this payment has no mirrored transaction row
 
+    // Final state of the payment, read after due date / installment recalculation so the
+    // transaction mirrors exactly what the payment table ended up with
     $pay = $this->db->query("SELECT id_scheme_account, DATE(date_payment) as date_payment,
         metal_rate, metal_weight, payment_status, installment, due_type,
         IFNULL(saved_benefits, 0) as saved_benefits, IFNULL(saved_benefit_amt, 0) as saved_benefit_amt,
@@ -839,12 +911,24 @@ public function syncTransactionOnPaymentEdit($id_payment, $old_id_scheme_account
         'date_upd'           => date('Y-m-d H:i:s')
     );
 
+    // receipt_no is deliberately NOT mirrored. The Edit Payment screen only changes the
+    // payment date and the scheme account; the receipt number is never edited and never
+    // derived from those, so the transaction keeps whatever receipt number it was issued.
+
+    // Payment was transferred to another scheme account. id_scheme_account maps the
+    // payment across on the payment side; client_id is what maps it across on the
+    // transaction side, so both have to move together. The target account's client id
+    // is its own ref_no (scheme_account.ref_no == transaction.client_id by convention).
     if (intval($pay->id_scheme_account) != intval($old_id_scheme_account)) {
         $upd['id_scheme_account'] = $pay->id_scheme_account;
-        $tgt = $this->db->query("SELECT clientid FROM customer_reg WHERE id_scheme_account = " . intval($pay->id_scheme_account))->row();
-        if (!empty($tgt) && trim((string)$tgt->clientid) !== '') {
-            $upd['client_id'] = trim($tgt->clientid);
+        $tgt = $this->db->query("SELECT ref_no FROM scheme_account WHERE id_scheme_account = " . intval($pay->id_scheme_account))->row();
+        $tgt_ref_no = (!empty($tgt) && isset($tgt->ref_no)) ? trim($tgt->ref_no) : '';
+        if ($tgt_ref_no !== '') {
+            $upd['client_id'] = $tgt_ref_no;
         }
+        // Defence in depth only - checkTransactionSyncTarget() already refuses a transfer
+        // whose target has no sync client id, so this branch is not reached in
+        // normal operation. Leaving client_id alone still beats blanking it.
     }
 
     $this->db->where('id_transaction', $trans->id_transaction)->update('transaction', $upd);
@@ -1199,6 +1283,7 @@ function updatePaymentdata($postdata)
             $this->syncTransactionOnPaymentEdit(
                 $postdata['id_payment'],
                 $pay_data['id_scheme_account'],
+                isset($pay_data['payment_type']) ? $pay_data['payment_type'] : '',
                 isset($pay_data['payment_ref_number']) ? $pay_data['payment_ref_number'] : ''
             );
         }
@@ -1269,11 +1354,24 @@ function recalculateAccountPaymentDueDates($id_scheme_account, $new_start_date =
     $payments = $this->db->query("SELECT id_payment, date_payment FROM payment WHERE id_scheme_account = " . $id_scheme_account . " AND payment_status IN (1, 2) ORDER BY date_payment ASC, id_payment ASC")->result_array();
     if (empty($payments)) return;
 
+    $date_shifted_payment_ids = array();
     if (!empty($new_start_date)) {
         $first_orig_date = date('Y-m-d', strtotime($payments[0]['date_payment']));
+        // Payments that took place on the initial start date (normally just the first
+        // payment) - captured before the update so the sync below knows exactly which
+        // payment rows actually moved.
+        foreach ($payments as $p) {
+            if (date('Y-m-d', strtotime($p['date_payment'])) === $first_orig_date) {
+                $date_shifted_payment_ids[] = $p['id_payment'];
+            }
+        }
+
         $this->db->where('id_scheme_account', $id_scheme_account)
                  ->where("DATE(date_payment) = '" . $this->db->escape_str($first_orig_date) . "'")
                  ->update('payment', array('date_payment' => $acc_start_date));
+        if ($this->db->affected_rows() <= 0) {
+            $date_shifted_payment_ids = array(); // nothing actually changed in the payment table
+        }
 
         foreach ($payments as &$p) {
             if (date('Y-m-d', strtotime($p['date_payment'])) === $first_orig_date) {
@@ -1348,6 +1446,24 @@ function recalculateAccountPaymentDueDates($id_scheme_account, $new_start_date =
     }
     
     $this->update_dueMonYear($id_scheme_account);
+
+    // Sync tool integration : the Edit Account start-date change above shifted the
+    // date_payment of the account's first payment(s) directly in the payment table -
+    // mirror that onto the transaction table too, same as a regular Edit Payment date
+    // change. Runs last so installment/due_type are already final.
+    if (!empty($date_shifted_payment_ids) && $this->config->item('integrationType') == 2) {
+        foreach ($date_shifted_payment_ids as $shifted_pay_id) {
+            $shifted_pay = $this->getPaymentDataByID($shifted_pay_id);
+            if (!empty($shifted_pay)) {
+                $this->syncTransactionOnPaymentEdit(
+                    $shifted_pay_id,
+                    $shifted_pay['id_scheme_account'],
+                    isset($shifted_pay['payment_type']) ? $shifted_pay['payment_type'] : '',
+                    isset($shifted_pay['payment_ref_number']) ? $shifted_pay['payment_ref_number'] : ''
+                );
+            }
+        }
+    }
 }
 
 function update_dueMonYear($id_scheme_account)
@@ -2228,8 +2344,11 @@ $("#cancel_pay").on("click", function (e) {
 - Receipt numbers are non-editable on this screen and are explicitly omitted from `$upd_data` to avoid overwriting actual receipt numbers with formatted text (such as `"-"` or `"null"`).
 
 ### 7. Sync Tool Mirroring (`integrationType == 2`):
-- Account edits call `syncCustomerRegOnAccEdit()` to update `customer_reg` (`reg_date`, `maturity_date`, `mobile`).
-- Payment edits call `syncTransactionOnPaymentEdit()` to update `transaction` (`payment_date`, `rate`, `weight`, `payment_status`, `installment_no`, `due_type`, `client_id`, etc.).
+- Account edits call `syncCustomerRegOnAccEdit()` to update `customer_reg` (`reg_date`, `maturity_date`, `mobile`) — only the fields whose own `scheme_account` update actually succeeded are pushed (e.g. a failed mobile/customer remap no longer drags the date fields along, and vice versa).
+- The join key for `customer_reg` is **`scheme_account.ref_no == customer_reg.clientid`**, not `id_scheme_account` alone — `customer_reg.id_scheme_account` is null on some rows, so it is only applied as an extra cross-check (`id_scheme_account IS NULL OR id_scheme_account = <id>`) when the row actually has one.
+- Payment edits call `syncTransactionOnPaymentEdit()` to update `transaction` (`payment_date`, `rate`, `weight`, `payment_status`, `installment_no`, `due_type`, `client_id`, etc.). The target `client_id` on an account transfer is also sourced from `scheme_account.ref_no` directly (not from `customer_reg.clientid`).
+- `findMirrorTransaction()` picks which payment field keys the `transaction.ref_no` match based on `payment.payment_type`: `'Offline'` payments key on `payment_ref_number` (a manually-entered external reference); every other payment_type keys on the payment's own `id_payment` (verified against live data as the ~100%-reliable rule for each case). An empty resolved key now returns `null` (no fallback) instead of silently matching on the wrong value.
+- A start-date edit on Edit Account shifts `date_payment` for the account's first payment(s) directly inside `recalculateAccountPaymentDueDates()`. Those shifted payment IDs are captured before the shift and, after the full recalculation cascade finishes, each is pushed through `syncTransactionOnPaymentEdit()` too — a date-only shift caused by an account edit must mirror onto `transaction` exactly like a regular Edit Payment date change does.
 
 ### 8. Branch-Wise Customer/Scheme Validation (`checkCommonSettings`):
 - `updateAccountDetails()` unconditionally calls `checkCommonSettings()` (see Step 4b) before writing the new `id_customer` mapping — this runs on every account edit regardless of config.

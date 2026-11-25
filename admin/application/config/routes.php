@@ -605,6 +605,9 @@ $route['reports/cus_ref_success']  = 'admin_reports/cus_ref_success';
 
 $route['reports/member_report']  = 'admin_reports/member_report';
 
+//notification report
+$route['reports/notification_report'] = 'admin_reports/notification_report';
+
 //Account employee wise reports
 
 $route['reports/Employee_account'] = 'admin_reports/employee_account';

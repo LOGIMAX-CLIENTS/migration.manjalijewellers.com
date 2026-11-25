@@ -33,6 +33,60 @@ class Admin_reports extends CI_Controller
 		}
 		$this->branch_settings =  $this->session->userdata('branch_settings');
 	}
+	//   Notification Report starts here
+	function notification_report()
+	{
+		$this->_require_notification_report_access();
+		$data['main_content'] = self::REP_VIEW . 'notification_report';
+		$this->load->view('layout/template', $data);
+	}
+	//function to return notification report data invoked from reports.js
+	function getNotificationReport()
+	{
+		$this->_require_notification_report_access();
+		$data = $this->admin_report_model->getNotificationReport(
+			$this->input->post('from_date'),
+			$this->input->post('to_date'),
+			$this->input->post('device_type'),
+			$this->input->post('send_status')
+		);
+		echo json_encode($data);
+	}
+	//the page shows customer notification content, so access is checked here as well as in the menu
+	private function _require_notification_report_access()
+	{
+		$access = $this->admin_settings_model->get_access('reports/notification_report');
+		if (empty($access['view'])) {
+			show_error('You do not have access to this report.', 403);
+		}
+	}
+	//notification wise view: one row per push, with how many customers it went to
+	function getNotificationGroups()
+	{
+		$this->_require_notification_report_access();
+		$data = $this->admin_report_model->getNotificationGroups(
+			$this->input->post('from_date'),
+			$this->input->post('to_date'),
+			$this->input->post('device_type'),
+			$this->input->post('send_status')
+		);
+		echo json_encode($data);
+	}
+	//customers one push was sent to, opened from the notification wise view
+	function getNotificationGroupCustomers()
+	{
+		$this->_require_notification_report_access();
+		$data = $this->admin_report_model->getNotificationGroupCustomers(
+			$this->input->post('id_log'),
+			$this->input->post('from_date'),
+			$this->input->post('to_date'),
+			$this->input->post('device_type'),
+			$this->input->post('send_status')
+		);
+		echo json_encode($data);
+	}
+	//   Notification Report ends here
+
 	//payment status 0 -> pending, 1 -> success, 2 -> rejected, -1 -> failure
 	function payment_due_list()
 	{

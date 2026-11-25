@@ -587,4 +587,84 @@ function get_all_cus_celeb_dates($postData){
         return $response;
     }
 
+    //   Notification Report starts here
+
+    // A broadcast adds about one row per device, so the rows sent to the browser are capped;
+    // the totals always cover the whole date range.
+    function getNotificationReport($from_date, $to_date, $device_type, $send_status)
+    {
+        $row_limit = 20000;
+        $where = $this->notification_log_where($from_date, $to_date, $device_type, $send_status, 'l.');
+
+        $totals = $this->db->query("SELECT COUNT(*) AS total, COALESCE(SUM(l.is_sent),0) AS sent FROM notification_send_log l WHERE " . $where)->row_array();
+        $rows = $this->db->query("SELECT TRIM(CONCAT(IFNULL(c.firstname,''),' ',IFNULL(c.lastname,''))) AS customer,
+                IFNULL(c.mobile,'') AS mobile, l.device_ref, l.device_type, l.noti_title, l.noti_body,
+                DATE_FORMAT(l.sent_at,'%d-%m-%Y %h:%i:%s %p') AS sent_time, l.is_sent, l.error_code
+            FROM notification_send_log l
+            LEFT JOIN customer c ON c.id_customer=l.id_customer
+            WHERE " . $where . "
+            ORDER BY l.id_log DESC
+            LIMIT " . $row_limit)->result_array();
+
+        return array(
+            'rows' => $rows,
+            'total' => (int) $totals['total'],
+            'sent' => (int) $totals['sent'],
+            'failed' => (int) $totals['total'] - (int) $totals['sent'],
+            'row_limit' => $row_limit
+        );
+    }
+
+    // Filters shared by both views: dates as dd-mm-yyyy (today when missing), optional platform and send status.
+    private function notification_log_where($from_date, $to_date, $device_type, $send_status, $alias = '')
+    {
+        $from = DateTime::createFromFormat('d-m-Y', (string) $from_date);
+        $to = DateTime::createFromFormat('d-m-Y', (string) $to_date);
+        $today = date('Y-m-d');
+        $where = $alias . "sent_at BETWEEN " . $this->db->escape(($from ? $from->format('Y-m-d') : $today) . ' 00:00:00')
+            . " AND " . $this->db->escape(($to ? $to->format('Y-m-d') : $today) . ' 23:59:59');
+
+        if ($device_type === '1' || $device_type === '2') {
+            $where .= " AND " . $alias . "device_type=" . (int) $device_type;
+        }
+        if ($send_status === '0' || $send_status === '1') {
+            $where .= " AND " . $alias . "is_sent=" . (int) $send_status;
+        }
+        return $where;
+    }
+
+    // Notification wise view: one row per push. A push is one batch_ref (one admin send or one
+    // scheduled run) with one title, so personalised messages such as birthday wishes still group
+    // together. id_log is the push's first row, which the customer list uses to find the push again.
+    function getNotificationGroups($from_date, $to_date, $device_type, $send_status)
+    {
+        $where = $this->notification_log_where($from_date, $to_date, $device_type, $send_status);
+        return $this->db->query("SELECT MIN(id_log) AS id_log, noti_title,
+                DATE_FORMAT(MIN(sent_at),'%d-%m-%Y %h:%i:%s %p') AS sent_time,
+                IF(COUNT(DISTINCT IFNULL(noti_body,''))=1, MIN(noti_body), NULL) AS noti_body,
+                COUNT(DISTINCT id_customer) AS customers,
+                COUNT(*) AS devices,
+                COALESCE(SUM(is_sent),0) AS sent
+            FROM notification_send_log
+            WHERE " . $where . "
+            GROUP BY batch_ref, noti_title
+            ORDER BY MIN(id_log) DESC")->result_array();
+    }
+
+    // Customers one push was sent to, with the same filters as the row that was clicked.
+    function getNotificationGroupCustomers($id_log, $from_date, $to_date, $device_type, $send_status)
+    {
+        $where = $this->notification_log_where($from_date, $to_date, $device_type, $send_status, 'l.');
+        return $this->db->query("SELECT TRIM(CONCAT(IFNULL(c.firstname,''),' ',IFNULL(c.lastname,''))) AS customer,
+                IFNULL(c.mobile,'') AS mobile, l.device_ref, l.device_type, l.noti_body,
+                DATE_FORMAT(l.sent_at,'%d-%m-%Y %h:%i:%s %p') AS sent_time, l.is_sent, l.error_code
+            FROM notification_send_log g
+            JOIN notification_send_log l ON l.batch_ref=g.batch_ref AND l.noti_title <=> g.noti_title
+            LEFT JOIN customer c ON c.id_customer=l.id_customer
+            WHERE g.id_log=" . (int) $id_log . " AND " . $where . "
+            ORDER BY l.id_log")->result_array();
+    }
+
+    //   Notification Report ends here
+
 }
