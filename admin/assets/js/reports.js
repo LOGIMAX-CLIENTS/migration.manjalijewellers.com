@@ -2155,6 +2155,40 @@ $(document).ready(function () {
       );
       break;
     //emp reff_report end
+    //notification report starts here
+    case "notification_report":
+      $("#rpt_payments1").text(moment().format("DD-MM-YYYY"));
+      $("#rpt_payments2").text(moment().format("DD-MM-YYYY"));
+      get_notification_report();
+      $("#rpt_payment_date").daterangepicker(
+        {
+          ranges: {
+            Today: [moment(), moment()],
+            Yesterday: [
+              moment().subtract(1, "days"),
+              moment().subtract(1, "days"),
+            ],
+            "Last 7 Days": [moment().subtract(6, "days"), moment()],
+            "Last 30 Days": [moment().subtract(29, "days"), moment()],
+            "This Month": [moment().startOf("month"), moment().endOf("month")],
+            "Last Month": [
+              moment().subtract(1, "month").startOf("month"),
+              moment().subtract(1, "month").endOf("month"),
+            ],
+          },
+          startDate: moment(),
+          endDate: moment(),
+        },
+        function (start, end) {
+          $("#rpt_payments1").text(start.format("DD-MM-YYYY"));
+          $("#rpt_payments2").text(end.format("DD-MM-YYYY"));
+          $("#notification_date_range").text(
+            start.format("DD-MM-YYYY") + " To " + end.format("DD-MM-YYYY")
+          );
+        }
+      );
+      break;
+    //notification report ends here
     default:
       break;
   }
@@ -17190,4 +17224,324 @@ function formatDate(date) {
   const parts = date.split('-');
   return parts[2] + '-' + parts[1] + '-' + parts[0]; // Convert DD-MM-YYYY to YYYY-MM-DD
 }
+
+//   Notification Report starts here
+
+$('#search_notification_report').on('click', get_notification_report);
+$('#notification_view').on('change', get_notification_report);
+
+$(document).on('click', '.notification_customers_btn', function () {
+	get_notification_customers($('#notification_group_table').DataTable().row($(this).closest('tr')).data());
+});
+
+// Platform and Send Status filters inside the customer list. They work on the rows already loaded.
+$.fn.dataTable.ext.search.push(function (settings, data, index, row) {
+	if (settings.nTable.id !== 'notification_customers_table') {
+		return true;
+	}
+	var platform = $('#notification_customers_platform').val();
+	var status = $('#notification_customers_status').val();
+	var known = row.device_type == 1 || row.device_type == 2;
+	if (platform === 'unknown' ? known : (platform !== '' && row.device_type != platform)) {
+		return false;
+	}
+	return status === '' || row.is_sent == status;
+});
+
+$('#notification_customers_platform, #notification_customers_status').on('change', function () {
+	if ($.fn.DataTable.isDataTable('#notification_customers_table')) {
+		$('#notification_customers_table').DataTable().draw();
+	}
+});
+
+$('#notification_customers_modal').on('shown.bs.modal', function () {
+	if ($.fn.DataTable.isDataTable('#notification_customers_table')) {
+		$('#notification_customers_table').DataTable().columns.adjust();
+	}
+});
+
+function get_notification_report()
+{
+	var from_date = $('#rpt_payments1').text();
+	var to_date = $('#rpt_payments2').text();
+
+	$('#notification_date_range').text(from_date + ' To ' + to_date);
+	$('div.overlay').css('display', 'block');
+
+	var by_device = $('#notification_view').val() === 'device';
+	$('#notification_platform_filter').toggle(by_device);
+	$('#notification_status_filter').toggle(by_device);
+	$('#notification_device_view').toggle(by_device);
+	$('#notification_group_view').toggle(!by_device);
+	if (!by_device) {
+		$('#notification_limit_alert').hide();
+		get_notification_groups();
+		return;
+	}
+
+	$.ajax({
+		type: 'post',
+		url: base_url + 'index.php/admin_reports/getNotificationReport',
+		dataType: 'json',
+		data: {
+			from_date: from_date,
+			to_date: to_date,
+			device_type: $('#notification_platform').val(),
+			send_status: $('#notification_status').val()
+		},
+		success: function (data) {
+			set_notification_report(data, from_date, to_date);
+		},
+		error: function () {
+			alert('Could not load the Notification Report. Please try again.');
+		},
+		complete: function () {
+			$('div.overlay').css('display', 'none');
+		}
+	});
+}
+
+function set_notification_report(data, from_date, to_date)
+{
+	var as_text = function (value) {
+		return $('<div>').text(value === null ? '' : value).html();
+	};
+	var platforms = { 1: 'Android', 2: 'iOS' };
+
+	$('#notification_total').text(data.total);
+	$('#notification_sent').text(data.sent);
+	$('#notification_failed').text(data.failed);
+	$('#notification_limit_alert')
+		.text('Showing the latest ' + data.row_limit + ' of ' + data.total + ' rows. Choose a shorter date range to see the rest.')
+		.toggle(data.total > data.row_limit);
+
+	if ($.fn.DataTable.isDataTable('#notification_report_table')) {
+		$('#notification_report_table').DataTable().clear().destroy();
+	}
+
+	$('#notification_report_table').DataTable({
+		data: data.rows,
+		deferRender: true,
+		ordering: false,
+		dom: 'lBfrtip',
+		pageLength: 25,
+		lengthMenu: [[25, 50, 100, 250, -1], [25, 50, 100, 250, 'All']],
+		buttons: [
+			{
+				extend: 'print',
+				title: '',
+				messageTop: 'Notification Report ' + from_date + ' - ' + to_date,
+				orientation: 'landscape'
+			},
+			{
+				extend: 'excel',
+				title: 'Notification Report ' + from_date + ' - ' + to_date
+			}
+		],
+		columns: [
+			{ data: null, render: function (d, t, r, meta) { return meta.row + 1; } },
+			{
+				data: 'customer',
+				render: function (value) {
+					return value ? as_text(value) : '<i class="text-muted">Not found</i>';
+				}
+			},
+			{ data: 'mobile', render: as_text },
+			{ data: 'device_ref', render: function (value) { return '…' + as_text(value); } },
+			{ data: 'device_type', render: function (value) { return platforms[value] || 'Unknown'; } },
+			{ data: 'noti_title', render: as_text },
+			{ data: 'noti_body', render: as_text },
+			{ data: 'sent_time' },
+			{
+				data: 'is_sent',
+				render: function (value, t, row) {
+					return value == 1
+						? '<span class="label label-success">Sent</span>'
+						: '<span class="label label-danger">Failed</span> ' + as_text(row.error_code);
+				}
+			}
+		]
+	});
+}
+
+function notification_report_filters()
+{
+	return {
+		from_date: $('#rpt_payments1').text(),
+		to_date: $('#rpt_payments2').text(),
+		device_type: $('#notification_platform').val(),
+		send_status: $('#notification_status').val()
+	};
+}
+
+// Notification wise view: one row per push, with how many customers it went to.
+function get_notification_groups()
+{
+	var filters = notification_report_filters();
+	// Platform and Send Status are device wise filters only.
+	filters.device_type = '';
+	filters.send_status = '';
+	$.ajax({
+		type: 'post',
+		url: base_url + 'index.php/admin_reports/getNotificationGroups',
+		dataType: 'json',
+		data: filters,
+		success: function (groups) {
+			set_notification_groups(groups, filters.from_date, filters.to_date);
+		},
+		error: function () {
+			alert('Could not load the Notification Report. Please try again.');
+		},
+		complete: function () {
+			$('div.overlay').css('display', 'none');
+		}
+	});
+}
+
+function set_notification_groups(groups, from_date, to_date)
+{
+	var as_text = function (value) {
+		return $('<div>').text(value === null ? '' : value).html();
+	};
+	var total = 0, sent = 0;
+	$.each(groups, function (i, group) {
+		total += parseInt(group.devices, 10);
+		sent += parseInt(group.sent, 10);
+	});
+	$('#notification_total').text(total);
+	$('#notification_sent').text(sent);
+	$('#notification_failed').text(total - sent);
+
+	if ($.fn.DataTable.isDataTable('#notification_group_table')) {
+		$('#notification_group_table').DataTable().clear().destroy();
+	}
+
+	$('#notification_group_table').DataTable({
+		data: groups,
+		ordering: false,
+		dom: 'lBfrtip',
+		pageLength: 25,
+		lengthMenu: [[25, 50, 100, -1], [25, 50, 100, 'All']],
+		buttons: [
+			{
+				extend: 'print',
+				title: '',
+				messageTop: 'Notification Report (notification wise) ' + from_date + ' - ' + to_date,
+				orientation: 'landscape',
+				exportOptions: { columns: ':not(:last-child)' }
+			},
+			{
+				extend: 'excel',
+				title: 'Notification Report (notification wise) ' + from_date + ' - ' + to_date,
+				exportOptions: { columns: ':not(:last-child)' }
+			}
+		],
+		columns: [
+			{ data: null, render: function (d, t, r, meta) { return meta.row + 1; } },
+			{ data: 'sent_time' },
+			{ data: 'noti_title', render: as_text },
+			{
+				data: 'noti_body',
+				render: function (value) {
+					return value === null ? '<i class="text-muted">Personalised for each customer</i>' : as_text(value);
+				}
+			},
+			{ data: 'customers' },
+			{ data: 'sent' },
+			{ data: null, render: function (d, t, row) { return row.devices - row.sent; } },
+			{
+				data: null,
+				render: function () {
+					return '<button type="button" class="btn btn-xs btn-primary notification_customers_btn">View Customers</button>';
+				}
+			}
+		]
+	});
+}
+
+function get_notification_customers(group)
+{
+	var filters = notification_report_filters();
+	// Load every send of this push; the list's own Platform and Send Status filters narrow it, starting at All.
+	$('#notification_customers_platform').val('');
+	$('#notification_customers_status').val('');
+	filters.id_log = group.id_log;
+	filters.device_type = '';
+	filters.send_status = '';
+	$('div.overlay').css('display', 'block');
+	$.ajax({
+		type: 'post',
+		url: base_url + 'index.php/admin_reports/getNotificationGroupCustomers',
+		dataType: 'json',
+		data: filters,
+		success: function (rows) {
+			set_notification_customers(rows, group);
+			$('#notification_customers_modal').modal('show');
+		},
+		error: function () {
+			alert('Could not load the customers for this notification. Please try again.');
+		},
+		complete: function () {
+			$('div.overlay').css('display', 'none');
+		}
+	});
+}
+
+function set_notification_customers(rows, group)
+{
+	var as_text = function (value) {
+		return $('<div>').text(value === null ? '' : value).html();
+	};
+	var platforms = { 1: 'Android', 2: 'iOS' };
+	var heading = (group.noti_title || '') + ' (' + group.sent_time + ')';
+	$('#notification_customers_heading').text(heading);
+
+	if ($.fn.DataTable.isDataTable('#notification_customers_table')) {
+		$('#notification_customers_table').DataTable().clear().destroy();
+	}
+
+	$('#notification_customers_table').DataTable({
+		data: rows,
+		ordering: false,
+		autoWidth: false,
+		dom: 'lBfrtip',
+		pageLength: 25,
+		lengthMenu: [[25, 50, 100, -1], [25, 50, 100, 'All']],
+		buttons: [
+			{ extend: 'excel', title: 'Notification Customers - ' + heading, exportOptions: { columns: ':gt(0)' } }
+		],
+		// Number the rows on screen, so S.No stays 1, 2, 3 after filtering.
+		drawCallback: function () {
+			var api = this.api();
+			var start = api.page.info().start;
+			api.column(0, { page: 'current' }).nodes().each(function (cell, i) {
+				cell.innerHTML = start + i + 1;
+			});
+		},
+		columns: [
+			{ data: null, render: function (d, t, r, meta) { return meta.row + 1; } },
+			{
+				data: 'customer',
+				render: function (value) {
+					return value ? as_text(value) : '<i class="text-muted">Not found</i>';
+				}
+			},
+			{ data: 'mobile', render: as_text },
+			{ data: 'device_ref', render: function (value) { return '…' + as_text(value); } },
+			{ data: 'device_type', render: function (value) { return platforms[value] || 'Unknown'; } },
+			{ data: 'noti_body', render: as_text },
+			{ data: 'sent_time' },
+			{
+				data: 'is_sent',
+				render: function (value, t, row) {
+					return value == 1
+						? '<span class="label label-success">Sent</span>'
+						: '<span class="label label-danger">Failed</span> ' + as_text(row.error_code);
+				}
+			}
+		]
+	});
+}
+
+//   Notification Report ends here
 
