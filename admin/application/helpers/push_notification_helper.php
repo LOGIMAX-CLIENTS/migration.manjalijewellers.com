@@ -265,4 +265,177 @@ if (!function_exists('dedupe_device_tokens')) {
     }
 }
 
+if (!function_exists('notify_broadcast_device_refs')) {
+    /**
+     * Every notification-enabled device's identifier on the ACTIVE provider --
+     * used to log a broadcast ("All") send, since OneSignal itself does not
+     * report which individual devices it reached.
+     *
+     * @return array Flat list of device refs (uuid or token, whichever is active)
+     */
+    function notify_broadcast_device_refs()
+    {
+        $CI  = &get_instance();
+        $col = notify_token_column('r');
+        $res = $CI->db->query(
+            "SELECT $col AS device_ref
+               FROM registered_devices r
+               INNER JOIN customer c ON (c.id_customer = r.id_customer)
+              WHERE c.notification = 1
+                AND c.active = 1
+                AND $col IS NOT NULL
+                AND $col <> ''"
+        );
+        if (!$res) {
+            return array();
+        }
+        return array_map(function ($row) { return $row['device_ref']; }, $res->result_array());
+    }
+}
+
+if (!function_exists('notify_load_device_meta')) {
+    /**
+     * id_customer + device_type for a list of device refs (FCM token or OneSignal
+     * player id, whichever `notify_token_column()` currently points at).
+     *
+     * @param  array $device_refs
+     * @return array device_ref => array('id_customer' => int|null, 'device_type' => int|null)
+     */
+    function notify_load_device_meta($device_refs)
+    {
+        $meta = array();
+        if (empty($device_refs)) {
+            return $meta;
+        }
+
+        $CI   = &get_instance();
+        $col  = notify_platform_is('fcm') ? 'token' : 'uuid';
+        $list = implode(',', array_map(array($CI->db, 'escape'), array_unique($device_refs)));
+        $res  = $CI->db->query("SELECT $col AS device_ref, id_customer, device_type FROM registered_devices WHERE $col IN ($list)");
+        if ($res) {
+            foreach ($res->result_array() as $row) {
+                $meta[$row['device_ref']] = array(
+                    'id_customer' => $row['id_customer'],
+                    'device_type' => $row['device_type'],
+                );
+            }
+        }
+
+        return $meta;
+    }
+}
+
+if (!function_exists('notify_log_send_batch')) {
+    /**
+     * Write rows into notification_send_log, 50 per INSERT to stay well below
+     * max_allowed_packet. Mirrors Fcm_service::flush_log() so the Notification
+     * Report works for every provider, not only FCM. A logging problem must
+     * never break a send, so this uses simple_query() -- a client whose DB has
+     * not run the notification_send_log migration keeps sending pushes, just
+     * without a report (logged instead).
+     *
+     * @param  array $rows Rows shaped like notification_send_log's columns
+     * @return void
+     */
+    function notify_log_send_batch($rows)
+    {
+        if (empty($rows)) {
+            return;
+        }
+
+        $CI = &get_instance();
+        $db = $CI->db;
+
+        $columns = array_keys($rows[0]);
+        $prefix  = 'INSERT INTO notification_send_log (' . implode(',', $columns) . ') VALUES ';
+
+        foreach (array_chunk($rows, 50) as $chunk) {
+            $values = array();
+            foreach ($chunk as $row) {
+                $escaped = array();
+                foreach ($columns as $col) {
+                    $escaped[] = $db->escape(isset($row[$col]) ? $row[$col] : NULL);
+                }
+                $values[] = '(' . implode(',', $escaped) . ')';
+            }
+
+            if ($db->simple_query($prefix . implode(',', $values))) {
+                continue;
+            }
+
+            $lost = 0;
+            foreach ($values as $one) {
+                if (!$db->simple_query($prefix . $one)) {
+                    $lost++;
+                }
+            }
+            if ($lost > 0) {
+                log_message('error', 'notify_log_send_batch: FAILED to write ' . $lost . ' of ' . count($values) . ' row(s) to notification_send_log, has the migration run?');
+            }
+        }
+    }
+}
+
+if (!function_exists('notify_log_onesignal_send')) {
+    /**
+     * Logs one OneSignal API call into notification_send_log. OneSignal returns
+     * a single aggregate result per call, not a per-device status like FCM, so
+     * every targeted device gets the same is_sent/error_code for this batch --
+     * still enough for the Notification Report to show something instead of
+     * staying permanently empty whenever OneSignal is the active provider.
+     *
+     * @param  array       $device_refs Player ids actually targeted by this call
+     * @param  string      $title
+     * @param  string      $body
+     * @param  string|bool $response    Raw OneSignal response body, or FALSE on cURL failure
+     * @return void
+     */
+    function notify_log_onesignal_send($device_refs, $title, $body, $response)
+    {
+        $device_refs = array_values(array_unique(array_filter(array_map('strval', (array) $device_refs))));
+        if (empty($device_refs)) {
+            return;
+        }
+
+        $decoded    = ($response !== FALSE) ? json_decode((string) $response, TRUE) : NULL;
+        $recipients = isset($decoded['recipients']) ? (int) $decoded['recipients'] : 0;
+        $is_sent    = ($response !== FALSE && $recipients > 0);
+
+        $message_id = isset($decoded['id']) ? (string) $decoded['id'] : NULL;
+
+        $error_code = NULL;
+        if (!$is_sent) {
+            if ($response === FALSE) {
+                $error_code = 'CURL_FAILED';
+            } elseif (isset($decoded['errors'])) {
+                $error_code = substr(is_array($decoded['errors']) ? implode('; ', $decoded['errors']) : (string) $decoded['errors'], 0, 100);
+            } else {
+                $error_code = 'NO_RECIPIENTS';
+            }
+        }
+
+        $batch_ref   = uniqid('', TRUE);
+        $meta_by_ref = notify_load_device_meta($device_refs);
+
+        $rows = array();
+        foreach ($device_refs as $ref) {
+            $meta     = isset($meta_by_ref[$ref]) ? $meta_by_ref[$ref] : array();
+            $rows[]   = array(
+                'batch_ref'      => $batch_ref,
+                'id_customer'    => isset($meta['id_customer']) ? $meta['id_customer'] : NULL,
+                'device_ref'     => substr($ref, -8),
+                'device_type'    => isset($meta['device_type']) ? $meta['device_type'] : NULL,
+                'noti_title'     => (string) $title,
+                'noti_body'      => (string) $body,
+                'sent_at'        => date('Y-m-d H:i:s'),
+                'is_sent'        => $is_sent ? 1 : 0,
+                'fcm_message_id' => $message_id,
+                'error_code'     => $error_code,
+            );
+        }
+
+        notify_log_send_batch($rows);
+    }
+}
+
 /* End of file push_notification_helper.php */
