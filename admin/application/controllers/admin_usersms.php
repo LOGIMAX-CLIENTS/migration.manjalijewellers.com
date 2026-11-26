@@ -2920,11 +2920,14 @@ function set_image($filename)
 		curl_setopt($ch, CURLOPT_TIMEOUT, 15);
 
 		$response = curl_exec($ch);
-		curl_close($ch); 
+		curl_close($ch);
+
+		notify_log_onesignal_send(notify_broadcast_device_refs(), $alertdetails['header'], $alertdetails['message'], $response);
+
 		return $response;
 	}
-	
-	
+
+
 	function send_singlealert_send_notification($alertdetails = array())
 	{
 		$this->load->helper('push_notification');
@@ -2989,10 +2992,13 @@ function set_image($filename)
 		curl_setopt($ch, CURLOPT_TIMEOUT, 15);
 		$response = curl_exec($ch);
 		//print_r($response);exit;
-		curl_close($ch);  
+		curl_close($ch);
+
+		notify_log_onesignal_send($registrationIds, $alertdetails['header'], $alertdetails['message'], $response);
+
 	return $response;
 	}
-	
+
 	function send_singlealert_notification($alertdetails = array())
 	{
 		$this->load->helper('push_notification');
@@ -3086,12 +3092,14 @@ function set_image($filename)
 
 		$response = curl_exec($ch);
 		//echo "<pre>";print_r($response);echo "</pre>";exit;
-		/*curl_close($ch); 
-		print_r($response);*/
+		curl_close($ch);
+
+		notify_log_onesignal_send($registrationIds, $alertdetails['header'], $alertdetails['message'], $response);
+
 	return $response;
 	}
-	
-//catlog module//HH	
+
+//catlog module//HH
 	
  function catlog_module_form($type,$id="")
 
